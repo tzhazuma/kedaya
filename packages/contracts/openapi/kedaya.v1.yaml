@@ -922,18 +922,62 @@ paths:
       responses:
         '201': { $ref: '#/components/responses/ModuleCreated' }
 
+  # ==================================================================
+  # buddy —— 找搭子（规格 docs/features/buddy-matching.md §5.1）
+  # 匹配算法在 @kedaya/shared/buddy，三端共用同一份（可解释性要求）
+  # ⚠️ 三板块只有 academic / daily / sport —— **明确不做 dating**（契约 §11.10-G）
+  # ==================================================================
+  /buddy/profile:
+    get:
+      tags: [buddy]
+      summary: 读我的匹配资料
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+    put:
+      tags: [buddy]
+      summary: 整体替换我的匹配资料
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BuddyProfileUpsert' }
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+    delete:
+      tags: [buddy]
+      summary: 删除匹配资料（硬删，含 embedding）→ 立即从推荐池移除
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+
   /buddy/items:
     get:
       tags: [buddy]
-      summary: 搭子招募列表
+      summary: 搭子活动列表（游标分页）
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
+        - name: section
+          in: query
+          schema:
+            type: string
+            enum: [academic, daily, sport]
+        - name: activity
+          in: query
+          schema:
+            type: string
+            enum: [study, sport, game, meal, travel, other]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [OPEN, FULL, CLOSED, CANCELLED]
       responses:
         '200': { $ref: '#/components/responses/ModuleList' }
     post:
       tags: [buddy]
-      summary: 发布搭子招募
+      summary: 发布搭子活动
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -941,6 +985,179 @@ paths:
             schema: { $ref: '#/components/schemas/BuddyPostCreate' }
       responses:
         '201': { $ref: '#/components/responses/ModuleCreated' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /buddy/items/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [buddy]
+      summary: 活动详情
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [buddy]
+      summary: 更新活动（JSON Merge Patch，契约 §11.1）
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: '#/components/schemas/BuddyPostCreate' }
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+    delete:
+      tags: [buddy]
+      summary: 取消活动（转 CANCELLED）
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+
+  /buddy/items/{id}/join:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [buddy]
+      summary: 申请加入（建 BuddyApplication，PENDING）
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message: { type: string, maxLength: 300 }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /buddy/items/{id}/leave:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [buddy]
+      summary: 撤回申请（PENDING → WITHDRAWN）
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+
+  /buddy/items/{id}/close:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [buddy]
+      summary: 发起人关闭活动（OPEN/FULL → CLOSED）
+      description: |
+        刻意用 `close` 而不是 `cancel`：`BuddyPost` 状态机里 `CLOSED` 与 `CANCELLED`
+        是两个不同终态；`CANCELLED` 由 `DELETE /items/:id` 触发。
+        这样**动作名与状态名一一对应**，无歧义（规格 §5.2）。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+        '403': { $ref: '#/components/responses/Unauthenticated' }
+
+  /buddy/items/{id}/decide:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [buddy]
+      summary: 发起人接受/拒绝某申请
+      description: |
+        不拆成 `accept`/`reject`：两者共享**全部**前置校验（必须是发起人、申请必须 PENDING、
+        名额检查），拆开会产生两份重复的守卫代码（规格 §5.2）。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [applicationId, decision]
+              properties:
+                applicationId: { type: string }
+                decision:
+                  type: string
+                  enum: [ACCEPTED, REJECTED]
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /buddy/items/{id}/feedback:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [buddy]
+      summary: 提交匹配反馈（like / dislike / skip）
+      description: |
+        反馈**按 section 隔离** —— `academic` 的 dislike 不影响该帖在 `daily` 的分数。
+        这是最容易写错的地方（规格 §3.6，对应验收 T6）。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [section, action]
+              properties:
+                section:
+                  type: string
+                  enum: [academic, daily, sport]
+                action:
+                  type: string
+                  enum: [like, dislike, skip]
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+
+  /buddy/applications:
+    get:
+      tags: [buddy]
+      summary: 我的申请列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+
+  /buddy/recommendations:
+    get:
+      tags: [buddy]
+      summary: 主动推荐（含**可解释理由**）
+      description: |
+        返回 `matchMode`（`vector` / `hash` / `rule`）与 `reason` 列表。
+        `hash` 模式下前端**不得**声称"语义相似" —— 那是字符级哈希，不是语义向量（规格 §3.4 模式 B）。
+        `reason` 是聚合后的短语（如"共同兴趣：羽毛球"），**不暴露对方的完整标签集**（规格 §6.1）。
+      parameters:
+        - name: section
+          in: query
+          schema:
+            type: string
+            enum: [academic, daily, sport]
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: 推荐列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          matchMode:
+                            type: string
+                            enum: [vector, hash, rule]
+                          items:
+                            type: array
+                            items: { $ref: '#/components/schemas/BuddyRecommendation' }
+
 
   /lost-found/items:
     get:
@@ -1715,27 +1932,192 @@ components:
         toSpot: { type: string, maxLength: 120 }
         deadline: { type: string, format: date-time }
 
+    # ---- buddy：找搭子 ----
+    BuddyProfile:
+      type: object
+      description: |
+        匹配资料。**对任何人都不直接可见**（包括发帖人）—— 只被算法使用，
+        输出只有 score + reason（规格 §6.1）。这是关键的隐私设计：
+        **匹配结果的解释不等于资料的泄漏**。
+      properties:
+        matchEnabled:
+          type: boolean
+          description: 默认 false —— 匹配是新用途，不默认开启（规格 §6.3）
+        department: { type: [string, 'null'] }
+        interestTags:
+          type: array
+          items: { type: string }
+          maxItems: 20
+          description: '**封闭标签表**的 key，不接受自由文本（规格 §3.2）'
+        activityTags:
+          type: array
+          items: { type: string }
+          maxItems: 10
+        availability:
+          type: array
+          items: { $ref: '#/components/schemas/BuddyAvailabilitySlot' }
+        preferredAreas:
+          type: array
+          items: { type: string }
+        skillLevel:
+          type: [string, 'null']
+          enum: [beginner, intermediate, advanced, null]
+        updatedAt: { type: string, format: date-time }
+
+    BuddyProfileUpsert:
+      type: object
+      properties:
+        matchEnabled: { type: boolean, default: false }
+        department: { type: [string, 'null'] }
+        interestTags:
+          type: array
+          items: { type: string }
+          maxItems: 20
+        activityTags:
+          type: array
+          items: { type: string }
+          maxItems: 10
+        availability:
+          type: array
+          items: { $ref: '#/components/schemas/BuddyAvailabilitySlot' }
+        preferredAreas:
+          type: array
+          items: { type: string }
+        skillLevel:
+          type: [string, 'null']
+          enum: [beginner, intermediate, advanced, null]
+
+    BuddyAvailabilitySlot:
+      type: object
+      required: [dow, startMin, endMin]
+      properties:
+        dow:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: '0=周日 … 6=周六（与 JS getDay() 一致）'
+        startMin:
+          type: integer
+          minimum: 0
+          maximum: 1440
+          description: 当日内分钟数
+        endMin:
+          type: integer
+          minimum: 0
+          maximum: 2880
+          description: |
+            可 > 1440 表示**跨零点**（如 22:00–02:00 → startMin=1320, endMin=1560）。
+            这是 F7 硬过滤的边界情况，必须有单测。
+
     BuddyPost:
       type: object
+      required: [id, section, activity, title, startsAt, status]
       properties:
         id: { type: string }
+        section:
+          type: string
+          enum: [academic, daily, sport]
+          description: '由 activity 映射而来：study→academic；meal/travel/other→daily；sport/game→sport'
         activity:
           type: string
-          enum: [sports, study, meal, travel, gaming, other]
+          enum: [study, sport, game, meal, travel, other]
         title: { type: string }
-        capacity: { type: integer }
-        joined: { type: integer }
-        meetAt: { type: string, format: date-time }
+        description: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+          maxItems: 8
+        startsAt: { type: string, format: date-time }
+        durationMin: { type: integer }
+        location: { type: string }
+        capacity:
+          type: integer
+          description: 含发起人
+        joinedCount:
+          type: integer
+          description: 含发起人，初值 1（契约 §11.10-D）
+        minSkillLevel:
+          type: [string, 'null']
+          enum: [beginner, intermediate, advanced, null]
+        status:
+          type: string
+          enum: [OPEN, FULL, CLOSED, CANCELLED]
+        creatorId: { type: string }
+        creatorNickname: { type: string }
+        createdAt: { type: string, format: date-time }
+
     BuddyPostCreate:
       type: object
-      required: [activity, title]
+      required: [activity, title, startsAt]
       properties:
         activity:
           type: string
-          enum: [sports, study, meal, travel, gaming, other]
-        title: { type: string, maxLength: 120 }
-        capacity: { type: integer, minimum: 2, maximum: 100 }
-        meetAt: { type: string, format: date-time }
+          enum: [study, sport, game, meal, travel, other]
+        title: { type: string, minLength: 1, maxLength: 80 }
+        description:
+          type: string
+          maxLength: 2000
+          description: |
+            **禁止包含联系方式**（手机号/微信/QQ 模式检测 → `VALIDATION_FAILED`）。
+            联系方式在申请被接受后由 `notifications` 模块交换（规格 §6.2）。
+        tags:
+          type: array
+          items: { type: string }
+          maxItems: 8
+        startsAt: { type: string, format: date-time }
+        durationMin: { type: integer, minimum: 15, maximum: 720 }
+        location: { type: string, maxLength: 120 }
+        capacity: { type: integer, minimum: 2, maximum: 50 }
+        minSkillLevel:
+          type: [string, 'null']
+          enum: [beginner, intermediate, advanced, null]
+        genderPreference:
+          type: [string, 'null']
+          enum: [any, same, null]
+
+    BuddyApplication:
+      type: object
+      required: [id, postId, applicantId, status]
+      properties:
+        id: { type: string }
+        postId: { type: string }
+        applicantId: { type: string }
+        applicantNickname: { type: string }
+        message: { type: string }
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, REJECTED, WITHDRAWN]
+        decidedAt: { type: [string, 'null'], format: date-time }
+        decidedBy: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+
+    BuddyMatchReason:
+      type: object
+      required: [code, label]
+      properties:
+        code:
+          type: string
+          enum: [same-department, shared-interests, shared-activities, availability-overlap, same-area, same-skill]
+        label:
+          type: string
+          description: 聚合后的短语（如"共同兴趣 3 项"），**不暴露对方完整标签集**
+        weight: { type: number }
+
+    BuddyRecommendation:
+      type: object
+      required: [post, score, reasons]
+      properties:
+        post: { $ref: '#/components/schemas/BuddyPost' }
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: 保留 3 位小数（与 STUMatch 对齐）
+        reasons:
+          type: array
+          items: { $ref: '#/components/schemas/BuddyMatchReason' }
+        feedbackAdjustment: { type: number }
+
 
     LostFoundItem:
       type: object
