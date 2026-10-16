@@ -12,7 +12,8 @@
     "./money": "./src/money.ts",
     "./time": "./src/time.ts",
     "./validate": "./src/validate.ts",
-    "./geo": "./src/geo/index.ts"
+    "./geo": "./src/geo/index.ts",
+    "./buddy": "./src/buddy/index.ts"
   },
   "files": [
     "src"

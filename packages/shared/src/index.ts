@@ -10,3 +10,4 @@ export * from './money';
 export * from './time';
 export * from './validate';
 export * from './geo';
+export * from './buddy';
