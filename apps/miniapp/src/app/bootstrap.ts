@@ -2,6 +2,8 @@ import type { BrowseFaqState } from '../application/faq/browseFaq'
 import type { ListForumBoardsState } from '../application/forum/listForumBoards'
 import type { ListForumPostsState } from '../application/forum/listForumPosts'
 import type { ListGroupBuysState } from '../application/groupbuy/listGroupBuys'
+import type { WildlifeTracksState } from '../application/wildlife/tracks'
+import type { WildlifeMapState } from '../application/wildlife/wildlifeMap'
 import type { Session } from '../domain/models/session'
 import type { AppContainer } from './container'
 
@@ -25,6 +27,8 @@ export interface BootstrapSnapshot {
   forumBoards: ListForumBoardsState
   forumPosts: ListForumPostsState
   faq: BrowseFaqState
+  wildlifeMap: WildlifeMapState
+  wildlifeTracks: WildlifeTracksState
   durationMs: number
 }
 
@@ -32,7 +36,7 @@ export interface BootstrapSnapshot {
  * 第 1 步：同步 hydrate。
  * 不做任何网络访问 —— 只读本地存储 + 内存快照。
  *
- * 覆盖用户最可能首屏进入的模块：拼单（既有切片）+ 论坛 + FAQ。
+ * 覆盖用户最可能首屏进入的模块：拼单（既有切片）+ 论坛 + FAQ + 野生动物地图。
  * 每个 `hydrate()` 都是幂等的，页面自己再调一次也不会重复读盘。
  */
 export function bootstrapSync(container: AppContainer): BootstrapSnapshot {
@@ -43,8 +47,19 @@ export function bootstrapSync(container: AppContainer): BootstrapSnapshot {
   const forumBoards = container.useCases.listForumBoards.hydrate()
   const forumPosts = container.useCases.listForumPosts.hydrate()
   const faq = container.useCases.browseFaq.hydrate()
+  const wildlifeMap = container.useCases.wildlifeMap.hydrate()
+  const wildlifeTracks = container.useCases.wildlifeTracks.hydrate()
 
-  return { session, list, forumBoards, forumPosts, faq, durationMs: Date.now() - startedAt }
+  return {
+    session,
+    list,
+    forumBoards,
+    forumPosts,
+    faq,
+    wildlifeMap,
+    wildlifeTracks,
+    durationMs: Date.now() - startedAt,
+  }
 }
 
 /**
@@ -62,6 +77,7 @@ export function refreshInBackground(container: AppContainer): void {
         container.useCases.listForumBoards.load(),
         container.useCases.listForumPosts.load(),
         container.useCases.browseFaq.load(),
+        container.useCases.wildlifeMap.load(),
       ]),
     )
     // 静默降级：单个模块的意外异常不能让启动流程变成 unhandled rejection

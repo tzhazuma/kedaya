@@ -30,6 +30,6 @@ export default defineConfig({
     url: process.env.DATABASE_URL ?? DEV_FALLBACK_URL,
   },
   migrations: {
-    seed: 'node prisma/seed.ts',
+    seed: 'node prisma/seed.mjs',
   },
 });

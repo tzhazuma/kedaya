@@ -22,17 +22,27 @@ import { createJoinGroupBuyUseCase } from '../application/groupbuy/joinGroupBuy'
 import type { JoinGroupBuyUseCase } from '../application/groupbuy/joinGroupBuy'
 import { createSessionUseCase } from '../application/auth/session'
 import type { SessionUseCase } from '../application/auth/session'
+import { createReportSightingUseCase } from '../application/wildlife/reportSighting'
+import type { ReportSightingUseCase } from '../application/wildlife/reportSighting'
+import { createWildlifeTracksUseCase } from '../application/wildlife/tracks'
+import type { WildlifeTracksUseCase } from '../application/wildlife/tracks'
+import { createWildlifeMapUseCase } from '../application/wildlife/wildlifeMap'
+import type { WildlifeMapUseCase } from '../application/wildlife/wildlifeMap'
 import { createApiClient, createAuthRefresher, createTaroHttpPort, createTracePort } from '../data/api'
 import type { ApiClient } from '../data/api'
+import { createTaroMediaUploader } from '../data/api/mediaUpload'
 import { createHttpFaqRepository } from '../data/repositories/httpFaqRepository'
 import { createHttpForumRepository } from '../data/repositories/httpForumRepository'
 import { createHttpGroupBuyRepository } from '../data/repositories/httpGroupBuyRepository'
+import { createHttpWildlifeRepository } from '../data/repositories/httpWildlifeRepository'
 import { createMockFaqRepository } from '../data/repositories/mockFaqRepository'
 import type { MockFaqRepository } from '../data/repositories/mockFaqRepository'
 import { createMockForumRepository } from '../data/repositories/mockForumRepository'
 import type { MockForumRepository } from '../data/repositories/mockForumRepository'
 import { createMockGroupBuyRepository } from '../data/repositories/mockGroupBuyRepository'
 import type { MockGroupBuyRepository } from '../data/repositories/mockGroupBuyRepository'
+import { createMockWildlifeRepository } from '../data/repositories/mockWildlifeRepository'
+import type { MockWildlifeRepository } from '../data/repositories/mockWildlifeRepository'
 import { createMemoryStorage } from '../data/storage/memoryStorage'
 import { createSessionStore, createTokenStore } from '../data/storage/sessionStore'
 import { StorageKeys } from '../data/storage/keys'
@@ -44,6 +54,7 @@ import type { ForumRepository } from '../domain/ports/forumRepository'
 import type { GroupBuyRepository } from '../domain/ports/groupbuyRepository'
 import type { AuthRefresherPort, SessionStorePort, TokenStorePort } from '../domain/ports/sessionPort'
 import type { TracePort } from '../domain/ports/tracePort'
+import type { WildlifeRepository } from '../domain/ports/wildlifeRepository'
 
 /**
  * 装配层（契约 §7 `app/`：DI、路由注册、运行时工厂）。
@@ -90,12 +101,15 @@ export interface AppContainer {
   groupBuyRepository: GroupBuyRepository
   forumRepository: ForumRepository
   faqRepository: FaqRepository
+  wildlifeRepository: WildlifeRepository
   /** 仅 mock 模式下非空 —— 页面用它演示「三态」 */
   mockControls: MockGroupBuyRepository | null
   /** 论坛的 mock 演示控制面（仅 mock 模式下非空） */
   mockForumControls: MockForumRepository | null
   /** FAQ 的 mock 演示控制面（仅 mock 模式下非空） */
   mockFaqControls: MockFaqRepository | null
+  /** 野生动物的 mock 演示控制面（仅 mock 模式下非空） */
+  mockWildlifeControls: MockWildlifeRepository | null
   useCases: {
     session: SessionUseCase
     listGroupBuys: ListGroupBuysUseCase
@@ -109,6 +123,9 @@ export interface AppContainer {
     reportForumContent: ReportForumContentUseCase
     browseFaq: BrowseFaqUseCase
     myTickets: MyTicketsUseCase
+    wildlifeMap: WildlifeMapUseCase
+    wildlifeTracks: WildlifeTracksUseCase
+    reportSighting: ReportSightingUseCase
   }
 }
 
@@ -118,6 +135,7 @@ export interface ContainerOverrides {
   repository?: GroupBuyRepository
   forumRepository?: ForumRepository
   faqRepository?: FaqRepository
+  wildlifeRepository?: WildlifeRepository
   env?: Partial<AppEnv>
 }
 
@@ -159,6 +177,9 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
   const mockFaqRepository = env.useMock
     ? createMockFaqRepository({ latencyMs: env.mockLatencyMs })
     : null
+  const mockWildlifeRepository = env.useMock
+    ? createMockWildlifeRepository({ latencyMs: env.mockLatencyMs })
+    : null
 
   const groupBuyRepository: GroupBuyRepository =
     overrides.repository ?? mockRepository ?? createHttpGroupBuyRepository(apiClient)
@@ -166,6 +187,23 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     overrides.forumRepository ?? mockForumRepository ?? createHttpForumRepository(apiClient)
   const faqRepository: FaqRepository =
     overrides.faqRepository ?? mockFaqRepository ?? createHttpFaqRepository(apiClient)
+  /**
+   * 野生动物仓储。
+   *
+   * ⚠️ 真后端模式下，照片上传走**独立的 multipart 端口**
+   * （`ApiClient` 只发 JSON，`wx.request` 不支持传文件）。
+   * 见 `data/api/mediaUpload.ts`。
+   */
+  const wildlifeUploader = createTaroMediaUploader({
+    baseUrl: env.apiBaseUrl,
+    tokens: tokenStore,
+    trace,
+    timeoutMs: env.requestTimeoutMs * 2,
+  })
+  const wildlifeRepository: WildlifeRepository =
+    overrides.wildlifeRepository ??
+    mockWildlifeRepository ??
+    createHttpWildlifeRepository(apiClient, wildlifeUploader)
 
   const session = createSessionUseCase(sessionStore)
   const listGroupBuys = createListGroupBuysUseCase({
@@ -236,6 +274,27 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     session: sessionStore,
   })
 
+  const wildlifeMap = createWildlifeMapUseCase({
+    repository: wildlifeRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.wildlifeMapCache,
+  })
+  const wildlifeTracks = createWildlifeTracksUseCase({
+    repository: wildlifeRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.wildlifeTracksCache,
+  })
+  const reportSighting = createReportSightingUseCase({
+    repository: wildlifeRepository,
+    session: sessionStore,
+    cache,
+    clock,
+    cacheKey: StorageKeys.wildlifeReportCache,
+    ethicsCacheKey: StorageKeys.wildlifeEthicsAck,
+  })
+
   return {
     env,
     trace,
@@ -248,9 +307,11 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     groupBuyRepository,
     forumRepository,
     faqRepository,
+    wildlifeRepository,
     mockControls: mockRepository,
     mockForumControls: mockForumRepository,
     mockFaqControls: mockFaqRepository,
+    mockWildlifeControls: mockWildlifeRepository,
     useCases: {
       session,
       listGroupBuys,
@@ -264,6 +325,9 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       reportForumContent,
       browseFaq,
       myTickets,
+      wildlifeMap,
+      wildlifeTracks,
+      reportSighting,
     },
   }
 }

@@ -1,0 +1,55 @@
+/* KdyPrivacyNotice —— 位置模糊化说明（规格 §9）。
+   色值全部取自设计令牌，禁止手写色值（契约 §6.2）。 */
+
+.kdy-privacy {
+  padding: $kdy-space-3 $kdy-space-4;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-privacy__head {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-privacy__glyph {
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-privacy__title {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-privacy__body {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-privacy__level {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-info;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-privacy__sensitive {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-privacy__aggregation {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}

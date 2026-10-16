@@ -1,0 +1,108 @@
+/* KdyEthicsNotice —— 投喂规范与不打扰提示（规格 §8）。
+   色值全部取自设计令牌，禁止手写色值（契约 §6.2）。 */
+
+.kdy-ethics {
+  padding: $kdy-space-3 $kdy-space-4;
+  background-color: $kdy-color-surface;
+  border-left: 4px solid $kdy-color-border;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-ethics--danger {
+  border-left-color: $kdy-color-danger;
+  background-color: $kdy-color-surface-alt;
+}
+
+.kdy-ethics--warning {
+  border-left-color: $kdy-color-warning;
+}
+
+.kdy-ethics--success {
+  border-left-color: $kdy-color-success;
+}
+
+.kdy-ethics__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+}
+
+.kdy-ethics__title {
+  flex: 1;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-ethics__zone {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-ethics__policy {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-ethics__notice {
+  display: block;
+  margin-top: $kdy-space-1;
+  padding: $kdy-space-2;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-sm;
+}
+
+.kdy-ethics__rules {
+  display: flex;
+  flex-direction: column;
+  margin-top: $kdy-space-2;
+}
+
+.kdy-ethics__rule {
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-loose;
+}
+
+.kdy-ethics__disturb {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-ethics__ack {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
+  padding: $kdy-space-2 $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-sm;
+}
+
+.kdy-ethics__ack--on {
+  border-color: $kdy-color-success;
+  background-color: $kdy-color-surface;
+}
+
+.kdy-ethics__box {
+  color: $kdy-color-brand-strong;
+  font-size: $kdy-font-size-md;
+}
+
+.kdy-ethics__ack-label {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}

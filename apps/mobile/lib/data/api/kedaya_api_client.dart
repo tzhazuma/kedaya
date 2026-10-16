@@ -74,18 +74,7 @@ final class KedaYaApiClient implements KedayaApiPort {
         queryParameters: request.query,
         options: _optionsFor(request),
       );
-      final Object? body = response.data;
-      if (body is String && body.trim().isNotEmpty) {
-        return ApiEnvelope.parseBody<T>(body, decode);
-      }
-      if (body is Map<String, Object?>) {
-        return ApiEnvelope.parse<T>(body, decode);
-      }
-      return ApiEnvelope.failure<T>(
-        ApiErrorCode.internal,
-        '空响应体',
-        _client.lastTraceId ?? '',
-      );
+      return _envelopeFrom<T>(response, decode);
     } on DioException catch (error) {
       final ApiEnvelope<T>? envelope = _failureEnvelope<T>(error, decode);
       if (envelope != null) return envelope;
@@ -100,8 +89,77 @@ final class KedaYaApiClient implements KedayaApiPort {
     }
   }
 
+  /// `multipart/form-data` 上传（规格 §4.1：图片走服务端代理上传）。
+  ///
+  /// 与 [send] 共用 [_envelopeFrom] 与 [_failureEnvelope]，因此错误语义完全一致
+  /// （422 `VALIDATION_FAILED` / `MEDIA_TOO_LARGE` 等由后端信封给出）。
+  /// 不设置 `contentType`：由 Dio 自己写 multipart boundary，也让后端的
+  /// **魔数校验**（规格 §4.2：不信任 `Content-Type`）成为唯一的格式判据。
+  @override
+  Future<Result<T>> sendMultipart<T>(
+    ApiRequest request,
+    List<ApiUploadFile> files,
+    T Function(Object? data) decode,
+  ) async {
+    try {
+      final FormData form = FormData();
+      final Object? body = request.body;
+      if (body is Map<String, Object?>) {
+        for (final MapEntry<String, Object?> entry in body.entries) {
+          final Object? value = entry.value;
+          if (value == null) continue;
+          form.fields.add(MapEntry<String, String>(entry.key, '$value'));
+        }
+      }
+      for (final ApiUploadFile file in files) {
+        form.files.add(
+          MapEntry<String, MultipartFile>(
+            file.field,
+            MultipartFile.fromBytes(file.bytes, filename: file.fileName),
+          ),
+        );
+      }
+
+      final Response<Object?> response = await _client.raw.request<Object?>(
+        normalizePath(request.path),
+        data: form,
+        queryParameters: request.query,
+        options: _optionsFor(request),
+      );
+      return toResult<T>(_envelopeFrom<T>(response, decode));
+    } on DioException catch (error) {
+      final ApiEnvelope<T>? envelope = _failureEnvelope<T>(error, decode);
+      if (envelope != null) return toResult<T>(envelope);
+      return Err<T>(_mapDioError(error), traceId: _client.lastTraceId);
+    } on Object catch (error) {
+      return Err<T>(
+        ApiError(code: ApiErrorCode.internal, message: '上传失败：$error'),
+        traceId: _client.lastTraceId,
+      );
+    }
+  }
+
+  /// 把一次响应收敛为信封（[send] 与 [sendMultipart] 共用）。
+  ApiEnvelope<T> _envelopeFrom<T>(Response<Object?> response, T Function(Object? data) decode) {
+    final Object? body = response.data;
+    if (body is String && body.trim().isNotEmpty) {
+      return ApiEnvelope.parseBody<T>(body, decode);
+    }
+    if (body is Map<String, Object?>) {
+      return ApiEnvelope.parse<T>(body, decode);
+    }
+    return ApiEnvelope.failure<T>(
+      ApiErrorCode.internal,
+      '空响应体',
+      _client.lastTraceId ?? '',
+    );
+  }
+
   Options _optionsFor(ApiRequest request) => Options(
     method: request.method.wire,
+    // null 时保持 Dio 全局默认（`application/json`）；契约 §11.1 的
+    // JSON Merge Patch 会显式传 `application/merge-patch+json`。
+    contentType: request.contentType,
     headers: <String, dynamic>{
       if (request.idempotencyKey != null) idempotencyHeader: request.idempotencyKey,
     },

@@ -19,6 +19,9 @@ export const PAGE_PATHS = {
   forumReport: '/presentation/pages/forum/report/index',
   faq: '/presentation/pages/faq/index/index',
   faqTickets: '/presentation/pages/faq/tickets/index',
+  wildlifeMap: '/presentation/pages/wildlife/map/index',
+  wildlifeReport: '/presentation/pages/wildlife/report/index',
+  wildlifeTracks: '/presentation/pages/wildlife/tracks/index',
 } as const
 
 export type PagePath = (typeof PAGE_PATHS)[keyof typeof PAGE_PATHS]
@@ -34,6 +37,8 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   groupbuy: PAGE_PATHS.groupBuyList,
   forum: PAGE_PATHS.forumList,
   faq: PAGE_PATHS.faq,
+  // `wildlife` 的入口是**地图页**（模块主界面），上报与轨迹从地图页进入
+  wildlife: PAGE_PATHS.wildlifeMap,
 }
 
 export function moduleEntryPath(moduleId: string): string | null {
@@ -83,4 +88,39 @@ export function forumReportPath(params: ForumReportParams): string {
 export function readIdParam(params: Record<string, string | undefined>): string | null {
   const id = params.id
   return id === undefined || id === '' ? null : id
+}
+
+/* ------------------------------------------------------------------ *
+ * wildlife（猫 / 鸟 / 黑天鹅）
+ * ------------------------------------------------------------------ */
+
+/**
+ * 上报页；可选带上物种与区域，进入后默认选中。
+ *
+ * 注意：**不带坐标参数**。坐标一律由上报页自己采集
+ * （定位 = WGS84 / 地图点选 = GCJ-02），并显式声明来源坐标系 ——
+ * 通过 URL 传坐标会让「这个点是什么坐标系」变得不可追溯（规格 §3.2 硬要求 5）。
+ */
+export function wildlifeReportPath(params?: {
+  speciesId?: string | null
+  zoneId?: string | null
+}): string {
+  const query: string[] = []
+  if (params?.speciesId != null && params.speciesId !== '') {
+    query.push(`speciesId=${encodeURIComponent(params.speciesId)}`)
+  }
+  if (params?.zoneId != null && params.zoneId !== '') {
+    query.push(`zoneId=${encodeURIComponent(params.zoneId)}`)
+  }
+  return query.length === 0
+    ? PAGE_PATHS.wildlifeReport
+    : `${PAGE_PATHS.wildlifeReport}?${query.join('&')}`
+}
+
+export function wildlifeTracksPath(): string {
+  return PAGE_PATHS.wildlifeTracks
+}
+
+export function wildlifeMapPath(): string {
+  return PAGE_PATHS.wildlifeMap
 }

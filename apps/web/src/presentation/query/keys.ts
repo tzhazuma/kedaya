@@ -30,6 +30,20 @@ export interface FaqTicketFilters {
   status: FaqTicketStatus | 'all';
 }
 
+/** wildlife 地图筛选（图层开关参与缓存键，避免图层状态互相污染） */
+export interface WildlifeMapFilters {
+  speciesId: string;
+  showZones: boolean;
+  showSpots: boolean;
+  showTracks: boolean;
+  showMarkers: boolean;
+}
+
+export interface WildlifeListFilters {
+  speciesId: string;
+  healthConcernOnly: boolean;
+}
+
 export const queryKeys = {
   groupbuy: {
     root: ['groupbuy'] as const,
@@ -53,5 +67,25 @@ export const queryKeys = {
   admin: {
     root: ['admin'] as const,
     dashboard: ['admin', 'dashboard'] as const,
+    wildlifeModeration: ['admin', 'wildlife', 'moderation'] as const,
+  },
+  wildlife: {
+    root: ['wildlife'] as const,
+    map: (filters: WildlifeMapFilters) =>
+      [
+        'wildlife',
+        'map',
+        filters.speciesId,
+        filters.showZones,
+        filters.showSpots,
+        filters.showTracks,
+        filters.showMarkers,
+      ] as const,
+    list: (filters: WildlifeListFilters) =>
+      ['wildlife', 'list', filters.speciesId, filters.healthConcernOnly] as const,
+    detail: (id: string) => ['wildlife', 'detail', id] as const,
+    zones: (speciesId: string) => ['wildlife', 'zones', speciesId] as const,
+    tracks: (speciesId: string) => ['wildlife', 'tracks', speciesId] as const,
+    catalog: ['wildlife', 'catalog'] as const,
   },
 } as const;

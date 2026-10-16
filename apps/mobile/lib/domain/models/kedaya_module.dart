@@ -2,7 +2,7 @@
 ///
 /// 真相来源：`packages/contracts/src/modules.ts`。导航、宫格、权限判定、路由前缀
 /// 全部由本表驱动 —— **禁止在 widget 里硬编码模块清单**。
-/// 两边一致性由 `test/domain/module_registry_test.dart` 断言（19 个模块、id 唯一、
+/// 两边一致性由 `test/domain/module_registry_test.dart` 断言（20 个模块、id 唯一、
 /// route == id、同意门规则与 `modules.test.ts` 相同）。
 library;
 
@@ -223,6 +223,16 @@ const List<KedayaModule> businessModules = <KedayaModule>[
     sensitivity: ModuleSensitivity.low,
     requiresConsent: false,
     route: 'wildlife',
+  ),
+  KedayaModule(
+    id: 'facility',
+    nameZh: '场馆预约',
+    nameEn: 'Facility Booking',
+    summary: '体育场馆、健身房等校园场馆的预约与核销',
+    category: ModuleCategory.business,
+    sensitivity: ModuleSensitivity.medium,
+    requiresConsent: false,
+    route: 'facility',
   ),
 ];
 

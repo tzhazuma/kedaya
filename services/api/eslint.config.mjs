@@ -27,4 +27,12 @@ export default tseslint.config(
       '@typescript-eslint/no-empty-function': 'off',
     },
   },
+  {
+    // 纯 Node 脚本（如 `prisma/seed.mjs`）：没有 TS 类型系统兜底，
+    // 但 `console` / `process` 是 Node 全局，必须显式声明，否则 no-undef 全红。
+    files: ['**/*.mjs'],
+    languageOptions: {
+      globals: { console: 'readonly', process: 'readonly', URL: 'readonly' },
+    },
+  },
 );

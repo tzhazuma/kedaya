@@ -20,8 +20,14 @@ export type { KdyCardProps } from './KdyCard'
 export { KdyEmpty } from './KdyEmpty'
 export type { KdyEmptyMode, KdyEmptyProps } from './KdyEmpty'
 
+export { KdyEthicsNotice } from './KdyEthicsNotice'
+export type { KdyEthicsNoticeProps } from './KdyEthicsNotice'
+
 export { KdyField } from './KdyField'
 export type { KdyFieldProps } from './KdyField'
+
+export { KdyPrivacyNotice } from './KdyPrivacyNotice'
+export type { KdyPrivacyNoticeProps } from './KdyPrivacyNotice'
 
 export { KdySearchBar } from './KdySearchBar'
 export type { KdySearchBarProps } from './KdySearchBar'

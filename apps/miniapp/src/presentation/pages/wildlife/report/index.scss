@@ -1,0 +1,137 @@
+/* 上报观测页（wildlife/report）。
+   色值全部取自设计令牌，禁止手写色值（契约 §6.2）。 */
+
+.kdy-wildlife-report__photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-2;
+}
+
+.kdy-wildlife-report__photo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $kdy-space-1;
+  width: 200px;
+}
+
+.kdy-wildlife-report__thumb {
+  width: 200px;
+  height: 200px;
+  border-radius: $kdy-radius-md;
+  background-color: $kdy-color-surface-alt;
+}
+
+.kdy-wildlife-report__photo-state {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-wildlife-report__tip,
+.kdy-wildlife-report__degrade,
+.kdy-wildlife-report__coord {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-wildlife-report__degrade {
+  padding: $kdy-space-2;
+  color: $kdy-color-warning;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-sm;
+}
+
+.kdy-wildlife-report__suggestions,
+.kdy-wildlife-report__species,
+.kdy-wildlife-report__individuals,
+.kdy-wildlife-report__zones,
+.kdy-wildlife-report__pickers,
+.kdy-wildlife-report__actions,
+.kdy-wildlife-report__time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-wildlife-report__suggestion,
+.kdy-wildlife-report__species-item,
+.kdy-wildlife-report__individual,
+.kdy-wildlife-report__zone {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-1;
+}
+
+.kdy-wildlife-report__time-value {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-md;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-wildlife-report__input,
+.kdy-wildlife-report__textarea {
+  width: 100%;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-wildlife-report__textarea {
+  min-height: 140px;
+}
+
+/* `<map>` 必须有确定高度 */
+.kdy-wildlife-report__canvas {
+  width: 100%;
+  height: 480px;
+  margin-top: $kdy-space-2;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-wildlife-report__switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $kdy-space-2 0;
+}
+
+.kdy-wildlife-report__switch-label {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-wildlife-report__forbidden {
+  display: block;
+  margin-top: $kdy-space-2;
+  padding: $kdy-space-2;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+  background-color: $kdy-color-surface-alt;
+  border-left: 4px solid $kdy-color-danger;
+  border-radius: $kdy-radius-sm;
+}
+
+.kdy-wildlife-report__ethics,
+.kdy-wildlife-report__privacy {
+  padding: $kdy-space-3 $kdy-space-4;
+}
+
+.kdy-wildlife-report__errors {
+  display: flex;
+  flex-direction: column;
+  padding: $kdy-space-2 $kdy-space-4;
+}
+
+.kdy-wildlife-report__error {
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-wildlife-report__submit {
+  padding: $kdy-space-3 $kdy-space-4 0;
+}

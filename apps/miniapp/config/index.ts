@@ -27,7 +27,20 @@ const baseConfig: UserConfigExport<'webpack5'> = {
   outputRoot: 'dist',
   plugins: [],
   defineConstants: {},
-  copy: { patterns: [], options: {} },
+  copy: {
+    /**
+     * 地图 marker 图标。
+     *
+     * `<map>` 的 `marker.iconPath` 只接受「小程序根目录下的路径 / 临时路径 / 网络图片」，
+     * **不支持** webpack 内联的 base64 data URI。因此这些小 PNG 必须**原样拷贝**到
+     * `dist/assets/wildlife/`，代码里以 `/assets/wildlife/*.png` 引用。
+     *
+     * `from` 相对 appPath（`apps/miniapp`），`to` 也相对 appPath
+     * （见 `WebpackPlugin.getCopyWebpackPlugin` 的 `context: appPath`）。
+     */
+    patterns: [{ from: 'src/assets/wildlife', to: 'dist/assets/wildlife' }],
+    options: {},
+  },
   framework: 'react',
   /**
    * webpack5 是唯一编译器（契约 §2）。

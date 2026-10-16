@@ -115,6 +115,14 @@ export interface ApiClient {
   patch<T>(path: string, body?: unknown, options?: RequestOptions): Promise<ApiResult<T>>;
   put<T>(path: string, body?: unknown, options?: RequestOptions): Promise<ApiResult<T>>;
   del<T>(path: string, options?: RequestOptions): Promise<ApiResult<T>>;
+  /**
+   * `multipart/form-data` 上传（wildlife 的照片上传，规格 §4.1）。
+   *
+   * 为什么必须走本客户端：契约 §7 硬规则 3「所有网络访问必须经过 `data/api/`」——
+   * 直接 `fetch` 会绕过 trace / 幂等键 / 信封解包 / 错误码映射。
+   * **不设置 `Content-Type`**：必须由运行时自己写 `boundary`，手写会破坏 multipart。
+   */
+  upload<T>(path: string, form: FormData, options?: RequestOptions): Promise<ApiResult<T>>;
 }
 
 /** 默认 trace id：优先 UUID，退化到时间戳 + 随机串（小程序等无 crypto 环境） */
@@ -198,6 +206,7 @@ export function createApiClient(config: ApiClientConfig = {}): ApiClient {
   async function request<T>(
     req: ApiRequest,
     options: RequestOptions = {},
+    form?: FormData,
   ): Promise<ApiResult<T>> {
     const fetchImpl = config.fetchImpl ?? globalThis.fetch;
     const traceId = options.traceId ?? nextTraceId();
@@ -228,7 +237,10 @@ export function createApiClient(config: ApiClientConfig = {}): ApiClient {
     if (isWrite && options.idempotencyKey) {
       headers[IDEMPOTENCY_HEADER] = options.idempotencyKey;
     }
-    if (isWrite && req.body !== undefined) headers['Content-Type'] = 'application/json';
+    // multipart 时**不能**手写 Content-Type（boundary 必须由运行时生成）
+    if (isWrite && req.body !== undefined && !form) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     const url = `${joinUrl(baseUrl, req.path)}${buildQueryString(req.query)}`;
 
@@ -244,7 +256,11 @@ export function createApiClient(config: ApiClientConfig = {}): ApiClient {
       response = await fetchImpl(url, {
         method,
         headers,
-        ...(isWrite && req.body !== undefined ? { body: JSON.stringify(req.body) } : {}),
+        ...(form
+          ? { body: form }
+          : isWrite && req.body !== undefined
+            ? { body: JSON.stringify(req.body) }
+            : {}),
         ...(options.signal ? { signal: options.signal } : {}),
         ...(controller ? { signal: controller.signal } : {}),
       });
@@ -314,6 +330,7 @@ export function createApiClient(config: ApiClientConfig = {}): ApiClient {
     put: (path, body, options) =>
       request({ path, method: 'PUT', ...(body === undefined ? {} : { body }) }, options),
     del: (path, options) => request({ path, method: 'DELETE' }, options),
+    upload: (path, form, options) => request({ path, method: 'POST' }, options, form),
   };
 }
 

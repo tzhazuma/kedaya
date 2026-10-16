@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  可达鸭 · wildlife 占位底图（方案 B：静态校园平面图 + 叠加层）
+  =====================================================================
+  ⚠️ 这是【自绘示意底图】（规格文档 §1.3 的 P1 路径），**不是测绘成果**：
+     - 建筑位置为示意性排布，无测绘精度；
+     - 校园官方平面图**尚未获得授权**（规格 §1.3 / 未决问题 U1，状态：未知）。
+  拿到学校书面授权前，禁止把学校官方平面图放进仓库或对象存储；
+  届时只需替换本文件并在 `src/domain/models/wildlife/basemap.ts` 更新
+  `imageUrl` / `license` / 控制点即可（底图是**可配置资源**，见规格 §1.4）。
+
+  坐标系：本图是**图像像素空间**，WGS84 通过仿射标定映射到像素，
+  **不经过 GCJ-02**（这正是方案 B 的核心优势，见规格 §1.2 理由 3、§3.2 第 4 条）。
+  控制点像素坐标即本文件中的地标位置（见 basemap.ts 的
+  WILDLIFE_BASEMAP_CONTROL_POINTS）。
+
+  配色：本文件是**静态资源**（与 public/brand/*.svg 同类），无法读取 CSS 变量，
+  因此色值**逐字取自** packages/design-tokens/dist/tokens.css 的浅色令牌：
+     #F7F8FA = --kdy-color-bg          #FFFFFF = --kdy-color-surface
+     #F1F3F7 = --kdy-color-surface-alt #E3E8EF = --kdy-color-border
+     #6B7A90 = --kdy-color-text-muted  #1F2733 = --kdy-color-text
+     #22A06B = --kdy-color-success     #3B82F6 = --kdy-color-info
+     #FFC53D = --kdy-color-brand       #FFF3B8 = --kdy-color-brand-soft
+     #E8833A = --kdy-color-warning     #D64545 = --kdy-color-danger
+  `src/presentation/theme/wildlife-tokens.test.ts` 会解析 tokens.css 并断言
+  本文件中出现的**每一个** hex 都是令牌里真实存在的值（防止有人手写新颜色）。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800"
+     role="img" aria-label="上海科技大学张江校区示意图（自绘占位底图，非测绘精度）">
+  <title>可达鸭 wildlife 占位底图（自绘示意）</title>
+
+  <!-- 底色 -->
+  <rect x="0" y="0" width="1200" height="800" fill="#F7F8FA"/>
+
+  <!-- 校园边界 -->
+  <polygon points="120,140 620,110 1060,120 1150,240 1150,620 1040,750 560,790 200,760 110,600 110,280"
+           fill="#FFFFFF" stroke="#E3E8EF" stroke-width="3"/>
+
+  <!-- 绿地（草坪） -->
+  <g fill="#22A06B" fill-opacity="0.12" stroke="#22A06B" stroke-opacity="0.35" stroke-width="1">
+    <path d="M400,250 L560,240 L580,360 L430,380 Z"/>
+    <path d="M180,420 L320,410 L330,500 L190,510 Z"/>
+    <path d="M820,560 L1030,540 L1060,700 L860,720 Z"/>
+    <path d="M620,120 L900,120 L920,210 L640,220 Z"/>
+  </g>
+
+  <!-- 人工湖 -->
+  <g>
+    <ellipse cx="700" cy="640" rx="175" ry="92" fill="#3B82F6" fill-opacity="0.18"
+             stroke="#3B82F6" stroke-opacity="0.45" stroke-width="2"/>
+    <text x="700" y="646" text-anchor="middle" font-size="16" fill="#6B7A90">人工湖</text>
+  </g>
+
+  <!-- 步道 / 主干道 -->
+  <g stroke="#E3E8EF" stroke-width="10" fill="none" stroke-linecap="round">
+    <path d="M180,700 L470,660 L700,690 L1000,650"/>
+    <path d="M300,180 L470,300 L620,420 L700,560"/>
+    <path d="M900,250 L960,420 L1050,420"/>
+    <path d="M330,520 L470,560 L620,470"/>
+  </g>
+
+  <!-- 建筑 -->
+  <g fill="#F1F3F7" stroke="#E3E8EF" stroke-width="2">
+    <!-- 图书馆（台阶控制点 470,300） -->
+    <rect x="420" y="250" width="110" height="100" rx="6"/>
+    <!-- 行政楼（广场控制点 620,180） -->
+    <rect x="560" y="120" width="130" height="110" rx="6"/>
+    <!-- 体育馆（入口控制点 900,250） -->
+    <rect x="830" y="180" width="150" height="140" rx="6"/>
+    <!-- 一食堂（门口控制点 330,520） -->
+    <rect x="265" y="455" width="140" height="120" rx="6"/>
+    <!-- 教学楼群 -->
+    <rect x="700" y="270" width="90" height="70" rx="6"/>
+    <rect x="700" y="360" width="90" height="70" rx="6"/>
+    <rect x="810" y="360" width="90" height="70" rx="6"/>
+    <!-- 宿舍区（西角控制点 200,700） -->
+    <rect x="135" y="600" width="70" height="150" rx="6"/>
+    <rect x="215" y="620" width="70" height="150" rx="6"/>
+    <rect x="295" y="600" width="70" height="150" rx="6"/>
+    <!-- 实验楼 -->
+    <rect x="880" y="450" width="120" height="80" rx="6"/>
+  </g>
+
+  <!-- 校门（东门 1120,420 / 南门 560,780） -->
+  <g fill="#FFC53D" stroke="#E8833A" stroke-width="2">
+    <rect x="1136" y="398" width="16" height="44" rx="3"/>
+    <rect x="540" y="774" width="44" height="16" rx="3"/>
+  </g>
+
+  <!-- 地标标注 -->
+  <g font-size="15" fill="#1F2733" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif">
+    <text x="475" y="392" text-anchor="middle">图书馆</text>
+    <text x="625" y="252" text-anchor="middle">行政楼</text>
+    <text x="905" y="345" text-anchor="middle">体育馆</text>
+    <text x="335" y="600" text-anchor="middle">一食堂</text>
+    <text x="745" y="310" text-anchor="middle">教学楼</text>
+    <text x="250" y="590" text-anchor="middle">宿舍区</text>
+    <text x="940" y="497" text-anchor="middle">实验楼</text>
+    <text x="1105" y="390" text-anchor="end">东门</text>
+    <text x="560" y="768" text-anchor="middle">南门</text>
+  </g>
+
+  <!-- 控制点示意（供人工核对标定；真实底图替换后应移除） -->
+  <g fill="#D64545">
+    <circle cx="470" cy="300" r="4"/><circle cx="900" cy="250" r="4"/>
+    <circle cx="330" cy="520" r="4"/><circle cx="700" cy="560" r="4"/>
+    <circle cx="200" cy="700" r="4"/><circle cx="1120" cy="420" r="4"/>
+    <circle cx="620" cy="180" r="4"/><circle cx="560" cy="780" r="4"/>
+  </g>
+
+  <!-- 占位声明（必须在图上可见） -->
+  <g>
+    <rect x="24" y="24" width="470" height="52" rx="8" fill="#FFF3B8" stroke="#E8833A" stroke-width="1.5"/>
+    <text x="40" y="48" font-size="15" fill="#1F2733">占位底图：自绘示意，非测绘精度</text>
+    <text x="40" y="68" font-size="12" fill="#6B7A90">待学校授权后替换 · 授权状态：未知（规格 §1.3 / U1）</text>
+  </g>
+  <g>
+    <rect x="24" y="740" width="330" height="36" rx="8" fill="#F1F3F7" stroke="#E3E8EF" stroke-width="1"/>
+    <text x="40" y="763" font-size="12" fill="#6B7A90">坐标：WGS84 → 仿射标定 → 像素（不经 GCJ-02）</text>
+  </g>
+</svg>

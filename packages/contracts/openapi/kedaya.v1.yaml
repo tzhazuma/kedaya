@@ -2001,11 +2001,22 @@ components:
       required: [id, observedAt, status]
       properties:
         id: { type: string }
-        speciesId: { type: [string, 'null'] }
+        species: { type: [string, 'null'] }
+        speciesNameZh: { type: [string, 'null'] }
         speciesSource:
           type: string
           enum: [manual, auto, corrected]
           description: 物种是怎么确定的（手动 / 自动分类 / 事后纠正）
+        observedAtFuzzed:
+          type: string
+          format: date-time
+          description: 时间粗化后的公开时间（规格 §9.5）
+        healthConcern: { type: boolean }
+        isAnonymous: { type: boolean }
+        photoUrls:
+          type: array
+          items: { type: string, format: uri }
+          description: 缩略图 URL（原图需鉴权）
         observedAt:
           type: string
           format: date-time
@@ -2037,30 +2048,56 @@ components:
 
     WildlifeSightingCreate:
       type: object
-      required: [observedAt, latitude, longitude]
+      description: |
+        上报观测。**字段与 `docs/features/wildlife-map.md` §10.3 的完整示例一致** ——
+        规格比 OpenAPI 先写全，此处的形状以规格为准（Lead 裁决 v1.3.1）。
+      required: [observedAt, geo]
       properties:
         observedAt:
           type: string
           format: date-time
           description: 发现时间。不得晚于入库时刻 +5 分钟，不得早于 −30 天（契约 §11.10-A）
-        latitude:
-          type: number
-          minimum: -90
-          maximum: 90
-          description: '**WGS84**。小程序地图点选得到的是 GCJ-02，必须先转换。'
-        longitude:
-          type: number
-          minimum: -180
-          maximum: 180
-          description: '**WGS84**'
-        speciesId:
+        geo:
+          type: object
+          description: |
+            **WGS84** 坐标。⚠️ 小程序地图点选得到的是 GCJ-02，**必须先 `gcj02ToWgs84()` 转换**。
+          required: [lat, lng]
+          properties:
+            lat: { type: number, minimum: -90, maximum: 90 }
+            lng: { type: number, minimum: -180, maximum: 180 }
+        geoAccuracyM:
+          type: integer
+          description: 定位精度（米）。用于判断是否可信到可以参与轨迹推断
+        zoneId: { type: [string, 'null'] }
+        species:
           type: [string, 'null']
-          description: 用户手动选择的物种（可空，允许"先上传后鉴定"）
+          description: 用户**手动选择**的物种（可空，允许"先上传后鉴定"）
         individualId: { type: [string, 'null'] }
         mediaIds:
           type: array
           items: { type: string }
           maxItems: 9
+        healthConcern:
+          type: boolean
+          default: false
+          description: 健康异常标记 → 触发通知链路（规格 §8.4）
+        isAnonymous: { type: boolean, default: false }
+        autoSpeciesId:
+          type: [string, 'null']
+          description: 自动分类给出的物种（与手动选择分开存，便于评估分类器准确率）
+        autoConfidence:
+          type: [number, 'null']
+          minimum: 0
+          maximum: 1
+        classifiedBy:
+          type: string
+          enum: [manual, vision_api, on_device, fallback]
+          description: 物种是怎么定下来的（规格 §5.5 的闭环）
+        ethicsAcknowledged:
+          type: boolean
+          description: |
+            用户已阅读投喂规范与不打扰提示（规格 §8）。
+            ⚠️ 这是**表单校验**，**不是**同意门 —— 全程不应返回 `CONSENT_REQUIRED`。
         note: { type: string, maxLength: 500 }
 
     WildlifeSpot:

@@ -4,9 +4,9 @@ import 'package:kedaya/domain/models/kedaya_module.dart';
 /// 模块注册表是契约 §4 的冻结项，Dart 侧只是镜像 —— 因此这里断言镜像没走样。
 /// 对应用例见 `packages/contracts/src/modules.test.ts`。
 void main() {
-  test('注册表共 19 个模块：14 业务 + 5 基础', () {
-    expect(kedayaModules, hasLength(19));
-    expect(businessModules, hasLength(14));
+  test('注册表共 20 个模块：15 业务 + 5 基础', () {
+    expect(kedayaModules, hasLength(20));
+    expect(businessModules, hasLength(15));
     expect(coreModules, hasLength(5));
   });
 

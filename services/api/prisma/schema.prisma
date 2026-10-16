@@ -44,6 +44,8 @@ model User {
   notifications  Notification[]
   portrait       AiPortraitProfile?
   appointments   WellbeingAppointment[]
+  /// 上报的动物观测（规格 §2.6 reporterId）。匿名上报时 API 层不得回传该关联
+  wildlifeSightings WildlifeSighting[]
 
   @@index([createdAt])
 }
@@ -588,20 +590,308 @@ model TechpieLink {
   @@index([category, status])
 }
 
-/// 猫鸟黑天鹅 · wildlife（低敏感）
-model WildlifeSpot {
-  id         String   @id @default(cuid())
-  species    String
-  place      String
-  lat        Float
-  lng        Float
-  note       String?
-  reportedBy String?
-  status     String   @default("active")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+/* ================================================================== *
+ * 2.10 wildlife 域（猫/鸟/黑天鹅活动区域与轨迹）—— 规格
+ *      docs/features/wildlife-map.md §2 / §7 / §9
+ *
+ * 全局约定（规格 §3.2）：
+ *   · **所有 lat/lng 列的语义都是 WGS84**，禁止出现 gcjLat/gcjLng 这类持久化列；
+ *     GCJ-02 只在渲染前一刻于内存中存在（`domain/geo.ts` 的 `toGcj02`）。
+ *   · 金额/半径/计数一律 Int；经纬度用 Decimal(10,7)（≈1.1 cm 分辨率）。
+ *   · 主键用 cuid()（本文件头部冻结的仓库约定；规格 §7 草案写的是
+ *     `dbgenerated("gen_ulid()")`，但本仓库没有该 PG 函数 —— 见交付说明）。
+ * ================================================================== */
 
-  @@index([species, status])
+/// 物种分类树 · wildlife（低敏感）
+///
+/// ⚠️ 种子数据（`prisma/seed-data.ts`）中的物种清单是**推测值**，未做实地物种调查
+/// （规格 §2.5 / U2）。`needsFieldVerification` / `verificationNote` 就是把这个
+/// 未知项变成**机器可见**的标记 —— 与 `CampusBasemap.license` 的 CI 校验同一思路。
+model SpeciesTaxonomy {
+  id                   String  @id @default(cuid())
+  /// 学名，如 `Cygnus atratus`。唯一
+  scientificName       String  @unique
+  commonNameZh         String
+  commonNameEn         String?
+  /// species | genus | family | order
+  taxonRank            String  @default("species")
+  parentId             String?
+  parent               SpeciesTaxonomy?  @relation("TaxonTree", fields: [parentId], references: [id])
+  children             SpeciesTaxonomy[] @relation("TaxonTree")
+  /// 国家/地方保护动物 → 审核严格度提升（双人复核）
+  isProtected          Boolean @default(false)
+  /// 繁殖期敏感 → 触发 §9.4 季节性加强模糊
+  isNestingSensitive   Boolean @default(false)
+  /// 繁殖月份（1–12）。仅 isNestingSensitive 时有意义
+  nestingMonths        Int[]   @default([])
+  /// allowed | discouraged | forbidden
+  defaultFeedingPolicy String  @default("discouraged")
+  /// 对接外部识别 API 的标签映射 `{ inaturalist?: number; baiduLabel?: string }`
+  externalIds          Json    @default("{}")
+  iconUrl              String?
+  isActive             Boolean @default(true)
+  /// 该条目是否仍需实地核实（U2）。种子数据全部为 true
+  needsFieldVerification Boolean @default(true)
+  verificationNote     String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  deletedAt            DateTime?
+
+  sightings   WildlifeSighting[]
+  individuals WildlifeIndividual[]
+  spots       WildlifeSpot[]
+  tracks      WildlifeTrack[]
+
+  @@index([taxonRank, isActive])
+  @@map("SpeciesTaxonomy")
+}
+
+/// 管理端划定的区域 · wildlife（低敏感）
+///
+/// 语义：**人工定义**的区域（投喂政策 / 告示位 / 管理边界 / 敏感区多边形）。
+/// 与 `WildlifeSpot`（算法聚类出的热点）**不是同一张表**（规格 §2.3）。
+model WildlifeZone {
+  id            String   @id @default(cuid())
+  name          String
+  /// 主要物种标签（SpeciesTaxonomy.id 列表）
+  speciesIds    String[] @default([])
+  /// WGS84 圆心
+  centerLat     Decimal  @db.Decimal(10, 7)
+  centerLng     Decimal  @db.Decimal(10, 7)
+  radiusM       Int
+  /// allowed | discouraged | forbidden
+  feedingPolicy String   @default("discouraged")
+  note          String?
+  /// 该区域的位置模糊化半径（米），默认 50（规格 §9.3 ②）
+  fuzzRadiusM   Int      @default(50)
+  /// 敏感区（宿舍/保育区/巢区）→ 公开展示时**只给区域不给坐标**（规格 §9.3 ①）
+  isSensitive   Boolean  @default(false)
+  /// 敏感区多边形顶点环（WGS84，`[{lat,lng}, ...]`）。
+  /// 规格 §9.3① 的 `SensitivePolygon.ring` 来源；只有 isSensitive=true 时有意义。
+  /// 为 null 的敏感区退化为"整个圆都不给坐标"（仍安全，只是判定更粗）。
+  sensitiveRing Json?
+  /// 告示位文案（黑天鹅等），规格 §8.3
+  noticeText    String?
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  sightings WildlifeSighting[]
+  spots     WildlifeSpot[]
+
+  @@index([isSensitive])
+  @@index([sortOrder])
+  @@map("WildlifeZone")
+}
+
+/// 一条观测上报 · wildlife（低敏感，但含位置/时间 → 属画像输入）
+///
+/// 访问域：wildlife
+/// 硬规则（规格 §2.6 / §9）：
+///   · `geoLat`/`geoLng` 是**已模糊化**的可公开坐标，**永远不是**精确坐标；
+///   · 精确坐标只存在 `WildlifeSightingExact`（受限表，读一次写一次审计）；
+///   · `observedAt`（发现时间）与 `createdAt`（上报时间）**必须分离**（契约 §11.10-A）。
+model WildlifeSighting {
+  id       String        @id @default(cuid())
+  zoneId   String?
+  zone     WildlifeZone? @relation(fields: [zoneId], references: [id])
+  /// SpeciesTaxonomy.id。契约冻结的字段名是 `species`
+  species  String
+  speciesRef SpeciesTaxonomy @relation(fields: [species], references: [id])
+  /// PENDING | PUBLISHED | REJECTED（契约 §2.10 状态机，不得改动）
+  status   String        @default("PENDING")
+
+  /// 公开坐标：WGS84，**已模糊化**。
+  /// 规格 §6.3 U6：契约把 geo 定义成 `{lat,lng}` 对象，但 Json 无法建索引/无法范围过滤，
+  /// 因此持久层拆成两个标量列；API 层仍返回 `geo: {lat, lng}`（响应形状不变）。
+  geoLat   Decimal?      @db.Decimal(10, 7)
+  geoLng   Decimal?      @db.Decimal(10, 7)
+  /// 实际生效的模糊层级：grid | coarsened | zone-only（规格 §9.2 四层流水线的产物）
+  geoFuzzLevel String    @default("grid")
+  /// 生效的模糊半径（米）。含 §9.4 季节性加强后的结果
+  fuzzRadiusM  Int       @default(50)
+  /// k-匿名计数用的网格键（`gridCellKey`，与 `snapToGrid` 同一套 floor 划分）。
+  /// 必须在**公开表**上，因为受限表不能被聚合查询读取（规格 §9.3 ④）。
+  gridCellKey  String?
+
+  photoUrls     String[] @default([])
+  healthConcern Boolean  @default(false)
+  reporterId    String
+  reporter      User     @relation(fields: [reporterId], references: [id])
+
+  /// 发现时间（用户选的）
+  observedAt       DateTime
+  /// 公开的粗化时间（规格 §9.5）
+  observedAtFuzzed DateTime
+  /// 公开延迟（天）。保护物种繁殖期为 7，其余为 0（规格 §9.5）
+  publishDelayDays Int      @default(0)
+
+  individualId           String?
+  individual             WildlifeIndividual? @relation(fields: [individualId], references: [id])
+  autoSpeciesId          String?
+  autoConfidence         Decimal? @db.Decimal(4, 3)
+  /// manual | vision_api | ondevice | fallback
+  classifiedBy           String   @default("manual")
+  /// 用户纠正了自动结果 → 训练样本（规格 §5.5）
+  correctedFromSpeciesId String?
+  note                   String?
+  isAnonymous            Boolean  @default(false)
+  moderatedBy            String?
+  moderatedAt            DateTime?
+  /// ≤200 字，**仅审核端可见**
+  rejectReason           String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  exact WildlifeSightingExact?
+  media WildlifeMedia[]
+
+  @@index([species, status, observedAt])
+  @@index([geoLat, geoLng])        // 包围盒粗筛（规格 §6.3）
+  @@index([status, createdAt])     // 审核队列
+  @@index([healthConcern, status]) // 健康异常优先
+  @@index([gridCellKey, observedAt]) // k-匿名计数（规格 §9.3 ④）
+  @@index([reporterId, createdAt])
+  @@map("WildlifeSighting")
+}
+
+/// 受限表：精确坐标 · wildlife
+///
+/// 访问域：wildlife.exact（**仅审核员 / 社团管理员**，每次读取写审计）
+/// 规格 §2.7：普通用户**完全不可读**，上报人本人**也不可读**（最小权限原则）。
+model WildlifeSightingExact {
+  sightingId      String           @id
+  sighting        WildlifeSighting @relation(fields: [sightingId], references: [id], onDelete: Cascade)
+  /// WGS84 精确纬度
+  exactLat        Decimal          @db.Decimal(10, 7)
+  /// WGS84 精确经度
+  exactLng        Decimal          @db.Decimal(10, 7)
+  exactAccuracyM  Int?
+  exactObservedAt DateTime
+  @@map("WildlifeSightingExact")
+}
+
+/// 被命名的个体 · wildlife（"手动给个名字"，规格 §2.8）
+///
+/// 审核语义与 WildlifeSighting 同构（刻意复用同一套队列与守卫）。
+model WildlifeIndividual {
+  id            String          @id @default(cuid())
+  name          String
+  speciesId     String
+  species       SpeciesTaxonomy @relation(fields: [speciesId], references: [id])
+  description   String?
+  coverPhotoUrl String?
+  /// PENDING | PUBLISHED | REJECTED
+  status        String          @default("PENDING")
+  isActive      Boolean         @default(true)
+  createdBy     String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?
+
+  sightings WildlifeSighting[]
+
+  /// 同物种内名字唯一，防止重复建个体
+  @@unique([speciesId, name])
+  @@index([status, createdAt])
+  @@map("WildlifeIndividual")
+}
+
+/// 观测照片 · wildlife
+///
+/// 硬规则（规格 §4.3）：`storageKey` 指向的对象**必须已剥离 EXIF**（含 GPS）。
+/// 未剥离 GPS 的照片会直接绕过 §9 的全部位置模糊化。
+model WildlifeMedia {
+  id            String           @id @default(cuid())
+  sightingId    String?
+  sighting      WildlifeSighting? @relation(fields: [sightingId], references: [id], onDelete: Cascade)
+  storageKey    String
+  thumbKey      String
+  widthPx       Int
+  heightPx      Int
+  /// 剥离元数据**之后**的大小
+  byteSize      Int
+  mimeType      String
+  /// 内容哈希，用于去重
+  sha256        String
+  /// 客户端生成的幂等键（规格 §4.5）
+  clientPhotoId String
+  sortOrder     Int              @default(0)
+  /// 上传者（孤儿媒体回收与越权校验用）
+  uploadedBy    String?
+  createdAt     DateTime         @default(now())
+
+  @@unique([sightingId, clientPhotoId])
+  @@unique([uploadedBy, clientPhotoId])
+  @@index([sha256])
+  @@index([sightingId, sortOrder])
+  @@index([sightingId, createdAt]) // 孤儿媒体回收（24h）
+  @@map("WildlifeMedia")
+}
+
+/// 聚合热点 · wildlife（**派生只读**，由 Worker 重算覆盖，无写端点）
+///
+/// 与 `WildlifeZone`（人工定义）刻意分表（规格 §2.3）。
+model WildlifeSpot {
+  id                String          @id @default(cuid())
+  speciesId         String
+  species           SpeciesTaxonomy @relation(fields: [speciesId], references: [id])
+  zoneId            String?
+  zone              WildlifeZone?   @relation(fields: [zoneId], references: [id])
+  /// WGS84，**已模糊化**的聚类质心
+  centroidLat       Decimal         @db.Decimal(10, 7)
+  centroidLng       Decimal         @db.Decimal(10, 7)
+  /// 95 分位半径
+  radiusM           Int
+  sightingCount     Int
+  /// 去重上报人数（反作弊：同一人多次上报只计 1，规格 §6.2 ②）
+  distinctReporters Int
+  firstSeenAt       DateTime
+  lastSeenAt        DateTime
+  /// 24 小时分布直方图（"常见出没时段"）
+  hourHistogram     Int[]           @default([])
+  confidence        Decimal         @db.Decimal(4, 3)
+  /// 如 `dbscan-v1`，用于可复现
+  algorithmVersion  String
+  computedAt        DateTime
+  createdAt         DateTime        @default(now())
+
+  @@index([speciesId, computedAt])
+  @@index([computedAt])
+  @@map("WildlifeSpot")
+}
+
+/// 推断轨迹 · wildlife（**派生只读**）
+///
+/// ⚠️ 数据来自同学偶发上报，**不是 GPS 项圈** → 无法重建真实运动路径（规格 §6.1）。
+/// `isInferred` **恒为 true**，字段存在的唯一目的是让客户端无法忘记标注它。
+model WildlifeTrack {
+  id               String          @id @default(cuid())
+  speciesId        String
+  species          SpeciesTaxonomy @relation(fields: [speciesId], references: [id])
+  individualId     String?
+  /// 途经的 WildlifeSpot，**按时间排序**
+  spotIds          String[]        @default([])
+  /// LineString（**已模糊化**）
+  pathGeoJson      Json
+  totalDistanceM   Int
+  spanStartAt      DateTime
+  spanEndAt        DateTime
+  sightingCount    Int
+  /// 只有一种方法，明确不做插值（规格 §6.2 ④）
+  method           String          @default("dbscan-chain")
+  confidence       Decimal         @db.Decimal(4, 3)
+  isInferred       Boolean         @default(true)
+  algorithmVersion String
+  computedAt       DateTime
+  createdAt        DateTime        @default(now())
+
+  @@index([speciesId, computedAt])
+  @@index([computedAt])
+  @@map("WildlifeTrack")
 }
 
 /* ================================================================== *

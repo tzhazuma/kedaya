@@ -11,9 +11,9 @@ iOS / Android / **鸿蒙** 三端原生客户端骨架。包名 `kedaya`，Dart 
 
 | 项 | 状态 |
 | --- | --- |
-| 代码 | 已写完（六边形分层 + 拼单/论坛/常见问题三个垂直切片 + 亮/暗主题 + 19 个测试文件 / 208 个用例） |
+| 代码 | 已写完（六边形分层 + 拼单/论坛/常见问题/校园动物四个垂直切片 + 亮/暗主题 + 32 个测试文件 / 392 个用例） |
 | **本机编译验证** | ❌ **未验证** —— 开发机上**没有安装 Flutter SDK**（`flutter` / `dart` 命令都不存在），因此 `flutter pub get` / `flutter analyze` / `flutter test` **一次都没有跑过** |
-| 静态自检（替代验证） | ✅ **已实际执行**：`/opt/homebrew/bin/python3 tool/selfcheck.py` —— 10 项文本检查全部通过（131 个 Dart 文件，0 处违规），见 §6.5 |
+| 静态自检（替代验证） | ✅ **已实际执行**：`/opt/homebrew/bin/python3 tool/selfcheck.py` —— 10 项文本检查全部通过（174 个 Dart 文件：lib 142 + test 32，0 处违规），见 §6.5 |
 | 依赖版本解析 | ❌ 未验证（`pubspec.yaml` 的版本区间是按 TechPie 的可用组合与 pub.dev 常见版本手写的，`pub get` 可能要求微调） |
 | 静态分析 | ❌ 未验证（`analysis_options.yaml` 打开了 `strict-casts` / `strict-inference` / `strict-raw-types`，代码按这些规则手写，但仍需 `flutter analyze` 复核） |
 | 运行时行为 | ❌ 未验证（未在真机/模拟器上启动过） |
@@ -94,10 +94,11 @@ apps/mobile/
 │       ├── README.md
 │       ├── groupbuy/                 #   ✅ 已跑通的垂直切片（拼单）
 │       ├── forum/                    #   ✅ 论坛（含匿名开关 + 举报）
-│       └── faq/                      #   ✅ 常见问题（含幂等「有用」+ 我的工单）
+│       ├── faq/                      #   ✅ 常见问题（含幂等「有用」+ 我的工单）
+│       └── wildlife/                 #   ✅ 校园动物（静态底图 + 叠加层 + 上报 + 推断轨迹）
 ├── tool/
 │   └── selfcheck.py                  # 替代验证：本机无 Flutter SDK，用静态自检覆盖能查的部分
-└── test/                             # 19 个测试文件
+└── test/                             # 32 个测试文件
     ├── domain/  data/  application/  presentation/
 ```
 
@@ -221,6 +222,7 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | **拼单垂直切片**：列表 + 详情 + loading/error/empty 三态 + 参团 | `lib/features/groupbuy/` |
 | **论坛切片**：版块筛选 + 主题列表（游标分页 + 下拉刷新 + 触底加载）+ 主题详情 + 回复列表/输入 + 发帖（**匿名开关**）+ 举报 + 分享 | `lib/features/forum/` |
 | **常见问题切片**：分类导航 + 搜索（防抖）+ 手风琴展开 + **幂等「有用」** + 我的工单 | `lib/features/faq/` |
+| **校园动物切片**：静态底图（方案 B）+ `CustomPaint` 叠加层（区域/聚合热点/推断轨迹）+ 观测与区域与轨迹页 + 上报（选图/上传/定位/地图点选/分类建议/命名个体/伦理确认）+ **仿射标定**（纯 Dart，像素↔经纬度往返 < 1 px） | `lib/features/wildlife/`（见其 README） |
 | **匿名身份与实名身份在模型层解耦**（契约 §9）：`ForumAuthor` sealed 类型 + `AnonymousIdentity` | `lib/domain/models/{forum,anonymous_identity}.dart` |
 | 底部导航 + 每个模块的路由段 | `lib/app/app_router.dart`、`lib/presentation/pages/module_detail_page.dart` |
 | 二次同意门（`wellbeing`/`dorm-harmony`/`ai-portrait`） | `lib/application/consent_controller.dart` |
@@ -232,7 +234,7 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | 项 | 说明 |
 | --- | --- |
 | 原生工程目录 | `android/` `ios/` `ohos/` 未生成（用 `flutter create` 生成，见 §1） |
-| 除 `groupbuy` / `forum` / `faq` 外的 16 个模块页面 | 只有 `/module/:id` 落地页展示注册表信息并**明说"尚未实现"**；没有假数据、没有假成功 |
+| 除 `groupbuy` / `forum` / `faq` / `wildlife` 外的 15 个模块页面 | 只有 `/module/:id` 落地页展示注册表信息并**明说"尚未实现"**；没有假数据、没有假成功 |
 | 论坛的版主治理界面 | 数据层已实现"3 个不同用户举报 → 自动隐藏"与 `LOCKED` 拒答，但**没有**版主 moderation / Lock / Hide 的 UI |
 | 发帖/回复频率限制、敏感词拦截 | ❌ 未实现（属于服务端限流与内容审核；客户端只做长度校验） |
 | FAQ 工单追问 / 关闭 | `FaqTicketStatus.canFollowUp` 已在模型里就绪，但没有 UI |
@@ -255,7 +257,7 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 
 ---
 
-## 5. 测试（19 个文件，共 208 个用例；其中本次新增 8 个文件 / 130 个用例）
+## 5. 测试（32 个文件，共 392 个用例；其中 `wildlife` 新增 13 个文件 / 184 个用例）
 
 > ⚠️ **全部用例都没有在本机执行过**（没有 Flutter SDK）。下面是"每个文件测什么"的清单，
 > 不是"测试通过"的证据。
@@ -281,9 +283,25 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | **`test/application/faq_controller_test.dart`** | **三态**、分类/搜索筛选、筛选重载、**幂等端到端（走 provider）**、局部覆盖、工单提交与失效重取 |
 | `test/application/theme_controller_test.dart` | 初值来自同步 hydrate、setMode 落盘并推给订阅者、外部写入同步到状态 |
 | `test/presentation/kedaya_theme_test.dart` | **亮暗字段集合一致**、`darkColors` 键集合交叉校验、16 键都与亮色不同、`resolveColor` 亮/暗/未知分支、`light()`/`dark()` 的 ThemeData 装配、`themeModeOf` 映射 |
+| **`test/domain/wildlife_geo_test.dart`** | 纯 Dart `cos`/`sqrt` 精度、ENU 往返、**像素 → 经纬度 → 像素 往返 < 1 px**、最小二乘标定还原仿射、RMSE 阈值、`lat`/`lng` 写反被拒、30 m ↔ 25–35 px |
+| **`test/domain/wildlife_datum_boundary_test.dart`** | **GCJ-02 不得入库**：`GeoDatum` 只有一个成员、序列化无 `gcj*` 键、payload 里的 `gcjLat`/`exactLat`/`reporterId` 被忽略、**源码机械扫描无 gcj 标识符** |
+| **`test/domain/wildlife_sighting_test.dart`** | 状态大小写收敛、发现时间 vs 上报时间、敏感区无坐标、分类来源、**§10.3 的 8 条校验 reason**、图片魔数 / 5 MB 上限、置信度三档 + 低置信度不预选、伦理规则规模、命名个体 |
+| **`test/domain/wildlife_track_test.dart`** | GeoJSON `[lng, lat]` 顺序、坏点丢弃、**`isInferred` 恒真（即使服务端发 false）**、免责说明兜底永不为空、折线长度现算、方法收敛 |
+| **`test/domain/wildlife_basemap_test.dart`** | §1.4 的四条 CI 规则（RMSE<5 / 控制点≥6 / odbl 署名 / 尺寸）、多问题全列、affine 必须是 6 个数 |
+| **`test/domain/wildlife_zone_species_test.dart`** | 物种繁殖期字段、`shanghaiMonth`、投喂政策收敛与徽章语义、告示位 40 字摘要、`zoneContaining` 取最小半径、热点直方图规范化 / `peakHours` / **聚合延迟 ≥24h** |
+| **`test/data/mock_wildlife_repository_test.dart`** | mock 行为：**只返回 PUBLISHED**、游标分页、物种与受伤筛选、自己的待审核可见 / 别人的 404、上报校验、健康异常不等审核、纠正闭环、撤回、个体同名冲突、故障与空结果 |
+| **`test/data/mock_wildlife_privacy_test.dart`** | **隐私行为**：返回坐标 ≠ 精确坐标且网格对齐、时间粗化到小时/天、**敏感区无坐标 + 热点不公开**、响应无 `reporterId`/`exactLat`、热点 `computedAt` 早于 24h |
+| **`test/data/mock_wildlife_media_test.dart`** | 上传幂等（同 `clientPhotoId` → 同 `mediaId`）、嗅探出的 MIME、非图片与超限拒绝、媒体不能被两条观测复用、不带照片也能提交、分类器关闭/开启/低置信度/故障降级 |
+| **`test/application/wildlife_map_controller_test.dart`** | **三态**（loading/data/empty/error）、物种筛选重载、**底图标定不合法 → 整页错误态**、refresh、只读 provider |
+| **`test/application/wildlife_sighting_list_controller_test.dart`** | **三态**、游标翻页、翻页失败保留列表、筛选重载、详情 404、写操作后失效重取 |
+| **`test/application/wildlife_report_controller_test.dart`** | 上报编排：默认发现时间、上传与**重试复用幂等键**、定位降级、地图点选自动判定区域、分类预选阈值、未勾伦理不发请求、完整提交流程、**同名个体复用**、服务端拒绝、健康异常告警、reset |
+| **`test/presentation/wildlife_widget_test.dart`** | 组件与文案约束：伦理提示 5 条 + "不是授权"、forbidden 警告条、**"推断轨迹 · 非实测路径"**、隐私说明、聚合延迟、投喂徽章、底图叠加层渲染与点选反算、**亮/暗主题下列表页均可用** |
 
 新增的 8 个文件（加粗）对应本次交付的 `forum` / `faq`：**domain 纯逻辑 4 个 +
 mock repository 行为 2 个 + application 三态/幂等 2 个**。
+
+`wildlife` 追加 13 个文件 / 184 个用例（加粗，见上表）：**domain 纯逻辑 6 个（含
+坐标系与 GCJ-02 边界）+ mock 行为 3 个（含隐私）+ application 3 个 + 组件 1 个**。
 
 ---
 
@@ -309,6 +327,10 @@ flutter test test/domain/forum_anonymity_boundary_test.dart # 单跑契约 §9 �
 flutter test test/presentation/kedaya_theme_test.dart      # 单跑契约 §11.5 暗色守门测试
 flutter test test/application/forum_controller_test.dart   # 单跑论坛三态/筛选
 flutter test test/application/faq_controller_test.dart     # 单跑 FAQ 三态/幂等
+flutter test test/domain/wildlife_geo_test.dart           # 单跑坐标/仿射标定（含往返 < 1 px）
+flutter test test/domain/wildlife_datum_boundary_test.dart # 单跑「GCJ-02 不得入库」边界
+flutter test test/data/mock_wildlife_privacy_test.dart    # 单跑位置模糊化/敏感区无坐标
+flutter test test/presentation/wildlife_widget_test.dart  # 单跑「推断轨迹」文案与亮暗主题
 
 # 4) 格式化检查（代码按 dart format 风格手写，未在本机跑过）
 dart format --output=none --set-exit-if-changed lib test
@@ -457,3 +479,27 @@ cd apps/mobile
 21. **契约 §11.2 未登记的 action**：`forum.reply`（后端用子资源 `replies`）、
     `faq.helpful`；以及未冻结的只读子资源 `forum/boards`、`faq/categories`。
     本端按后端实际路径调用并上报，**没有**改 `docs/` 与 `packages/`（Lead 独占）。
+
+### 8.3 `wildlife` 新增的风险点（需要 `flutter analyze` 复核）
+
+22. **新增依赖 `image_picker: ^1.1.2`**（本端第一次引入平台插件依赖）。
+    用到的 API 面：`ImagePicker().pickMultiImage({imageQuality, limit})`、
+    `XFile.readAsBytes()` / `XFile.name` / `XFile.mimeType`。若解析到别的版本，
+    这一处需要按实际签名调整（`limit` 参数需要 image_picker ≥ 1.1.0）。
+23. **`MethodChannelLocation` 的原生侧未实现**（`kedaya/location`，与
+    `kedaya/unified_identity` 同样只有 Dart 侧契约）。此时定位返回 `null`，
+    UI **自动降级到「在地图上点选」**——这条路径完整可用，不是占位。
+24. **`RadioListTile` 的 `groupValue` / `onChanged`** 按 Flutter **3.27** 书写；
+    若 SDK ≥3.32，会变成 deprecation 警告（需要改用 `RadioGroup`）。
+25. **`InteractiveViewer(constrained: false)`** 承载固定尺寸的 `SizedBox`，
+    点选模式假设"子画布左上角与视口左上角对齐"（恒等变换下成立）。
+    如果实测点选坐标偏移，问题在这里，而不是在仿射标定（标定有往返单测）。
+26. **`WildlifeSighting.geo` 在本端是**可空**的**：契约 §2.6 把 `geo` 写成必填，
+    但规格 §9.3 ① / T10 要求敏感区**不输出任何坐标**。本端以隐私要求为准，
+    并把这条冲突上报 Lead（见 `lib/features/wildlife/README.md` §6）。
+27. **两处共享文件的纯增量改动**：`KedayaApiPort.sendMultipart`（规格 §4.1 的
+    multipart 服务端代理上传需要它）与 `ApiRequest.contentType`（契约 §11.1 的
+    JSON Merge Patch 需要它）。二者都没有改变既有行为，但属于
+    `lib/domain/` 的公共面，建议 Lead 知悉。
+28. **`FutureProvider.family<..., String?>`**（个体列表按物种过滤）用**可空 String**
+    作 family 参数：riverpod 2.6.x 允许，但这是一个容易被 3.x 改掉的用法。

@@ -8,6 +8,14 @@ import '../features/forum/presentation/pages/forum_compose_page.dart';
 import '../features/forum/presentation/pages/forum_post_detail_page.dart';
 import '../features/groupbuy/presentation/pages/groupbuy_detail_page.dart';
 import '../features/groupbuy/presentation/pages/groupbuy_list_page.dart';
+import '../features/wildlife/presentation/pages/wildlife_map_page.dart';
+import '../features/wildlife/presentation/pages/wildlife_report_page.dart';
+import '../features/wildlife/presentation/pages/wildlife_sighting_detail_page.dart';
+import '../features/wildlife/presentation/pages/wildlife_sightings_page.dart';
+import '../features/wildlife/presentation/pages/wildlife_track_detail_page.dart';
+import '../features/wildlife/presentation/pages/wildlife_tracks_page.dart';
+import '../features/wildlife/presentation/pages/wildlife_zone_detail_page.dart';
+import '../features/wildlife/presentation/pages/wildlife_zones_page.dart';
 import '../presentation/components/kedaya_shell.dart';
 import '../presentation/pages/home_page.dart';
 import '../presentation/pages/module_detail_page.dart';
@@ -27,6 +35,8 @@ final GlobalKey<NavigatorState> kedaYaRootNavigatorKey = GlobalKey<NavigatorStat
 ///   - `/groupbuy` 与 `/groupbuy/:id`：拼单垂直切片（全屏，盖住底部导航）
 ///   - `/forum`、`/forum/compose`、`/forum/:id`：论坛（列表 / 发帖 / 主题详情）
 ///   - `/faq`、`/faq/tickets`：常见问题（分类+搜索+手风琴 / 我的工单）
+///   - `/wildlife`（地图）、`/wildlife/report`（上报）、`/wildlife/sightings[/:id]`、
+///     `/wildlife/zones[/:id]`、`/wildlife/tracks[/:id]`：校园动物切片
 ///   - `/module/:moduleId`：**注册表驱动**的模块落地页（未实现的模块在此如实说明）
 GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
   navigatorKey: kedaYaRootNavigatorKey,
@@ -111,6 +121,61 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
           path: 'tickets',
           name: 'faq-tickets',
           builder: (BuildContext context, GoRouterState state) => const FaqTicketsPage(),
+        ),
+      ],
+    ),
+    GoRoute(
+      path: '/wildlife',
+      name: 'wildlife',
+      builder: (BuildContext context, GoRouterState state) => const WildlifeMapPage(),
+      routes: <RouteBase>[
+        // 静态段（report / sightings / zones / tracks）与各自的 `:id` 分开声明，
+        // 同级不冲突；这里仍然把**静态段放在前面**，与 `/forum/compose` 的
+        // 处理保持一致（go_router 同级按声明顺序匹配）。
+        GoRoute(
+          path: 'report',
+          name: 'wildlife-report',
+          builder: (BuildContext context, GoRouterState state) => const WildlifeReportPage(),
+        ),
+        GoRoute(
+          path: 'sightings',
+          name: 'wildlife-sightings',
+          builder: (BuildContext context, GoRouterState state) =>
+              const WildlifeSightingsPage(),
+          routes: <RouteBase>[
+            GoRoute(
+              path: ':id',
+              name: 'wildlife-sighting',
+              builder: (BuildContext context, GoRouterState state) =>
+                  WildlifeSightingDetailPage(sightingId: state.pathParameters['id'] ?? ''),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: 'zones',
+          name: 'wildlife-zones',
+          builder: (BuildContext context, GoRouterState state) => const WildlifeZonesPage(),
+          routes: <RouteBase>[
+            GoRoute(
+              path: ':id',
+              name: 'wildlife-zone',
+              builder: (BuildContext context, GoRouterState state) =>
+                  WildlifeZoneDetailPage(zoneId: state.pathParameters['id'] ?? ''),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: 'tracks',
+          name: 'wildlife-tracks',
+          builder: (BuildContext context, GoRouterState state) => const WildlifeTracksPage(),
+          routes: <RouteBase>[
+            GoRoute(
+              path: ':id',
+              name: 'wildlife-track',
+              builder: (BuildContext context, GoRouterState state) =>
+                  WildlifeTrackDetailPage(trackId: state.pathParameters['id'] ?? ''),
+            ),
+          ],
         ),
       ],
     ),

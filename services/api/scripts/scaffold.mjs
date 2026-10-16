@@ -19,7 +19,8 @@
  *   auth（两级身份）、wellbeing（同意门 + 审计 + 危机热线）、
  *   dorm-harmony（匿名 + 同意门）、ai-portrait（同意门 + 禁读域）、
  *   forum（版块 + 状态机 + 匿名 HMAC + 举报阈值治理 + 回复子资源）、
- *   faq（检索 + 幂等「有用」+ 工单状态机 + 关键词建议）。
+ *   faq（检索 + 幂等「有用」+ 工单状态机 + 关键词建议）、
+ *   wildlife（四层位置模糊化 + EXIF 剥离 + DBSCAN 热点/推断轨迹 + 受限精确坐标表）。
  *   判据：领域形状超出"一套 CRUD + 一个动作"能表达的范围。
  *
  * 用法：node scripts/scaffold.mjs
@@ -688,28 +689,12 @@ import { CAMPUS_SESSION_PORT, type CampusSessionPort } from '../auth/domain/auth
     ],
     action: { kind: 'update', name: 'sync', summary: '触发一次同步', data: "{ status: 'synced' }" },
   },
-  {
-    id: 'wildlife',
-    zh: '猫鸟黑天鹅',
-    pascal: 'Wildlife',
-    model: 'WildlifeSpot',
-    delegate: 'wildlifeSpot',
-    ownerField: null,
-    readOnly: ['createdAt', 'updatedAt'],
-    optionalCreate: ['status'],
-    fields: [
-      ['species', 'string'],
-      ['place', 'string'],
-      ['lat', 'float'],
-      ['lng', 'float'],
-      ['note', 'string?'],
-      ['reportedBy', 'string?'],
-      ['status', 'string'],
-      ['createdAt', 'date'],
-      ['updatedAt', 'date'],
-    ],
-    action: { kind: 'update', name: 'confirm', summary: '确认为有效活动点', data: "{ status: 'confirmed' }" },
-  },
+  // ⚠️ `wildlife` **已移出 SPEC 表**（2026-10-17）：
+  // 它的领域形状（四层位置模糊化 / EXIF 剥离 / DBSCAN 热点与推断轨迹 /
+  // 受限精确坐标表 / 派生只读资源）远超"一套 CRUD + 一个动作"能表达的范围，
+  // 因此与 auth / wellbeing / dorm-harmony / ai-portrait / forum / faq 一样
+  // **改为手写**，本脚本不再写盘。详见
+  // `src/modules/wildlife/` 与 `docs/features/wildlife-map.md`。
 ];
 
 /* ------------------------------------------------------------------ *

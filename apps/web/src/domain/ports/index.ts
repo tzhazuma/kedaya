@@ -4,3 +4,4 @@
  */
 export * from './groupbuy';
 export * from './audit';
+export * from './wildlife';

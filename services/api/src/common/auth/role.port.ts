@@ -12,9 +12,13 @@ import { ConfigService } from '@nestjs/config';
  * 骨架阶段用环境变量白名单实现（`EnvRoleAdapter`），
  * 真实系统应换成后台角色表 —— 端口形状不变，用例层无需改动。
  */
-export type KedaYaRole = 'forum_moderator' | 'faq_staff';
+export type KedaYaRole = 'forum_moderator' | 'faq_staff' | 'wildlife_moderator';
 
-export const KEDAYA_ROLES: readonly KedaYaRole[] = ['forum_moderator', 'faq_staff'];
+export const KEDAYA_ROLES: readonly KedaYaRole[] = [
+  'forum_moderator',
+  'faq_staff',
+  'wildlife_moderator',
+];
 
 export interface RolePort {
   hasRole(userId: string, role: KedaYaRole): Promise<boolean>;
@@ -26,6 +30,7 @@ export const ROLE_PORT = Symbol('KEDAYA_ROLE_PORT');
 export const ROLE_ENV_KEYS: Record<KedaYaRole, string> = {
   forum_moderator: 'FORUM_MODERATOR_USER_IDS',
   faq_staff: 'FAQ_STAFF_USER_IDS',
+  wildlife_moderator: 'WILDLIFE_MODERATOR_USER_IDS',
 };
 
 /** 逗号分隔的 id 白名单 → 去空去重后的数组 */

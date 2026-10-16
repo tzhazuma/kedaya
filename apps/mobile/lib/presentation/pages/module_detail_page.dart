@@ -16,6 +16,7 @@ const Map<String, String> implementedModuleRoutes = <String, String>{
   'groupbuy': '/groupbuy',
   'forum': '/forum',
   'faq': '/faq',
+  'wildlife': '/wildlife',
 };
 
 /// 模块落地页 —— **注册表驱动**，不含任何伪造的业务数据。
@@ -137,6 +138,9 @@ class ModuleDetailPage extends ConsumerWidget {
                         '回复 + 发帖（含匿名开关）+ 举报 + 分享，走 ForumPort。',
                     'faq' => '本模块已实现：分类导航 + 搜索 + 手风琴展开 + '
                         '「有用」（幂等）+ 我的工单，走 FaqPort。',
+                    'wildlife' => '本模块已实现：静态底图 + 叠加层（区域/聚合热点/推断轨迹）+ '
+                        '观测列表与详情 + 区域与告示位 + 上报（选图/定位/分类建议/命名个体/'
+                        '伦理确认）+ 推断轨迹页，走 WildlifePort。',
                     _ => '本模块尚未实现：只有冻结契约里的路由与权限信息，'
                         '没有页面、没有 mock 数据、没有假成功。',
                   },

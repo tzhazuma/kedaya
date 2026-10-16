@@ -16,6 +16,17 @@ abstract interface class KedayaApiPort {
   /// 无返回体的请求（DELETE / 动作端点）。成功值为 [Unit.instance]。
   Future<Result<Unit>> sendVoid(ApiRequest request);
 
+  /// `multipart/form-data` 上传（图片走**服务端代理上传**，规格 §4.1）。
+  ///
+  /// 单独一个方法而不是把文件塞进 [ApiRequest]：multipart 的编码、进度与
+  /// 重试语义和 JSON 完全不同，混在一个方法里会让两边的实现都变脏。
+  /// 解包规则与 [send] 一致（同一套 `ApiEnvelope`）。
+  Future<Result<T>> sendMultipart<T>(
+    ApiRequest request,
+    List<ApiUploadFile> files,
+    T Function(Object? data) decode,
+  );
+
   /// 最近一次请求的 traceId（契约 §6.1），错误上报时带上。
   String? get lastTraceId;
 }

@@ -11,10 +11,13 @@ import '../domain/ports/faq_port.dart';
 import '../domain/ports/forum_port.dart';
 import '../domain/ports/groupbuy_port.dart';
 import '../domain/ports/local_cache_port.dart';
+import '../domain/ports/location_port.dart';
 import '../domain/ports/lost_found_port.dart';
+import '../domain/ports/media_picker_port.dart';
 import '../domain/ports/platform_ports.dart';
 import '../domain/ports/theme_mode_port.dart';
 import '../domain/ports/wellbeing_port.dart';
+import '../domain/ports/wildlife_port.dart';
 import '../presentation/theme/kedaya_theme.dart';
 import 'app_environment.dart';
 import 'app_router.dart';
@@ -71,6 +74,21 @@ final lostFoundRepositoryProvider = Provider<LostFoundPort>(
 
 final wellbeingRepositoryProvider = Provider<WellbeingPort>(
   (ref) => ref.watch(appRuntimeProvider).wellbeing,
+);
+
+/// 校园动物（契约 §4.1 `wildlife`；敏感级低、**无同意门**）。
+final wildlifeRepositoryProvider = Provider<WildlifePort>(
+  (ref) => ref.watch(appRuntimeProvider).wildlife,
+);
+
+/// 选图端口（mock 运行时是内存实现，不弹相册）。
+final mediaPickerProvider = Provider<MediaPickerPort>(
+  (ref) => ref.watch(appRuntimeProvider).mediaPicker,
+);
+
+/// 定位端口（WGS84；不可用时上报表单降级到地图点选）。
+final locationProvider = Provider<LocationPort>(
+  (ref) => ref.watch(appRuntimeProvider).location,
 );
 
 final shareProvider = Provider<SharePort>((ref) => ref.watch(appRuntimeProvider).share);

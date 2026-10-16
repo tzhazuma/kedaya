@@ -21,3 +21,6 @@ process.env.CAMPUS_CAS_URL ??= 'https://cas.shanghaitech.edu.cn/cas';
 process.env.CAMPUS_SSO_CLIENT_ID ??= 'kedaya-test';
 process.env.DATABASE_URL ??= 'postgresql://kedaya:kedaya@localhost:5432/kedaya';
 process.env.WELLBEING_CRISIS_HOTLINE ??= '021-12320-5';
+// wildlife：位置模糊化密钥（≥32 字节）。缺失时 WildlifeModule **故意**启动失败
+// （规格 §9.7 / T14）—— 那条行为由 wildlife 自己的测试显式清空变量来验证。
+process.env.WILDLIFE_FUZZ_SECRET ??= 'test-wildlife-fuzz-secret-32-bytes-min!!';

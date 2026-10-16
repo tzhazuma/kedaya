@@ -26,6 +26,20 @@ export const StorageKeys = {
   faqHelpfulVotes: `${STORAGE_PREFIX}faq:helpful-votes`,
   /** FAQ 我的工单缓存 */
   faqTicketListCache: `${STORAGE_PREFIX}cache:faq:tickets`,
+  /** 野生动物地图缓存（底图 / 物种 / 区域 / 热点 / 轨迹 / 观测） */
+  wildlifeMapCache: `${STORAGE_PREFIX}cache:wildlife:map`,
+  /** 野生动物推断轨迹缓存 */
+  wildlifeTracksCache: `${STORAGE_PREFIX}cache:wildlife:tracks`,
+  /** 野生动物上报表单的物种 / 个体缓存 */
+  wildlifeReportCache: `${STORAGE_PREFIX}cache:wildlife:report`,
+  /**
+   * 伦理提示的本地确认标记（规格 §8.2「同一用户只提示一次」）。
+   *
+   * ⚠️ 这**不是**同意记录：`wildlife` 敏感级为 `low`、**无同意门**，
+   * 契约 §9 的同意门只适用于 `wellbeing` / `dorm-harmony` / `ai-portrait`。
+   * 这里存的是「表单操作确认」的时间戳，不产生任何授权状态。
+   */
+  wildlifeEthicsAck: `${STORAGE_PREFIX}wildlife:ethics-ack`,
   /** 敏感模块二次同意记录（契约 §9） */
   consent: `${STORAGE_PREFIX}consent`,
 } as const

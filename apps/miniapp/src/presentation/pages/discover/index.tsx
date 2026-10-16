@@ -175,6 +175,48 @@ export default function DiscoverPage() {
         </View>
       </KdyCard>
 
+      <KdyCard title='猫 / 鸟 / 黑天鹅（野生动物地图）' elevated={false}>
+        <Text className='kdy-discover__hint'>
+          地图：活动区域圈 + 聚合热点 + 历史观测点；上报：照片 / 发现时间 / 定位或地图点选 /
+          自动分类（不可用时降级为手动选择）/ 给个体起名；轨迹：推断轨迹（显著标注「不是实测路径」）。
+          含投喂规范与位置模糊化说明。默认走 mock 数据。
+        </Text>
+        <View className='kdy-discover__actions'>
+          <KdyButton
+            size='sm'
+            onClick={() => {
+              void navigateTo(PAGE_PATHS.wildlifeMap).then((result) => {
+                if (!result.ok) toast(result.error.message)
+              })
+            }}
+          >
+            进入动物地图
+          </KdyButton>
+          <KdyButton
+            size='sm'
+            variant='ghost'
+            onClick={() => {
+              void navigateTo(PAGE_PATHS.wildlifeReport).then((result) => {
+                if (!result.ok) toast(result.error.message)
+              })
+            }}
+          >
+            上报观测
+          </KdyButton>
+          <KdyButton
+            size='sm'
+            variant='ghost'
+            onClick={() => {
+              void navigateTo(PAGE_PATHS.wildlifeTracks).then((result) => {
+                if (!result.ok) toast(result.error.message)
+              })
+            }}
+          >
+            推断轨迹
+          </KdyButton>
+        </View>
+      </KdyCard>
+
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
       </Text>

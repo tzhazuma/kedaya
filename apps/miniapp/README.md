@@ -96,11 +96,13 @@ apps/miniapp/
     └── presentation/          # UI
         ├── components/        #   KdyCard / KdyButton / KdyEmpty / KdyTag
         │                      #   + KdySwitch / KdySearchBar / KdyAccordion / KdyField
+        │                      #   + KdyEthicsNotice / KdyPrivacyNotice（wildlife 的伦理与隐私提示）
         ├── hooks/             #   useStore（useSyncExternalStore 封装）
         ├── theme/tokens.scss  #   设计令牌入口（全局注入）
         └── pages/             #   home / discover / messages / profile
                                #   groupbuy/* · forum/{list,detail,create,report}
                                #   faq/{index,tickets}
+                               #   wildlife/{map,report,tracks}
 ```
 
 **依赖方向（硬规则）**：`presentation → application → domain ← data`。
@@ -240,6 +242,42 @@ npm run build:weapp -w @kedaya/miniapp
   （domain-model §2.8「不存明文手机号」），校验在 domain 层，页面只展示错误。
 - **未登录也能提交工单**（`userId: null`），列表此时只显示匿名工单。
 
+## 6.3 垂直切片：猫 / 鸟 / 黑天鹅（`wildlife`）
+
+对应 `docs/features/wildlife-map.md`，敏感级 **low**（**无同意门**，契约 §9）。
+
+- **动物地图页** `presentation/pages/wildlife/map`：`<map>` 底图 +
+  **活动区域圈**（`circles`）+ **聚合热点 / 历史观测标记**（`markers`）+ **推断轨迹折线**（`polyline`，
+  虚线）；物种筛选、区域列表、点标记看观测详情（物种 / 发现时间 / 照片 / 区域 / 投喂规范）、
+  「在腾讯地图中打开」（`wx.openLocation`）。
+- **上报观测页** `presentation/pages/wildlife/report`（**核心流程**）：
+  `Taro.chooseMedia` 选图 → 按需压缩 → `POST /media`（**multipart**，走 `data/api/mediaUpload.ts`）→
+  `POST /classify` 自动分类建议（**无 key 时静默降级为纯手动**）→ 手动选物种 →
+  可选「给个体起名」（`POST /individuals`）→ 定位（`getLocation`，WGS84）或地图点选（GCJ-02）→
+  发现时间（默认现在，可改）→ 伦理勾选（**表单校验，不是同意门**）→ `POST /items`（带幂等键）。
+- **推断轨迹页** `presentation/pages/wildlife/tracks`：页面顶部**常驻**免责横幅 +
+  每条轨迹卡片标注「推断轨迹」+ **原样展示服务端下发的 `disclaimer`**（缺失时回退本地兜底）。
+- **伦理与隐私提示（硬要求，不是可选项）**：`KdyEthicsNotice`（投喂规范 `allowed|discouraged|forbidden`
+  + 不打扰提示 + 伦理清单 + 勾选）与 `KdyPrivacyNotice`（**明确告诉用户「你看到的公开位置是模糊后的」**、
+  敏感区不公开坐标、聚合热点延迟 ≥24h）。
+- **坐标系（本模块最大的坑，规格 §3）**：全链路 WGS84；`<map>` 只认 GCJ-02。
+  转换入口**只有两个**，都在 `domain/models/wildlife.ts`：
+  `toMapPoint()`（渲染前 WGS84→GCJ-02）与 `toApiPoint(point, from)`（上传前 GCJ-02→WGS84，
+  `from` **必填**）。页面**禁止**自己拼叠加层 —— 一律走 `buildMapOverlays()`。
+- **三态齐全**：`loading` / `empty` / `error`（+ `ready`，缓存降级另有提示）。
+  顶部「模拟错误态 / 模拟空态 / 重置演示数据」走 `mockWildlifeControls` 的真实控制面。
+
+> ⚠️ **与规格 §1.2 的偏离（已在交付说明中记录）**：规格**推荐**方案 B
+> （静态校园平面图 + 叠加层，无坐标系问题），而本实现按本任务的显式要求采用**方案 A**
+> （原生 `<map>` + `markers`/`circles`/`polyline`）。两者对用户的核心差别是底图内容；
+> 坐标转换规范两者一致。`<map>` 自 2021 年起需要腾讯位置服务 key / 小程序绑定，
+> 未配置时 `onError` 会给出明确提示（mock 数据与其余功能不受影响）。
+
+> ⚠️ **未决项（诚实标注）**：物种清单是**推测**（规格 §2.5 / U2，未做实地调查）；
+> 底图与 `CAMPUS_BBOX` / `CAMPUS_ORIGIN` 是**占位值**（U1 / U3）；
+> 告示文案是**草案，未经校方或社团审核**（U7）；GCJ-02 控制点未采集（U4），
+> 因此规格 §11.1 的 **T4（与腾讯控制点误差 < 5 m）未执行**。
+
 ---
 
 ## 7. 测试
@@ -272,6 +310,13 @@ npm run test -w @kedaya/miniapp
 | `src/application/faq/__tests__/browseFaq.test.ts` | 分类/搜索、投票幂等（本地不再发请求）、投票记录持久化 |
 | `src/application/faq/__tests__/myTickets.test.ts` | 未登录提交、隐私校验、缓存降级、列表头部插入 |
 | `src/data/storage/__tests__/sessionStore.test.ts` | 会话 hydrate、快照引用稳定（`useSyncExternalStore` 前提）、tokenStore 视图 |
+| `src/domain/models/__tests__/wildlife.test.ts` | **坐标系（渲染 WGS84→GCJ-02 / 上传 GCJ-02→WGS84 / 偏移量级 200–800 m / 往返自洽 / lat-lng 互换被拒）**、地图叠加层派生、投喂规范取更严格者、伦理与隐私文案、分类三档降级、表单校验 |
+| `src/application/wildlife/__tests__/wildlifeMap.test.ts` | 契约 §8 hydrate/load、三态、物种筛选、**`buildMapOverlays` 产出的每个坐标都是 GCJ-02**、E10 热点 24h 延迟过滤、敏感区不渲染点位 |
+| `src/application/wildlife/__tests__/reportSighting.test.ts` | **地图点选 GCJ-02 → 提交 body 必须是 WGS84（且不等于点选值）**、GPS 原样透传、伦理勾选拦截、分类降级（manual/fallback/vision_api）、照片上传与重试复用 `clientPhotoId`、提交幂等键复用、个体命名 |
+| `src/application/wildlife/__tests__/tracks.test.ts` | 推断轨迹三态、选中详情、**「推断轨迹」标注恒存在**、服务端 `disclaimer` 优先与本地兜底 |
+| `src/data/repositories/__tests__/mockWildlifeRepository.test.ts` | 游标分页、三态控制面、**敏感区不存坐标 / 网格吸附真的生效**、E10 过滤、分类降级、个体重名 `CONFLICT` |
+| `src/data/repositories/__tests__/httpWildlifeRepository.test.ts` | `/wildlife/*` 路径映射、URL 编码、`Idempotency-Key`、**仓储层不做坐标转换（原样透传 WGS84）**、上传委托给 multipart 端口 |
+| `src/data/api/__tests__/mediaUpload.test.ts` | 上传表单字段（`clientPhotoId` 幂等依据）、响应解包、缺字段/非信封/未声明 `exifStripped` 的处理 |
 
 > 测试替身集中在 `src/application/__tests__/testDoubles.ts`（文件名不含 `.test.ts`，
 > 不会被 vitest 收集）。它刻意**不** import `data/` 下的实现，保持 `application` 层分层干净。
@@ -294,9 +339,14 @@ npm run test -w @kedaya/miniapp
 - **论坛垂直切片**：版块 + 主题列表 / 详情 + 楼中楼回复 / 发帖（含匿名开关与隐私说明）/
   举报，下拉刷新 + 触底游标分页 + `onShareAppMessage`，治理规则真实生效
 - **FAQ 垂直切片**：分类 + 搜索 + 手风琴 + 「有用」（幂等）+ 我的工单，三态齐全
-- 8 个复用组件：`KdyCard` / `KdyButton` / `KdyEmpty` / `KdyTag` / `KdySwitch` /
-  `KdySearchBar` / `KdyAccordion` / `KdyField`（全部取自设计令牌）
-- 18 个 Vitest 测试文件 / 263 个测试（domain / 网络层 / mock 仓储 / http 仓储 / 用例 / 存储）
+- **野生动物（`wildlife`）垂直切片**：地图（区域圈 + 热点 + 观测标记 + 推断轨迹折线）/
+  上报（选图压缩上传 + 定位或地图点选 + 发现时间 + 自动分类降级 + 手动选物种 + 个体命名）/
+  推断轨迹（显著标注「不是实测路径」）；投喂规范与位置模糊化提示为**硬要求**；`app.config.ts`
+  已声明 `permission.scope.userLocation` 与 `requiredPrivateInfos: [getLocation, chooseLocation]`
+- 10 个复用组件：`KdyCard` / `KdyButton` / `KdyEmpty` / `KdyTag` / `KdySwitch` /
+  `KdySearchBar` / `KdyAccordion` / `KdyField` / `KdyEthicsNotice` / `KdyPrivacyNotice`
+  （全部取自设计令牌；地图叠加层色值走 `presentation/theme/mapColors.ts`，同样派生自 `tokens.json`）
+- 25 个 Vitest 测试文件 / 382 个测试（domain / 网络层 / mock 仓储 / http 仓储 / 用例 / 存储）
 
 ### ❌ 未实现（诚实清单）
 
@@ -306,7 +356,18 @@ npm run test -w @kedaya/miniapp
   `profile.campusBound` 目前是手工切换的占位开关。
 - **敏感模块二次同意**：契约 §9 的同意流程与审计日志未实现（首页对这类模块只做标注 + 提示）。
 - **站内信列表**（`notifications`）：只有订阅消息链路，站内信列表是空态。
-- **其余 16 个业务模块**：契约 §4 已登记，端上未实现（首页明确显示「开发中」）。
+- **其余 15 个业务模块**：契约 §4 已登记，端上未实现（首页明确显示「开发中」）。
+- **`wildlife` 未实现的部分（诚实清单）**：
+  - **修正 / 撤回自己的上报**（`PATCH` / `DELETE /wildlife/items/:id`）—— 契约端点已定义，端上未做入口；
+  - **审核队列**（`POST /wildlife/items/:id/moderate`）—— 属管理端，端上不做；
+  - **底图叠加（规格 §1.2 方案 B：静态校园平面图 + 仿射标定）** —— 未做，本实现用原生 `<map>`；
+  - **`WildlifeSpot` 的小时分布直方图可视化**、区域多边形的敏感区判定 —— 未做；
+  - **照片「已上传」列表的本地草稿持久化**（规格 §4.5「3 次全失败保留本地草稿」）—— 只在内存里保留，
+    杀进程后丢失；
+  - **`POST /media` 的 401 刷新重试** —— `mediaUpload.ts` 刻意不复用 `ApiClient` 的刷新去重
+    （与 `HttpPort` 耦合），401 直接返回 `UNAUTHENTICATED`，由用例层提示重新登录；
+  - **地图 key**：`<map>` 需要腾讯位置服务 key / 小程序绑定；未配置时地图空白，
+    `onError` 会提示，其余功能不受影响。
 - **论坛治理后台**：版主锁定 / 隐藏 / 申诉的**操作入口**未做（端上只消费治理结果）；
   主题/回复的删除、点赞、编辑也未做。
 - **FAQ 内容运营侧**：文章的新增/编辑/归档（`AnswerTicket`）未做，端上只读。
@@ -391,4 +452,25 @@ npm run test      -w @kedaya/miniapp          # 18 files / 263 tests passed
 npm run lint      -w @kedaya/miniapp          # exit 0
 npm run build:weapp -w @kedaya/miniapp        # exit 0（Compiled successfully）
 npm run typecheck                             # 仓库级 turbo：7 successful, 7 total
+```
+
+task-11（`wildlife`）验证过的命令 —— **真实输出见交付说明**：
+
+```bash
+export PATH="/opt/homebrew/bin:$PATH"
+./scripts/with-npm-lock.sh npm install        # exit 0（仅 npm warn install-scripts，无 error）
+npm run typecheck -w @kedaya/miniapp          # exit 0（无输出 = 无类型错误）
+npm run test      -w @kedaya/miniapp          # 25 files / 382 tests passed（基线 18/263，+7 文件 / +119 测试）
+npm run lint      -w @kedaya/miniapp          # exit 0（0 problems）
+npm run build:weapp -w @kedaya/miniapp        # exit 0（Compiled successfully in 3.66s）
+```
+
+构建产物抽查（真实命令输出）：
+
+```
+apps/miniapp/dist/assets/wildlife/{marker-spot,marker-sighting,marker-sensitive,marker-track}.png
+apps/miniapp/dist/presentation/pages/wildlife/{map,report,tracks}/{index.js,index.json,index.wxml,index.wxss}
+dist/app.json → permission.scope.userLocation.desc 已声明；
+                requiredPrivateInfos = ["getLocation","chooseLocation"]；
+                tabBar.list 仍是 4 项（首页/发现/消息/我的），结构未改动
 ```

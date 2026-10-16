@@ -61,6 +61,9 @@ function createFakeClient(handler: (call: RecordedCall) => Result<unknown, ApiEr
       record({ path, method: 'PUT', ...(body === undefined ? {} : { body }) }, options) as ApiResult<T>,
     del: async <T>(path: string, options?: RequestOptions) =>
       record({ path, method: 'DELETE' }, options) as ApiResult<T>,
+    // forum / faq 不使用 multipart；仅为满足 `ApiClient` 形状（wildlife 照片上传在用）
+    upload: async <T>(path: string, _form: FormData, options?: RequestOptions) =>
+      record({ path, method: 'POST' }, options) as ApiResult<T>,
   };
 
   return { client, calls };

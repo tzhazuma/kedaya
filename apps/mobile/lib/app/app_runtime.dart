@@ -13,8 +13,11 @@ import '../data/mock/mock_errand_repository.dart';
 import '../data/mock/mock_faq_repository.dart';
 import '../data/mock/mock_forum_repository.dart';
 import '../data/mock/mock_groupbuy_repository.dart';
+import '../data/mock/mock_location_port.dart';
 import '../data/mock/mock_lost_found_repository.dart';
+import '../data/mock/mock_media_picker.dart';
 import '../data/mock/mock_wellbeing_repository.dart';
+import '../data/mock/mock_wildlife_repository.dart';
 import '../data/repositories/remote_auth_repository.dart';
 import '../data/repositories/remote_campus_session_repository.dart';
 import '../data/repositories/remote_consent_repository.dart';
@@ -24,6 +27,7 @@ import '../data/repositories/remote_forum_repository.dart';
 import '../data/repositories/remote_groupbuy_repository.dart';
 import '../data/repositories/remote_lost_found_repository.dart';
 import '../data/repositories/remote_wellbeing_repository.dart';
+import '../data/repositories/remote_wildlife_repository.dart';
 import '../data/storage/cache_theme_mode_store.dart';
 import '../data/storage/preferences_cache_store.dart';
 import '../data/storage/secure_credential_store.dart';
@@ -37,12 +41,17 @@ import '../domain/ports/forum_port.dart';
 import '../domain/ports/groupbuy_port.dart';
 import '../domain/ports/kedaya_api_port.dart';
 import '../domain/ports/local_cache_port.dart';
+import '../domain/ports/location_port.dart';
 import '../domain/ports/lost_found_port.dart';
+import '../domain/ports/media_picker_port.dart';
 import '../domain/ports/platform_ports.dart';
 import '../domain/ports/theme_mode_port.dart';
 import '../domain/ports/wellbeing_port.dart';
+import '../domain/ports/wildlife_port.dart';
 import '../platform/clipboard_share_port.dart';
+import '../platform/image_picker_media_picker.dart';
 import '../platform/local_notification_port.dart';
+import '../platform/method_channel_location.dart';
 import '../platform/method_channel_unified_identity.dart';
 import 'app_environment.dart';
 
@@ -65,6 +74,9 @@ final class AppRuntime {
     required this.errand,
     required this.lostFound,
     required this.wellbeing,
+    required this.wildlife,
+    required this.mediaPicker,
+    required this.location,
     required this.credentials,
     required this.cache,
     required this.share,
@@ -99,6 +111,18 @@ final class AppRuntime {
   final ErrandPort errand;
   final LostFoundPort lostFound;
   final WellbeingPort wellbeing;
+
+  /// 校园动物（契约 §4.1 `wildlife`，敏感级**低**、**无同意门**）。
+  ///
+  /// 规格 §8.2 的伦理勾选是**上报表单的操作确认**，不是同意门 ——
+  /// 因此这里**不经过** [consent]，也**不会**返回 `CONSENT_REQUIRED`。
+  final WildlifePort wildlife;
+
+  /// 选图（相册 / 相机）。mock 运行时是内存实现，不弹相册。
+  final MediaPickerPort mediaPicker;
+
+  /// 定位（WGS84）。不可用时上报表单降级到「在地图上点选位置」。
+  final LocationPort location;
 
   final CredentialStorePort credentials;
   final LocalCachePort cache;
@@ -139,6 +163,9 @@ final class AppRuntime {
       errand: MockErrandRepository(),
       lostFound: MockLostFoundRepository(),
       wellbeing: MockWellbeingRepository(),
+      wildlife: MockWildlifeRepository(controls: controls),
+      mediaPicker: InMemoryMediaPicker(),
+      location: InMemoryLocationPort(),
       credentials: InMemoryCredentialStore(),
       cache: cache,
       share: const ClipboardSharePort(),
@@ -214,6 +241,9 @@ final class AppRuntime {
       errand: RemoteErrandRepository(api),
       lostFound: RemoteLostFoundRepository(api),
       wellbeing: wellbeing,
+      wildlife: RemoteWildlifeRepository(api),
+      mediaPicker: ImagePickerMediaPicker(),
+      location: const MethodChannelLocation(),
       credentials: credentials,
       cache: cache,
       share: const ClipboardSharePort(),

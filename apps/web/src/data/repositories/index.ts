@@ -10,6 +10,7 @@ import type { AuditLogRepository, ModuleSwitchRepository } from '@/domain/ports/
 import type { FaqRepository } from '@/domain/ports/faq';
 import type { ForumRepository } from '@/domain/ports/forum';
 import type { GroupBuyRepository } from '@/domain/ports/groupbuy';
+import type { WildlifeRepository } from '@/domain/ports/wildlife';
 
 import { createApiClient, type ApiClient } from '../api/client';
 import {
@@ -22,10 +23,15 @@ import {
   createMockGroupBuyRepository,
   type MockGroupBuyRepository,
 } from '../mock/groupbuy.repository';
+import {
+  createMockWildlifeRepository,
+  type MockWildlifeRepository,
+} from '../mock/wildlife.repository';
 import { createAuditLogHttpRepository, createModuleSwitchHttpRepository } from './admin.http';
 import { createFaqHttpRepository } from './faq.http';
 import { createForumHttpRepository } from './forum.http';
 import { createGroupBuyHttpRepository } from './groupbuy.http';
+import { createWildlifeHttpRepository } from './wildlife.http';
 
 export type RepositoryMode = 'mock' | 'http';
 
@@ -34,6 +40,7 @@ export interface RepositoryBundle {
   groupbuy: GroupBuyRepository;
   forum: ForumRepository;
   faq: FaqRepository;
+  wildlife: WildlifeRepository;
   auditLog: AuditLogRepository;
   moduleSwitches: ModuleSwitchRepository;
 }
@@ -54,6 +61,7 @@ export function createRepositories(mode: RepositoryMode = repositoryMode()): Rep
       groupbuy: createGroupBuyHttpRepository(client),
       forum: createForumHttpRepository(client),
       faq: createFaqHttpRepository(client),
+      wildlife: createWildlifeHttpRepository(client),
       auditLog: createAuditLogHttpRepository(client),
       moduleSwitches: createModuleSwitchHttpRepository(client),
     };
@@ -65,6 +73,7 @@ export function createRepositories(mode: RepositoryMode = repositoryMode()): Rep
     groupbuy: createMockGroupBuyRepository(),
     forum: createMockForumRepository(),
     faq: createMockFaqRepository(),
+    wildlife: createMockWildlifeRepository(),
     auditLog: admin.auditLog,
     moduleSwitches: admin.moduleSwitches,
   };
@@ -97,6 +106,12 @@ export function getMockForumRepository(): MockForumRepository | undefined {
 export function getMockFaqRepository(): MockFaqRepository | undefined {
   const current = getRepositories();
   return current.mode === 'mock' ? (current.faq as MockFaqRepository) : undefined;
+}
+
+/** 拿到 mock wildlife 仓储（用于故障演练 / 分类模式开关 / 测试） */
+export function getMockWildlifeRepository(): MockWildlifeRepository | undefined {
+  const current = getRepositories();
+  return current.mode === 'mock' ? (current.wildlife as MockWildlifeRepository) : undefined;
 }
 
 /** 测试/热重载用：丢弃单例 */

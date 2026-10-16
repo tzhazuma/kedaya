@@ -89,6 +89,7 @@ apps/web/
 | **拼单垂直切片** | `app/(portal)/groupbuy/**` | 列表（游标分页 + 状态/关键词筛选 + 四态）与详情（参与者/规则/**参团 mutation**） |
 | **论坛切片** | `app/(portal)/forum/**` | 版块导航 + 主题列表（游标分页 / 版块筛选 / 关键词 / **被治理主题显式标注状态**）；详情（正文 + 回复列表 + 回复框 + **举报弹层**）；发帖页（**匿名开关** + 隐私说明） |
 | **FAQ 切片** | `app/(portal)/faq/**` | 分类导航 + 搜索 + 手风琴条目 + **「有用/无用」乐观更新与失败回滚**；`/faq/tickets` 我的工单（提交 + 状态 + 脱敏联系方式） |
+| **wildlife 切片** | `app/(portal)/wildlife/**`、`app/(admin)/admin/wildlife/page.tsx` | 动物地图（静态底图 + SVG 叠加层）、观测列表/详情、区域列表、推断轨迹页、上报表单（照片上传 + 地图点选 + 自动分类降级）、审核队列（`moderate` 冻结动作）—— 见 §8 |
 | 管理后台占位 | `app/(admin)/admin/page.tsx` | 模块开关表（20 行，受权限约束）+ 审计日志表（§9 字段齐全）+ 合规概览 |
 | 5+ 复用组件 | `presentation/components/` | `KdyCard` `KdyButton` `KdyBadge` `KdyEmpty` `KdySkeleton` `KdyAlert` `ModuleGrid` `PageHeader` `SiteHeader` `SiteFooter` `UnofficialNotice` + forum/faq 专属组件 |
 | 主题 Provider | `presentation/theme/` | light/dark/system 三态；`useSyncExternalStore` 订阅 `localStorage` + `matchMedia`；写 `<html data-theme>`（system 移除）+ `dark` class + `color-scheme`，暗色配色来自令牌 `colorDark` |
@@ -391,3 +392,206 @@ forum/faq 浏览器实测（真实 Chromium，`http://127.0.0.1:3311`，数据�
 - **治理状态必须显式**：`domain/models/forum.ts` 的 `postVisibility()` 是唯一真相，
   HIDDEN / LOCKED 的 `listable: true` 保证它们**留在列表里**并带 `notice`；
   只有 DELETED / DRAFT 才不出现。
+
+---
+
+## 8. wildlife 切片（猫 / 鸟 / 黑天鹅）
+
+> 规格：`docs/features/wildlife-map.md` · 契约：`00-FROZEN-CONTRACT.md` §4.1 / §6.1 / §9 / §11.2 / §11.5
+
+### 8.1 底图方案：**方案 B（静态校园平面图 + SVG 叠加层）**
+
+**为什么不用高德/腾讯瓦片**（规格 §1.2，也是代码注释里写明的理由）：
+
+1. 校园尺度（约 1 km²）下街道图会渲染出与校园无关的道路与建筑轮廓，**信息密度反而更低**；
+2. 动物活动点大多在草坪、湖边、宿舍楼下、小径旁 —— 这些在街道图上**根本不存在**，
+   用街道图当背景，用户看到的是"一个点落在某条不存在的路上"；
+3. 静态底图用**图像像素空间**，WGS84 经仿射标定映射到像素，**完全不经过 GCJ-02** ——
+   把"坐标偏移几百米、且看起来像数据错了"这类极难排查的 bug 的作用面压到零（规格 §3.2 第 4 条）；
+4. 不依赖第三方地图 key（无配额 / 无 ToS 约束）。
+
+**占位底图（诚实标注）**：`public/wildlife/basemap.svg` 是**自绘示意图**（1200×800，
+校园轮廓 + 主要建筑 + 湖/绿地 + 步道 + 校门 + 地标标注），**不是测绘成果**。
+校园官方平面图**尚未获得授权**（规格 §1.3 / 未决问题 U1，状态：**未知**），
+因此代码与 UI 都注明"占位底图，待学校授权后替换"，并且：
+
+- `license: 'original'` → `isPlaceholder: true`；**只有 `school-authorized` 才算非占位** ——
+  把"学校授权"这个法务事项变成**可被代码检查**的前置条件（`resolveCampusBasemap()` + 单测）；
+- 拿到书面授权后只需替换 SVG 并更新控制点，消费方代码零改动（底图是可配置资源，规格 §1.4）。
+
+**仿射标定**（`src/domain/models/wildlife/basemap.ts`）：
+
+```
+WGS84（唯一真相）──toLocalMeters()──▶ 局部 ENU 米制平面 ──affine──▶ 底图像素 (px, py)
+```
+
+| 项 | 实测值 |
+| --- | --- |
+| 控制点数 | **8**（≥ 6），分散在四角与中心 |
+| 标定残差 RMSE | **1.70 px**（阈值 < 5，`basemapCalibrationProblems()` 可执行断言） |
+| 像素 → WGS84 → 像素 往返误差 | **< 1e-6 px**（硬要求 < 1 px，实测约 1e-9 px） |
+| 30 m 的上报 → 像素距离 | **29.8 px**（1 m ≈ 1 px，验收 T7） |
+| `lat`/`lng` 颠倒 | 被 `assertInCampus()` 拒绝（`COORDINATE_OUT_OF_CAMPUS`） |
+
+### 8.2 文件清单（全部在 `apps/web/` 内）
+
+| 层 | 文件 |
+| --- | --- |
+| 静态资源 | `public/wildlife/basemap.svg`（占位底图） |
+| domain（模型） | `src/domain/models/wildlife/{basemap,species,sightings,tracks,ethics,geometry,index}.ts` |
+| domain（端口） | `src/domain/ports/wildlife.ts` |
+| data（传输层） | `src/data/schemas/wildlife.ts` |
+| data（mock） | `src/data/mock/fixtures/wildlife.ts`、`src/data/mock/wildlife.repository.ts` |
+| data（HTTP） | `src/data/repositories/wildlife.http.ts` |
+| data（客户端） | `src/data/api/client.ts` 新增 `upload()`（multipart，见 §8.7 偏差 2） |
+| application | `src/application/wildlife/{wildlifeMap,listSightings,listZones,listTracks,reportSighting,moderateSightings,loadWildlifeCatalog}.ts` |
+| presentation | `src/presentation/components/wildlife/*`（地图/列表/详情/区域/轨迹/上报表单/伦理/隐私/筛选）、`src/presentation/components/admin/WildlifeModerationQueue.tsx` |
+| 页面 | `/wildlife`、`/wildlife/report`、`/wildlife/zones`、`/wildlife/tracks`、`/wildlife/sightings/[id]`、`/admin/wildlife` |
+
+### 8.3 三态齐全（loading / error / empty）+ 空态引导
+
+- loading：骨架屏（`data-testid="wildlife-map-loading"` 等），首屏不阻塞；
+- error：`KdyAlert role="alert"` + 重试按钮，且**保留上一次成功的数据**（契约 §8 失败静默降级而非白屏）；
+- empty：带引导文案 + "上报一条观测"入口。实测：筛选「珠颈斑鸠」（无观测记录的物种）→
+  同时出现三处空态（热点 / 轨迹 / 观测），文案分别为
+  "还没有达到公开条件的热点…"、"还没有可推断的轨迹。轨迹要求同一物种在 7 天窗口内至少有 5 个已发布观测。"、
+  "还没有审核通过的观测…"。
+
+**无后端可跑**：默认 `NEXT_PUBLIC_KEDAYA_USE_MOCK=true`，7 个页面全部出数据（见 §8.8 实测）。
+
+### 8.4 伦理与隐私（硬要求，逐条落地）
+
+| 要求 | 落地位置 |
+| --- | --- |
+| 投喂规范 `allowed/discouraged/forbidden` | `FeedingPolicyBadge` + 区域卡片 + 上报表单红色警告条；区域政策与物种默认政策取**较严者** |
+| 伦理守则（E1–E8 精简版，≤5 条、每条 ≤20 字） | `EthicsNotice`（上报表单提交按钮上方，默认展开，勾选才可提交） |
+| **不是同意门** | 勾选只拒绝**本次提交**；不引入 `CONSENT_REQUIRED`（契约 §9 的同意门只适用于 wellbeing/dorm-harmony/ai-portrait），UI 明确写出这一区别 |
+| 不打扰野生动物 / 不带走蛋与幼崽 / 夜间不用闪光灯 | `ETHICS_RULES` + `NO_TAKE_NOTICE` |
+| 位置已模糊化说明（**不声称"完全匿名"**） | `PrivacyNoticePanel`（地图页必现）："只能定位到片区（约百米量级）…我们不能声称'完全匿名'" |
+| 敏感区**不公开任何坐标** | 敏感区上报 → `geo: null` + 只给 `zoneId`；地图上**不落点**（`sightingToMarker` 返回 `null`） |
+| 热点**不是实时位置**（延迟 ≥24h） | 热点卡片固定徽章"历史聚合 · 延迟 ≥24h" + `SPOT_REALTIME_NOTICE`；mock 的 `computedAt` 比当前时间早 26h |
+| k-匿名（<3 位不同上报人不公开） | mock 的 `/spots` **过滤掉**不足 3 人的热点（`wsp-04` 不出现） |
+| 图片 EXIF 强制剥离 | 上传链路说明 + 客户端预校验（服务端负责真正剥离） |
+| 轨迹必须标注"推断，非实测路径" | 地图上虚线 + 每张轨迹卡片的 `KdyBadge`（短标签）+ 服务端 `disclaimer` + `summaryLabel`（"基于 N 次上报推断的活动范围"） |
+| 告示文案是草案 | 区域告示位带 `NOTICE_DRAFT_FLAG`（未决问题 U7） |
+
+### 8.5 测试（新增 **132** 个用例，web 243 → **375**）
+
+| 文件 | 用例数 | 覆盖 |
+| --- | --- | --- |
+| `domain/models/wildlife/basemap.test.ts` | 18 | **仿射标定与坐标映射**：RMSE < 5、控制点 ≥ 6、像素↔经纬度往返 < 1 px、30 m → 25–35 px、米↔像素互逆、lat/lng 颠倒被拒、占位底图派生、SVG 尺寸与配置一致 |
+| `domain/models/wildlife/wildlife.test.ts` | 41 | 投喂政策取严、繁殖期 ×4（T11）、上海本地月份、置信度分档与**不预选**（T44）、伦理守则 ≤5 条且 ≤20 字、上报校验（伦理/时间/校园/照片/备注）、坐标扣留说明、匿名展示、审核规则（双人复核/队首优先）、k-匿名、轨迹一致性、叠加层几何（**扣留坐标不落点**） |
+| `application/wildlife/wildlife.test.ts` | 28 | 地图用例（底图占位/叠加层/图层开关/隐私提示/繁殖期）、观测 VM（禁投喂警告/匿名/分类免责声明/扣留说明）、区域与轨迹 VM（**每条轨迹必带推断标签与免责声明**）、上报用例（校验→回执→敏感区）、分类降级、审核用例（FORBIDDEN→双人通过） |
+| `data/mock/wildlife.repository.test.ts` | 24 | 游标分页不重不漏、只给 PUBLISHED、k-匿名过滤、敏感区坐标扣留、网格吸附、伦理/坐标/时间/物种/媒体校验、上传幂等（T37）、双人复核、拒绝必填理由、`classify()` 空数组（T43）、故障演练与 reset |
+| `data/repositories/wildlife.http.test.ts` | 11 | 路由由模块注册表派生、`moderate` 冻结动作名、`Idempotency-Key`（同内容复用同键）、multipart 上传、游标原样透传、脏数据 → INTERNAL、错误码透传 |
+| `presentation/theme/wildlife-tokens.test.ts` | 10 | wildlife 源码**零手写色值**、叠加层只用 `currentColor` + 令牌工具类、`basemap.svg` 的每个 hex 都是 tokens.css 里真实存在的令牌值、暗色令牌可达 |
+
+### 8.6 未实现 / 已知限制（如实列出）
+
+1. **地图不支持缩放/平移手势**：规格 §1.2 第 5 条要求 1×–4× 缩放，当前只做了固定比例展示
+   （点击点选可用，但没有双指缩放/拖动）。这是**未完成的规格项**，不是设计选择。
+2. **地图点选只有指针交互**：键盘用户无法在地图上选点（已知无障碍缺口，页面上已如实说明）。
+3. **占位底图是浅色静态图**：暗色模式下不做反色（避免伪造地图配色），靠外层令牌背景与叠加层保证可读性。
+   `basemap.svg` 是静态资源，无法读取 CSS 变量，因此色值**逐字取自** `tokens.css`，
+   并由测试断言"每个 hex 都是令牌里存在的值"。
+4. **审核员身份是演示常量**（`DEMO_MODERATOR` / `DEMO_SECOND_MODERATOR` 占位）：
+   未接契约 §5 第一级身份层；真正的权限边界必须在服务端（前端按钮禁用只是体验）。
+5. **自动分类默认关闭**（`classifierMode: 'manual'`）：`POST /classify` 返回空数组，
+   UI 走"静默降级为手动"路径；`'server'` 模式在 mock 里可切换，用于演示建议与"低置信度不预选"。
+6. **mock 的模糊化弱于真实后端**：mock 只做网格吸附（规格 §9.3 ②），
+   **不含**确定性加噪的 HMAC 部分（规格 §9.3 ③，需要服务端密钥）。**不能拿 mock 做隐私强度评估。**
+7. **精确坐标（受限表）在 Web 端没有任何读取入口**：审核队列只**说明**"审核端可见精确坐标"，
+   没有真的去取（规格 §2.7 要求每次读取写审计，那属于服务端能力）。
+8. **`rejectReason` 只在 `admin` 视角渲染**：公开详情页不传 `admin`，因此不会展示该字段。
+
+### 8.7 与冻结契约的偏差（需 Lead 裁定）
+
+1. **管理端审核队列用 `GET /wildlife/items?status=PENDING`**
+   规格 §10.1 把 `/items` 定义为"**仅 `PUBLISHED`**"的公开列表，而审核需要待审核记录。
+   我**没有自创端点**，而是给公开列表加了 `status` 过滤参数（mock 与 HTTP 仓储都支持）。
+   **建议**：服务端为审核员放开该过滤，或另给一个管理端集合路由（如 `/wildlife/moderation/queue`）。
+2. **`ApiClient` 新增 `upload()`（multipart）**
+   契约 §7 硬规则 3 要求"所有网络访问必须经过 `data/api/`"，而 `ApiClient` 原先只有 JSON 方法。
+   我在 `client.ts` 内新增 `upload(path, form, options)`（**不手写 `Content-Type`**，
+   由运行时生成 boundary），wildlife 的 `POST /media` 走它。
+   附带改动：`data/repositories/forum-faq.http.test.ts` 的假客户端补了一个 `upload` 桩
+   （否则 `ApiClient` 类型不完整，typecheck 失败）。
+   **建议**：Lead 评估是否把 `upload` 提升为契约级客户端能力。
+3. **`moderate` 的 body 用 `decision`**：与规格 §10.2 一致（`{decision, reason?}`），
+   action 名 `moderate` 已登记在契约 §11.2（`wildlife.moderate`），未自创。
+4. **实测发现：失败后的重试在**隐藏标签页**里会永久暂停**（与 wildlife 无关，属全局行为）
+   TanStack Query 的 retryer 判定 `canContinue() = focusManager.isFocused() && …`；
+   标签页隐藏时 `isFocused()` 为 false，于是 `fetchStatus: 'paused'`，UI **永远停在骨架屏**，
+   既不出错误态也不出重试按钮。**实测 `/groupbuy`（既有页面）在 HTTP 模式下完全一样**，
+   因此这不是 wildlife 切片引入的问题，而是 Web 端全局的健壮性缺口。
+   **建议**：Lead 统一评估（例如失败时给出显式错误 + 手动重试，而不是无限等待网络/焦点恢复）。
+   wildlife 侧最终**未**改动 `networkMode`，保持与其余页面一致。
+5. **`public/wildlife/basemap.svg` 使用字面色值**（静态资源无法读 CSS 变量）：
+   已用测试断言"每个 hex 都在 `tokens.css` 里"，从而把"颜色也来自令牌"变成机器可检查的事实。
+
+### 8.8 自检证据（真实执行输出摘要）
+
+```bash
+$ npm run typecheck -w @kedaya/web
+> tsc --noEmit -p tsconfig.json
+（无输出 = 0 错误）
+
+$ npm run lint -w @kedaya/web
+> eslint .
+（无输出 = 0 problems）
+
+$ npm run test -w @kedaya/web
+ Test Files  21 passed (21)
+      Tests  375 passed (375)     # 基线 243 + wildlife 新增 132
+
+$ npm run build -w @kedaya/web
+▲ Next.js 16.4.2 (Turbopack)
+✓ Compiled successfully in 635ms
+✓ Generating static pages using 11 workers (34/34)
+├ ○ /wildlife        ├ ○ /wildlife/report   ├ ○ /wildlife/zones
+├ ○ /wildlife/tracks ├ ƒ /wildlife/sightings/[id] ├ ○ /admin/wildlife
+```
+
+生产服务器冒烟（`next start -p 3328`，真实 curl）：
+
+```
+/wildlife HTTP 200   /wildlife/report HTTP 200   /wildlife/zones HTTP 200
+/wildlife/tracks HTTP 200   /wildlife/sightings/ws-1001 HTTP 200
+/wildlife/sightings/nope HTTP 200   /admin/wildlife HTTP 200
+```
+
+浏览器实测（真实 Chromium，**无后端**，数据全部来自 mock）：
+
+- `/wildlife`：底图 `<img src="/wildlife/basemap.svg">` + SVG 叠加层；
+  图例 `活动区域 5 · 聚合热点 3 · 推断轨迹 3 · 观测点 10`；底图署名与
+  `8 个控制点 · 标定残差 RMSE 1.70 px（阈值 < 5）` 可见；
+  3 个"推断轨迹，非实测路径"徽章；`另有 2 条观测因位于敏感区或上报人数不足，没有出现在地图上…`；
+  隐私面板出现"片区级，不是完全匿名"。
+- 图层开关：勾选「观测点」→ 地图上出现 **10** 个观测点（坐标被扣留的 2 条不落点）。
+- 物种筛选：选「黑天鹅」→ 地图只剩 1 个区域 / 1 个热点（叠加层与列表同步收窄）。
+- **错误态**：点「演练故障」→ `role="alert"` 出现
+  「动物地图加载失败 / 动物地图服务暂时不可用（mock 故障演练） /
+  契约 §8 要求失败静默降级而非白屏：下方保留上一次成功的地图数据。」+「重试」按钮，
+  地图与 12 张卡片**保留**；点「恢复正常」→ 提示消失、数据恢复。
+- **空态**：选「珠颈斑鸠」（无观测）→ 三处空态 + "上报一条观测"入口。
+- `/wildlife/report`：地图点选 → 「已选点：WGS84 31.177699, 121.592042（像素 699, 599）· 在校园范围内」；
+  落在「人工湖（黑天鹅水域）」→ 出现禁投喂警告；伦理守则 **5** 条；勾选后提交按钮启用；
+  `<input type="file">` 选 JPEG → 「已上传 1 张：wm-mock-1」+ 自动分类降级提示
+  「当前没有启用自动分类（或识别服务不可用），请手动选择物种 —— 这不影响上报。」；
+  提交 → 「上报已提交：已提交，进入审核队列…」。
+- `/wildlife/sightings/ws-1009`（敏感区记录）：「该记录不公开坐标 / 该位置位于敏感区（宿舍/保育区）…」，
+  上报人显示「匿名同学」，页面中**不出现** `reporterId`。
+- `/wildlife/tracks`：顶部「推断轨迹，非实测路径」+ 3 张轨迹卡片各带服务端下发的免责声明
+  「本轨迹由 31 次同学上报推断得出，并非实测运动路径。」；地图上 3 条**虚线**折线（共 11 个顶点）。
+- `/admin/wildlife`：队列 `共 15 条 · 待审核 3 条 · 疑似受伤 1 条 · 保护物种 5 条`，
+  疑似受伤（白鹭）排队首；对保护物种点「通过并发布」→
+  「操作被拒绝：保护物种需要两名审核员复核…已记录你的第一票」；
+  切到「第二名审核员」再通过 → 「操作已完成：记录 ws-1011 → 已发布」，待审核 3 → 2。
+- 暗色：点「深色」→ `<html data-theme="dark">`，`--kdy-color-brand` = `#ffd666`（= 令牌 `colorDark.brand`）。
+
+> ⚠️ **错误态验证的一个坑（已记录）**：TanStack Query 的 retryer 用
+> `focusManager.isFocused()` 判定是否继续重试；在**隐藏标签页**里它永远为 false，
+> 于是失败后的重试会 `paused` 在那里 —— 页面就一直停在骨架屏。
+> 本次验证是把标签页"伪装为可见"（覆写 `document.visibilityState` 并派发 `visibilitychange`）
+> 之后才拿到上面那条错误态输出的。`/groupbuy`（既有页面）在 HTTP 模式下表现完全相同，
+> 详见 §8.7 偏差 4。

@@ -73,7 +73,7 @@ class HomePage extends ConsumerWidget {
           Center(
             child: TextButton(
               onPressed: () => context.go('/modules'),
-              child: const Text('查看全部 19 个模块'),
+              child: const Text('查看全部 20 个模块'),
             ),
           ),
         ],

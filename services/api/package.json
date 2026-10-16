@@ -21,8 +21,8 @@
     "prisma:validate": "prisma validate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:diff": "prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script",
-    "prisma:seed": "node prisma/seed.ts",
+    "prisma:diff": "prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script",
+    "prisma:seed": "node prisma/seed.mjs",
     "scaffold": "node scripts/scaffold.mjs"
   },
   "dependencies": {
@@ -37,7 +37,8 @@
     "@prisma/client": "7.10.1",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
-    "zod": "4.6.7"
+    "zod": "4.6.7",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@nestjs/testing": "12.1.3",
