@@ -3,7 +3,7 @@ import { MODULES } from '@kedaya/contracts'
 import type { KedayaModule } from '@kedaya/contracts'
 
 import { getContainer } from '../../../app/container'
-import { PAGE_PATHS } from '../../../app/routes'
+import { moduleEntryPath } from '../../../app/routes'
 import { navigateTo, toast } from '../../../platform/navigation'
 import { KdyCard, KdyTag } from '../../components'
 import type { KdyTagTone } from '../../components'
@@ -17,11 +17,11 @@ import './index.scss'
  * 禁止在各端硬编码模块清单）。因此这里没有任何写死的模块数组，
  * 后端/契约新增模块时首页自动出现。
  *
+ * 「哪些模块已经有真实页面」由 `app/routes.ts` 的 `MODULE_ENTRY_PATHS` 声明 ——
+ * 这也是一张表，而不是散落在页面里的 `if (id === 'xxx')`。
+ *
  * 敏感级展示规则（契约 §9）：需要二次同意的模块标红，high/critical 标黄。
  */
-
-/** 已实现垂直切片的模块（其余点击后明确提示「开发中」，不假装可用） */
-const IMPLEMENTED_MODULE_IDS: readonly string[] = ['groupbuy']
 
 function moduleTone(module: KedayaModule): KdyTagTone {
   if (module.requiresConsent) return 'danger'
@@ -30,7 +30,7 @@ function moduleTone(module: KedayaModule): KdyTagTone {
 }
 
 function moduleBadge(module: KedayaModule): string {
-  if (IMPLEMENTED_MODULE_IDS.includes(module.id)) return '已上线'
+  if (moduleEntryPath(module.id) !== null) return '已上线'
   if (module.requiresConsent) return '需二次同意'
   if (module.sensitivity === 'high' || module.sensitivity === 'critical') return '高敏感'
   return '开发中'
@@ -42,8 +42,9 @@ export default function HomePage() {
   const sessionState = useStore(session)
 
   function handleModuleTap(module: KedayaModule): void {
-    if (module.id === 'groupbuy') {
-      void navigateTo(PAGE_PATHS.groupBuyList)
+    const path = moduleEntryPath(module.id)
+    if (path !== null) {
+      void navigateTo(path)
       return
     }
     if (module.requiresConsent) {

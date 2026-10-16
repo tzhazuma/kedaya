@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../application/consent_controller.dart';
 import '../../application/module_catalog.dart';
 import '../../domain/models/kedaya_module.dart';
 import '../components/kedaya_shell.dart';
+import '../theme/kedaya_theme_extension.dart';
 import '../theme/kedaya_tokens.dart';
+
+/// 已实现垂直切片的入口路由（契约 §4 的模块 id → 该模块的落地路由）。
+///
+/// 未列出的模块仍然只有"尚未实现"的如实说明，没有假页面、没有假成功。
+const Map<String, String> implementedModuleRoutes = <String, String>{
+  'groupbuy': '/groupbuy',
+  'forum': '/forum',
+  'faq': '/faq',
+};
 
 /// 模块落地页 —— **注册表驱动**，不含任何伪造的业务数据。
 ///
-/// 已实现的模块（`groupbuy`）从这里给出真实入口；其余模块如实说明"尚未实现"，
-/// 并展示它在契约里的冻结信息（路由前缀 / 敏感级 / 是否需要二次同意）。
-/// 这样"未实现"是**可见的**，而不是假装成功。
+/// 已实现的模块（`groupbuy` / `forum` / `faq`）从这里给出真实入口；
+/// 其余模块如实说明"尚未实现"，并展示它在契约里的冻结信息
+/// （路由前缀 / 敏感级 / 是否需要二次同意）。这样"未实现"是**可见的**，
+/// 而不是假装成功。
 class ModuleDetailPage extends ConsumerWidget {
   const ModuleDetailPage({required this.moduleId, super.key});
 
@@ -19,6 +31,7 @@ class ModuleDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final KedaYaColors colors = context.kedayaColors;
     final KedayaModule? module = ref.watch(moduleByIdProvider(moduleId));
     if (module == null) {
       return KedaYaPageScaffold(
@@ -27,9 +40,9 @@ class ModuleDetailPage extends ConsumerWidget {
           child: Text(
             '模块 "$moduleId" 不在冻结注册表里（契约 §4）。',
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: KedaYaTokens.fontSizeSm,
-              color: KedaYaTokens.colorTextMuted,
+              color: colors.textMuted,
             ),
           ),
         ),
@@ -55,20 +68,20 @@ class ModuleDetailPage extends ConsumerWidget {
           const SizedBox(height: KedaYaTokens.space4),
           Text(
             module.summary,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: KedaYaTokens.fontSizeSm,
               height: KedaYaTokens.lineHeightLoose,
-              color: KedaYaTokens.colorText,
+              color: colors.text,
             ),
           ),
           if (module.requiresConsent) ...<Widget>[
             const SizedBox(height: KedaYaTokens.space5),
-            const Text(
+            Text(
               '敏感模块 · 二次同意（契约 §9）',
               style: TextStyle(
                 fontSize: KedaYaTokens.fontSizeMd,
                 fontWeight: KedaYaTokens.fontWeightSemibold,
-                color: KedaYaTokens.colorText,
+                color: colors.text,
               ),
             ),
             const SizedBox(height: KedaYaTokens.space2),
@@ -101,32 +114,49 @@ class ModuleDetailPage extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(KedaYaTokens.space4),
             decoration: BoxDecoration(
-              color: KedaYaTokens.colorSurfaceAlt,
+              color: colors.surfaceAlt,
               borderRadius: BorderRadius.circular(KedaYaTokens.radiusLg),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text(
+                Text(
                   '实现状态',
                   style: TextStyle(
                     fontSize: KedaYaTokens.fontSizeSm,
                     fontWeight: KedaYaTokens.fontWeightSemibold,
-                    color: KedaYaTokens.colorText,
+                    color: colors.text,
                   ),
                 ),
                 const SizedBox(height: KedaYaTokens.space2),
                 Text(
-                  module.id == 'groupbuy'
-                      ? '本模块已实现：列表 + 详情 + 参团，走 domain/ports 的 GroupbuyPort。'
-                      : '本模块尚未实现：只有冻结契约里的路由与权限信息，'
-                            '没有页面、没有 mock 数据、没有假成功。',
-                  style: const TextStyle(
+                  switch (module.id) {
+                    'groupbuy' => '本模块已实现：列表 + 详情 + 参团，'
+                        '走 domain/ports 的 GroupbuyPort。',
+                    'forum' => '本模块已实现：版块筛选 + 主题列表（游标分页）+ 主题详情 + '
+                        '回复 + 发帖（含匿名开关）+ 举报 + 分享，走 ForumPort。',
+                    'faq' => '本模块已实现：分类导航 + 搜索 + 手风琴展开 + '
+                        '「有用」（幂等）+ 我的工单，走 FaqPort。',
+                    _ => '本模块尚未实现：只有冻结契约里的路由与权限信息，'
+                        '没有页面、没有 mock 数据、没有假成功。',
+                  },
+                  style: TextStyle(
                     fontSize: KedaYaTokens.fontSizeSm,
                     height: KedaYaTokens.lineHeightNormal,
-                    color: KedaYaTokens.colorTextMuted,
+                    color: colors.textMuted,
                   ),
                 ),
+                if (implementedModuleRoutes[module.id] != null) ...<Widget>[
+                  const SizedBox(height: KedaYaTokens.space4),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () => context.push(implementedModuleRoutes[module.id]!),
+                      icon: const Icon(Icons.arrow_forward, size: 18),
+                      label: const Text('进入模块'),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -144,6 +174,7 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final KedaYaColors colors = context.kedayaColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: KedaYaTokens.space1),
       child: Row(
@@ -153,18 +184,18 @@ class _InfoRow extends StatelessWidget {
             width: 96,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: KedaYaTokens.fontSizeSm,
-                color: KedaYaTokens.colorTextMuted,
+                color: colors.textMuted,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: KedaYaTokens.fontSizeSm,
-                color: KedaYaTokens.colorText,
+                color: colors.text,
               ),
             ),
           ),

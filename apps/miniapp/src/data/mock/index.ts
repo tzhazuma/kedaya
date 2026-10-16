@@ -1,3 +1,7 @@
+export * from './faqFixtures'
+export * from './faqMemoryDatabase'
 export * from './fixtures'
+export * from './forumFixtures'
+export * from './forumMemoryDatabase'
 export * from './memoryDatabase'
 export * from './mockAuth'

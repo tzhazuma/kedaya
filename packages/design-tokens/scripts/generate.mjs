@@ -42,6 +42,9 @@ const pascal = (s) => String(s).replace(/(^|[-_])(\w)/g, (_, __, c) => c.toUpper
 const ident = (s) => String(s).replace(/[^A-Za-z0-9]/g, '_');
 
 const isNumericGroup = (g) => typeof Object.values(g)[0] === 'number';
+/** 无单位组：这些是倍数 / 权重 / 层级，**绝不能加 px**（加了会得到 `1.25px` 这种废值） */
+const UNITLESS_GROUPS = new Set(['lineHeight', 'fontWeight', 'zIndex']);
+const needsPx = (group, value) => typeof value === 'number' && !UNITLESS_GROUPS.has(group);
 
 /* ================================================================== *
  * 1. CSS 变量（含暗色覆盖）
@@ -57,7 +60,7 @@ for (const group of PLAIN_GROUPS) {
   const numeric = isNumericGroup(g);
   cssLines.push(`  /* ${group} */`);
   for (const [key, value] of Object.entries(g)) {
-    cssLines.push(`  --kdy-${kebab(group)}-${kebab(key)}: ${numeric ? `${value}px` : value};`);
+    cssLines.push(`  --kdy-${kebab(group)}-${kebab(key)}: ${needsPx(group, value) ? `${value}px` : value};`);
   }
 }
 cssLines.push('}', '');
@@ -95,7 +98,7 @@ for (const group of PLAIN_GROUPS) {
   const numeric = isNumericGroup(g);
   scssLines.push(`// ${group}`);
   for (const [key, value] of Object.entries(g)) {
-    scssLines.push(`$kdy-${kebab(group)}-${kebab(key)}: ${numeric ? `${value}px` : value};`);
+    scssLines.push(`$kdy-${kebab(group)}-${kebab(key)}: ${needsPx(group, value) ? `${value}px` : value};`);
   }
   scssLines.push('');
 }
@@ -104,7 +107,7 @@ scssLines.push('$kdy-tokens: (');
 for (const group of PLAIN_GROUPS) {
   scssLines.push(`  "${kebab(group)}": (`);
   for (const [key, value] of Object.entries(tokens[group])) {
-    scssLines.push(`    "${kebab(key)}": ${typeof value === 'number' ? `${value}px` : value},`);
+    scssLines.push(`    "${kebab(key)}": ${needsPx(group, value) ? `${value}px` : value},`);
   }
   scssLines.push('  ),');
 }

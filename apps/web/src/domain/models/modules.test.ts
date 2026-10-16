@@ -22,7 +22,8 @@ import {
 
 describe('模块注册表（契约 §4 数据驱动）', () => {
   it('注册表与契约模块表一一对应', () => {
-    expect(PORTAL_MODULE_COUNT).toBe(19);
+    // 契约 v1.2 §11.10-C 新增第 20 个模块 facility（场馆预约）
+    expect(PORTAL_MODULE_COUNT).toBe(20);
     expect(PORTAL_MODULES).toHaveLength(MODULES.length);
     expect(PORTAL_MODULES.map((m) => m.id)).toEqual(MODULES.map((m) => m.id));
   });
@@ -31,7 +32,7 @@ describe('模块注册表（契约 §4 数据驱动）', () => {
     expect(validateModuleRegistry(PORTAL_MODULES, MODULES)).toEqual([]);
   });
 
-  it('模块 id 唯一，且覆盖全部 5 基础 + 14 业务', () => {
+  it('模块 id 唯一，且覆盖全部 5 基础 + 15 业务', () => {
     const ids = PORTAL_MODULES.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const mod of [...CORE_MODULES, ...BUSINESS_MODULES]) {
@@ -39,10 +40,10 @@ describe('模块注册表（契约 §4 数据驱动）', () => {
     }
   });
 
-  it('分类分组：5 基础 + 14 业务', () => {
+  it('分类分组：5 基础 + 15 业务', () => {
     expect(PORTAL_MODULE_GROUPS.core).toHaveLength(5);
-    expect(PORTAL_MODULE_GROUPS.business).toHaveLength(14);
-    expect(groupModulesByCategory(PORTAL_MODULES).business).toHaveLength(14);
+    expect(PORTAL_MODULE_GROUPS.business).toHaveLength(15);
+    expect(groupModulesByCategory(PORTAL_MODULES).business).toHaveLength(15);
   });
 
   it('每个模块都有可用的门户路由与图标', () => {

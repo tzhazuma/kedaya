@@ -9,6 +9,7 @@ import {
   CalendarDays,
   CircleHelp,
   CreditCard,
+  Dumbbell,
   HeartPulse,
   Home,
   KeyRound,
@@ -55,6 +56,7 @@ export const MODULE_ICONS: Record<ModuleIconKey, KdyIcon> = {
   'credit-card': CreditCard,
   user: User,
   bell: Bell,
+  dumbbell: Dumbbell,
 };
 
 export function moduleIcon(key: ModuleIconKey): KdyIcon {

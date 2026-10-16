@@ -41,6 +41,20 @@ class HomePage extends ConsumerWidget {
           ),
           const SizedBox(height: KedaYaTokens.space3),
           _GroupbuyEntryCard(onTap: () => context.push('/groupbuy')),
+          const SizedBox(height: KedaYaTokens.space3),
+          _FeatureEntryCard(
+            icon: Icons.forum_outlined,
+            title: '论坛',
+            description: '版块筛选 + 主题列表（游标分页）+ 详情/回复 + 发帖（含匿名开关）+ 举报',
+            onTap: () => context.push('/forum'),
+          ),
+          const SizedBox(height: KedaYaTokens.space3),
+          _FeatureEntryCard(
+            icon: Icons.help_outline,
+            title: '常见问题',
+            description: '分类导航 + 搜索 + 手风琴展开 +「有用」（幂等）+ 我的工单',
+            onTap: () => context.push('/faq'),
+          ),
           const SizedBox(height: KedaYaTokens.space6),
           const _SectionTitle(
             title: '业务模块',
@@ -160,6 +174,32 @@ class _GroupbuyEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _FeatureEntryCard(
+      icon: Icons.groups_2_outlined,
+      title: '拼单',
+      description: '列表 + 详情 + 参团，三态齐全；默认走内存 mock，无需后端',
+      onTap: onTap,
+    );
+  }
+}
+
+/// 已实现模块的入口卡片（亮/暗通用：色值全部走 [KedaYaColors]）。
+class _FeatureEntryCard extends StatelessWidget {
+  const _FeatureEntryCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final KedaYaColors colors = context.kedayaColors;
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -172,45 +212,38 @@ class _GroupbuyEntryCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: KedaYaTokens.colorBrandSoft,
+                  color: colors.brandSoft,
                   borderRadius: BorderRadius.circular(KedaYaTokens.radiusMd),
                 ),
                 alignment: Alignment.center,
-                child: const Icon(
-                  Icons.groups_2_outlined,
-                  color: KedaYaTokens.colorInk,
-                ),
+                child: Icon(icon, color: colors.brandStrong),
               ),
               const SizedBox(width: KedaYaTokens.space3),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      '拼单',
+                      title,
                       style: TextStyle(
                         fontSize: KedaYaTokens.fontSizeMd,
                         fontWeight: KedaYaTokens.fontWeightSemibold,
-                        color: KedaYaTokens.colorText,
+                        color: colors.text,
                       ),
                     ),
-                    SizedBox(height: KedaYaTokens.space1),
+                    const SizedBox(height: KedaYaTokens.space1),
                     Text(
-                      '列表 + 详情 + 参团，三态齐全；默认走内存 mock，无需后端',
+                      description,
                       style: TextStyle(
                         fontSize: KedaYaTokens.fontSizeSm,
-                        color: KedaYaTokens.colorTextMuted,
+                        color: colors.textMuted,
                         height: KedaYaTokens.lineHeightNormal,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: KedaYaTokens.colorTextMuted,
-              ),
+              Icon(Icons.chevron_right, size: 20, color: colors.textMuted),
             ],
           ),
         ),

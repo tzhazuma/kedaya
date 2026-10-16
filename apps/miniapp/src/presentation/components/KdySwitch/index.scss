@@ -1,0 +1,61 @@
+.kdy-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-3;
+  padding: $kdy-space-2 0;
+}
+
+.kdy-switch-row--disabled {
+  opacity: 0.5;
+}
+
+.kdy-switch-row__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: $kdy-space-1;
+}
+
+.kdy-switch-row__label {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  font-weight: 500;
+}
+
+.kdy-switch-row__desc {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.5;
+}
+
+.kdy-switch {
+  position: relative;
+  box-sizing: border-box;
+  flex: none;
+  width: 88px;
+  height: 48px;
+  padding: 4px;
+  background-color: $kdy-color-surface-alt;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-pill;
+  transition: background-color 0.2s ease;
+}
+
+.kdy-switch--on {
+  background-color: $kdy-color-brand;
+  border-color: $kdy-color-brand-strong;
+}
+
+.kdy-switch__knob {
+  width: 38px;
+  height: 38px;
+  background-color: $kdy-color-surface;
+  border-radius: $kdy-radius-pill;
+  box-shadow: $kdy-shadow-sm;
+  transition: transform 0.2s ease;
+}
+
+.kdy-switch--on .kdy-switch__knob {
+  transform: translateX(40px);
+}

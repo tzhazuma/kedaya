@@ -1,0 +1,42 @@
+.kdy-accordion {
+  border-bottom: 1px solid $kdy-color-border;
+}
+
+.kdy-accordion:last-child {
+  border-bottom-width: 0;
+}
+
+.kdy-accordion__head {
+  display: flex;
+  align-items: flex-start;
+  gap: $kdy-space-2;
+  padding: $kdy-space-3 0;
+}
+
+.kdy-accordion__arrow {
+  flex: none;
+  color: $kdy-color-brand-strong;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-accordion__title {
+  flex: 1;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.kdy-accordion__meta {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: $kdy-space-1;
+}
+
+.kdy-accordion__body {
+  padding: 0 $kdy-space-1 $kdy-space-3;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.6;
+}

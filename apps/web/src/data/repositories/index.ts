@@ -7,6 +7,8 @@
 import { API_BASE_PATH } from '@kedaya/contracts';
 
 import type { AuditLogRepository, ModuleSwitchRepository } from '@/domain/ports/audit';
+import type { FaqRepository } from '@/domain/ports/faq';
+import type { ForumRepository } from '@/domain/ports/forum';
 import type { GroupBuyRepository } from '@/domain/ports/groupbuy';
 
 import { createApiClient, type ApiClient } from '../api/client';
@@ -14,11 +16,15 @@ import {
   createMockAdminRepositories,
   type MockAdminRepositories,
 } from '../mock/admin.repository';
+import { createMockFaqRepository, type MockFaqRepository } from '../mock/faq.repository';
+import { createMockForumRepository, type MockForumRepository } from '../mock/forum.repository';
 import {
   createMockGroupBuyRepository,
   type MockGroupBuyRepository,
 } from '../mock/groupbuy.repository';
 import { createAuditLogHttpRepository, createModuleSwitchHttpRepository } from './admin.http';
+import { createFaqHttpRepository } from './faq.http';
+import { createForumHttpRepository } from './forum.http';
 import { createGroupBuyHttpRepository } from './groupbuy.http';
 
 export type RepositoryMode = 'mock' | 'http';
@@ -26,6 +32,8 @@ export type RepositoryMode = 'mock' | 'http';
 export interface RepositoryBundle {
   mode: RepositoryMode;
   groupbuy: GroupBuyRepository;
+  forum: ForumRepository;
+  faq: FaqRepository;
   auditLog: AuditLogRepository;
   moduleSwitches: ModuleSwitchRepository;
 }
@@ -44,6 +52,8 @@ export function createRepositories(mode: RepositoryMode = repositoryMode()): Rep
     return {
       mode,
       groupbuy: createGroupBuyHttpRepository(client),
+      forum: createForumHttpRepository(client),
+      faq: createFaqHttpRepository(client),
       auditLog: createAuditLogHttpRepository(client),
       moduleSwitches: createModuleSwitchHttpRepository(client),
     };
@@ -53,6 +63,8 @@ export function createRepositories(mode: RepositoryMode = repositoryMode()): Rep
   return {
     mode,
     groupbuy: createMockGroupBuyRepository(),
+    forum: createMockForumRepository(),
+    faq: createMockFaqRepository(),
     auditLog: admin.auditLog,
     moduleSwitches: admin.moduleSwitches,
   };
@@ -73,6 +85,18 @@ export function getRepositories(): RepositoryBundle {
 export function getMockGroupBuyRepository(): MockGroupBuyRepository | undefined {
   const current = getRepositories();
   return current.mode === 'mock' ? (current.groupbuy as MockGroupBuyRepository) : undefined;
+}
+
+/** 拿到 mock 论坛仓储（用于故障演练开关 / 测试） */
+export function getMockForumRepository(): MockForumRepository | undefined {
+  const current = getRepositories();
+  return current.mode === 'mock' ? (current.forum as MockForumRepository) : undefined;
+}
+
+/** 拿到 mock FAQ 仓储（用于故障演练开关 / 测试） */
+export function getMockFaqRepository(): MockFaqRepository | undefined {
+  const current = getRepositories();
+  return current.mode === 'mock' ? (current.faq as MockFaqRepository) : undefined;
 }
 
 /** 测试/热重载用：丢弃单例 */

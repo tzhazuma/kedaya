@@ -1,0 +1,40 @@
+.kdy-field {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+  padding: $kdy-space-2 0;
+}
+
+.kdy-field__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kdy-field__label {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: 500;
+}
+
+.kdy-field__hint {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-field__control {
+  box-sizing: border-box;
+  padding: $kdy-space-2 $kdy-space-3;
+  background-color: $kdy-color-surface;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-field--error .kdy-field__control {
+  border-color: $kdy-color-danger;
+}
+
+.kdy-field__error {
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}

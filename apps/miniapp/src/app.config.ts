@@ -21,6 +21,12 @@ export default {
     'presentation/pages/profile/index',
     'presentation/pages/groupbuy/list/index',
     'presentation/pages/groupbuy/detail/index',
+    'presentation/pages/forum/list/index',
+    'presentation/pages/forum/detail/index',
+    'presentation/pages/forum/create/index',
+    'presentation/pages/forum/report/index',
+    'presentation/pages/faq/index/index',
+    'presentation/pages/faq/tickets/index',
   ],
   window: {
     backgroundTextStyle: 'light',

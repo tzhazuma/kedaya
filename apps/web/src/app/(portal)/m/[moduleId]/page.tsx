@@ -15,7 +15,7 @@ interface ModulePageProps {
   params: Promise<{ moduleId: string }>;
 }
 
-/** 让所有 19 个模块都有可达页面（而非 404），并如实标注"尚未实现"。 */
+/** 让所有 20 个模块都有可达页面（而非 404），并如实标注"尚未实现"。 */
 export function generateStaticParams() {
   return PORTAL_MODULES.map((mod) => ({ moduleId: mod.id }));
 }

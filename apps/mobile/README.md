@@ -11,8 +11,9 @@ iOS / Android / **鸿蒙** 三端原生客户端骨架。包名 `kedaya`，Dart 
 
 | 项 | 状态 |
 | --- | --- |
-| 代码 | 已写完（六边形分层 + 拼单垂直切片 + 亮/暗主题 + 11 个单元测试） |
+| 代码 | 已写完（六边形分层 + 拼单/论坛/常见问题三个垂直切片 + 亮/暗主题 + 19 个测试文件 / 208 个用例） |
 | **本机编译验证** | ❌ **未验证** —— 开发机上**没有安装 Flutter SDK**（`flutter` / `dart` 命令都不存在），因此 `flutter pub get` / `flutter analyze` / `flutter test` **一次都没有跑过** |
+| 静态自检（替代验证） | ✅ **已实际执行**：`/opt/homebrew/bin/python3 tool/selfcheck.py` —— 10 项文本检查全部通过（131 个 Dart 文件，0 处违规），见 §6.5 |
 | 依赖版本解析 | ❌ 未验证（`pubspec.yaml` 的版本区间是按 TechPie 的可用组合与 pub.dev 常见版本手写的，`pub get` 可能要求微调） |
 | 静态分析 | ❌ 未验证（`analysis_options.yaml` 打开了 `strict-casts` / `strict-inference` / `strict-raw-types`，代码按这些规则手写，但仍需 `flutter analyze` 复核） |
 | 运行时行为 | ❌ 未验证（未在真机/模拟器上启动过） |
@@ -91,8 +92,12 @@ apps/mobile/
 │   │   ├── pages/ components/ theme/
 │   └── features/                     # 每个 feature 一个目录（见 lib/features/README.md）
 │       ├── README.md
-│       └── groupbuy/                 #   ✅ 已跑通的垂直切片
-└── test/                             # 11 个单元测试
+│       ├── groupbuy/                 #   ✅ 已跑通的垂直切片（拼单）
+│       ├── forum/                    #   ✅ 论坛（含匿名开关 + 举报）
+│       └── faq/                      #   ✅ 常见问题（含幂等「有用」+ 我的工单）
+├── tool/
+│   └── selfcheck.py                  # 替代验证：本机无 Flutter SDK，用静态自检覆盖能查的部分
+└── test/                             # 19 个测试文件
     ├── domain/  data/  application/  presentation/
 ```
 
@@ -176,6 +181,25 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
   16 个键都与亮色不同、以及 `KedaYaTokens.darkColors` 的键集合与 Dart 字段清单一致
   （生成器新增暗色令牌时会失败，逼着客户端同步补字段）。
 
+### 3.5 匿名（契约 §9）与幂等（`faq`）
+
+两条要求各自落在**类型**与**幂等键**上，而不是靠 UI 记得处理：
+
+- **匿名**：`ForumAuthor` 是 sealed 类型，实名 (`RealAuthor`) 与匿名
+  (`AnonymousAuthor(AnonymousIdentity)`) 是**两个不同的类型**；后者**没有** `userId`
+  字段，`realUserIdOrNull` 恒为 `null`。因此"匿名帖里混进实名 id"在编译期就不可能，
+  解析时即使 payload 带了 `authorId` 也会被丢弃。边界由
+  `test/domain/forum_anonymity_boundary_test.dart` 机械校验。
+- **幂等**：`FaqVoter` 给出稳定幂等键（已登录 `u:<userId>` / 未登录 `d:<deviceId>`，
+  设备 id 落 `LocalCachePort`），mock 与远端都按 `voterId` 去重，重复点击返回
+  `counted: false`（**不是失败**）；UI 再叠一层"已标记有用"的禁用态。
+  详见 `lib/features/faq/README.md`。
+
+### 3.6 论坛 / FAQ 的端口与用例
+
+见各自的 feature README：`lib/features/forum/README.md`、`lib/features/faq/README.md`
+（含 ports ↔ HTTP 对照、用例清单、治理规则实现情况、未实现项）。
+
 ---
 
 ## 4. 已实现 / 未实现
@@ -186,25 +210,33 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | --- | --- |
 | 契约 §8 启动时序 | `lib/app/bootstrap.dart` + `lib/main.dart` |
 | 六边形分层骨架（目录名严格按 §7） | `lib/{app,application,domain,data,platform,presentation}/` |
-| 11 个 domain port | `lib/domain/ports/`：`AuthPort`、`CampusSessionPort`、`KedayaApiPort`、`CredentialStorePort`、`LocalCachePort`、`ConsentPort`、`ThemeModePort`、`GroupbuyPort`、`ErrandPort`、`LostFoundPort`、`WellbeingPort` + `platform_ports.dart` |
+| 13 个 domain port | `lib/domain/ports/`：`AuthPort`、`CampusSessionPort`、`KedayaApiPort`、`CredentialStorePort`、`LocalCachePort`、`ConsentPort`、`ThemeModePort`、`GroupbuyPort`、`ForumPort`、`FaqPort`、`ErrandPort`、`LostFoundPort`、`WellbeingPort` + `platform_ports.dart` |
 | 19 个模块注册表（镜像 `packages/contracts`） | `lib/domain/models/kedaya_module.dart` |
 | 金额整数分（镜像 `packages/shared/money.ts`） | `lib/domain/models/money.dart` |
 | 统一信封 + Dio 装配（Bearer / Trace / 401 刷新重试） | `lib/data/api/{api_envelope,dio_client,kedaya_api_client}.dart` |
-| 远端 repositories（auth / campus / consent / groupbuy / errand / lost-found / wellbeing） | `lib/data/repositories/` |
-| 内存 mock 适配器（含延迟与故障注入） | `lib/data/mock/` |
+| 远端 repositories（auth / campus / consent / groupbuy / **forum** / **faq** / errand / lost-found / wellbeing） | `lib/data/repositories/` |
+| 内存 mock 适配器（含延迟与故障注入、举报治理规则、**幂等投票**） | `lib/data/mock/` |
 | **亮 / 暗主题**（从设计令牌派生，契约 §11.5） | `lib/presentation/theme/` |
 | **主题模式**：跟随系统 / 浅色 / 深色，可切换 + 持久化 + 冷启动同步读回 | `lib/application/theme_controller.dart`、`lib/data/storage/cache_theme_mode_store.dart`、`lib/presentation/pages/profile_page.dart` |
 | **拼单垂直切片**：列表 + 详情 + loading/error/empty 三态 + 参团 | `lib/features/groupbuy/` |
+| **论坛切片**：版块筛选 + 主题列表（游标分页 + 下拉刷新 + 触底加载）+ 主题详情 + 回复列表/输入 + 发帖（**匿名开关**）+ 举报 + 分享 | `lib/features/forum/` |
+| **常见问题切片**：分类导航 + 搜索（防抖）+ 手风琴展开 + **幂等「有用」** + 我的工单 | `lib/features/faq/` |
+| **匿名身份与实名身份在模型层解耦**（契约 §9）：`ForumAuthor` sealed 类型 + `AnonymousIdentity` | `lib/domain/models/{forum,anonymous_identity}.dart` |
 | 底部导航 + 每个模块的路由段 | `lib/app/app_router.dart`、`lib/presentation/pages/module_detail_page.dart` |
 | 二次同意门（`wellbeing`/`dorm-harmony`/`ai-portrait`） | `lib/application/consent_controller.dart` |
-| 11 个单元测试 | `test/`（见第 5 节） |
+| 19 个测试文件 | `test/`（见第 5 节） |
+| 静态自检脚本（本机替代验证） | `tool/selfcheck.py`（见第 6.5 节） |
 
 ### ❌ 未实现（如实列出，没有用 TODO 占位函数冒充）
 
 | 项 | 说明 |
 | --- | --- |
 | 原生工程目录 | `android/` `ios/` `ohos/` 未生成（用 `flutter create` 生成，见 §1） |
-| 除 `groupbuy` 外的 18 个模块页面 | 只有 `/module/:id` 落地页展示注册表信息并**明说"尚未实现"**；没有假数据、没有假成功 |
+| 除 `groupbuy` / `forum` / `faq` 外的 16 个模块页面 | 只有 `/module/:id` 落地页展示注册表信息并**明说"尚未实现"**；没有假数据、没有假成功 |
+| 论坛的版主治理界面 | 数据层已实现"3 个不同用户举报 → 自动隐藏"与 `LOCKED` 拒答，但**没有**版主 moderation / Lock / Hide 的 UI |
+| 发帖/回复频率限制、敏感词拦截 | ❌ 未实现（属于服务端限流与内容审核；客户端只做长度校验） |
+| FAQ 工单追问 / 关闭 | `FaqTicketStatus.canFollowUp` 已在模型里就绪，但没有 UI |
+| Markdown 渲染 | 论坛正文与 FAQ 答案按**纯文本**展示（契约里的 "Markdown 子集" 未渲染） |
 | 校园系统绑定的 UI | `CampusSessionPort` 与 `CampusBindingsController` 已实现并可用（profile 页展示状态），但没有"输入凭据绑定"的对话框页面 |
 | 统一身份认证的原生侧 | `MethodChannelUnifiedIdentity` 已定义 channel 契约（`kedaya/unified_identity`），**原生侧实现未写**；mock 运行时用 `DevUnifiedIdentity` |
 | 本地化（i18n） | 未接 `flutter_localizations`（会与 `intl` 版本绑定冲突）；UI 文案直接写中文 |
@@ -223,7 +255,10 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 
 ---
 
-## 5. 测试（11 个文件，共 60+ 个用例）
+## 5. 测试（19 个文件，共 208 个用例；其中本次新增 8 个文件 / 130 个用例）
+
+> ⚠️ **全部用例都没有在本机执行过**（没有 Flutter SDK）。下面是"每个文件测什么"的清单，
+> 不是"测试通过"的证据。
 
 | 文件 | 覆盖 |
 | --- | --- |
@@ -232,12 +267,23 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | `test/domain/result_and_api_error_test.dart` | `Result` 的 Ok/Err/map/flatMap/unwrap、错误码 wire 往返、未知码收敛 |
 | `test/domain/auth_session_boundary_test.dart` | **契约 §5 边界机械校验**：序列化键名不含校园凭据；未知校园系统抛错 |
 | `test/domain/groupbuy_order_test.dart` | 模型解析/序列化、未知状态收敛、进度收敛、查询参数收敛 |
+| **`test/domain/forum_post_test.dart`** | 论坛模型解析/序列化、状态收敛（未知→不可回复）、`LOCKED` 语义、草稿校验、标签解析、**匿名开关语义**（请求体不含实名标识） |
+| **`test/domain/forum_anonymity_boundary_test.dart`** | **契约 §9 机械校验**：`AnonymousAuthor` 无实名出口、payload 混入 `authorId` 也被丢弃、匿名帖子/回复/举报的序列化键名不含实名片段 |
+| **`test/domain/faq_article_test.dart`** | 文章/工单解析、搜索纯逻辑、状态机辅助、**联系方式拒绝手机号**、长度校验、`counted` 语义 |
+| **`test/domain/faq_voter_test.dart`** | 幂等键稳定性、`u:`/`d:` 前缀不混淆、未知 key 保守收敛、设备票 ≠ 用户票 |
 | `test/data/api_envelope_test.dart` | 信封成功/失败解包、非 JSON 容错、decode 不被误调用、路径收敛 |
 | `test/data/mock_groupbuy_repository_test.dart` | mock 游标分页、参团累加与锁定、冲突/404/校验、故障与空结果开关 |
+| **`test/data/mock_forum_repository_test.dart`** | 分页/版块筛选/关键词、`HIDDEN` 不可见、置顶排序、**匿名身份稳定且跨人跨版块不同**、`LOCKED` 拒答、**举报去重 + 3 人自动隐藏**、故障/空结果 |
+| **`test/data/mock_faq_repository_test.dart`** | 分类、`DRAFT` 不可见、分类/关键词检索、**「有用」幂等（同一 voter 只计一次）**、工单归属与分页、提交校验（拒绝手机号）、故障/空结果 |
 | `test/data/theme_mode_store_test.dart` | 主题模式落盘与同步 hydrate、损坏/未知值回落、`changes` 广播 |
 | `test/application/groupbuy_list_controller_test.dart` | **三态**：loading→data / empty / error；翻页失败保留列表；写操作后失效读 provider |
+| **`test/application/forum_controller_test.dart`** | **三态**、版块筛选（首次生效 + 切换重载）、翻页失败保留列表、回复后失效重取、发帖后列表含新帖、举报去重抛 `CONFLICT` |
+| **`test/application/faq_controller_test.dart`** | **三态**、分类/搜索筛选、筛选重载、**幂等端到端（走 provider）**、局部覆盖、工单提交与失效重取 |
 | `test/application/theme_controller_test.dart` | 初值来自同步 hydrate、setMode 落盘并推给订阅者、外部写入同步到状态 |
 | `test/presentation/kedaya_theme_test.dart` | **亮暗字段集合一致**、`darkColors` 键集合交叉校验、16 键都与亮色不同、`resolveColor` 亮/暗/未知分支、`light()`/`dark()` 的 ThemeData 装配、`themeModeOf` 映射 |
+
+新增的 8 个文件（加粗）对应本次交付的 `forum` / `faq`：**domain 纯逻辑 4 个 +
+mock repository 行为 2 个 + application 三态/幂等 2 个**。
 
 ---
 
@@ -256,10 +302,13 @@ flutter pub get
 # 2) 静态分析（必须 0 error；strict-* 三个开关已打开）
 flutter analyze
 
-# 3) 单元测试（11 个文件应全绿）
+# 3) 单元测试（19 个文件应全绿）
 flutter test
 flutter test test/domain/auth_session_boundary_test.dart   # 单跑契约 §5 边界测试
+flutter test test/domain/forum_anonymity_boundary_test.dart # 单跑契约 §9 匿名边界测试
 flutter test test/presentation/kedaya_theme_test.dart      # 单跑契约 §11.5 暗色守门测试
+flutter test test/application/forum_controller_test.dart   # 单跑论坛三态/筛选
+flutter test test/application/faq_controller_test.dart     # 单跑 FAQ 三态/幂等
 
 # 4) 格式化检查（代码按 dart format 风格手写，未在本机跑过）
 dart format --output=none --set-exit-if-changed lib test
@@ -271,6 +320,27 @@ flutter run
 flutter run --dart-define=KEDAYA_FLAVOR=dev --dart-define=KEDAYA_API_BASE_URL=<dev-host>
 ```
 
+### 6.5 本机替代验证（**已实际执行**）
+
+本机没有 Flutter SDK，所以用一个纯 Python 的静态自检覆盖能查的部分：
+
+```bash
+cd apps/mobile
+/opt/homebrew/bin/python3 tool/selfcheck.py            # 10 项检查，退出码 0 = 全通过
+/opt/homebrew/bin/python3 tool/selfcheck.py --verbose
+```
+
+它检查：① import 可解析（相对路径 + `package:kedaya/…` 都要落到真实文件）；
+② 括号/花括号平衡（忽略字符串与注释）；③ `directives_ordering`
+（dart: → package: → 相对，组内字母序）；④ 未使用的 `dart:` import；
+⑤ **未使用的 import（启发式，含第三方包）**；⑥ **`const` 构造里出现运行期表达式**
+（手写 Dart 最常见的编译错误：把 const 令牌换成 `context.kedayaColors.*` 后忘了去 `const`）；
+⑦ TODO/FIXME 占位；⑧ 硬编码 `Color(0x…)`；⑨ domain 层是否 import 框架；
+⑩ application 层是否把 `Ref` 当字段持有。
+
+**它替代不了 `flutter analyze` / `flutter test`** —— 类型错误、API 版本不匹配、
+运行时行为都不在它的覆盖范围内。见 §8。
+
 手测要点：
 
 1. 首页 → 「拼单」→ 列表应出 5 条 mock 数据（loading 态可见约 250ms）。
@@ -280,6 +350,25 @@ flutter run --dart-define=KEDAYA_FLAVOR=dev --dart-define=KEDAYA_API_BASE_URL=<d
 5. 「我的 → 外观」切 跟随系统 / 浅色 / 深色：应立即整体变色（背景、卡片、导航栏、
    按钮、文字）；**杀掉进程重进应记住选择，且首帧就是该模式**（不闪一下再切）。
 6. 系统切换到深色（若选"跟随系统"）应自动跟随。
+7. 首页 → 「论坛」→ 列表应出 **6** 条（第 7 条 `HIDDEN` 不应出现）；版块 chip 切到
+   「学习交流」应只剩 2 条；滚到底部应自动加载下一页（列表页 footer 也会显示"没有更多了"）。
+8. 论坛 → ✏️ 发帖：填标题+正文 → 打开**匿名开关** → 按钮文案变成「匿名发布」，
+   开关下方应显示「匿名后你的实名身份不会与帖子关联」；发布后回到列表，
+   新帖应带「匿名」徽标，作者名是 `匿名鸭 #N`（**不是**当前账号名）。
+9. 论坛 → 进 `fp-1005`（已锁定）→ 底部应显示"暂不能回复"而不是输入框；
+   进 `fp-1002` 回复一条 → 回复数 +1。
+10. 论坛 → 详情右上角 🚩 → 选理由 → 提交 → 提示"举报已提交"；**再举报同一条**应提示
+    "你已经举报过这条内容了"（去重）。详情右上角 🔗 分享 → 剪贴板应拿到含标题的链接。
+11. 论坛 → 🧪 菜单切空列表/上游故障，验证 empty 与 error 三态；详情页 URL 改成
+    `/forum/fp-nope` 应显示**空态**。
+12. 首页 → 「常见问题」→ 7 篇（第 8 篇 `DRAFT` 不应出现）；点分类 chip 切「账号与登录」
+    → 3 篇；搜索框输入「匿名」（约 300ms 后）→ 只剩 1 篇。
+13. 展开任一条 → 点「有用」→ 计数 +1 且按钮变「已标记有用」并禁用；
+    **重复点击无法再触发**（这是 UI 层幂等）；杀掉进程重进，同一条应仍是"已标记"状态
+    （设备/用户 id 已落盘）。
+14. 常见问题 → 🎫「我的工单」→ 3 条（待回复 / 已回复 / 已关闭）；点 ➕ 提交工单：
+    联系方式填 `13800138000` 应被拒绝并提示不要填手机号，改成邮箱后可提交。
+15. 暗色主题下重复 7–14 步：所有卡片/标签/chip/输入框都应是暗色系（无白底黑字残留）。
 
 ---
 
@@ -313,4 +402,58 @@ flutter run --dart-define=KEDAYA_FLAVOR=dev --dart-define=KEDAYA_API_BASE_URL=<d
    后同步 `KedaYaColors.tokenKeys` 与 `toMap()`。
 7. `freezed` / `json_serializable` 目前是**未被使用**的依赖（见 §3.3），
    `flutter pub get` 不会报错，但如需精简可以删掉这 5 行。
-8. 全部 60+ 个测试用例都**没有在本机执行过**。
+8. 全部 208 个测试用例都**没有在本机执行过**。
+
+### 8.1 `forum` / `faq` 新增的风险点（需要 `flutter analyze` 复核）
+
+9. **`FamilyAsyncNotifier`**：`forumRepliesProvider` 用的是
+   `AsyncNotifierProvider.family<ForumReplyListController, ForumReplyListState, String>`
+   + `class ... extends FamilyAsyncNotifier<State, Arg>`，并按 riverpod **2.6.x** 的
+   `build(Arg arg)` / `arg` 语义书写。若解析到 3.x，这一处需要改写成新的 family 语法
+   （这是本次交付里**唯一**新增的 Riverpod API 面）。
+10. **`ChoiceChip` / `ExpansionTile` / `showModalBottomSheet`**：均按 Flutter 3.27 的
+    API 书写（`showCheckmark`、`expandedCrossAxisAlignment`、
+    `MediaQuery.viewInsetsOf`）。`MediaQuery.viewInsetsOf` 需要 Flutter 3.10+。
+11. **`Switch` 的默认样式**：论坛回复框/发帖页/举报弹层直接用了 `Switch` 与
+    `SwitchListTile`，没有自定义颜色 —— 它们的颜色来自 `ColorScheme`（`KedaYaTheme`
+    已按亮/暗注入），因此暗色下应当正常；若实测有偏差，请在 `KedaYaTheme._build` 里
+    补 `switchTheme`，**不要**在页面里写色值。
+12. **测试里的时序假设**：`forum_controller_test.dart` / `faq_controller_test.dart`
+    有两处依赖"依赖失效后的重建已完成"，用了一个轮询到非 loading 的 `settle()` 辅助函数
+    （最多 50 次 `await Future.delayed(Duration.zero)`）。这是本机无法验证的部分里
+    **最可能先失败**的一处；若失败，请先确认是时序问题而不是逻辑问题。
+13. **契约缺口（已上报，未擅自修改）**：`forum.reply`、`forum.helpful`（`faq.helpful`）、
+    `forum/boards`、`faq/categories` 未登记在契约 §11.2 / §6.1。本端按统一形状调用，
+    需要 Lead 补进 §11.2 与 OpenAPI（契约 §11.2 明确要求两处同时改）。
+14. **占位域名**：论坛分享链接基址 `forumShareBaseUrl = 'https://kedaya.local/forum'`
+    （`lib/features/forum/presentation/pages/forum_post_detail_page.dart`）与
+    `AppEnvironment.prodBaseUrl` 是同一类占位，上线前必须替换。
+15. **mock 的 `currentUserId` 是可变字段**：`MockForumRepository.currentUserId` 默认
+    `mockUser.userId`，只为了在测试里模拟"不同用户举报"。真实实现里这个值来自 JWT，
+    客户端不可自选 —— 别把这个字段当成可配置项接到 UI 上。
+
+### 8.2 与 `services/api` 的跨端一致性（交付时实测，**只读**了 API 代码）
+
+16. **已按"两端都能用"对齐的差异**（详见两个 feature README 的对照表）：
+    版块字段 `board`/`boardId`、列表参数 `board`/`q`、状态大小写
+    （后端主题/回复状态是**小写**，举报状态是**大写**）、举报理由
+    （文档 `privacy` vs 后端规范值 `pii`）、举报补充说明 `detail`/`note`、
+    回复路径 `items/:id/replies`、helpful 响应只回 `{id, helpfulCount, counted}`、
+    匿名在后端表现为 `authorId: null` 且**不下发** `anonymousIdentity`。
+    本端一律**双向兼容**（发规范值、解析两种），因此不会因字段名/大小写差异崩解析。
+17. **`GET /faq/categories` 后端不存在** → 真实后端下 FAQ 分类条会显示
+    「分类加载失败 + 重试」，文章列表不受影响；mock 运行时正常。
+18. **`POST /faq/items/:id/helpful` 需要登录** → 未登录的"设备票"只在 mock 下成立。
+19. **🔒 隐私发现（已上报 Lead，本端只读未改）**：`services/api` 的
+    `ForumPostModel.anonHandle` / `ForumReportModel.reporterKey` 会随响应下发
+    （`PrismaCursorRepository.toModel` 是恒等透传，
+    `services/api/src/common/crud/prisma-cursor.repository.ts:37`）。
+    这会让任何客户端把同一匿名作者的所有帖子关联起来，与
+    `02-domain-model.md` §2.4「对普通用户不可见」冲突。
+    本端 `domain` 模型**不含**这两个字段，并有测试断言 `toJson()` 不出现 `anonHandle`。
+    建议后端序列化前剔除。
+20. **后端不下发作者展示名**（`ForumPostModel` 只有 `authorId`）→ 真实后端下
+    实名作者会显示成 ULID。本端不做"编造昵称"的兜底，请在 `profile`/后端补展示名。
+21. **契约 §11.2 未登记的 action**：`forum.reply`（后端用子资源 `replies`）、
+    `faq.helpful`；以及未冻结的只读子资源 `forum/boards`、`faq/categories`。
+    本端按后端实际路径调用并上报，**没有**改 `docs/` 与 `packages/`（Lead 独占）。

@@ -14,6 +14,18 @@ export const StorageKeys = {
   groupBuyListCache: `${STORAGE_PREFIX}cache:groupbuy:list`,
   /** 拼单详情缓存 */
   groupBuyDetailCache: `${STORAGE_PREFIX}cache:groupbuy:detail`,
+  /** 论坛版块缓存 */
+  forumBoardListCache: `${STORAGE_PREFIX}cache:forum:boards`,
+  /** 论坛主题列表缓存 */
+  forumPostListCache: `${STORAGE_PREFIX}cache:forum:posts`,
+  /** 论坛主题详情缓存（按 id 分片） */
+  forumPostDetailCache: `${STORAGE_PREFIX}cache:forum:post`,
+  /** FAQ 问答列表缓存 */
+  faqArticleListCache: `${STORAGE_PREFIX}cache:faq:articles`,
+  /** FAQ「有用」投票记录（幂等的本地依据，与列表缓存分开存） */
+  faqHelpfulVotes: `${STORAGE_PREFIX}faq:helpful-votes`,
+  /** FAQ 我的工单缓存 */
+  faqTicketListCache: `${STORAGE_PREFIX}cache:faq:tickets`,
   /** 敏感模块二次同意记录（契约 §9） */
   consent: `${STORAGE_PREFIX}consent`,
 } as const

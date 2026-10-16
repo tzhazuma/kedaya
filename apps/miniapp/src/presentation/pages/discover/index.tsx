@@ -118,7 +118,7 @@ export default function DiscoverPage() {
 
       <KdyCard title='拼单垂直切片' elevated={false}>
         <Text className='kdy-discover__hint'>
-          当前唯一跑通的业务模块，含列表 / 详情 / 参团，默认走 mock 数据。
+          已跑通的业务模块之一，含列表 / 详情 / 参团，默认走 mock 数据。
         </Text>
         <View className='kdy-discover__actions'>
           <KdyButton
@@ -130,6 +130,47 @@ export default function DiscoverPage() {
             }}
           >
             进入拼单列表
+          </KdyButton>
+        </View>
+      </KdyCard>
+
+      <KdyCard title='论坛与常见问题' elevated={false}>
+        <Text className='kdy-discover__hint'>
+          论坛：版块 / 主题 / 回复 / 匿名发帖 / 举报，支持下拉刷新与触底加载。
+          FAQ：分类 / 搜索 / 手风琴 / 「有用」（幂等）/ 我的工单。默认走 mock 数据。
+        </Text>
+        <View className='kdy-discover__actions'>
+          <KdyButton
+            size='sm'
+            onClick={() => {
+              void navigateTo(PAGE_PATHS.forumList).then((result) => {
+                if (!result.ok) toast(result.error.message)
+              })
+            }}
+          >
+            进入论坛
+          </KdyButton>
+          <KdyButton
+            size='sm'
+            variant='ghost'
+            onClick={() => {
+              void navigateTo(PAGE_PATHS.faq).then((result) => {
+                if (!result.ok) toast(result.error.message)
+              })
+            }}
+          >
+            进入常见问题
+          </KdyButton>
+          <KdyButton
+            size='sm'
+            variant='ghost'
+            onClick={() => {
+              void navigateTo(PAGE_PATHS.faqTickets).then((result) => {
+                if (!result.ok) toast(result.error.message)
+              })
+            }}
+          >
+            我的工单
           </KdyButton>
         </View>
       </KdyCard>

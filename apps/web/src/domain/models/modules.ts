@@ -1,7 +1,7 @@
 /**
  * 门户模块注册表 —— 首页宫格的**唯一数据源**。
  *
- * 契约 §4：19 个模块（5 基础 + 14 业务）由 `@kedaya/contracts` 的 `MODULES` 冻结。
+ * 契约 §4 + §11.10-C：**20** 个模块（5 基础 + 15 业务）由 `@kedaya/contracts` 的 `MODULES` 冻结。
  * 本文件只补 UI 装饰，**不复制、不改写**契约内容。
  *
  * 依赖方向：domain → @kedaya/contracts（纯类型/常量包，零框架）。
@@ -44,9 +44,11 @@ const DECORATION: Readonly<Record<string, ModuleDecoration>> = {
   faq: { icon: 'circle-help', accent: 'neutral' },
   techpie: { icon: 'plug', accent: 'info' },
   wildlife: { icon: 'bird', accent: 'success' },
+  // 第 20 个模块（契约 §11.10-C 裁决 v1.2）：场馆预约，medium 敏感、无同意门
+  facility: { icon: 'dumbbell', accent: 'success' },
 };
 
-/** 19 个模块，顺序 = 契约顺序（基础在前，业务在后） */
+/** 20 个模块，顺序 = 契约顺序（基础在前，业务在后） */
 export const PORTAL_MODULES: readonly PortalModule[] = MODULES.map((m) =>
   decorateModule(m, DECORATION[m.id]),
 );
@@ -60,7 +62,7 @@ export const CONSENT_GATED_MODULES: readonly PortalModule[] = consentGatedModule
 /** 需要审计的模块（high + critical；注意 auth / campus-card 在列但**无同意门**） */
 export const AUDITED_MODULES: readonly PortalModule[] = auditedModules(PORTAL_MODULES);
 
-/** 模块总数 —— 与契约 §4 对齐（5 + 14 = 19） */
+/** 模块总数 —— 与契约对齐（5 基础 + 15 业务 = 20，含 §11.10-C 新增的 facility） */
 export const PORTAL_MODULE_COUNT = PORTAL_MODULES.length;
 
 /** 契约原始条目（测试用，避免测试自己再 import 一次） */

@@ -46,14 +46,14 @@
   --kdy-font-size-xxl: 24px;
   --kdy-font-size-display: 32px;
   /* lineHeight */
-  --kdy-line-height-tight: 1.25px;
-  --kdy-line-height-normal: 1.5px;
-  --kdy-line-height-loose: 1.75px;
+  --kdy-line-height-tight: 1.25;
+  --kdy-line-height-normal: 1.5;
+  --kdy-line-height-loose: 1.75;
   /* fontWeight */
-  --kdy-font-weight-regular: 400px;
-  --kdy-font-weight-medium: 500px;
-  --kdy-font-weight-semibold: 600px;
-  --kdy-font-weight-bold: 700px;
+  --kdy-font-weight-regular: 400;
+  --kdy-font-weight-medium: 500;
+  --kdy-font-weight-semibold: 600;
+  --kdy-font-weight-bold: 700;
   /* shadow */
   --kdy-shadow-sm: 0 1px 2px rgba(27,36,54,0.06);
   --kdy-shadow-md: 0 4px 12px rgba(27,36,54,0.08);
@@ -62,12 +62,12 @@
   --kdy-font-family-sans: PingFang SC, Hiragino Sans GB, Microsoft YaHei, Noto Sans CJK SC, sans-serif;
   --kdy-font-family-mono: SFMono-Regular, Menlo, Consolas, monospace;
   /* zIndex */
-  --kdy-z-index-base: 0px;
-  --kdy-z-index-dropdown: 1000px;
-  --kdy-z-index-sticky: 1100px;
-  --kdy-z-index-overlay: 1200px;
-  --kdy-z-index-modal: 1300px;
-  --kdy-z-index-toast: 1400px;
+  --kdy-z-index-base: 0;
+  --kdy-z-index-dropdown: 1000;
+  --kdy-z-index-sticky: 1100;
+  --kdy-z-index-overlay: 1200;
+  --kdy-z-index-modal: 1300;
+  --kdy-z-index-toast: 1400;
 }
 
 /* colorDark —— 覆盖 color 的同名变量，消费方无需改动 */

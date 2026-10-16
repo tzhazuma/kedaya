@@ -13,9 +13,32 @@ export const PAGE_PATHS = {
   profile: '/presentation/pages/profile/index',
   groupBuyList: '/presentation/pages/groupbuy/list/index',
   groupBuyDetail: '/presentation/pages/groupbuy/detail/index',
+  forumList: '/presentation/pages/forum/list/index',
+  forumDetail: '/presentation/pages/forum/detail/index',
+  forumCreate: '/presentation/pages/forum/create/index',
+  forumReport: '/presentation/pages/forum/report/index',
+  faq: '/presentation/pages/faq/index/index',
+  faqTickets: '/presentation/pages/faq/tickets/index',
 } as const
 
 export type PagePath = (typeof PAGE_PATHS)[keyof typeof PAGE_PATHS]
+
+/**
+ * 模块 id（契约 §4）→ 已实现页面的映射。
+ *
+ * 首页宫格完全由 `@kedaya/contracts` 的 `MODULES` 驱动，**不允许**硬编码模块清单；
+ * 这里只声明「哪些模块在端上已经有真实页面」，其余模块点击后如实提示「未实现」。
+ * 新增垂直切片时只改这一张表，首页不用动。
+ */
+export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
+  groupbuy: PAGE_PATHS.groupBuyList,
+  forum: PAGE_PATHS.forumList,
+  faq: PAGE_PATHS.faq,
+}
+
+export function moduleEntryPath(moduleId: string): string | null {
+  return MODULE_ENTRY_PATHS[moduleId] ?? null
+}
 
 /** tabBar 上的四个主页面（必须与 app.config.ts 的 tabBar.list 完全一致） */
 export const TAB_BAR_PATHS: readonly string[] = [
@@ -32,6 +55,28 @@ export function isTabBarPath(path: string): boolean {
 
 export function groupBuyDetailPath(id: string): string {
   return `${PAGE_PATHS.groupBuyDetail}?id=${encodeURIComponent(id)}`
+}
+
+export function forumDetailPath(id: string): string {
+  return `${PAGE_PATHS.forumDetail}?id=${encodeURIComponent(id)}`
+}
+
+/** 发帖页；可选带上当前版块，进入后默认选中 */
+export function forumCreatePath(boardId?: string | null): string {
+  return boardId === undefined || boardId === null || boardId === ''
+    ? PAGE_PATHS.forumCreate
+    : `${PAGE_PATHS.forumCreate}?boardId=${encodeURIComponent(boardId)}`
+}
+
+export interface ForumReportParams {
+  targetType: 'POST' | 'REPLY'
+  targetId: string
+}
+
+export function forumReportPath(params: ForumReportParams): string {
+  return `${PAGE_PATHS.forumReport}?targetType=${encodeURIComponent(
+    params.targetType,
+  )}&targetId=${encodeURIComponent(params.targetId)}`
 }
 
 /** 从页面参数里安全取 id（`useRouter().params.id` 可能是 string | undefined） */

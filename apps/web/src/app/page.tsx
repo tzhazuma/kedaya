@@ -87,7 +87,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ---------------- 19 个模块宫格 ---------------- */}
+      {/* ---------------- 20 个模块宫格（契约 §4 + §11.10-C） ---------------- */}
       <section className="flex flex-col gap-4" aria-labelledby="modules-heading">
         <header className="flex flex-wrap items-end justify-between gap-2">
           <div>

@@ -340,36 +340,106 @@ model CanteenDish {
   @@index([caloriesKcal])
 }
 
-/// 论坛 · forum（中敏感，支持匿名）
+/// 论坛版块 · forum
+///
+/// `ForumPost.board` 存的是本表的 `slug`（不是 id）：
+/// 版块是**低频变更的目录数据**，用 slug 做业务键让帖子列表过滤
+/// 与前端路由可以共用同一个可读值。为了不破坏已有数据与 seed，
+/// 这里**刻意不加外键约束**，改由用例层校验版块存在（见 forum.service）。
+model ForumBoard {
+  id          String   @id @default(cuid())
+  /// 唯一业务键，由 `slugify` 生成（契约 §6.3 的 slugify）
+  slug        String   @unique
+  name        String
+  description String?
+  /// public | campus_only（campus_only 需登录，契约 §4 模块表）
+  visibility  String   @default("public")
+  /// 冗余计数（发帖时自增）
+  postCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([visibility])
+}
+
+/// 论坛主题 · forum（中敏感，支持匿名）
+///
+/// 匿名存储（契约 §9）：`anonymous=true` 时 `authorId` 恒为 `null`，
+/// 只存 `anonHandle`（= HMAC(secret, userId + '|' + 'thread:' + postId)）。
+/// 也就是说**实名身份根本不落库**，作者身份只能由本人携带 JWT 重算 handle 证明，
+/// 因此同一人在不同主题的 handle 天然不可关联（见 forum.domain.ts）。
 model ForumPost {
-  id         String   @id @default(cuid())
-  board      String
+  id         String    @id @default(cuid())
+  /// → ForumBoard.id（02-domain-model §2.4 的 boardId）
+  boardId    String
   authorId   String?
   anonHandle String?
   title      String
   body       String
-  status     String   @default("published")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  /// DRAFT | PUBLISHED | LOCKED | HIDDEN | DELETED（状态机见 forum.domain.ts）
+  status     String    @default("PUBLISHED")
+  /// ≤5 个，每个 ≤16 字（契约 02-domain-model §2.4）
+  tags       String[]  @default([])
+  /// 冗余计数，回复/删除回复时维护，供详情页直接返回
+  replyCount Int       @default(0)
+  likeCount  Int       @default(0)
+  pinnedAt   DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   replies ForumReply[]
 
-  @@index([board, status, createdAt])
+  @@index([boardId, status, createdAt])
   @@index([anonHandle])
+  @@index([status, createdAt])
 }
 
 /// 论坛回复
 model ForumReply {
-  id         String   @id @default(cuid())
-  postId     String
-  authorId   String?
-  anonHandle String?
-  body       String
-  createdAt  DateTime @default(now())
+  id            String   @id @default(cuid())
+  postId        String
+  /// 二级回复（指向同表 id）；无外键，理由同 ForumPost.board
+  parentReplyId String?
+  authorId      String?
+  anonHandle    String?
+  body          String
+  /// PUBLISHED | HIDDEN | DELETED
+  status        String   @default("PUBLISHED")
+  likeCount     Int      @default(0)
+  createdAt     DateTime @default(now())
 
   post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId, createdAt])
+  @@index([postId, status])
+  @@index([parentReplyId])
+}
+
+/// 论坛举报 · forum
+///
+/// 匿名可用：匿名举报人只留 `reporterKey`（HMAC handle），`reporterId` 为 null。
+/// `reporterKey` 同时是**去重键**：同一人对同一条内容的重复举报只会有一行，
+/// 这样「3 个不同用户举报自动隐藏」的阈值统计不会被同一个人刷出来。
+model ForumReport {
+  id         String   @id @default(cuid())
+  /// POST | REPLY
+  targetType String
+  targetId   String
+  /// spam | abuse | pii | illegal | other（pii 的旧写法 privacy 会被归一化）
+  reason     String
+  detail     String?
+  /// PENDING | UPHELD | DISMISSED
+  status     String   @default("PENDING")
+  /// 实名举报人；匿名举报时为 null（与 reporterKey 解耦）
+  reporterId String?
+  /// 去重/计数键：`user:<id>` 或 `anon:<handle>`，绝不等于实名 id
+  reporterKey String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([targetType, targetId, reporterKey])
+  @@index([targetId, status])
+  @@index([status, createdAt])
 }
 
 /// AI 校园画像 · ai-portrait（**高敏感**）
@@ -422,16 +492,85 @@ model WellbeingAppointment {
 
 /// 常见问题 · faq（低敏感）
 model FaqEntry {
+  id             String   @id @default(cuid())
+  /// 唯一业务键（02-domain-model §2.8）：slugify(question)，中文会退化为 ULID
+  slug           String   @unique
+  question       String
+  answer         String
+  category       String
+  tags           String[]
+  /// DRAFT | PUBLISHED | ARCHIVED
+  status         String   @default("PUBLISHED")
+  helpfulCount   Int      @default(0)
+  unhelpfulCount Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([category, status])
+}
+
+/// FAQ「有用」投票 · faq
+///
+/// 幂等落点：`@@unique([entryId, voterKey])` 让「同一用户重复点只算一次」
+/// 由**数据库约束**保证，而不是靠先查后写的竞态逻辑。
+/// 注意本表只存 `voterKey`（`user:<id>`），不存任何画像字段。
+model FaqHelpfulVote {
+  id        String   @id @default(cuid())
+  entryId   String
+  voterKey  String
+  /// helpful | unhelpful（同一人可改票，唯一约束保证一人一票）
+  vote      String   @default("helpful")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([entryId, voterKey])
+  @@index([entryId])
+}
+
+/// FAQ 工单式自助答疑 · faq
+///
+/// 未登录也可提交（`userId` 为 null，契约 02-domain-model §2.8）。
+/// `contact` 只允许邮箱/微信，**禁止明文手机号**（用例层用 isChinaMobile 拦截）。
+model FaqTicket {
+  id                String    @id @default(cuid())
+  userId            String?
+  contact           String
+  question          String
+  /// OPEN | ANSWERED | CLOSED（状态机见 faq.domain.ts）
+  status            String    @default("OPEN")
+  answer            String?
+  answeredAt        DateTime?
+  closedAt          DateTime?
+  /// 提交时命中的 FAQ 建议 id（用于后续统计"未命中"，不做推荐模型）
+  suggestedEntryIds String[]  @default([])
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+/// 场馆预约 · facility（中敏感，契约 §11.10-C 新增的第 20 个模块）
+///
+/// 金额一律整数分（契约 §6.1）：`feeFen` 是 Int，禁止 Float/Decimal。
+/// 状态：booked | cancelled | completed。
+model FacilityBooking {
   id           String   @id @default(cuid())
-  question     String
-  answer       String
-  category     String
-  tags         String[]
-  helpfulCount Int      @default(0)
+  ownerId      String
+  /// gym | badminton | basketball | tennis | pool | other
+  kind         String
+  facilityName String?
+  startsAt     DateTime
+  endsAt       DateTime
+  status       String   @default("booked")
+  /// 费用（整数分）
+  feeFen       Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  @@index([category])
+  @@index([ownerId, startsAt])
+  @@index([kind, startsAt])
+  @@index([status, startsAt])
 }
 
 /// TechPie 整合 · techpie（中敏感）

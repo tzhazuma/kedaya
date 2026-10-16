@@ -106,6 +106,8 @@ tags:
     description: TechPie 整合 —— 与 TechPie / GeekPie 体系互联互通
   - name: wildlife
     description: 猫鸟黑天鹅 —— 校园动物活动区域地图、投喂规范与上报
+  - name: facility
+    description: 场馆预约 —— 体育场馆、健身房等校园场馆的预约与核销
 
 paths:
   # ==================================================================
@@ -583,7 +585,14 @@ paths:
               properties:
                 reason:
                   type: string
+                  description: |
+                    举报理由。canonical 为 `pii`；服务端同时接受 `privacy` 作为别名。
                   enum: [spam, abuse, pii, illegal, other]
+                targetType:
+                  type: string
+                  description: 举报对象类型（主题或回复），缺省为 `post`
+                  enum: [post, reply]
+                  default: post
                 detail: { type: string, maxLength: 500 }
       responses:
         '200':
@@ -591,6 +600,163 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiSuccess' }
+
+  # ==================================================================
+  # forum 治理与回复（补充：契约必须比实现更完整，否则实现会各自发明）
+  # ==================================================================
+  /forum/boards:
+    get:
+      tags: [forum]
+      summary: 版块列表
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [forum]
+      summary: 新建版块（版主）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 60 }
+                description: { type: string, maxLength: 500 }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /forum/items/{id}/replies:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [forum]
+      summary: 回复列表（楼中楼）
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [forum]
+      summary: 发表回复
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string, minLength: 1, maxLength: 5000 }
+                parentReplyId:
+                  type: string
+                  description: 楼中楼父回复；缺省为顶层回复
+                anonymous: { type: boolean, default: false }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+        '409':
+          description: 主题被锁定或已删除，不可回复
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiFailure' }
+
+  # ==================================================================
+  # faq 投票与工单
+  # ==================================================================
+  /faq/items/{id}/votes:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [faq]
+      summary: 对 FAQ 条目投票（「有用」/「没用」）
+      description: |
+        **子资源集合的创建**，不是一次性动作 —— 因此可以重复调用，由服务端按
+        (entryId, userId) 去重实现**幂等**：同一用户重复投同一值只算一次，改投则覆盖。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value]
+              properties:
+                value:
+                  type: string
+                  enum: [helpful, unhelpful]
+      responses:
+        '200':
+          description: 投票结果（返回最新计数）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          helpfulCount: { type: integer }
+                          unhelpfulCount: { type: integer }
+                          myVote:
+                            type: [string, 'null']
+                            enum: [helpful, unhelpful, null]
+
+  /faq/categories:
+    get:
+      tags: [faq]
+      summary: FAQ 分类字典
+      description: |
+        分类字典由服务端提供（不要在客户端从 `/faq/items` 派生）——
+        否则排序、归档分类、计数都会变成客户端逻辑。见契约 §11.11。
+      responses:
+        '200':
+          description: 分类列表（含条目计数）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/FaqCategory' }
+
+  /faq/tickets:
+    get:
+      tags: [faq]
+      summary: 我的工单
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [faq]
+      summary: 提交工单（自助答疑未命中时）
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              properties:
+                question: { type: string, minLength: 1, maxLength: 1000 }
+                category: { type: string, maxLength: 60 }
+                contact:
+                  type: string
+                  description: 可选联系方式；**不写入 FAQ 知识库**
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
 
   # ==================================================================
   # 其余 15 个模块 —— 统一 list + create 形状
@@ -880,6 +1046,34 @@ paths:
       responses:
         '201': { $ref: '#/components/responses/ModuleCreated' }
 
+  /facility/items:
+    get:
+      tags: [facility]
+      summary: 场馆列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: kind
+          in: query
+          schema:
+            type: string
+            enum: [gym, badminton, basketball, tennis, pool, other]
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [facility]
+      summary: 提交场馆预约
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FacilityBookingCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
   /wildlife/items:
     get:
       tags: [wildlife]
@@ -1098,18 +1292,29 @@ components:
 
     ForumPost:
       type: object
-      required: [id, title, createdAt]
+      required: [id, title, status, createdAt]
       properties:
         id: { type: string }
         boardId: { type: string }
         title: { type: string }
         body: { type: string }
+        status:
+          type: string
+          description: |
+            主题状态。**大写**，与 docs/architecture/02-domain-model.md 的冻结枚举一致。
+            状态机：DRAFT→PUBLISHED→LOCKED↔PUBLISHED→HIDDEN→PUBLISHED（申诉成功）/DELETED
+          enum: [DRAFT, PUBLISHED, LOCKED, HIDDEN, DELETED]
+        tags:
+          type: array
+          items: { type: string }
+          maxItems: 5
         anonymous:
           type: boolean
-          description: 匿名帖的作者身份与实名身份解耦存储
+          description: 匿名帖的作者身份与实名身份解耦存储（契约 §9）
         authorDisplay: { type: string }
         replyCount: { type: integer }
         createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
 
     ForumPostCreate:
       type: object
@@ -1393,6 +1598,11 @@ components:
         answer: { type: string }
         category: { type: string }
         helpfulCount: { type: integer }
+        unhelpfulCount: { type: integer }
+        myVote:
+          type: [string, 'null']
+          enum: [helpful, unhelpful, null]
+          description: 当前用户的投票（未投为 null）
     FaqEntryCreate:
       type: object
       required: [question]
@@ -1418,6 +1628,77 @@ components:
           type: string
           enum: [sso, schedule, assignment, campus-card]
         token: { type: string }
+
+    FacilityBooking:
+      type: object
+      properties:
+        id: { type: string }
+        kind:
+          type: string
+          enum: [gym, badminton, basketball, tennis, pool, other]
+        facilityName: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        status:
+          type: string
+          enum: [requested, confirmed, checked-in, completed, cancelled, no-show]
+        feeFen:
+          type: integer
+          description: 费用，**整数分**（免费为 0）
+    FacilityBookingCreate:
+      type: object
+      required: [kind, startsAt, endsAt]
+      properties:
+        kind:
+          type: string
+          enum: [gym, badminton, basketball, tennis, pool, other]
+        facilityName: { type: string, maxLength: 120 }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+
+    ForumBoard:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        postCount: { type: integer }
+
+    ForumReply:
+      type: object
+      required: [id, postId, body, createdAt]
+      properties:
+        id: { type: string }
+        postId: { type: string }
+        parentReplyId: { type: [string, 'null'] }
+        body: { type: string }
+        anonymous: { type: boolean }
+        authorDisplay: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    FaqCategory:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        sortOrder: { type: integer }
+        itemCount: { type: integer }
+
+    FaqTicket:
+      type: object
+      required: [id, question, status, createdAt]
+      properties:
+        id: { type: string }
+        question: { type: string }
+        category: { type: string }
+        status:
+          type: string
+          enum: [open, answered, closed]
+        answer: { type: string }
+        createdAt: { type: string, format: date-time }
 
     WildlifeSpot:
       type: object

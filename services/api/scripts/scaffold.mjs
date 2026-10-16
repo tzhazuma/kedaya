@@ -3,9 +3,9 @@
  * 可达鸭后端 · 模块脚手架
  *
  * 为什么存在这个脚本：
- *   契约 §4 的 19 个模块里，有 15 个是"同一套 CRUD 形状 + 各自的领域动作"
+ *   契约 §4 的 20 个模块里，有 14 个是"同一套 CRUD 形状 + 各自的领域动作"
  *   （契约 §6.1：list / create / detail / patch / delete / <action>）。
- *   手写这 15 × 5 个文件既冗长又容易漂移。本脚本把**形状**固化下来，
+ *   手写这 14 × 5 个文件既冗长又容易漂移。本脚本把**形状**固化下来，
  *   把**差异**（字段、领域动作）留在下面的 SPEC 表里，一次生成、可重复执行。
  *
  * 生成的分层（契约 §7）：
@@ -15,8 +15,12 @@
  *   <id>.controller.ts      路由 + Zod schema + Swagger
  *   <id>.module.ts          NestJS 装配
  *
- * 手写（不生成）的 4 个模块：auth（两级身份）、wellbeing（同意门 + 审计 +
- * 危机热线）、dorm-harmony（匿名 + 同意门）、ai-portrait（同意门 + 禁读域）。
+ * 手写（**不在** SPEC 表里、本脚本不写盘）的 6 个模块：
+ *   auth（两级身份）、wellbeing（同意门 + 审计 + 危机热线）、
+ *   dorm-harmony（匿名 + 同意门）、ai-portrait（同意门 + 禁读域）、
+ *   forum（版块 + 状态机 + 匿名 HMAC + 举报阈值治理 + 回复子资源）、
+ *   faq（检索 + 幂等「有用」+ 工单状态机 + 关键词建议）。
+ *   判据：领域形状超出"一套 CRUD + 一个动作"能表达的范围。
  *
  * 用法：node scripts/scaffold.mjs
  */
@@ -62,7 +66,7 @@ const tsType = (t) => `${TS_BASE[baseOf(t)]}${isNullable(t) ? ' | null' : ''}`;
 const tokenOf = (model) => `${model.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase()}_REPOSITORY`;
 
 /* ------------------------------------------------------------------ *
- * SPEC：15 个"形状统一"的模块
+ * SPEC：14 个"形状统一"的模块
  *
  *   readOnly    —— DB 管理的时间戳等，不进 create/update 输入
  *   optionalCreate —— Prisma 有 @default，创建时可省略
@@ -546,124 +550,122 @@ import { CAMPUS_SESSION_PORT, type CampusSessionPort } from '../auth/domain/auth
     return this.service.calories(canteen);
   }`,
   },
+  /* ------------------------------------------------------------------ *
+   * 已从 SPEC 表**移除**（改为手写，不再由本脚本生成）：
+   *
+   *   forum —— 版块目录 + 主题状态机 + 匿名身份 HMAC 派生 + 举报阈值治理
+   *            + 回复子资源；「一套 CRUD + 一个动作」表达不了。
+   *   faq   —— 条目检索 + 幂等「有用」投票 + 工单状态机 + 关键词建议排序。
+   *
+   * 与既有的 4 个手写模块同类：auth（两级身份）、wellbeing（同意门 + 审计 +
+   * 危机热线）、dorm-harmony（匿名 + 同意门）、ai-portrait（同意门 + 禁读域）。
+   * 这 6 个模块的目录**不会被本脚本写盘**，手写实现不会被 `npm run scaffold` 覆盖。
+   * ------------------------------------------------------------------ */
   {
-    id: 'forum',
-    zh: '论坛',
-    pascal: 'Forum',
-    model: 'ForumPost',
-    delegate: 'forumPost',
-    ownerField: null,
+    id: 'facility',
+    zh: '场馆预约',
+    pascal: 'Facility',
+    model: 'FacilityBooking',
+    delegate: 'facilityBooking',
+    ownerField: 'ownerId',
     readOnly: ['createdAt', 'updatedAt'],
-    optionalCreate: ['status'],
+    optionalCreate: ['status', 'facilityName'],
     fields: [
-      ['board', 'string'],
-      ['authorId', 'string?'],
-      ['anonHandle', 'string?'],
-      ['title', 'string'],
-      ['body', 'string'],
+      ['ownerId', 'string'],
+      ['kind', 'string'],
+      ['facilityName', 'string?'],
+      ['startsAt', 'date'],
+      ['endsAt', 'date'],
       ['status', 'string'],
+      ['feeFen', 'int'],
       ['createdAt', 'date'],
       ['updatedAt', 'date'],
     ],
-    action: { kind: 'custom', name: 'reply', summary: '回复主题（真实写入 ForumReply）' },
-    customPort: `  addReply(
-    postId: string,
-    input: { body: string; authorId?: string | null; anonHandle?: string | null },
-  ): Promise<{ id: string; postId: string; body: string; createdAt: Date }>;
-  listReplies(postId: string): Promise<Array<{ id: string; postId: string; body: string; createdAt: Date }>>;`,
+    serviceImports: `import { ConflictError, ForbiddenError } from '../../common/errors/app-error';`,
+    action: { kind: 'custom', name: 'cancel', summary: '发起人取消预约' },
+    customPort: `  findOverlapping(input: {
+    kind: string;
+    facilityName: string | null;
+    startsAt: Date;
+    endsAt: Date;
+  }): Promise<FacilityBookingModel | null>;`,
     customRepository: `
-  /** 回复主题（真实写入 ForumReply 关联表） */
-  async addReply(
-    postId: string,
-    input: { body: string; authorId?: string | null; anonHandle?: string | null },
-  ): Promise<{ id: string; postId: string; body: string; createdAt: Date }> {
-    return this.prisma.forumReply.create({
-      data: {
-        postId,
-        body: input.body,
-        authorId: input.authorId ?? null,
-        anonHandle: input.anonHandle ?? null,
+  /**
+   * 时段冲突检测（同一场馆 + 同一时间段 + 未取消的预约）。
+   * 半开区间 [startsAt, endsAt) 相交：existing.startsAt < new.endsAt && existing.endsAt > new.startsAt。
+   */
+  async findOverlapping(input: {
+    kind: string;
+    facilityName: string | null;
+    startsAt: Date;
+    endsAt: Date;
+  }): Promise<FacilityBookingModel | null> {
+    const row = await this.prisma.facilityBooking.findFirst({
+      where: {
+        kind: input.kind,
+        status: 'booked',
+        ...(input.facilityName ? { facilityName: input.facilityName } : {}),
+        startsAt: { lt: input.endsAt },
+        endsAt: { gt: input.startsAt },
       },
-      select: { id: true, postId: true, body: true, createdAt: true },
+      orderBy: { startsAt: 'asc' },
     });
-  }
-
-  listReplies(postId: string) {
-    return this.prisma.forumReply.findMany({
-      where: { postId },
-      orderBy: { createdAt: 'asc' },
-      take: 100,
-    });
+    return row ? (row as unknown as FacilityBookingModel) : null;
   }`,
-    customService: `
-  /** 领域动作：回复主题（契约 §9：支持匿名，与实名身份解耦存储） */
-  reply(id: string, body: string, actorId?: string, anonHandle?: string) {
-    return this.repo.addReply(id, { body, authorId: actorId ?? null, anonHandle: anonHandle ?? null });
+    customCreate: `
+  /**
+   * 创建预约。
+   *
+   * 与其余模块不同：除了归属补全，还必须在**写库前**做两件事：
+   *   1. 金额一律**整数分**（契约 §6.1）—— 非整数直接 VALIDATION_FAILED，不静默截断；
+   *   2. 同一场馆同一时段不可重复预约 —— 冲突返回 CONFLICT。
+   */
+  override async create(input: CreateFacilityBookingInput, actorId?: string): Promise<FacilityBookingModel> {
+    const owner = input.ownerId ?? actorId;
+    if (!owner) {
+      throw new ValidationError('未登录时必须显式提供 ownerId', { field: 'ownerId' });
+    }
+    if (!Number.isInteger(input.feeFen) || input.feeFen < 0) {
+      throw new ValidationError('feeFen 必须是非负整数分（契约 §6.1 禁止浮点金额）', { field: 'feeFen' });
+    }
+
+    const startsAt = new Date(input.startsAt);
+    const endsAt = new Date(input.endsAt);
+    if (!(endsAt > startsAt)) {
+      throw new ValidationError('endsAt 必须晚于 startsAt', { field: 'endsAt' });
+    }
+
+    const conflict = await this.repo.findOverlapping({
+      kind: input.kind,
+      facilityName: input.facilityName ?? null,
+      startsAt,
+      endsAt,
+    });
+    if (conflict) {
+      throw new ConflictError('该时段已被预约', { conflictId: conflict.id });
+    }
+
+    return super.create({ ...input, ownerId: owner });
   }
 
-  replies(id: string) {
-    return this.repo.listReplies(id);
+  /** 领域动作：取消预约（仅发起人；只有 booked 可取消） */
+  async cancel(id: string, actorId?: string): Promise<FacilityBookingModel> {
+    const booking = await this.detail(id);
+    if (!actorId || booking.ownerId !== actorId) {
+      throw new ForbiddenError('只有发起人可以取消该预约');
+    }
+    if (booking.status !== 'booked') {
+      throw new ConflictError('该预约当前状态不可取消', { status: booking.status });
+    }
+    return this.repo.update(id, { status: 'cancelled' } as UpdateFacilityBookingInput);
   }`,
     customController: `
-  @Post('items/:id/reply')
-  @ApiOperation({ summary: '回复主题（实名或匿名，匿名与实名解耦存储）' })
-  reply(
-    @OptionalCurrentUser() actorId: string | undefined,
-    @Param('id') id: string,
-    @ZodBody(replySchema) body: z.infer<typeof replySchema>,
-  ) {
-    return this.service.reply(id, body.body, actorId, body.anonHandle);
-  }
-
-  @Get('items/:id/replies')
-  @ApiOperation({ summary: '主题回复列表' })
-  replies(@Param('id') id: string) {
-    return this.service.replies(id);
-  }`,
-    extraSchemas: `const replySchema = z.object({
-  body: z.string().min(1).max(5000),
-  anonHandle: z.string().min(1).max(64).optional(),
-});`,
-  },
-  {
-    id: 'faq',
-    zh: '常见问题',
-    pascal: 'Faq',
-    model: 'FaqEntry',
-    delegate: 'faqEntry',
-    ownerField: null,
-    readOnly: ['createdAt', 'updatedAt'],
-    optionalCreate: ['tags', 'helpfulCount'],
-    fields: [
-      ['question', 'string'],
-      ['answer', 'string'],
-      ['category', 'string'],
-      ['tags', 'string[]'],
-      ['helpfulCount', 'int'],
-      ['createdAt', 'date'],
-      ['updatedAt', 'date'],
-    ],
-    action: { kind: 'custom', name: 'helpful', summary: '标记有用（计数自增）' },
-    customPort: `  markHelpful(id: string): Promise<FaqEntryModel>;`,
-    customRepository: `
-  /** 原子自增：并发下不会丢计数 */
-  async markHelpful(id: string): Promise<FaqEntryModel> {
-    return this.prisma.faqEntry.update({
-      where: { id },
-      data: { helpfulCount: { increment: 1 } },
-    });
-  }`,
-    customService: `
-  /** 领域动作：标记有用 */
-  async markHelpful(id: string): Promise<FaqEntryModel> {
-    await this.detail(id);
-    return this.repo.markHelpful(id);
-  }`,
-    customController: `
-  @Post('items/:id/helpful')
-  @ApiOperation({ summary: '标记该条目有用（原子自增）' })
-  markHelpful(@Param('id') id: string) {
-    return this.service.markHelpful(id);
+  @Post('items/:id/cancel')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '取消预约（契约 §11.10-C 的领域动作；仅发起人）' })
+  cancel(@CurrentUser() actorId: string, @Param('id') id: string) {
+    return this.service.cancel(id, actorId);
   }`,
   },
   {
@@ -718,7 +720,7 @@ const HEADER = (zh, id) => `/**
  * ${zh} · ${id}（契约 §4）
  *
  * 本文件由 scripts/scaffold.mjs 生成；要改形状请改脚本里的 SPEC 表，
- * 改完重跑 \`npm run scaffold\`，避免 15 个模块各写一套。
+ * 改完重跑 \`npm run scaffold\`，避免 14 个模块各写一套。
  */`;
 
 function domainFile(spec) {
@@ -818,14 +820,14 @@ function serviceFile(spec) {
   const token = tokenOf(model);
 
   // 始终 override create：即使模块无归属字段，也接受并忽略 actorId，
-  // 这样 controller 的调用签名在 15 个模块间保持一致。
+  // 这样 controller 的调用签名在 14 个模块间保持一致。
   // `override` 是必需的 —— tsconfig.base.json 开了 noImplicitOverride。
   //
   // 注意 ownerField 可能本身是 readOnly（例如 ProfileSetting.userId 由账号决定，
   // 不该出现在请求体里）——此时归属只能来自请求主体。
   const ownerInBody = ownerField !== null && !spec.readOnly.includes(ownerField);
 
-  const createOverride =
+  const generatedCreateOverride =
     ownerField === null
       ? `
   /** 本模块支持匿名，忽略请求主体（契约 §9：匿名与实名解耦） */
@@ -855,6 +857,10 @@ function serviceFile(spec) {
     }
     return super.create({ ...input, ${ownerField}: actorId } as Create${model}Input);
   }`;
+
+  // SPEC 可以用 customCreate 整体替换生成的 create（例如 facility 需要在写库前
+  // 做"时段冲突"判定 —— 那不属于归属补全，塞进 owner 逻辑里会污染所有模块）。
+  const createOverride = spec.customCreate ?? generatedCreateOverride;
 
   const ctorExtra = serviceCtorExtra ? `\n${serviceCtorExtra.trimEnd()}` : '';
 
@@ -943,7 +949,7 @@ const updateSchema = createSchema.partial();
  * 编译期防漂移断言：Zod 推导出的类型必须兼容 domain 声明的输入类型。
  * 只改了一边就会直接编译失败。
  */
-type AssertAssignable<Target, Actual extends Target> = true;
+type AssertAssignable<Target, _Actual extends Target> = true;
 export type CreateSchemaMatchesDomain = AssertAssignable<Create${model}Input, z.infer<typeof createSchema>>;
 export type UpdateSchemaMatchesDomain = AssertAssignable<Update${model}Input, z.infer<typeof updateSchema>>;
 

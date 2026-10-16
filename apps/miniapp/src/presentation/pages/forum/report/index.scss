@@ -1,0 +1,40 @@
+.kdy-forum-report__target {
+  display: block;
+  padding-bottom: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  word-break: break-all;
+}
+
+.kdy-forum-report__reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+}
+
+.kdy-forum-report__reason {
+  display: flex;
+  align-items: center;
+}
+
+.kdy-forum-report__selected {
+  display: block;
+  padding-top: $kdy-space-2;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-forum-report__privacy {
+  display: block;
+  padding-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-forum-report__actions {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+  padding: $kdy-space-2 $kdy-space-4;
+}

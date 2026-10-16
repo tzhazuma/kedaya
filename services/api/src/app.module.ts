@@ -24,6 +24,7 @@ import { ErrandModule } from './modules/errand/errand.module';
 import { BuddyModule } from './modules/buddy/buddy.module';
 import { LostFoundModule } from './modules/lost-found/lost-found.module';
 import { CanteenModule } from './modules/canteen/canteen.module';
+import { FacilityModule } from './modules/facility/facility.module';
 import { ForumModule } from './modules/forum/forum.module';
 import { AiPortraitModule } from './modules/ai-portrait/ai-portrait.module';
 import { WellbeingModule } from './modules/wellbeing/wellbeing.module';
@@ -32,7 +33,7 @@ import { TechpieModule } from './modules/techpie/techpie.module';
 import { WildlifeModule } from './modules/wildlife/wildlife.module';
 
 /**
- * 应用根模块 —— 契约 §4 的 **19 个模块全部装配**。
+ * 应用根模块 —— 契约 §4 的 **20 个模块全部装配**（v1.2 §11.10-C 新增 `facility`）。
  *
  * 三个全局提供者（契约 §6.1 的统一约定都靠它们落地）：
  *   APP_PIPE       ZodValidationPipe   —— 全站唯一校验入口
@@ -55,7 +56,7 @@ import { WildlifeModule } from './modules/wildlife/wildlife.module';
     PrismaModule,
     ComplianceModule,
 
-    // 19 个业务/基础模块
+    // 20 个业务/基础模块（14 业务 + 5 基础 + facility）
     AuthModule,
     ScheduleModule,
     CampusCardModule,
@@ -69,6 +70,7 @@ import { WildlifeModule } from './modules/wildlife/wildlife.module';
     BuddyModule,
     LostFoundModule,
     CanteenModule,
+    FacilityModule,
     ForumModule,
     AiPortraitModule,
     WellbeingModule,

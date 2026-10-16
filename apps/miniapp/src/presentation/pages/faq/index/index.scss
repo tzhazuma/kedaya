@@ -1,0 +1,54 @@
+.kdy-faq__categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  padding: $kdy-space-1 $kdy-space-4 $kdy-space-2;
+}
+
+.kdy-faq__category {
+  display: flex;
+  align-items: center;
+}
+
+.kdy-faq__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  padding: $kdy-space-2 $kdy-space-4;
+}
+
+.kdy-faq__hint,
+.kdy-faq__more,
+.kdy-faq__soft-error {
+  display: block;
+  padding: $kdy-space-1 $kdy-space-4;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-faq__hint,
+.kdy-faq__more {
+  color: $kdy-color-text-muted;
+}
+
+.kdy-faq__soft-error {
+  color: $kdy-color-warning;
+}
+
+.kdy-faq__answer {
+  display: block;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.7;
+}
+
+.kdy-faq__vote {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  padding-top: $kdy-space-3;
+}
+
+.kdy-faq__voted {
+  color: $kdy-color-success;
+  font-size: $kdy-font-size-xs;
+}

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/faq/presentation/pages/faq_home_page.dart';
+import '../features/faq/presentation/pages/faq_tickets_page.dart';
+import '../features/forum/presentation/pages/forum_board_page.dart';
+import '../features/forum/presentation/pages/forum_compose_page.dart';
+import '../features/forum/presentation/pages/forum_post_detail_page.dart';
 import '../features/groupbuy/presentation/pages/groupbuy_detail_page.dart';
 import '../features/groupbuy/presentation/pages/groupbuy_list_page.dart';
 import '../presentation/components/kedaya_shell.dart';
@@ -20,6 +25,8 @@ final GlobalKey<NavigatorState> kedaYaRootNavigatorKey = GlobalKey<NavigatorStat
 /// 结构：
 ///   - `StatefulShellRoute` 承载底部导航三个分支：`/home` `/modules` `/profile`
 ///   - `/groupbuy` 与 `/groupbuy/:id`：拼单垂直切片（全屏，盖住底部导航）
+///   - `/forum`、`/forum/compose`、`/forum/:id`：论坛（列表 / 发帖 / 主题详情）
+///   - `/faq`、`/faq/tickets`：常见问题（分类+搜索+手风琴 / 我的工单）
 ///   - `/module/:moduleId`：**注册表驱动**的模块落地页（未实现的模块在此如实说明）
 GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
   navigatorKey: kedaYaRootNavigatorKey,
@@ -72,6 +79,38 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
           name: 'groupbuy-detail',
           builder: (BuildContext context, GoRouterState state) =>
               GroupbuyDetailPage(orderId: state.pathParameters['id'] ?? ''),
+        ),
+      ],
+    ),
+    GoRoute(
+      path: '/forum',
+      name: 'forum',
+      builder: (BuildContext context, GoRouterState state) => const ForumBoardPage(),
+      routes: <RouteBase>[
+        // ⚠️ `compose` 必须声明在 `:id` **之前**，否则 `/forum/compose`
+        // 会被 `:id` 吃掉（go_router 同级路由按声明顺序匹配）。
+        GoRoute(
+          path: 'compose',
+          name: 'forum-compose',
+          builder: (BuildContext context, GoRouterState state) => const ForumComposePage(),
+        ),
+        GoRoute(
+          path: ':id',
+          name: 'forum-post',
+          builder: (BuildContext context, GoRouterState state) =>
+              ForumPostDetailPage(postId: state.pathParameters['id'] ?? ''),
+        ),
+      ],
+    ),
+    GoRoute(
+      path: '/faq',
+      name: 'faq',
+      builder: (BuildContext context, GoRouterState state) => const FaqHomePage(),
+      routes: <RouteBase>[
+        GoRoute(
+          path: 'tickets',
+          name: 'faq-tickets',
+          builder: (BuildContext context, GoRouterState state) => const FaqTicketsPage(),
         ),
       ],
     ),

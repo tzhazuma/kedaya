@@ -7,7 +7,10 @@ import '../domain/ports/auth_port.dart';
 import '../domain/ports/campus_session_port.dart';
 import '../domain/ports/consent_port.dart';
 import '../domain/ports/errand_port.dart';
+import '../domain/ports/faq_port.dart';
+import '../domain/ports/forum_port.dart';
 import '../domain/ports/groupbuy_port.dart';
+import '../domain/ports/local_cache_port.dart';
 import '../domain/ports/lost_found_port.dart';
 import '../domain/ports/platform_ports.dart';
 import '../domain/ports/theme_mode_port.dart';
@@ -41,6 +44,21 @@ final consentProvider = Provider<ConsentPort>((ref) => ref.watch(appRuntimeProvi
 
 final groupbuyRepositoryProvider = Provider<GroupbuyPort>(
   (ref) => ref.watch(appRuntimeProvider).groupbuy,
+);
+
+/// 论坛（契约 §4.1 `forum`）。
+final forumRepositoryProvider = Provider<ForumPort>(
+  (ref) => ref.watch(appRuntimeProvider).forum,
+);
+
+/// 常见问题（契约 §4.1 `faq`）。
+final faqRepositoryProvider = Provider<FaqPort>(
+  (ref) => ref.watch(appRuntimeProvider).faq,
+);
+
+/// 本地缓存（契约 §8：`readJson` 是**同步**的，因此可以在 provider 体内直接用）。
+final localCacheProvider = Provider<LocalCachePort>(
+  (ref) => ref.watch(appRuntimeProvider).cache,
 );
 
 final errandRepositoryProvider = Provider<ErrandPort>(

@@ -95,9 +95,12 @@ apps/miniapp/
     ├── platform/              # 平台差异适配（订阅消息 / 扫码 / 分享 / 地图 / 导航）
     └── presentation/          # UI
         ├── components/        #   KdyCard / KdyButton / KdyEmpty / KdyTag
+        │                      #   + KdySwitch / KdySearchBar / KdyAccordion / KdyField
         ├── hooks/             #   useStore（useSyncExternalStore 封装）
         ├── theme/tokens.scss  #   设计令牌入口（全局注入）
-        └── pages/             #   home / discover / messages / profile / groupbuy/*
+        └── pages/             #   home / discover / messages / profile
+                               #   groupbuy/* · forum/{list,detail,create,report}
+                               #   faq/{index,tickets}
 ```
 
 **依赖方向（硬规则）**：`presentation → application → domain ← data`。
@@ -201,6 +204,44 @@ npm run build:weapp -w @kedaya/miniapp
 
 ---
 
+## 6.1 垂直切片：论坛（`forum`）
+
+对应 `docs/architecture/02-domain-model.md` §2.4，敏感级 `medium`。
+
+- **列表页** `presentation/pages/forum/list`：版块筛选（「全部」+ 版块）、主题卡片
+  （标题 / 摘要 / 标签 / 状态标签 / 置顶 / 回复数 / 相对时间）、下拉刷新、触底加载。
+- **详情页** `presentation/pages/forum/detail`：主题正文 + 一级「楼中楼」回复 +
+  回复输入框 + 举报入口 + `onShareAppMessage` 分享。
+- **发帖页** `presentation/pages/forum/create`：标题 / 正文 / 标签 + **匿名开关**，
+  并在页面上直接展示隐私说明（匿名只对普通同学隐藏，版主可在板块内追溯）。
+- **举报页** `presentation/pages/forum/report`：理由选择（`spam|abuse|illegal|privacy|other`）
+  + 匿名举报开关。
+- **治理规则真的在跑**（不是 UI 假状态）：列表不含 `HIDDEN`/`DELETED`/`DRAFT`；
+  `LOCKED` 主题无法回复（domain 的 `canReply` 判定，UI 与仓储共用）；
+  3 个**不同**用户举报 → 目标自动 `HIDDEN`。
+- **写动作**：`createForumPost` / `replyToPost` / `reportForumContent` ——
+  会话门 → domain 本地校验 → 仓储写动作，全部带 `Idempotency-Key`（契约 §11.3）。
+- **三态齐全**：`loading` / `empty` / `error`（+ `ready`，缓存降级时另有提示）。
+  顶部「模拟错误态 / 模拟空态 / 重置演示数据」走 `mockForumControls` 的真实控制面。
+
+## 6.2 垂直切片：常见问题（`faq`）
+
+对应 `docs/architecture/02-domain-model.md` §2.8，敏感级 `low`（**搜索无需登录**）。
+
+- **FAQ 页** `presentation/pages/faq/index`：搜索框 + 分类标签 + 手风琴列表 +
+  「有用」按钮；下拉刷新、触底加载。
+- **我的工单页** `presentation/pages/faq/tickets`：工单列表（状态标签 / 官方回复 /
+  未登录提交标记）+ 提交表单。
+- **「有用」是幂等的**：重复点击只算一次。两道保险 ——
+  ① 本地已投票记录命中就直接返回 `applied: false`（连请求都不发）；
+  ② mock 仓储按 `userId + articleId` 去重，真后端另有 `Idempotency-Key`。
+  两者共用 domain 的 `applyHelpfulVote`，语义不会漂移。
+- **隐私硬约束**：工单 `contact` **拒绝中国大陆手机号**
+  （domain-model §2.8「不存明文手机号」），校验在 domain 层，页面只展示错误。
+- **未登录也能提交工单**（`userId: null`），列表此时只显示匿名工单。
+
+---
+
 ## 7. 测试
 
 ```bash
@@ -214,10 +255,26 @@ npm run test -w @kedaya/miniapp
 | 测试文件 | 覆盖内容 |
 | --- | --- |
 | `src/domain/models/__tests__/groupbuy.test.ts` | 状态推导、参团资格、派生摘要、整数分金额 |
+| `src/domain/models/__tests__/forum.test.ts` | 主题状态机（`canReply`）、匿名展示、草稿校验（长度/标签/敏感词/PII 提示）、回复树组装 |
+| `src/domain/models/__tests__/faq.test.ts` | 可见性、搜索/分类、工单隐私校验（拒绝手机号）、`applyHelpfulVote` 幂等 |
 | `src/data/api/__tests__/request.test.ts` | 信封解包、trace/Bearer/幂等头、401 刷新重试、并发刷新去重、传输失败语义 |
 | `src/data/repositories/__tests__/mockGroupBuyRepository.test.ts` | 游标分页、参团写动作、三态控制面、深拷贝隔离 |
+| `src/data/repositories/__tests__/mockForumRepository.test.ts` | 游标分页、列表可见性、置顶排序、发帖/回复、举报阈值治理、三态控制面 |
+| `src/data/repositories/__tests__/mockFaqRepository.test.ts` | 只返回 PUBLISHED、分类/搜索、投票幂等（服务端侧）、工单归属、三态控制面 |
+| `src/data/repositories/__tests__/httpForumFaqRepository.test.ts` | 真后端仓储的 URL 映射、`Idempotency-Key`、`forum.report` 动作名、错误映射 |
 | `src/application/groupbuy/__tests__/listGroupBuys.test.ts` | 契约 §8：同步 hydrate、失败静默降级、empty/error 态、loadMore 续页、快照引用稳定 |
+| `src/application/forum/__tests__/listForumBoards.test.ts` | 版块三态、缓存降级、订阅/快照稳定性 |
+| `src/application/forum/__tests__/listForumPosts.test.ts` | 契约 §8 + 游标续页 + 版块切换清空 |
+| `src/application/forum/__tests__/forumPostDetail.test.ts` | 主题与回复分别失败、回复树、触底续页、写后就地更新 |
+| `src/application/forum/__tests__/createForumPost.test.ts` | 未登录/校验失败拦截、匿名开关、幂等键唯一性与复用 |
+| `src/application/forum/__tests__/replyToPost.test.ts` | `LOCKED`/`HIDDEN`/`DELETED` 主题拒答、`replyCount` 乐观更新 |
+| `src/application/forum/__tests__/reportForumContent.test.ts` | 登录门、非法理由拦截、匿名与 `reporterId` 解耦、重复举报 `CONFLICT` |
+| `src/application/faq/__tests__/browseFaq.test.ts` | 分类/搜索、投票幂等（本地不再发请求）、投票记录持久化 |
+| `src/application/faq/__tests__/myTickets.test.ts` | 未登录提交、隐私校验、缓存降级、列表头部插入 |
 | `src/data/storage/__tests__/sessionStore.test.ts` | 会话 hydrate、快照引用稳定（`useSyncExternalStore` 前提）、tokenStore 视图 |
+
+> 测试替身集中在 `src/application/__tests__/testDoubles.ts`（文件名不含 `.test.ts`，
+> 不会被 vitest 收集）。它刻意**不** import `data/` 下的实现，保持 `application` 层分层干净。
 
 ---
 
@@ -234,8 +291,12 @@ npm run test -w @kedaya/miniapp
 - mock adapter（确定性种子数据 + 内存数据库 + 三态控制面）
 - 平台能力封装（订阅消息 / 扫码 / 分享 / 地图 / 导航），逐个注明微信特有与 H5 降级
 - 拼单垂直切片：列表 + 详情 + 参团，三态齐全，默认 mock
-- 4 个复用组件：`KdyCard` / `KdyButton` / `KdyEmpty` / `KdyTag`（全部取自设计令牌）
-- 5 个 Vitest 测试文件（domain / 网络层 / mock 仓储 / 列表用例 / 会话存储）
+- **论坛垂直切片**：版块 + 主题列表 / 详情 + 楼中楼回复 / 发帖（含匿名开关与隐私说明）/
+  举报，下拉刷新 + 触底游标分页 + `onShareAppMessage`，治理规则真实生效
+- **FAQ 垂直切片**：分类 + 搜索 + 手风琴 + 「有用」（幂等）+ 我的工单，三态齐全
+- 8 个复用组件：`KdyCard` / `KdyButton` / `KdyEmpty` / `KdyTag` / `KdySwitch` /
+  `KdySearchBar` / `KdyAccordion` / `KdyField`（全部取自设计令牌）
+- 18 个 Vitest 测试文件 / 263 个测试（domain / 网络层 / mock 仓储 / http 仓储 / 用例 / 存储）
 
 ### ❌ 未实现（诚实清单）
 
@@ -245,7 +306,10 @@ npm run test -w @kedaya/miniapp
   `profile.campusBound` 目前是手工切换的占位开关。
 - **敏感模块二次同意**：契约 §9 的同意流程与审计日志未实现（首页对这类模块只做标注 + 提示）。
 - **站内信列表**（`notifications`）：只有订阅消息链路，站内信列表是空态。
-- **其余 18 个业务模块**：契约 §4 已登记，端上未实现（首页明确显示「开发中」）。
+- **其余 16 个业务模块**：契约 §4 已登记，端上未实现（首页明确显示「开发中」）。
+- **论坛治理后台**：版主锁定 / 隐藏 / 申诉的**操作入口**未做（端上只消费治理结果）；
+  主题/回复的删除、点赞、编辑也未做。
+- **FAQ 内容运营侧**：文章的新增/编辑/归档（`AnswerTicket`）未做，端上只读。
 - **tabBar 图标**：未配置 `iconPath`（品牌图标未就位），当前只显示文字。
 - **H5 端未实机验证**：`build:h5` 脚本已就绪，但本轮只验证了 `weapp` 构建。
 - **CI / 真机预览**：未在真机与微信开发者工具中打开验证（无图形环境）。
@@ -268,9 +332,63 @@ npm run test -w @kedaya/miniapp
    `config/index.ts` 里设 `compiler: { type: 'webpack5', prebundle: { enable: false } }`。
    这仍是 webpack5 编译器，只是关掉预打包。
 
+4. **契约缺口：`faq` 的 `VoteHelpful` 没有登记的领域动作名**（需 Lead 裁决，未擅自扩契约）。
+   契约 §11.2 冻结了 `<action>` 名并要求「三端不得自创」，但登记表里 `faq` 没有任何 action。
+   为了不自创动作名，本端把「有用」投票建模为**子资源集合的创建**：
+   `POST /api/v1/faq/items/:id/votes`（body `{ value: 'helpful' }`），而不是
+   `POST /api/v1/faq/items/:id/helpful`。子资源不受动作名冻结约束，且天然可承载
+   `Idempotency-Key`。若 Lead 决定登记为 `faq.vote` 动作，只需改
+   `data/repositories/httpFaqRepository.ts` 里的一行路径。
+   另有两处**子资源**扩展同样未在契约中显式登记（非动作名，不违反 §11.2，但建议补进 OpenAPI）：
+   `GET /api/v1/forum/boards`、`GET|POST /api/v1/forum/items/:id/replies`、
+   `GET|POST /api/v1/faq/tickets`。
+
+5. **tabBar 结构未改动**（任务硬性要求）：仍是最初的四个 tab
+   （首页 / 发现 / 消息 / 我的）。论坛与 FAQ 从**首页宫格**与**「发现」页**进入。
+   首页宫格原本是 `if (module.id === 'groupbuy')` 的硬编码分支，本次改为由
+   `app/routes.ts` 的 `MODULE_ENTRY_PATHS` 表驱动（模块清单仍 100% 来自
+   `@kedaya/contracts` 的 `MODULES`）。
+
+6. **⚠️ 跨端 wire 形状不一致（M1 集成前必须由 Lead 裁决，本端未擅自跟随）**。
+   本端（小程序）的 HTTP 映射与 **Web 端、Flutter 端、domain-model 文档一致**，
+   但与 `services/api` 的**实现**存在差异。三端客户端彼此一致、后端单独偏离，
+   因此这里保持契约侧写法并上报，而不是把后端的偏离抄进主端：
+
+   | 项 | 本端 / Web / mobile / 文档 | `services/api` 实现 | 后果（真后端模式） |
+   | --- | --- | --- | --- |
+   | 主题列表筛选参数 | `boardId`、`keyword` | `board`、`q` | **静默返回未筛选结果**（后端忽略未知参数） |
+   | FAQ 搜索参数 | `keyword` | `q` | 同上 |
+   | 「有用」投票路径 | `POST /faq/items/:id/votes` | `POST /faq/items/:id/helpful` | 404 |
+   | 举报理由取值 | `privacy`（domain-model §2.4） | `pii`（OpenAPI 与后端） | 后端**已兼容**旧值 `privacy`（`normalizeReportReason`），可正常受理 |
+   | 主题状态取值 | `PUBLISHED` 等大写 | `published` 等小写 | 状态标签/`canReply` 判定错位 |
+   | 举报回复 | `POST /forum/items/:replyId/report` + `targetType: 'REPLY'` | 只支持举报主题（无 `targetType`） | 举报回复会打到错误目标 |
+
+   证据（真实文件行）：
+   `services/api/src/modules/forum/forum.controller.ts:141-150`（`board`/`q`）、
+   `services/api/src/modules/faq/faq.controller.ts:74-83`（`q`）、
+   `services/api/src/modules/faq/faq.controller.ts:121`（`items/:id/helpful`）、
+   `services/api/src/modules/forum/domain/forum.domain.ts:84`（小写状态）、
+   `:169`（`pii`）、
+   `packages/contracts/openapi/kedaya.v1.yaml:500-506`（契约侧 `boardId`）。
+   **本端受影响文件只有两处**（若 Lead 裁决跟随后端，改这两处即可）：
+   `data/repositories/httpForumRepository.ts`、`data/repositories/httpFaqRepository.ts`。
+   默认 mock 模式下不受影响，页面与用例层无需改动。
+
 ---
 
 ## 9. 自检证据
 
-见本目录交付说明（Lead 的 task-3 交付消息）中粘贴的真实命令输出。
+真实命令输出粘贴在**交付说明**里（task-3 为骨架阶段、task-8 为 forum + faq 阶段），
 本 README 不复制输出，避免与真实结果脱节。
+
+task-8（forum + faq）验证过的命令：
+
+```bash
+export PATH="/opt/homebrew/bin:$PATH"
+./scripts/with-npm-lock.sh npm install        # exit 0
+npm run typecheck -w @kedaya/miniapp          # exit 0
+npm run test      -w @kedaya/miniapp          # 18 files / 263 tests passed
+npm run lint      -w @kedaya/miniapp          # exit 0
+npm run build:weapp -w @kedaya/miniapp        # exit 0（Compiled successfully）
+npm run typecheck                             # 仓库级 turbo：7 successful, 7 total
+```

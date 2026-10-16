@@ -393,6 +393,14 @@ npm run test -w <app>       # 该 app 测试
 | `forum` | `report` | 举报 |
 | `wellbeing` | `cancel` | 取消预约 |
 | `takeout-guard` | `resolve` | 结案 |
+| `buddy` | `join` | 加入搭子 |
+| `buddy` | `leave` | 退出搭子 |
+| `buddy` | `close` | 发起人关闭招募 |
+| `buddy` | `decide` | 发起人审批申请（接受 / 拒绝） |
+| `buddy` | `feedback` | 匹配反馈（喂给打分模型，见 `docs/features/buddy-matching.md`） |
+| `wildlife` | `moderate` | 管理员审核（隐藏不当图片 / 纠正物种分类） |
+| `techpie` | `renew` | 续期 TechPie / 校园系统绑定 |
+| `facility` | `cancel` | 发起人取消场馆预约（仅 `booked` 状态可取消） |
 
 > **修订（v1.1.1）**：初版遗漏了 `groupbuy.cancel`、`lost-found.match`、`lost-found.close`。
 > `mobile-flutter` 实现时发现并上报 —— 这三个都是**真实领域需要**的动作，不是自创，
@@ -504,3 +512,142 @@ npm workspaces 嵌套安装，实测 `npm install` exit 0。
 | 5 | 未做中国商标网实时检索、未取得法律意见（G-IP1 / G-IP2） | **上线** | 待指派 |
 | 6 | `Taro` 的 GitHub license 报 `NOASSERTION`（npm 报 MIT），采用前需人工确认 | M0 收尾 | Lead |
 | 7 | TechPie-flutter 仓库**无 LICENSE 文件**（README 声称 MIT）—— 只借鉴架构模式，不复制代码 | 持续 | 全体 |
+
+
+### 11.10 规格评审裁决（v1.2 · 2026-10-17）
+
+> `feature-specs` 在交付 `docs/features/{buddy-matching,wildlife-map,techpie-integration}.md`
+> 时提出 8 项硬阻塞。以下为 Lead 的逐条裁决，**全部具有契约效力**。
+
+#### A. `WildlifeSighting` 必须补 `observedAt`（用户明确要求"发现时间"）
+
+契约原模型只有 `createdAt`（**入库时间**），而用户需求要的是**发现时间**（观察时刻），
+两者在补录、离线同步场景下会相差很久。裁决：
+
+- 新增 `observedAt: DateTime`（必填，**观察时刻**，客户端采集）
+- `createdAt` 保留，语义收窄为**服务端入库时刻**，只用于审计与排序兜底
+- 校验：`observedAt` 不得晚于 `createdAt + 5 分钟`（容忍客户端时钟漂移），
+  不得早于 `createdAt - 30 天`（防止误填远古时间污染轨迹）
+- 违反返回 `VALIDATION_FAILED`
+
+#### B. `TechpieLink.provider` 枚举改为校园平台标识
+
+原枚举 `techpie | geekpie` 与实现需要不一致（实现要区分 eGate / CpDaily / 校园卡 / CAS）。
+裁决改为与 `CampusBinding.platform` **同一套**：
+
+```
+provider: 'cas' | 'egate' | 'cpdaily' | 'ecard' | 'techpie'
+```
+
+**理由**：绑定目标本来就是校园系统，复用同一枚举避免两套平台标识长期漂移。
+`techpie` 保留为"与 GeekPie 体系互联"这一项。
+
+#### C. 新增第 20 个模块 `facility`（场馆预约）
+
+TechPie 已实现场馆/健身房预约（`oa-gym`）。评审指出它在现有 20 个模块里**无处安放**：
+- 不属于 `schedule`（不是课程）
+- 不属于 `campus-card`（不是支付）
+- 不属于 `techpie`（`techpie` 是**互联互通**，不是具体校园服务）
+
+裁决：**新增业务模块 `facility`**（中文名「场馆预约」），`sensitivity: 'medium'`，
+`requiresConsent: false`，路由 `facility`。模块总数 19 → **20**。
+
+> 这是模块注册表的一次**正式演进**。`packages/contracts/src/modules.ts` 是唯一真相，
+> 三端的导航/宫格会自动跟随（这正是把它做成注册表而不是各端硬编码的价值）。
+> 相关测试与文档需同步更新。
+
+#### D. `buddy.joinedCount` 初值语义
+
+裁决：**`joinedCount` 含发起人，初值为 1**；`capacity` 也含发起人。
+即"capacity=4 的搭子"= 发起人 + 最多 3 个加入者。理由：符合直觉（"4 人局"就是 4 个人），
+且避免 UI 上出现"0/4"这种奇怪初值。
+
+#### E. 游标是**不透明**的，允许复合游标
+
+`docs/architecture/03-api-contract.md` 曾写"cursor 就是 ULID"，这**过度约束**了实现：
+`buddy` 的 `sort=startsAt_asc` 需要 `(startsAt, id)` 复合游标。
+
+裁决（**覆盖 03-api-contract.md 的该表述**）：
+- **cursor 对客户端完全不透明**：客户端只能原样回传，**不得解析、不得构造、不得假设格式**
+- 服务端可以自由编码复合键（base64url 编码的 `(sortKey, id)` 即可）
+- 唯一硬约束：**同一 `sort` + 同一 `filter` 下，游标必须稳定**（翻页不重不漏）
+- 切换 `sort` 或 `filter` 时游标失效，返回 `VALIDATION_FAILED`
+
+#### F. 微信小程序 `web-view` **不能**注入 cookie —— I3 在小程序端没有出口
+
+评审实测判断：小程序 `web-view` 无法自定义请求头、无法跨域设置 cookie。
+因此契约 §11.4 的 **I3（校园 cookie 唯一出口供 WebView 注入）在小程序端不成立**。
+
+裁决：
+- I3 **仍然对 Flutter / Web 端有效**（它们能控制 WebView 请求头）
+- 小程序端的校园系统访问走**两条替代路径**，按优先级：
+  1. **用户自登录**（在 `web-view` 内让用户自己走学校登录页，cookie 由学校域自己种）
+  2. **服务端代理**（后端持 session 代为请求，返回结构化数据，不下发 cookie）
+- 小程序端**禁止**尝试绕过此限制（如伪造 header、劫持 cookie）
+- 这是**平台能力边界**，不是实现缺陷；三端 UI 需按端展示不同引导文案
+
+#### G. `buddy` 明确不做 dating（合规与定位）
+
+STUMatch 有 `dating`（交友/约会）板块。裁决：**可达鸭不实现**。理由：
+1. 校园平台做约会匹配的合规与舆情风险显著高于"找搭子"
+2. 产品定位是"什么需求都可以到达"的**事务性**平台，不是社交平台
+3. 若未来要做，必须**新开模块 + 新 ADR + 独立二次同意门**，不得在 `buddy` 里悄悄加
+
+`buddy` 的三板块定为 `academic` / `daily` / `sport`。
+
+#### H. 仍然开放、需人来解决的项
+
+评审列出的 10 项"需人解决"问题**全部维持开放**，已登记进各规格文档的未决表。
+其中最阻塞的两项：
+
+| # | 问题 | 阻塞 | 影响 |
+| --- | --- | --- | --- |
+| 1 | 学校是否允许第三方代持 CASTGC | **M1** | 若不允许，`schedule`/`campus-card` 需改为服务端代理或用户自登录 |
+| 2 | 校园平面图能否获取、需什么授权 | wildlife Phase 1 | 兜底方案：自绘 SVG 底图（规格文档已给出） |
+
+> **好消息（评审实证）**：校园卡走**独立 OPENID 通道**，不依赖 CASTGC
+> （`ecard_api_client.dart` 直连校园卡域名）。因此 **Phase 0 可以零合规风险开工**：
+> 校园卡 + WebView 直连，不需要代持任何校园会话。
+
+
+### 11.11 子资源与集合路由（v1.3 · 2026-10-17）
+
+`web-forum-faq` 与 `miniapp-forum-faq` 各自独立地把"投票"建模为**子资源集合的创建**
+（`POST /faq/items/:id/votes`）而不是领域动作，并据此请求登记。Lead 裁决：**认可，并上升为通用约定。**
+
+#### 规则
+
+除了 §6.1 的统一 CRUD 形状与 §11.2 的领域动作，**允许**以下子资源/集合路由，且**无需**逐个登记进 §11.2
+（因为它们是"资源"而不是"动作"，语义自明）：
+
+| 形状 | 含义 | 例 |
+| --- | --- | --- |
+| `GET /<mod>/<collection>` | 附属集合的列表 | `GET /forum/boards` |
+| `POST /<mod>/items/:id/<sub>` | 向子集合添加成员（**幂等由 (父, 主体) 唯一约束保证**） | `POST /faq/items/:id/votes` |
+| `GET /<mod>/items/:id/<sub>` | 子集合列表（游标分页） | `GET /forum/items/:id/replies` |
+| `POST /<mod>/items/:id/replies` | 回复（子集合成员，可带 `parentReplyId` 做楼中楼） | — |
+| `GET/POST /<mod>/tickets` | 工单集合 | `GET /faq/tickets` |
+
+**判定标准**：如果这个操作**可以重复执行且每次都是"新增一个成员"**，它是子资源，用 `POST .../<复数名词>`；
+如果它是**对既有资源的状态迁移**（且重复执行应被拒绝或幂等），它是领域动作，必须登记进 §11.2。
+
+> 反例：`POST /forum/items/:id/report` 是动作（同一人对同一帖重复举报应被 `CONFLICT` 拒绝），
+> 所以它**必须**留在 §11.2 里 —— 这条边界是这次评审最有价值的产出。
+
+#### `GET /faq/categories`
+
+已补进 OpenAPI。**服务端必须提供该端点**，不要让客户端从 `/faq/items` 全量派生
+（那会把分类字典变成客户端逻辑，且无法承载排序与归档分类）。
+
+### 11.12 匿名 handle 的残余风险（必须知晓）
+
+实现采用 `anonHandle = HMAC(secret, userId + '|' + scope)`，`scope` 为**帖子/举报作用域**，
+因此**跨帖不可关联**（这是正确设计）。但仍有两条残余风险，登记在案：
+
+| # | 风险 | 现状 | 建议 |
+| --- | --- | --- | --- |
+| R1 | **学号空间小（8 位数字）+ secret 泄漏 → 可暴力枚举反推作者** | `ANON_HANDLE_SECRET` 由环境变量提供；`.env.example` 尚未落地 | ① secret 必须为高熵随机值且**不得有默认值**（缺失即启动失败）② 生产建议改为 HMAC 后**再截断+加盐**或直接用随机 UUID 存映射表 |
+| R2 | `authorId` 字段对匿名内容返回的是 handle（客户端 schema 要求非空） | 已如此实现；字段名有轻微误导 | 客户端**不得**把匿名内容的 `authorId` 当实名 ID 使用；已在各端测试中断言 |
+
+**未做**：没有做 handle 轮换（rotation）。若要支持"匿名身份可撤销/可轮换"，需要额外的映射表，
+那会**重新引入可关联性**，属于产品决策，不在 M0 范围。

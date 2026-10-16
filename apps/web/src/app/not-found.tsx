@@ -8,7 +8,7 @@ export default function NotFound() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-16">
       <KdyEmpty
         title="页面不存在"
-        description="你访问的模块或拼单可能已被下架。可以从首页的 19 个模块入口重新进入。"
+        description="你访问的模块或拼单可能已被下架。可以从首页的 20 个模块入口重新进入。"
         action={
           <div className="flex flex-wrap items-center justify-center gap-3">
             <KdyButton href="/">返回首页</KdyButton>

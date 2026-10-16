@@ -1,3 +1,6 @@
+import type { BrowseFaqState } from '../application/faq/browseFaq'
+import type { ListForumBoardsState } from '../application/forum/listForumBoards'
+import type { ListForumPostsState } from '../application/forum/listForumPosts'
 import type { ListGroupBuysState } from '../application/groupbuy/listGroupBuys'
 import type { Session } from '../domain/models/session'
 import type { AppContainer } from './container'
@@ -19,20 +22,29 @@ import type { AppContainer } from './container'
 export interface BootstrapSnapshot {
   session: Session
   list: ListGroupBuysState
+  forumBoards: ListForumBoardsState
+  forumPosts: ListForumPostsState
+  faq: BrowseFaqState
   durationMs: number
 }
 
 /**
  * 第 1 步：同步 hydrate。
  * 不做任何网络访问 —— 只读本地存储 + 内存快照。
+ *
+ * 覆盖用户最可能首屏进入的模块：拼单（既有切片）+ 论坛 + FAQ。
+ * 每个 `hydrate()` 都是幂等的，页面自己再调一次也不会重复读盘。
  */
 export function bootstrapSync(container: AppContainer): BootstrapSnapshot {
   const startedAt = Date.now()
 
   const session = container.useCases.session.hydrate()
   const list = container.useCases.listGroupBuys.hydrate()
+  const forumBoards = container.useCases.listForumBoards.hydrate()
+  const forumPosts = container.useCases.listForumPosts.hydrate()
+  const faq = container.useCases.browseFaq.hydrate()
 
-  return { session, list, durationMs: Date.now() - startedAt }
+  return { session, list, forumBoards, forumPosts, faq, durationMs: Date.now() - startedAt }
 }
 
 /**
@@ -43,7 +55,17 @@ export function bootstrapSync(container: AppContainer): BootstrapSnapshot {
  * 内部所有失败都被吞掉（静默降级），错误状态由各用例写入自己的 state。
  */
 export function refreshInBackground(container: AppContainer): void {
-  void refreshSessionToken(container).then(() => container.useCases.listGroupBuys.load())
+  void refreshSessionToken(container)
+    .then(() =>
+      Promise.all([
+        container.useCases.listGroupBuys.load(),
+        container.useCases.listForumBoards.load(),
+        container.useCases.listForumPosts.load(),
+        container.useCases.browseFaq.load(),
+      ]),
+    )
+    // 静默降级：单个模块的意外异常不能让启动流程变成 unhandled rejection
+    .catch(() => undefined)
 }
 
 async function refreshSessionToken(container: AppContainer): Promise<void> {

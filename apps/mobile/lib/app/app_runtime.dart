@@ -10,6 +10,8 @@ import '../data/mock/mock_campus_session_repository.dart';
 import '../data/mock/mock_consent_store.dart';
 import '../data/mock/mock_controls.dart';
 import '../data/mock/mock_errand_repository.dart';
+import '../data/mock/mock_faq_repository.dart';
+import '../data/mock/mock_forum_repository.dart';
 import '../data/mock/mock_groupbuy_repository.dart';
 import '../data/mock/mock_lost_found_repository.dart';
 import '../data/mock/mock_wellbeing_repository.dart';
@@ -17,6 +19,8 @@ import '../data/repositories/remote_auth_repository.dart';
 import '../data/repositories/remote_campus_session_repository.dart';
 import '../data/repositories/remote_consent_repository.dart';
 import '../data/repositories/remote_errand_repository.dart';
+import '../data/repositories/remote_faq_repository.dart';
+import '../data/repositories/remote_forum_repository.dart';
 import '../data/repositories/remote_groupbuy_repository.dart';
 import '../data/repositories/remote_lost_found_repository.dart';
 import '../data/repositories/remote_wellbeing_repository.dart';
@@ -28,6 +32,8 @@ import '../domain/ports/campus_session_port.dart';
 import '../domain/ports/consent_port.dart';
 import '../domain/ports/credential_store_port.dart';
 import '../domain/ports/errand_port.dart';
+import '../domain/ports/faq_port.dart';
+import '../domain/ports/forum_port.dart';
 import '../domain/ports/groupbuy_port.dart';
 import '../domain/ports/kedaya_api_port.dart';
 import '../domain/ports/local_cache_port.dart';
@@ -54,6 +60,8 @@ final class AppRuntime {
     required this.campusSessions,
     required this.consent,
     required this.groupbuy,
+    required this.forum,
+    required this.faq,
     required this.errand,
     required this.lostFound,
     required this.wellbeing,
@@ -81,6 +89,13 @@ final class AppRuntime {
   final CampusSessionPort campusSessions;
   final ConsentPort consent;
   final GroupbuyPort groupbuy;
+
+  /// 论坛（契约 §4.1 `forum`，敏感级中；支持匿名，契约 §9）。
+  final ForumPort forum;
+
+  /// 常见问题（契约 §4.1 `faq`，敏感级低；检索无需登录）。
+  final FaqPort faq;
+
   final ErrandPort errand;
   final LostFoundPort lostFound;
   final WellbeingPort wellbeing;
@@ -119,6 +134,8 @@ final class AppRuntime {
       campusSessions: campus,
       consent: consent,
       groupbuy: MockGroupbuyRepository(controls: controls),
+      forum: MockForumRepository(controls: controls),
+      faq: MockFaqRepository(controls: controls),
       errand: MockErrandRepository(),
       lostFound: MockLostFoundRepository(),
       wellbeing: MockWellbeingRepository(),
@@ -192,6 +209,8 @@ final class AppRuntime {
       campusSessions: campus,
       consent: consent,
       groupbuy: RemoteGroupbuyRepository(api),
+      forum: RemoteForumRepository(api),
+      faq: RemoteFaqRepository(api),
       errand: RemoteErrandRepository(api),
       lostFound: RemoteLostFoundRepository(api),
       wellbeing: wellbeing,

@@ -49,15 +49,15 @@ $kdy-font-size-xxl: 24px;
 $kdy-font-size-display: 32px;
 
 // lineHeight
-$kdy-line-height-tight: 1.25px;
-$kdy-line-height-normal: 1.5px;
-$kdy-line-height-loose: 1.75px;
+$kdy-line-height-tight: 1.25;
+$kdy-line-height-normal: 1.5;
+$kdy-line-height-loose: 1.75;
 
 // fontWeight
-$kdy-font-weight-regular: 400px;
-$kdy-font-weight-medium: 500px;
-$kdy-font-weight-semibold: 600px;
-$kdy-font-weight-bold: 700px;
+$kdy-font-weight-regular: 400;
+$kdy-font-weight-medium: 500;
+$kdy-font-weight-semibold: 600;
+$kdy-font-weight-bold: 700;
 
 // shadow
 $kdy-shadow-sm: 0 1px 2px rgba(27,36,54,0.06);
@@ -69,12 +69,12 @@ $kdy-font-family-sans: PingFang SC, Hiragino Sans GB, Microsoft YaHei, Noto Sans
 $kdy-font-family-mono: SFMono-Regular, Menlo, Consolas, monospace;
 
 // zIndex
-$kdy-z-index-base: 0px;
-$kdy-z-index-dropdown: 1000px;
-$kdy-z-index-sticky: 1100px;
-$kdy-z-index-overlay: 1200px;
-$kdy-z-index-modal: 1300px;
-$kdy-z-index-toast: 1400px;
+$kdy-z-index-base: 0;
+$kdy-z-index-dropdown: 1000;
+$kdy-z-index-sticky: 1100;
+$kdy-z-index-overlay: 1200;
+$kdy-z-index-modal: 1300;
+$kdy-z-index-toast: 1400;
 
 // 便捷 map，便于 SCSS 侧遍历
 $kdy-tokens: (
@@ -126,15 +126,15 @@ $kdy-tokens: (
     "display": 32px,
   ),
   "line-height": (
-    "tight": 1.25px,
-    "normal": 1.5px,
-    "loose": 1.75px,
+    "tight": 1.25,
+    "normal": 1.5,
+    "loose": 1.75,
   ),
   "font-weight": (
-    "regular": 400px,
-    "medium": 500px,
-    "semibold": 600px,
-    "bold": 700px,
+    "regular": 400,
+    "medium": 500,
+    "semibold": 600,
+    "bold": 700,
   ),
   "shadow": (
     "sm": 0 1px 2px rgba(27,36,54,0.06),
@@ -146,12 +146,12 @@ $kdy-tokens: (
     "mono": SFMono-Regular, Menlo, Consolas, monospace,
   ),
   "z-index": (
-    "base": 0px,
-    "dropdown": 1000px,
-    "sticky": 1100px,
-    "overlay": 1200px,
-    "modal": 1300px,
-    "toast": 1400px,
+    "base": 0,
+    "dropdown": 1000,
+    "sticky": 1100,
+    "overlay": 1200,
+    "modal": 1300,
+    "toast": 1400,
   ),
 );
 

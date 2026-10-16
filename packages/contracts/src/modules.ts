@@ -171,6 +171,16 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
     requiresConsent: false,
     route: 'wildlife',
   },
+  {
+    id: 'facility',
+    nameZh: '场馆预约',
+    nameEn: 'Facility Booking',
+    summary: '体育场馆、健身房等校园场馆的预约与核销',
+    category: 'business',
+    sensitivity: 'medium',
+    requiresConsent: false,
+    route: 'facility',
+  },
 ] as const;
 
 /* ------------------------------------------------------------------ *

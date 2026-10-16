@@ -1,3 +1,7 @@
+export * from './httpFaqRepository'
+export * from './httpForumRepository'
 export * from './httpGroupBuyRepository'
+export * from './mockFaqRepository'
+export * from './mockForumRepository'
 export * from './mockGroupBuyRepository'
 export * from './toRepositoryError'

@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/app_providers.dart';
 import '../../../../data/mock/mock_controls.dart';
-import '../../../../data/mock/mock_failure.dart';
 import '../../../../domain/models/groupbuy_order.dart';
 import '../../../../presentation/components/async_state_view.dart';
+import '../../../../presentation/components/mock_state_menu.dart';
 import '../../../../presentation/components/state_views.dart';
 import '../../../../presentation/theme/kedaya_tokens.dart';
 import '../../application/groupbuy_providers.dart';
@@ -32,7 +32,7 @@ class GroupbuyListPage extends ConsumerWidget {
         title: const Text('拼单'),
         actions: <Widget>[
           if (mockControls != null)
-            _MockStateMenu(
+            MockStateMenu(
               controls: mockControls,
               onChanged: () => ref.invalidate(groupbuyListControllerProvider),
             ),
@@ -133,34 +133,6 @@ class _ListFooter extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// mock 三态演示开关（真实运行时不存在此入口）。
-class _MockStateMenu extends StatelessWidget {
-  const _MockStateMenu({required this.controls, required this.onChanged});
-
-  final MockControls controls;
-  final VoidCallback onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      tooltip: 'mock 三态演示',
-      icon: const Icon(Icons.science_outlined),
-      onSelected: (String value) {
-        controls.emptyResults = value == 'empty';
-        controls.failureMode = value == 'error'
-            ? MockFailureMode.upstreamUnavailable
-            : MockFailureMode.none;
-        onChanged();
-      },
-      itemBuilder: (BuildContext context) => const <PopupMenuEntry<String>>[
-        PopupMenuItem<String>(value: 'normal', child: Text('正常数据')),
-        PopupMenuItem<String>(value: 'empty', child: Text('空列表（empty 态）')),
-        PopupMenuItem<String>(value: 'error', child: Text('上游故障（error 态）')),
-      ],
     );
   }
 }

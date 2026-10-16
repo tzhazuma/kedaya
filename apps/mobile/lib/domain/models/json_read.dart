@@ -129,6 +129,15 @@ DateTime? readDateTimeOrNull(Map<String, Object?> json, String key) {
 /// 写回时统一用 UTC ISO-8601（与后端约定一致）。
 String isoUtc(DateTime value) => value.toUtc().toIso8601String();
 
+/// wire 枚举值比较：**忽略大小写与首尾空白**。
+///
+/// 为什么需要它：`docs/architecture/02-domain-model.md` 用
+/// `enum<DRAFT|PUBLISHED|…>` 的大写记号描述取值，而 `services/api` 实现里
+/// 论坛主题/回复的状态是**小写**（`published`）、举报状态却是**大写**
+/// （`PENDING`）。同一个契约下两种大小写并存，客户端只能用不敏感比较兜住，
+/// 否则一个大小写差异就会让整条数据收敛成 `unknown`（帖子变成不可见/不可回复）。
+bool wireEquals(String a, String b) => a.trim().toLowerCase() == b.trim().toLowerCase();
+
 List<Object?> readList(Map<String, Object?> json, String key) {
   final Object? value = json[key];
   if (value is List<Object?>) return value;

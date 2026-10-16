@@ -12,13 +12,13 @@ import {
 } from './modules';
 
 describe('模块注册表', () => {
-  it('共 19 个模块（14 业务 + 5 基础）', () => {
-    expect(MODULES).toHaveLength(19);
-    expect(BUSINESS_MODULES).toHaveLength(14);
+  it('共 20 个模块（15 业务 + 5 基础）', () => {
+    expect(MODULES).toHaveLength(20);
+    expect(BUSINESS_MODULES).toHaveLength(15);
     expect(CORE_MODULES).toHaveLength(5);
   });
 
-  it('覆盖需求图中的全部 14 个业务模块', () => {
+  it('覆盖需求图中的全部 14 个业务模块 + 场馆预约（TechPie 并入）', () => {
     const ids = BUSINESS_MODULES.map((m) => m.id);
     expect(ids).toEqual([
       'groupbuy',
@@ -35,6 +35,7 @@ describe('模块注册表', () => {
       'faq',
       'techpie',
       'wildlife',
+      'facility',
     ]);
   });
 

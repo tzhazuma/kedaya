@@ -36,9 +36,9 @@ describe('OpenAPI 契约文件', () => {
     }
   });
 
-  it('19 个模块都有对应的 tag 与至少一个端点', () => {
+  it('20 个模块都有对应的 tag 与至少一个端点', () => {
     const tagNames = (spec.tags ?? []).map((t: any) => t.name);
-    expect(tagNames).toHaveLength(19);
+    expect(tagNames).toHaveLength(20);
 
     const taggedRoutes = new Set<string>();
     for (const [path, ops] of Object.entries(spec.paths ?? {})) {

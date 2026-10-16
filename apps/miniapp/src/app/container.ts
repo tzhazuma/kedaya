@@ -1,3 +1,19 @@
+import { createBrowseFaqUseCase } from '../application/faq/browseFaq'
+import type { BrowseFaqUseCase } from '../application/faq/browseFaq'
+import { createMyTicketsUseCase } from '../application/faq/myTickets'
+import type { MyTicketsUseCase } from '../application/faq/myTickets'
+import { createCreateForumPostUseCase } from '../application/forum/createForumPost'
+import type { CreateForumPostUseCase } from '../application/forum/createForumPost'
+import { createForumPostDetailUseCase } from '../application/forum/forumPostDetail'
+import type { ForumPostDetailUseCase } from '../application/forum/forumPostDetail'
+import { createListForumBoardsUseCase } from '../application/forum/listForumBoards'
+import type { ListForumBoardsUseCase } from '../application/forum/listForumBoards'
+import { createListForumPostsUseCase } from '../application/forum/listForumPosts'
+import type { ListForumPostsUseCase } from '../application/forum/listForumPosts'
+import { createReplyToPostUseCase } from '../application/forum/replyToPost'
+import type { ReplyToPostUseCase } from '../application/forum/replyToPost'
+import { createReportForumContentUseCase } from '../application/forum/reportForumContent'
+import type { ReportForumContentUseCase } from '../application/forum/reportForumContent'
 import { createListGroupBuysUseCase } from '../application/groupbuy/listGroupBuys'
 import type { ListGroupBuysUseCase } from '../application/groupbuy/listGroupBuys'
 import { createGroupBuyDetailUseCase } from '../application/groupbuy/groupBuyDetail'
@@ -8,7 +24,13 @@ import { createSessionUseCase } from '../application/auth/session'
 import type { SessionUseCase } from '../application/auth/session'
 import { createApiClient, createAuthRefresher, createTaroHttpPort, createTracePort } from '../data/api'
 import type { ApiClient } from '../data/api'
+import { createHttpFaqRepository } from '../data/repositories/httpFaqRepository'
+import { createHttpForumRepository } from '../data/repositories/httpForumRepository'
 import { createHttpGroupBuyRepository } from '../data/repositories/httpGroupBuyRepository'
+import { createMockFaqRepository } from '../data/repositories/mockFaqRepository'
+import type { MockFaqRepository } from '../data/repositories/mockFaqRepository'
+import { createMockForumRepository } from '../data/repositories/mockForumRepository'
+import type { MockForumRepository } from '../data/repositories/mockForumRepository'
 import { createMockGroupBuyRepository } from '../data/repositories/mockGroupBuyRepository'
 import type { MockGroupBuyRepository } from '../data/repositories/mockGroupBuyRepository'
 import { createMemoryStorage } from '../data/storage/memoryStorage'
@@ -17,6 +39,8 @@ import { StorageKeys } from '../data/storage/keys'
 import { createTaroStorage } from '../data/storage/taroStorage'
 import type { CachePort } from '../domain/ports/cachePort'
 import type { ClockPort } from '../domain/ports/clockPort'
+import type { FaqRepository } from '../domain/ports/faqRepository'
+import type { ForumRepository } from '../domain/ports/forumRepository'
 import type { GroupBuyRepository } from '../domain/ports/groupbuyRepository'
 import type { AuthRefresherPort, SessionStorePort, TokenStorePort } from '../domain/ports/sessionPort'
 import type { TracePort } from '../domain/ports/tracePort'
@@ -64,13 +88,27 @@ export interface AppContainer {
   refresher: AuthRefresherPort
   apiClient: ApiClient
   groupBuyRepository: GroupBuyRepository
+  forumRepository: ForumRepository
+  faqRepository: FaqRepository
   /** 仅 mock 模式下非空 —— 页面用它演示「三态」 */
   mockControls: MockGroupBuyRepository | null
+  /** 论坛的 mock 演示控制面（仅 mock 模式下非空） */
+  mockForumControls: MockForumRepository | null
+  /** FAQ 的 mock 演示控制面（仅 mock 模式下非空） */
+  mockFaqControls: MockFaqRepository | null
   useCases: {
     session: SessionUseCase
     listGroupBuys: ListGroupBuysUseCase
     groupBuyDetail: GroupBuyDetailUseCase
     joinGroupBuy: JoinGroupBuyUseCase
+    listForumBoards: ListForumBoardsUseCase
+    listForumPosts: ListForumPostsUseCase
+    forumPostDetail: ForumPostDetailUseCase
+    createForumPost: CreateForumPostUseCase
+    replyToPost: ReplyToPostUseCase
+    reportForumContent: ReportForumContentUseCase
+    browseFaq: BrowseFaqUseCase
+    myTickets: MyTicketsUseCase
   }
 }
 
@@ -78,6 +116,8 @@ export interface ContainerOverrides {
   cache?: CachePort
   clock?: ClockPort
   repository?: GroupBuyRepository
+  forumRepository?: ForumRepository
+  faqRepository?: FaqRepository
   env?: Partial<AppEnv>
 }
 
@@ -113,9 +153,19 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
   const mockRepository = env.useMock
     ? createMockGroupBuyRepository({ latencyMs: env.mockLatencyMs })
     : null
+  const mockForumRepository = env.useMock
+    ? createMockForumRepository({ latencyMs: env.mockLatencyMs })
+    : null
+  const mockFaqRepository = env.useMock
+    ? createMockFaqRepository({ latencyMs: env.mockLatencyMs })
+    : null
 
   const groupBuyRepository: GroupBuyRepository =
     overrides.repository ?? mockRepository ?? createHttpGroupBuyRepository(apiClient)
+  const forumRepository: ForumRepository =
+    overrides.forumRepository ?? mockForumRepository ?? createHttpForumRepository(apiClient)
+  const faqRepository: FaqRepository =
+    overrides.faqRepository ?? mockFaqRepository ?? createHttpFaqRepository(apiClient)
 
   const session = createSessionUseCase(sessionStore)
   const listGroupBuys = createListGroupBuysUseCase({
@@ -136,6 +186,56 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     clock,
   })
 
+  const listForumBoards = createListForumBoardsUseCase({
+    repository: forumRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.forumBoardListCache,
+  })
+  const listForumPosts = createListForumPostsUseCase({
+    repository: forumRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.forumPostListCache,
+  })
+  const forumPostDetail = createForumPostDetailUseCase({
+    repository: forumRepository,
+    cache,
+    clock,
+    cacheKeyFor: (id) => `${StorageKeys.forumPostDetailCache}:${id}`,
+  })
+  const createForumPost = createCreateForumPostUseCase({
+    repository: forumRepository,
+    session: sessionStore,
+    clock,
+  })
+  const replyToPost = createReplyToPostUseCase({
+    repository: forumRepository,
+    session: sessionStore,
+    clock,
+  })
+  const reportForumContent = createReportForumContentUseCase({
+    repository: forumRepository,
+    session: sessionStore,
+    clock,
+  })
+
+  const browseFaq = createBrowseFaqUseCase({
+    repository: faqRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.faqArticleListCache,
+    votesCacheKey: StorageKeys.faqHelpfulVotes,
+    session: sessionStore,
+  })
+  const myTickets = createMyTicketsUseCase({
+    repository: faqRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.faqTicketListCache,
+    session: sessionStore,
+  })
+
   return {
     env,
     trace,
@@ -146,8 +246,25 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     refresher,
     apiClient,
     groupBuyRepository,
+    forumRepository,
+    faqRepository,
     mockControls: mockRepository,
-    useCases: { session, listGroupBuys, groupBuyDetail, joinGroupBuy },
+    mockForumControls: mockForumRepository,
+    mockFaqControls: mockFaqRepository,
+    useCases: {
+      session,
+      listGroupBuys,
+      groupBuyDetail,
+      joinGroupBuy,
+      listForumBoards,
+      listForumPosts,
+      forumPostDetail,
+      createForumPost,
+      replyToPost,
+      reportForumContent,
+      browseFaq,
+      myTickets,
+    },
   }
 }
 
