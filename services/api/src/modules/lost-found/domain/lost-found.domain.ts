@@ -8,6 +8,7 @@ import type { ResourceRepository } from '../../../common/crud/resource';
 
 /** 领域模型：字段与 Prisma 行字段一一对应（domain 层不 import Prisma） */
 export interface LostFoundItemModel {
+  id: string;
   reporterId: string;
   kind: string;
   title: string;
@@ -22,7 +23,7 @@ export interface LostFoundItemModel {
 
 /** 创建输入。 * 归属字段 `reporterId` 在未登录时可由请求主体补全（见 service.create）。 */
 export interface CreateLostFoundItemInput {
-  reporterId: string;
+  reporterId?: string;
   kind: string;
   title: string;
   description?: string | null;

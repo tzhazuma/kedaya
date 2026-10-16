@@ -35,24 +35,27 @@ const baseConfig: UserConfigExport<'webpack5'> = {
    * 而本仓库多个工作流并行安装/构建，必须避免对共享目录的隐式写入。
    */
   compiler: { type: 'webpack5', prebundle: { enable: false } },
-  /**
-   * 必须把 workspace 里的 TS 包纳入 babel-loader 的处理范围。
-   *
-   * Taro 默认的 script rule 只 include `sourceDir`（apps/miniapp/src），
-   * 而 `@kedaya/contracts` / `@kedaya/shared` / `@kedaya/design-tokens` 的
-   * `main` 直接指向 **TS 源码**（`./src/index.ts`）。webpack 解析符号链接后拿到的是
-   * packages 下各包 src 目录里的真实路径，落在 sourceDir 之外 → 没有 loader →
-   * `ModuleParseError: Unexpected token`。
-   *
-   * Taro 为此提供了 `compile.include`（见 @tarojs/taro 的 ICompileOption），
-   * 它会 unshift 进 script rule 的 include 列表。
-   */
-  compile: {
-    include: [path.resolve(__dirname, '..', '..', '..', 'packages')],
-  },
   cache: { enable: false },
   sass: { resource: [TOKENS_SCSS] },
   mini: {
+    /**
+     * 必须把 workspace 里的 TS 包纳入 babel-loader 的处理范围。
+     *
+     * Taro 默认的 script rule 只 include `sourceDir`（apps/miniapp/src），
+     * 而 `@kedaya/contracts` / `@kedaya/shared` / `@kedaya/design-tokens` 的
+     * `main` 直接指向 **TS 源码**（`./src/index.ts`）。webpack 解析符号链接后拿到的是
+     * packages 下各包 src 目录里的真实路径，落在 sourceDir 之外 → 没有 loader →
+     * `ModuleParseError: Unexpected token` on `export type ApiErrorCode =`。
+     *
+     * ⚠️ 这个选项在 **`mini.compile`** 下，**不是**顶层 `compile`：
+     *   - `mini.compile.include`  → any[]，真正会 unshift 进 script rule 的 include
+     *     （见 @tarojs/taro 的 types/compile/config/mini.d.ts）
+     *   - 顶层 `compile.include`  → 属于 IPrebundle（预打包）语义，放这里会被静默忽略
+     * 我们踩过一次：写在顶层时构建仍然报 ModuleParseError。
+     */
+    compile: {
+      include: [path.resolve(__dirname, '..', '..', '..', 'packages')],
+    },
     postcss: {
       pxtransform: { enable: true, config: {} },
       cssModules: { enable: false },

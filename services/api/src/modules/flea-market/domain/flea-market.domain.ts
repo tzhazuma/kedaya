@@ -8,6 +8,7 @@ import type { ResourceRepository } from '../../../common/crud/resource';
 
 /** 领域模型：字段与 Prisma 行字段一一对应（domain 层不 import Prisma） */
 export interface FleaItemModel {
+  id: string;
   sellerId: string;
   title: string;
   description: string | null;
@@ -22,7 +23,7 @@ export interface FleaItemModel {
 
 /** 创建输入。 * 归属字段 `sellerId` 在未登录时可由请求主体补全（见 service.create）。 */
 export interface CreateFleaItemInput {
-  sellerId: string;
+  sellerId?: string;
   title: string;
   description?: string | null;
   priceFen: number;

@@ -726,11 +726,18 @@ function domainFile(spec) {
   const ro = new Set(readOnly);
   const opt = new Set(optionalCreate);
 
-  const modelFields = fields.map(([name, type]) => `  ${name}: ${tsType(type)};`).join('\n');
+  // Prisma 每个模型都有 `id String @id @default(cuid())`，但 SPEC 的 fields 只列业务字段，
+  // 因此必须在这里显式补上主键 —— 否则领域模型没有 id，CRUD 端口、findById 与测试全都无法工作。
+  const modelFields = [
+    '  id: string;',
+    ...fields.map(([name, type]) => `  ${name}: ${tsType(type)};`),
+  ].join('\n');
 
   const createFields = fields
     .filter(([name]) => !ro.has(name))
     .map(([name, type]) => {
+      // 归属字段由 service.create 从请求主体补全（见 ownerNote），所以对调用方是可选的
+      if (ownerField && name === ownerField) return `  ${name}?: ${TS_BASE[baseOf(type)]};`;
       if (isNullable(type)) return `  ${name}?: ${TS_BASE[baseOf(type)]} | null;`;
       if (opt.has(name)) return `  ${name}?: ${TS_BASE[baseOf(type)]};`;
       return `  ${name}: ${TS_BASE[baseOf(type)]};`;

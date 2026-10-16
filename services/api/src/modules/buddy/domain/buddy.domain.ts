@@ -8,6 +8,7 @@ import type { ResourceRepository } from '../../../common/crud/resource';
 
 /** 领域模型：字段与 Prisma 行字段一一对应（domain 层不 import Prisma） */
 export interface BuddyGroupModel {
+  id: string;
   ownerId: string;
   activity: string;
   title: string;
@@ -21,7 +22,7 @@ export interface BuddyGroupModel {
 
 /** 创建输入。 * 归属字段 `ownerId` 在未登录时可由请求主体补全（见 service.create）。 */
 export interface CreateBuddyGroupInput {
-  ownerId: string;
+  ownerId?: string;
   activity: string;
   title: string;
   campusSpot: string;
