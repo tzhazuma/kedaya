@@ -29,12 +29,39 @@
 
 | 端 | 技术 | 状态 |
 | --- | --- | --- |
-| **微信小程序**（主端） | Taro 4 + React 19 | 🚧 框架就绪 |
-| **原生移动端** iOS / Android / 鸿蒙 | Flutter 3 | 🚧 框架就绪 |
-| **Web 门户 + 管理后台** | Next.js 16 | 🚧 框架就绪 |
-| **后端** | NestJS 12 + Prisma + PostgreSQL | 🚧 框架就绪 |
+| **微信小程序**（主端） | Taro 4 + **React 18** | ✅ 论坛 / 常见问题 / 拼单 已实现 |
+| **原生移动端** iOS / Android / 鸿蒙 | Flutter 3 | ✅ 同上一组（**代码完整但未编译验证**） |
+| **Web 门户 + 管理后台** | Next.js 16 + React 19 | ✅ 同上一组 + 管理后台 |
+| **后端** | NestJS 12 + Prisma + PostgreSQL | ✅ 20 个模块，257 个测试 |
+
+> **React 版本按端不同是刻意的**：`@tarojs/react@4.3.0` 的 peer 是 `react@^18`，
+> 而 Next.js 16 接受 `^18.2.0 || ^19`。小程序锁 18.3.1、Web 用 19.3.1，
+> npm workspaces 嵌套共存（实测通过）。详见契约 §2。
 
 **名字的由来**：可达鸭 —— "在上科大什么需求都可以**到达**的鸭"。
+
+---
+
+## 已实现的功能
+
+### 论坛 `forum`
+版块 / 主题 / **楼中楼回复** / 举报（同人去重 + **3 人阈值自动隐藏**）/ 版主隐藏与恢复 / 软删。
+**匿名按契约 §9 真解耦**：`anonymous=true` 时实名身份**不落库**（`authorId` 恒为 null），
+只存 `HMAC(secret, userId|thread:<postId>)` —— 同帖同人一致、**跨帖不可关联**，
+作者自助编辑靠重算 handle 证明身份（不需要任何映射表）。
+
+### 常见问题 `faq`
+分类 / 关键词检索 / **幂等投票**（唯一约束保证一人一票，重复投不改计数、改票两边同步）/
+工单式自助答疑（未命中返回关键词建议，不引向量库）。
+
+### 场馆预约 `facility`（第 20 个模块）
+时段冲突 → `CONFLICT`、金额整数分、发起人可取消。
+
+### 拼单 `groupbuy`（M0 的垂直切片）
+列表 / 详情 / 参团，作为后续所有模块的分层范本。
+
+> 其余 16 个模块目前是**可运行的骨架**（有端点、有分层、有测试），尚未实现完整领域逻辑。
+> 下一步按 `docs/features/` 的规格推进：找搭子 / 猫鸟黑天鹅 / TechPie 整合。
 
 ---
 
@@ -43,7 +70,7 @@
 ```mermaid
 graph TB
     subgraph clients["客户端 · 三端共享契约"]
-        MP["微信小程序<br/>Taro 4 + React 19<br/><i>主端</i>"]
+        MP["微信小程序<br/>Taro 4 + React 18<br/><i>主端</i>"]
         MB["原生移动端<br/>Flutter 3<br/>iOS / Android / 鸿蒙"]
         WEB["Web 门户 + 管理后台<br/>Next.js 16"]
     end
@@ -144,6 +171,7 @@ kedaya/
 │   └── shared/           Result · 金额 · 时间 · 校验（纯 TS，三端共用）
 ├── docs/
 │   ├── architecture/     总览 · 领域模型 · API 契约 · 客户端架构 · 安全 · 路线图
+│   ├── features/         功能规格：找搭子 · 猫鸟黑天鹅地图 · TechPie 整合
 │   └── adr/              架构决策记录
 └── assets/brand/         可达鸭吉祥物与封面（原创美术）
 ```
@@ -190,10 +218,10 @@ cd apps/mobile && flutter pub get && flutter run
 ### 全仓校验
 
 ```bash
-npm run typecheck      # 全量类型检查
-npm run test           # 全量测试
+npm run typecheck      # 全量类型检查（6 个 workspace）
+npm run test           # 全量测试（827 个用例）
 npm run build          # 全量构建
-npm run tokens         # 重新生成设计令牌
+npm run tokens         # 重新生成设计令牌 + 同步 Flutter 副本
 ```
 
 ---
@@ -218,6 +246,7 @@ npm run tokens         # 重新生成设计令牌
 | 常见问题 | 知识库与工单式自助答疑 | 低 |
 | TechPie 整合 | 与 TechPie / GeekPie 体系互联互通 | 中 |
 | 猫鸟黑天鹅 | 校园动物活动区域地图、投喂规范、上报 | 低 |
+| 场馆预约 | 体育场馆、健身房等校园场馆的预约与核销 | 中 |
 
 **基础模块**：身份 · 课表 · 校园卡 · 我的 · 通知
 
@@ -277,11 +306,19 @@ TechPie 整合模块（`techpie`）用于与 TechPie / GeekPie 体系互联互�
 
 | 阶段 | 范围 | 状态 |
 | --- | --- | --- |
-| **M0 · 框架** | 契约层、设计令牌、四端骨架、CI | 🚧 进行中 |
-| **M1 · 基础模块** | 身份、课表、校园卡、我的、通知 | ⏳ |
-| **M2 · 低敏感业务** | 拼单、跳蚤、跑腿、找搭子、失物招领、食堂营养、常见问题、猫鸟黑天鹅 | ⏳ |
-| **M3 · 高敏感业务** | 论坛、偷外卖、宿舍矛盾、心理治疗 | ⏳ |
-| **M4 · AI 与整合** | AI 校园画像、TechPie 整合 | ⏳ |
+| **M0 · 框架** | 契约层、设计令牌、四端骨架、CI | ✅ **完成** |
+| **M1 · 基础模块** | 身份、课表、校园卡、我的、通知 | ⏳ 骨架就绪 |
+| **M2 · 低敏感业务** | 拼单、跳蚤、跑腿、找搭子、失物招领、食堂营养、**常见问题**、**猫鸟黑天鹅**、场馆预约 | 🚧 **拼单 / 常见问题 已完成** |
+| **M3 · 高敏感业务** | **论坛**、偷外卖、宿舍矛盾、心理治疗 | 🚧 **论坛已完成** |
+| **M4 · AI 与整合** | AI 校园画像、TechPie 整合 | ⏳ 规格已就绪 |
+
+**规格已就绪、待实现**（见 `docs/features/`）：
+
+| 文档 | 内容 |
+| --- | --- |
+| [`buddy-matching.md`](docs/features/buddy-matching.md) | 找搭子 —— 接入 [STUMatch](https://github.com/tzhazuma/STUMatch) 的匹配算法（含真实打分公式与行号） |
+| [`wildlife-map.md`](docs/features/wildlife-map.md) | 猫/鸟/黑天鹅 —— 校园地图底图、**WGS84↔GCJ-02 坐标系陷阱**、可离线降级的自动分类、轨迹推断、四层位置模糊化 |
+| [`techpie-integration.md`](docs/features/techpie-integration.md) | TechPie 能力逐项映射 + 两级身份模型下的合规红线 |
 
 ---
 
