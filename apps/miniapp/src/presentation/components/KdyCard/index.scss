@@ -1,0 +1,39 @@
+.kdy-card {
+  box-sizing: border-box;
+  margin: $kdy-space-2 $kdy-space-4;
+  padding: $kdy-space-4;
+  background-color: $kdy-color-surface;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-lg;
+}
+
+.kdy-card--elevated {
+  border-color: transparent;
+  box-shadow: $kdy-shadow-sm;
+}
+
+.kdy-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $kdy-space-2;
+}
+
+.kdy-card__title {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-md;
+  font-weight: 600;
+}
+
+.kdy-card__extra {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-card__body {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}

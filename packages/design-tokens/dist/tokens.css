@@ -1,0 +1,112 @@
+/* 由 packages/design-tokens/scripts/generate.mjs 生成 —— 请勿手改。
+ * 真相来源: packages/design-tokens/tokens.json */
+
+:root {
+  /* color */
+  --kdy-color-brand: #FFC53D;
+  --kdy-color-brand-strong: #F08F2A;
+  --kdy-color-brand-soft: #FFF3B8;
+  --kdy-color-ink: #1B2436;
+  --kdy-color-ink-soft: #33405A;
+  --kdy-color-bg: #F7F8FA;
+  --kdy-color-surface: #FFFFFF;
+  --kdy-color-surface-alt: #F1F3F7;
+  --kdy-color-text: #1F2733;
+  --kdy-color-text-muted: #6B7A90;
+  --kdy-color-text-inverse: #FFFFFF;
+  --kdy-color-border: #E3E8EF;
+  --kdy-color-success: #22A06B;
+  --kdy-color-warning: #E8833A;
+  --kdy-color-danger: #D64545;
+  --kdy-color-info: #3B82F6;
+  /* space */
+  --kdy-space-0: 0px;
+  --kdy-space-1: 4px;
+  --kdy-space-2: 8px;
+  --kdy-space-3: 12px;
+  --kdy-space-4: 16px;
+  --kdy-space-5: 20px;
+  --kdy-space-6: 24px;
+  --kdy-space-8: 32px;
+  --kdy-space-10: 40px;
+  --kdy-space-12: 48px;
+  --kdy-space-16: 64px;
+  /* radius */
+  --kdy-radius-sm: 4px;
+  --kdy-radius-md: 8px;
+  --kdy-radius-lg: 12px;
+  --kdy-radius-xl: 16px;
+  --kdy-radius-pill: 999px;
+  /* fontSize */
+  --kdy-font-size-xs: 12px;
+  --kdy-font-size-sm: 14px;
+  --kdy-font-size-md: 16px;
+  --kdy-font-size-lg: 18px;
+  --kdy-font-size-xl: 20px;
+  --kdy-font-size-xxl: 24px;
+  --kdy-font-size-display: 32px;
+  /* lineHeight */
+  --kdy-line-height-tight: 1.25px;
+  --kdy-line-height-normal: 1.5px;
+  --kdy-line-height-loose: 1.75px;
+  /* fontWeight */
+  --kdy-font-weight-regular: 400px;
+  --kdy-font-weight-medium: 500px;
+  --kdy-font-weight-semibold: 600px;
+  --kdy-font-weight-bold: 700px;
+  /* shadow */
+  --kdy-shadow-sm: 0 1px 2px rgba(27,36,54,0.06);
+  --kdy-shadow-md: 0 4px 12px rgba(27,36,54,0.08);
+  --kdy-shadow-lg: 0 12px 32px rgba(27,36,54,0.12);
+  /* fontFamily */
+  --kdy-font-family-sans: PingFang SC, Hiragino Sans GB, Microsoft YaHei, Noto Sans CJK SC, sans-serif;
+  --kdy-font-family-mono: SFMono-Regular, Menlo, Consolas, monospace;
+  /* zIndex */
+  --kdy-z-index-base: 0px;
+  --kdy-z-index-dropdown: 1000px;
+  --kdy-z-index-sticky: 1100px;
+  --kdy-z-index-overlay: 1200px;
+  --kdy-z-index-modal: 1300px;
+  --kdy-z-index-toast: 1400px;
+}
+
+/* colorDark —— 覆盖 color 的同名变量，消费方无需改动 */
+[data-theme="dark"] {
+  --kdy-color-brand: #FFD666;
+  --kdy-color-brand-strong: #FFC53D;
+  --kdy-color-brand-soft: #3A2F12;
+  --kdy-color-ink: #0B1220;
+  --kdy-color-ink-soft: #1B2436;
+  --kdy-color-bg: #0B1220;
+  --kdy-color-surface: #151C28;
+  --kdy-color-surface-alt: #1E2734;
+  --kdy-color-text: #E8EEF7;
+  --kdy-color-text-muted: #93A3B8;
+  --kdy-color-text-inverse: #0B1220;
+  --kdy-color-border: #2A3444;
+  --kdy-color-success: #3DD68C;
+  --kdy-color-warning: #F0A05A;
+  --kdy-color-danger: #F07171;
+  --kdy-color-info: #60A5FA;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --kdy-color-brand: #FFD666;
+    --kdy-color-brand-strong: #FFC53D;
+    --kdy-color-brand-soft: #3A2F12;
+    --kdy-color-ink: #0B1220;
+    --kdy-color-ink-soft: #1B2436;
+    --kdy-color-bg: #0B1220;
+    --kdy-color-surface: #151C28;
+    --kdy-color-surface-alt: #1E2734;
+    --kdy-color-text: #E8EEF7;
+    --kdy-color-text-muted: #93A3B8;
+    --kdy-color-text-inverse: #0B1220;
+    --kdy-color-border: #2A3444;
+    --kdy-color-success: #3DD68C;
+    --kdy-color-warning: #F0A05A;
+    --kdy-color-danger: #F07171;
+    --kdy-color-info: #60A5FA;
+  }
+}

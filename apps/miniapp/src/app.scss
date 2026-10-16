@@ -1,0 +1,38 @@
+// 全局样式。
+//
+// 设计令牌由 config/index.ts 的 `sass.resource` **全局注入**到每个 .scss 文件，
+// 注入入口：src/presentation/theme/tokens.scss
+//          → packages/design-tokens/dist/tokens.scss
+// 因此这里（以及任何组件样式）可以直接使用 $kdy-* 变量，且**不得手写色值**（契约 §6.2）。
+
+page,
+.kdy-root {
+  background-color: $kdy-color-bg;
+  color: $kdy-color-text;
+  font-family: $kdy-font-family-sans;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.5;
+}
+
+/* 契约 §9：全站显著标注「第三方非官方平台」 */
+.kdy-disclaimer {
+  display: block;
+  padding: $kdy-space-4 $kdy-space-4 $kdy-space-6;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.kdy-page {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding-bottom: $kdy-space-6;
+}
+
+.kdy-section-title {
+  padding: $kdy-space-4 $kdy-space-4 $kdy-space-2;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-md;
+  font-weight: 600;
+}

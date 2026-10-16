@@ -1,0 +1,316 @@
+# 可达鸭 · Flutter 原生端（`apps/mobile/`）
+
+iOS / Android / **鸿蒙** 三端原生客户端骨架。包名 `kedaya`，Dart SDK `>=3.6.2 <4.0.0`。
+
+> **第三方非官方平台**：本项目由学生社区维护，与上海科技大学官方系统无关。
+> 全站显著标注，不冒充学校官方系统（冻结契约 §9）。
+
+---
+
+## 0. 交付状态（如实声明）
+
+| 项 | 状态 |
+| --- | --- |
+| 代码 | 已写完（六边形分层 + 拼单垂直切片 + 亮/暗主题 + 11 个单元测试） |
+| **本机编译验证** | ❌ **未验证** —— 开发机上**没有安装 Flutter SDK**（`flutter` / `dart` 命令都不存在），因此 `flutter pub get` / `flutter analyze` / `flutter test` **一次都没有跑过** |
+| 依赖版本解析 | ❌ 未验证（`pubspec.yaml` 的版本区间是按 TechPie 的可用组合与 pub.dev 常见版本手写的，`pub get` 可能要求微调） |
+| 静态分析 | ❌ 未验证（`analysis_options.yaml` 打开了 `strict-casts` / `strict-inference` / `strict-raw-types`，代码按这些规则手写，但仍需 `flutter analyze` 复核） |
+| 运行时行为 | ❌ 未验证（未在真机/模拟器上启动过） |
+
+**下面第 6 节的命令是"装好 Flutter 后必须执行"的清单**；执行结果与本文档不一致时，以实际结果为准，并请回报 Lead。
+
+---
+
+## 1. 快速开始
+
+```bash
+cd apps/mobile
+
+# 1) 拉依赖
+flutter pub get
+
+# 2) 直接运行（默认 mock 运行时，零后端、零网络）
+flutter run
+
+# 3) 接后端（示例）
+flutter run \
+  --dart-define=KEDAYA_FLAVOR=dev \
+  --dart-define=KEDAYA_API_BASE_URL=https://your-api.example.com
+```
+
+默认 `AppFlavor.mock`：`git clone` 之后**不需要任何后端**就能看到完整 UI
+（契约 §7 硬规则 4 要求必须有 mock adapter）。
+
+原生工程目录（`android/` `ios/` `ohos/`）**没有提交**：它们是 `flutter create` 的产物，
+本工作流的写作用域只覆盖 Dart 侧骨架。首次运行前需要：
+
+```bash
+cd apps/mobile
+flutter create --org cn.shanghaitech.kedaya --project-name kedaya --platforms=android,ios .
+```
+
+（鸿蒙需要 OHOS fork 的 Flutter SDK，见第 7 节。）
+
+> **改设计令牌时不要手改本端文件**：`lib/presentation/theme/kedaya_tokens.dart` 是
+> **生成物的副本**（带"勿手改"横幅）。在仓库根目录跑 `npm run tokens`
+> （= `generate.mjs` + `scripts/sync-flutter-tokens.mjs`）会同时更新源与副本。
+
+---
+
+## 2. 目录结构（目录名是冻结契约 §7 的，不得改名）
+
+```
+apps/mobile/
+├── pubspec.yaml
+├── analysis_options.yaml
+├── lib/
+│   ├── main.dart                     # 只调用 bootstrap()，不含第二份启动逻辑
+│   ├── app/                          # 装配与启动：DI、路由、运行时工厂
+│   │   ├── app_environment.dart      #   flavor / baseUrl / dart-define 覆盖
+│   │   ├── app_runtime.dart          #   手工装配全部端口（mock / 远端两套）
+│   │   ├── app_providers.dart        #   Riverpod 装配（ProviderScope 根部 override）
+│   │   ├── app_router.dart           #   go_router：底部导航 + 每个 feature 的路由段
+│   │   ├── app.dart                  #   根组件（亮/暗主题 + themeMode + 路由）
+│   │   └── bootstrap.dart            #   契约 §8 启动时序的**唯一**实现
+│   ├── application/                  # 用例/控制器：编排，不含 IO
+│   │   ├── session_controller.dart
+│   │   ├── campus_bindings_controller.dart
+│   │   ├── consent_controller.dart
+│   │   ├── theme_controller.dart
+│   │   └── module_catalog.dart
+│   ├── domain/                       # 纯领域：零框架依赖（只 dart:core + 自有模型）
+│   │   ├── models/                   #   19 个模块注册表 / 金额 / 结果 / 主题模式 / 模型
+│   │   └── ports/                    #   接口（依赖倒置的支点）
+│   ├── data/                         # adapters：实现 ports
+│   │   ├── api/                      #   Dio 装配 + 信封解包
+│   │   ├── repositories/             #   remote 实现
+│   │   ├── storage/                  #   Keychain / SharedPreferences / 主题模式
+│   │   └── mock/                     #   内存 mock（无后端可跑）
+│   ├── platform/                     # 平台差异：share / notification / SSO 入口
+│   ├── presentation/                 # UI
+│   │   ├── pages/ components/ theme/
+│   └── features/                     # 每个 feature 一个目录（见 lib/features/README.md）
+│       ├── README.md
+│       └── groupbuy/                 #   ✅ 已跑通的垂直切片
+└── test/                             # 11 个单元测试
+    ├── domain/  data/  application/  presentation/
+```
+
+**依赖方向**：`presentation → application → domain ← data`。
+`domain/` 里没有任何 `package:flutter/*`、没有 `dart:convert`、没有 Dio ——
+JSON 解码只在 `data/api/` 发生，模型只接收**已解码**的 `Map<String, Object?>`。
+主题模式也因此用 domain 自有的 `KedaYaThemeMode` 枚举，而不是 Flutter 的 `ThemeMode`。
+
+---
+
+## 3. 关键设计说明
+
+### 3.1 契约 §8 启动时序（`lib/app/bootstrap.dart`）
+
+```dart
+final runtime = await AppRuntime.create(env);  // 只做本地 IO（SharedPreferences.getInstance）
+runtime.hydrate();                             // ① 同步 hydrate 缓存，禁止网络
+runApp(ProviderScope(... KedaYaApp()));        // ② 立即渲染首屏
+unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失败静默降级
+```
+
+- 第 ① 步的 `hydrate()` 是**同步**的：`LocalCachePort.readJson` 的契约就是同步
+  （`SharedPreferences` 在 `getInstance()` 时已把数据读进内存）。它 hydrate 四样东西：
+  会话、校园系统绑定、同意记录、**主题模式**。
+- 第 ③ 步的每一项（token 续期 / 校园系统绑定对账 / 同意记录对账）都单独 try/catch，
+  失败只记进 `AppRuntime.lastBackgroundError`，**不弹错、不阻塞**。
+- 主题模式必须在第 ① 步读回，否则首帧会用错主题、再闪一下才切到用户的选择。
+
+### 3.2 契约 §5 两级身份模型
+
+| 层 | 端口 | 产物 | 边界 |
+| --- | --- | --- | --- |
+| 第一级 身份 | `AuthPort` | KedaYa 自有 JWT（`AuthSession`） | **绝不含**任何校园 cookie/session/tgc |
+| 第二级 能力 | `CampusSessionPort` | 各校园系统 session cookie | 只能经 `cookieHeaderFor()` 交给 WebView 注入 |
+
+- `AuthSession` / `CampusBinding` 的序列化键名由
+  `test/domain/auth_session_boundary_test.dart` **机械校验**：出现
+  `cookie`/`tgc`/`castgc`/`session`/`egate`/`cpdaily` 等片段即测试失败。
+- 校园系统 cookie 只存在于 `RemoteCampusSessionRepository` 的私有字段与安全存储里，
+  连 `domain` 模型都不经过。
+- "已登录但未绑定"是合法状态：此时身份有效，校园系统功能返回
+  `CAMPUS_BINDING_REQUIRED`（`ApiError.needsCampusBinding`）。
+
+### 3.3 模型策略：**手写 `fromJson` / `toJson`**（不用 freezed 代码生成）
+
+`pubspec.yaml` 里声明了 `freezed_annotation` / `json_annotation` / `build_runner` /
+`freezed` / `json_serializable`（任务要求），但**当前所有模型都是手写的**。原因：
+
+1. 代码生成产物（`*.g.dart` / `*.freezed.dart`）没有提交，而开发机没有 Flutter SDK，
+   无法运行 `build_runner`；如果模型依赖生成代码，`git clone` 后**一定编译不过**。
+2. 手写版可以用纯 `dart:core` 实现，正好满足"`domain` 层零框架依赖"。
+3. 解析逻辑集中在 `domain/models/json_read.dart`（类型不符即抛 `FormatException`，
+   未知枚举值收敛为 `unknown` 而不是崩溃）。
+
+后续若改用 freezed：`analysis_options.yaml` 已忽略 `invalid_annotation_target`，
+且 `exclude` 已包含 `**/*.g.dart` / `**/*.freezed.dart`。
+
+### 3.4 主题：亮 / 暗（契约 §6.2 + §11.5）
+
+**色值只有一个来源**：`packages/design-tokens` 的生成物。
+
+- `lib/presentation/theme/kedaya_tokens.dart` 是它的**生成物副本**（`npm run tokens`
+  同步，带"勿手改"横幅）。Flutter 包无法 import 包边界之外的 Dart 文件，
+  所以必须留一份副本；副本由脚本维护，因此不会再漂移。
+- `KedaYaColors`（`ThemeExtension`）承载 16 个颜色令牌，组件用
+  `context.kedayaColors.xxx` 取值，**禁止硬编码色值**。
+- 亮暗两套**共用同一个字段清单**（`KedaYaColors._fromTokens` 的初始化列表），
+  因此结构上不可能漂移：
+  - 亮色 ← `KedaYaTokens.resolveColor(key, isDark: false)`；
+  - 暗色 ← `KedaYaTokens.darkColors[key]`（契约 §11.5 的暗色覆盖表），
+    缺键**直接抛 `StateError`** —— 宁可启动即报错，也不要在暗色主题里混进亮色值。
+- `KedaYaTheme.light()` / `KedaYaTheme.dark()` 共用同一个私有 `_build()`，
+  只换调色板与 `Brightness`，所以新增组件样式只需改一处。
+- 主题模式：`KedaYaThemeMode`（domain 枚举）→ `ThemeModePort` →
+  `CacheThemeModeStore`（复用 `LocalCachePort`，不新增存储依赖）→
+  `ThemeModeController`（Riverpod `Notifier`）。`themeModeOf()` 是 domain 枚举到
+  Flutter `ThemeMode` 的**唯一**转换点。
+- 切换入口在「我的 → 外观」（`SegmentedButton`：跟随系统 / 浅色 / 深色），
+  选择立即生效并落盘，下次冷启动首帧就是该模式。
+- 校验：`test/presentation/kedaya_theme_test.dart` 断言亮暗字段集合一致、
+  16 个键都与亮色不同、以及 `KedaYaTokens.darkColors` 的键集合与 Dart 字段清单一致
+  （生成器新增暗色令牌时会失败，逼着客户端同步补字段）。
+
+---
+
+## 4. 已实现 / 未实现
+
+### ✅ 已实现（可运行、有测试）
+
+| 项 | 位置 |
+| --- | --- |
+| 契约 §8 启动时序 | `lib/app/bootstrap.dart` + `lib/main.dart` |
+| 六边形分层骨架（目录名严格按 §7） | `lib/{app,application,domain,data,platform,presentation}/` |
+| 11 个 domain port | `lib/domain/ports/`：`AuthPort`、`CampusSessionPort`、`KedayaApiPort`、`CredentialStorePort`、`LocalCachePort`、`ConsentPort`、`ThemeModePort`、`GroupbuyPort`、`ErrandPort`、`LostFoundPort`、`WellbeingPort` + `platform_ports.dart` |
+| 19 个模块注册表（镜像 `packages/contracts`） | `lib/domain/models/kedaya_module.dart` |
+| 金额整数分（镜像 `packages/shared/money.ts`） | `lib/domain/models/money.dart` |
+| 统一信封 + Dio 装配（Bearer / Trace / 401 刷新重试） | `lib/data/api/{api_envelope,dio_client,kedaya_api_client}.dart` |
+| 远端 repositories（auth / campus / consent / groupbuy / errand / lost-found / wellbeing） | `lib/data/repositories/` |
+| 内存 mock 适配器（含延迟与故障注入） | `lib/data/mock/` |
+| **亮 / 暗主题**（从设计令牌派生，契约 §11.5） | `lib/presentation/theme/` |
+| **主题模式**：跟随系统 / 浅色 / 深色，可切换 + 持久化 + 冷启动同步读回 | `lib/application/theme_controller.dart`、`lib/data/storage/cache_theme_mode_store.dart`、`lib/presentation/pages/profile_page.dart` |
+| **拼单垂直切片**：列表 + 详情 + loading/error/empty 三态 + 参团 | `lib/features/groupbuy/` |
+| 底部导航 + 每个模块的路由段 | `lib/app/app_router.dart`、`lib/presentation/pages/module_detail_page.dart` |
+| 二次同意门（`wellbeing`/`dorm-harmony`/`ai-portrait`） | `lib/application/consent_controller.dart` |
+| 11 个单元测试 | `test/`（见第 5 节） |
+
+### ❌ 未实现（如实列出，没有用 TODO 占位函数冒充）
+
+| 项 | 说明 |
+| --- | --- |
+| 原生工程目录 | `android/` `ios/` `ohos/` 未生成（用 `flutter create` 生成，见 §1） |
+| 除 `groupbuy` 外的 18 个模块页面 | 只有 `/module/:id` 落地页展示注册表信息并**明说"尚未实现"**；没有假数据、没有假成功 |
+| 校园系统绑定的 UI | `CampusSessionPort` 与 `CampusBindingsController` 已实现并可用（profile 页展示状态），但没有"输入凭据绑定"的对话框页面 |
+| 统一身份认证的原生侧 | `MethodChannelUnifiedIdentity` 已定义 channel 契约（`kedaya/unified_identity`），**原生侧实现未写**；mock 运行时用 `DevUnifiedIdentity` |
+| 本地化（i18n） | 未接 `flutter_localizations`（会与 `intl` 版本绑定冲突）；UI 文案直接写中文 |
+| 推送 | `LocalNotificationPort` 是内存实现；未接厂商推送 / `flutter_local_notifications` |
+| 系统分享面板 | `ClipboardSharePort` 落剪贴板（真实可用）；未接 `share_plus` |
+| 崩溃上报 / 埋点 | 未接 |
+| 鸿蒙构建 | 未验证（需要 OHOS fork，见 §7） |
+
+### ⚠️ 上线前必须替换
+
+1. `lib/data/mock/crisis_resources.dart` 里的**危机干预热线是示例数据**
+   （`021-0000-0000` 是明显的假号），必须由学校心理健康中心提供真实号码后替换。
+   契约 §9 要求该出口不可被埋进二级菜单、且不可因网络失败消失。
+2. `AppEnvironment.prodBaseUrl` 目前是占位域名 `https://api.kedaya.local`。
+3. 品牌素材（吉祥物 SVG）在 `assets/brand/`（Lead 独占），本端尚未接入 UI。
+
+---
+
+## 5. 测试（11 个文件，共 60+ 个用例）
+
+| 文件 | 覆盖 |
+| --- | --- |
+| `test/domain/money_test.dart` | 整数分 ↔ 元、非法输入、往返一致、带符号展示 |
+| `test/domain/module_registry_test.dart` | 19 个模块、id 唯一、route==id、**同意门规则**（`auth`/`campus-card` 不设门） |
+| `test/domain/result_and_api_error_test.dart` | `Result` 的 Ok/Err/map/flatMap/unwrap、错误码 wire 往返、未知码收敛 |
+| `test/domain/auth_session_boundary_test.dart` | **契约 §5 边界机械校验**：序列化键名不含校园凭据；未知校园系统抛错 |
+| `test/domain/groupbuy_order_test.dart` | 模型解析/序列化、未知状态收敛、进度收敛、查询参数收敛 |
+| `test/data/api_envelope_test.dart` | 信封成功/失败解包、非 JSON 容错、decode 不被误调用、路径收敛 |
+| `test/data/mock_groupbuy_repository_test.dart` | mock 游标分页、参团累加与锁定、冲突/404/校验、故障与空结果开关 |
+| `test/data/theme_mode_store_test.dart` | 主题模式落盘与同步 hydrate、损坏/未知值回落、`changes` 广播 |
+| `test/application/groupbuy_list_controller_test.dart` | **三态**：loading→data / empty / error；翻页失败保留列表；写操作后失效读 provider |
+| `test/application/theme_controller_test.dart` | 初值来自同步 hydrate、setMode 落盘并推给订阅者、外部写入同步到状态 |
+| `test/presentation/kedaya_theme_test.dart` | **亮暗字段集合一致**、`darkColors` 键集合交叉校验、16 键都与亮色不同、`resolveColor` 亮/暗/未知分支、`light()`/`dark()` 的 ThemeData 装配、`themeModeOf` 映射 |
+
+---
+
+## 6. 装好 Flutter 后的验证命令（按顺序执行）
+
+```bash
+# 环境
+flutter --version                 # 期望 Dart >= 3.6.2
+flutter doctor -v
+
+cd apps/mobile
+
+# 1) 依赖解析（最可能出问题的一步：版本区间需按实际 SDK 微调）
+flutter pub get
+
+# 2) 静态分析（必须 0 error；strict-* 三个开关已打开）
+flutter analyze
+
+# 3) 单元测试（11 个文件应全绿）
+flutter test
+flutter test test/domain/auth_session_boundary_test.dart   # 单跑契约 §5 边界测试
+flutter test test/presentation/kedaya_theme_test.dart      # 单跑契约 §11.5 暗色守门测试
+
+# 4) 格式化检查（代码按 dart format 风格手写，未在本机跑过）
+dart format --output=none --set-exit-if-changed lib test
+
+# 5) 运行（mock 运行时，无后端）
+flutter run
+
+# 6) 接后端跑（需要 Lead 提供 dev 域名）
+flutter run --dart-define=KEDAYA_FLAVOR=dev --dart-define=KEDAYA_API_BASE_URL=<dev-host>
+```
+
+手测要点：
+
+1. 首页 → 「拼单」→ 列表应出 5 条 mock 数据（loading 态可见约 250ms）。
+2. 右上角 🧪 菜单可切换 **正常 / 空列表 / 上游故障** —— 用来验证 empty 与 error 三态。
+3. 点任意一条进详情 → 「参团 1 份」→ 份数 +1，进度条前进，满员后按钮禁用。
+4. 详情页 URL 改为不存在的 id（例如 `/groupbuy/gb-nope`）应显示**空态**而非错误态。
+5. 「我的 → 外观」切 跟随系统 / 浅色 / 深色：应立即整体变色（背景、卡片、导航栏、
+   按钮、文字）；**杀掉进程重进应记住选择，且首帧就是该模式**（不闪一下再切）。
+6. 系统切换到深色（若选"跟随系统"）应自动跟随。
+
+---
+
+## 7. 鸿蒙（HarmonyOS）说明
+
+- 需要 **OHOS fork 的 Flutter SDK**（stock Flutter 没有 OHOS engine）。构建产物是 `.hap`。
+- `flutter_secure_storage` 上游不带 OHOS 实现，需要替换为 `flutter_secure_storage_ohos`
+  （TechPie 的做法）；`lib/data/storage/secure_credential_store.dart` **不需要改**，
+  差异只在 `pubspec.yaml` 的依赖替换。
+- `shared_preferences` / `url_launcher` 等同样需要 OHOS fork 的对应实现。
+- `lib/platform/platform_info.dart` 刻意用 `defaultTargetPlatform.name` 字符串比较：
+  OHOS fork 给 `TargetPlatform` 增加了 `ohos` 成员，对枚举做穷尽 `switch` 会在该分支编译失败。
+
+---
+
+## 8. 已知风险 / 需要 `flutter analyze` 复核的点
+
+1. **Riverpod API 面**：`AsyncNotifier` / `AsyncNotifierProvider` / `AsyncValue.guard` /
+   `Notifier` / `NotifierProvider` / `Provider.overrideWithValue` / `ref.invalidate`
+   均按 flutter_riverpod **2.6.x** 的 API 书写；若解析到 3.x 需要改 `AsyncNotifier`
+   与 `Ref` 的用法（application 层已刻意不持有 `Ref`，只有 provider 体内用到）。
+2. **go_router 版本**：`StatefulShellRoute.indexedStack` + `StatefulShellBranch` +
+   `StatefulNavigationShell.goBranch` 按 go_router **14.x** 的 API 书写。
+3. **`Color.withValues`**：需要 Flutter 3.27+（Dart 3.6 对应 Flutter 3.27，故可用）；
+   若 SDK 更旧需换成 `withOpacity`。
+4. **`CardThemeData`**：Flutter 3.27+ 的 `ThemeData.cardTheme` 类型；
+   更旧的版本是 `CardTheme`。
+5. **`SegmentedButton`**（「外观」切换）：需要 Flutter 3.7+。
+6. **暗色缺键会抛错**：`KedaYaColors._resolve` 在 `darkColors` 缺键时抛 `StateError`
+   （有意为之，见 §3.4）。若生成器改了键名，请在仓库根目录跑 `npm run tokens`
+   后同步 `KedaYaColors.tokenKeys` 与 `toMap()`。
+7. `freezed` / `json_serializable` 目前是**未被使用**的依赖（见 §3.3），
+   `flutter pub get` 不会报错，但如需精简可以删掉这 5 行。
+8. 全部 60+ 个测试用例都**没有在本机执行过**。

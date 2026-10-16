@@ -1,0 +1,68 @@
+.kdy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 $kdy-space-4;
+  border: 1px solid transparent;
+  border-radius: $kdy-radius-md;
+  font-size: $kdy-font-size-sm;
+  font-weight: 500;
+  line-height: 1;
+  text-align: center;
+
+  /* 微信 button 默认带 1px 边框（::after），必须清掉，否则圆角处会出现双线 */
+  &::after {
+    border: none;
+  }
+}
+
+.kdy-btn--sm {
+  height: 28px;
+  padding: 0 $kdy-space-3;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-btn--md {
+  height: 40px;
+}
+
+.kdy-btn--lg {
+  height: 48px;
+  font-size: $kdy-font-size-md;
+}
+
+.kdy-btn--block {
+  display: flex;
+  width: 100%;
+}
+
+.kdy-btn--primary {
+  background-color: $kdy-color-brand;
+  color: $kdy-color-ink;
+}
+
+.kdy-btn--secondary {
+  background-color: $kdy-color-brand-soft;
+  color: $kdy-color-brand-strong;
+}
+
+.kdy-btn--ghost {
+  background-color: transparent;
+  border-color: $kdy-color-border;
+  color: $kdy-color-ink-soft;
+}
+
+.kdy-btn--danger {
+  background-color: $kdy-color-danger;
+  color: $kdy-color-text-inverse;
+}
+
+.kdy-btn--hover {
+  opacity: 0.85;
+}
+
+.kdy-btn--disabled {
+  opacity: 0.45;
+}

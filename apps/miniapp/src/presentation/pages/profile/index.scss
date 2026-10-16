@@ -1,0 +1,55 @@
+.kdy-profile__hint {
+  display: block;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-profile__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-3;
+  padding: $kdy-space-2 0;
+  border-bottom: 1px solid $kdy-color-border;
+}
+
+.kdy-profile__k {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-profile__v {
+  flex: 1;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  text-align: right;
+  word-break: break-all;
+}
+
+.kdy-profile__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-4;
+}
+
+.kdy-profile__rule {
+  padding: $kdy-space-2 0;
+  border-bottom: 1px solid $kdy-color-border;
+}
+
+.kdy-profile__rule-title {
+  display: block;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: 600;
+}
+
+.kdy-profile__rule-detail {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}

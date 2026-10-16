@@ -1,0 +1,115 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------ *
+ * 设计令牌 —— 唯一真相是 @kedaya/design-tokens（契约 §6.2）。
+ * 本文件**不出现任何手写色值**：所有颜色/圆角/字号/阴影都从 --kdy-* 派生。
+ *
+ * 说明：`@kedaya/design-tokens` 的 package.json `exports` 里
+ *   "./css" -> "./dist/tokens.css"
+ * 而**没有**导出 "./dist/tokens.css" 子路径，Tailwind 4 的解析器会强制 exports
+ * 白名单（报错：`"./dist/tokens.css" is not exported under the condition "style"`）。
+ * 因此这里用包导出的入口 `@kedaya/design-tokens/css` —— 指向同一份产物。
+ * ------------------------------------------------------------------ */
+@import '@kedaya/design-tokens/css';
+
+/* 暗色模式：class 驱动（Tailwind 4 自定义 variant）。
+ * 令牌侧的暗色值由 design-tokens 通过 [data-theme="dark"] 与
+ * @media (prefers-color-scheme: dark) :root:not([data-theme="light"]) 提供；
+ * ThemeProvider 负责写 <html data-theme> / dark class / color-scheme。
+ * 因此 `dark:` 变体与令牌暗色**同时**生效，本文件无需任何手写暗色值。 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* ---- 颜色：--color-* => bg-brand / text-ink / border-border ---- */
+  --color-brand: var(--kdy-color-brand);
+  --color-brand-strong: var(--kdy-color-brand-strong);
+  --color-brand-soft: var(--kdy-color-brand-soft);
+  --color-ink: var(--kdy-color-ink);
+  --color-ink-soft: var(--kdy-color-ink-soft);
+
+  --color-canvas: var(--kdy-color-bg);
+  --color-surface: var(--kdy-color-surface);
+  --color-surface-alt: var(--kdy-color-surface-alt);
+
+  --color-body: var(--kdy-color-text);
+  --color-muted: var(--kdy-color-text-muted);
+  --color-inverse: var(--kdy-color-text-inverse);
+
+  --color-border: var(--kdy-color-border);
+
+  --color-success: var(--kdy-color-success);
+  --color-warning: var(--kdy-color-warning);
+  --color-danger: var(--kdy-color-danger);
+  --color-info: var(--kdy-color-info);
+
+  /* ---- 间距：--spacing 基数是 4px（= --kdy-space-1），
+   *      因此 p-4 = 16px、gap-6 = 24px，全部由令牌派生 ---- */
+  --spacing: var(--kdy-space-1);
+
+  /* ---- 圆角：--radius-* => rounded-lg 等 ---- */
+  --radius-sm: var(--kdy-radius-sm);
+  --radius-md: var(--kdy-radius-md);
+  --radius-lg: var(--kdy-radius-lg);
+  --radius-xl: var(--kdy-radius-xl);
+  --radius-pill: var(--kdy-radius-pill);
+
+  /* ---- 字号：--text-* => text-display / text-sm 等 ---- */
+  --text-xs: var(--kdy-font-size-xs);
+  --text-sm: var(--kdy-font-size-sm);
+  --text-md: var(--kdy-font-size-md);
+  --text-lg: var(--kdy-font-size-lg);
+  --text-xl: var(--kdy-font-size-xl);
+  --text-xxl: var(--kdy-font-size-xxl);
+  --text-display: var(--kdy-font-size-display);
+
+  /* ---- 字体族 ---- */
+  --font-sans: var(--kdy-font-family-sans);
+  --font-mono: var(--kdy-font-family-mono);
+
+  /* ---- 阴影 ---- */
+  --shadow-sm: var(--kdy-shadow-sm);
+  --shadow-md: var(--kdy-shadow-md);
+  --shadow-lg: var(--kdy-shadow-lg);
+}
+
+/* ------------------------------------------------------------------ *
+ * 基础层
+ * ------------------------------------------------------------------ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-body);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 键盘可达性：统一 focus ring（颜色仍来自令牌） */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-strong);
+    outline-offset: 2px;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * 少量无法用工具类表达的重复样式
+ * ------------------------------------------------------------------ */
+@layer components {
+  /* 首页品牌区的暖色渐变：色值全部来自令牌 */
+  .kdy-brand-gradient {
+    background-image: linear-gradient(
+      135deg,
+      var(--color-brand-soft) 0%,
+      var(--color-surface) 55%,
+      var(--color-surface-alt) 100%
+    );
+  }
+
+  /* 敏感模块（high/critical）的警示描边，契约 §9 */
+  .kdy-sensitive-ring {
+    box-shadow: inset 0 0 0 1px var(--color-warning);
+  }
+}

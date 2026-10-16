@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["@tarojs/taro", "node"],
+    "noEmit": true,
+    "paths": {
+      "react": ["./node_modules/@types/react"],
+      "react/*": ["./node_modules/@types/react/*"],
+      "react-dom": ["./node_modules/@types/react-dom"],
+      "react-dom/*": ["./node_modules/@types/react-dom/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "config/**/*.ts", "vitest.config.ts"],
+  "exclude": ["node_modules", "dist", ".temp", ".swc"]
+}

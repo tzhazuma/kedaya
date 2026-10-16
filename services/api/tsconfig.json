@@ -1,0 +1,33 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    /*
+     * rootDir 显式指向仓库根：因为 `@kedaya/contracts` / `@kedaya/shared` 的入口是
+     * **TypeScript 源码**（`main: ./src/index.ts`，且内部是 extensionless 相对导入），
+     * Node 的 ESM 解析器无法在运行时加载它们。
+     * 把它们纳入本编译程序后，tsc 会一并产出 CommonJS，而 `require('./envelope')`
+     * 在 CJS 下能正确解析到 `./envelope.js` —— 这是唯一无需额外打包器就能跑通的路径。
+     * 代价：dist 布局是 `dist/services/api/src/main.js`（见 package.json 的 start 脚本）。
+     */
+    "rootDir": "../..",
+    "outDir": "./dist",
+    "module": "CommonJS",
+    "moduleResolution": "Node10",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "isolatedModules": false,
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@kedaya/contracts": ["../../packages/contracts/src/index.ts"],
+      "@kedaya/shared": ["../../packages/shared/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "prisma/**/*.ts", "vitest.config.ts"],
+  "exclude": ["node_modules", "dist", "coverage"]
+}

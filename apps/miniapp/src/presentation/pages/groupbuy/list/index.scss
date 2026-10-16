@@ -1,0 +1,107 @@
+.kdy-gb-list__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  padding: $kdy-space-3 $kdy-space-4 $kdy-space-1;
+}
+
+.kdy-gb-list__filter {
+  padding: 2px 0;
+}
+
+.kdy-gb-list__demo {
+  display: flex;
+  gap: $kdy-space-2;
+  padding: $kdy-space-2 $kdy-space-4 $kdy-space-3;
+}
+
+.kdy-gb-list__hint,
+.kdy-gb-list__more,
+.kdy-gb-list__soft-error {
+  display: block;
+  padding: $kdy-space-2 $kdy-space-4;
+  font-size: $kdy-font-size-xs;
+  text-align: center;
+}
+
+.kdy-gb-list__hint {
+  color: $kdy-color-info;
+}
+
+.kdy-gb-list__more {
+  color: $kdy-color-text-muted;
+}
+
+.kdy-gb-list__soft-error {
+  color: $kdy-color-warning;
+}
+
+/* ---- 拼单卡片 ---- */
+
+.kdy-gb-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+}
+
+.kdy-gb-card__title {
+  flex: 1;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-md;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.kdy-gb-card__meta {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-2;
+}
+
+.kdy-gb-card__place {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-gb-card__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-gb-card__price {
+  color: $kdy-color-brand-strong;
+  font-size: $kdy-font-size-lg;
+  font-weight: 700;
+}
+
+.kdy-gb-card__progress {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-gb-card__bar {
+  height: 6px;
+  margin-top: $kdy-space-2;
+  overflow: hidden;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-pill;
+}
+
+.kdy-gb-card__bar-inner {
+  height: 6px;
+  background-color: $kdy-color-brand;
+  border-radius: $kdy-radius-pill;
+}
+
+.kdy-gb-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: $kdy-space-3;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}

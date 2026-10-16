@@ -1,0 +1,1496 @@
+openapi: 3.1.0
+
+info:
+  title: 可达鸭 API (KedaYa)
+  version: 1.0.0
+  summary: 上海科技大学统一校园服务平台 —— 三端共享后端契约
+  description: |
+    # 可达鸭 API v1
+
+    本文件是可达鸭三端（微信小程序 / Flutter 原生 / Web）与后端之间的**唯一接口契约**。
+
+    ## 冻结约定（与 `docs/architecture/00-FROZEN-CONTRACT.md` §6.1 一致）
+
+    - **Base path**：`/api/v1`
+    - **认证**：`Authorization: Bearer <accessToken>`
+    - **追踪**：请求头 `X-KedaYa-Trace`；响应体 `traceId` 回填
+    - **幂等**：写操作支持 `Idempotency-Key` 头
+    - **时间**：ISO-8601 UTC 字符串
+    - **金额**：**整数分**（`amountFen: 12345` 表示 123.45 元）
+    - **列表**：游标分页（`cursor` / `limit`），**不用 offset**
+
+    ## 统一响应信封
+
+    所有响应（含错误）都是 `ApiEnvelope`：
+    ```json
+    { "ok": true,  "data": { }, "traceId": "..." }
+    { "ok": false, "error": { "code": "NOT_FOUND", "message": "拼单不存在" }, "traceId": "..." }
+    ```
+
+    ## 统一资源形状
+
+    每个模块的资源遵循同一形状（见各模块 path）：
+
+    ```
+    GET    /api/v1/<module>/items          列表（游标分页）
+    POST   /api/v1/<module>/items          创建
+    GET    /api/v1/<module>/items/{id}     详情
+    PATCH  /api/v1/<module>/items/{id}     更新
+    DELETE /api/v1/<module>/items/{id}     删除 / 下架
+    POST   /api/v1/<module>/items/{id}/<action>   领域动作
+    ```
+
+    ## 两级身份
+
+    见 `docs/architecture/00-FROZEN-CONTRACT.md` §5。
+    身份（`/auth/*`）与校园系统绑定（`/auth/campus-bindings`）是**两个层级**。
+    未绑定时校园系统相关端点返回 `CAMPUS_BINDING_REQUIRED`。
+
+    ## 敏感模块
+
+    `wellbeing` / `dorm-harmony` / `ai-portrait` 需要二次同意，
+    未同意时返回 `CONSENT_REQUIRED`。详见 §9。
+
+  contact:
+    name: 可达鸭项目
+    url: https://github.com/tzhazuma/kedaya
+  license:
+    name: MIT
+    identifier: MIT
+
+servers:
+  - url: https://api.kedaya.app/api/v1
+    description: 生产
+  - url: http://localhost:3000/api/v1
+    description: 本地开发
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: auth
+    description: 身份 —— 上科大统一身份认证与校园系统绑定（两级模型）
+  - name: schedule
+    description: 课表 —— 学期、课程表、考试
+  - name: campus-card
+    description: 校园卡 —— 余额、流水、付款码
+  - name: profile
+    description: 我的 —— 资料、设置、隐私开关
+  - name: notifications
+    description: 通知 —— 站内信、订阅消息、推送
+  - name: groupbuy
+    description: 拼单 —— 拼团凑单：发起、参团、成团、结算
+  - name: takeout-guard
+    description: 偷外卖 —— 外卖被拿错的举报、举证、协商、信用记录
+  - name: flea-market
+    description: 跳蚤 —— 二手闲置发布、搜索、议价、面交
+  - name: dorm-harmony
+    description: 宿舍矛盾 —— 匿名调解申请、调解员介入、公约投票（需二次同意）
+  - name: errand
+    description: 跑腿 —— 代取快递、买饭、送件，悬赏与接单
+  - name: buddy
+    description: 找搭子 —— 运动、自习、吃饭、出行组队匹配
+  - name: lost-found
+    description: 失物招领 —— 丢失登记、拾获登记、双向匹配
+  - name: canteen
+    description: 食堂营养 —— 菜品营养数据、热量估算、饮食建议
+  - name: forum
+    description: 论坛 —— 版块、主题、回复、举报与治理
+  - name: ai-portrait
+    description: AI 校园画像 —— 基于行为的画像与推荐，可解释、可关闭（需二次同意）
+  - name: wellbeing
+    description: 心理治疗 —— 咨询预约、心理测评、危机干预入口（需二次同意）
+  - name: faq
+    description: 常见问题 —— 知识库与工单式自助答疑
+  - name: techpie
+    description: TechPie 整合 —— 与 TechPie / GeekPie 体系互联互通
+  - name: wildlife
+    description: 猫鸟黑天鹅 —— 校园动物活动区域地图、投喂规范与上报
+
+paths:
+  # ==================================================================
+  # auth —— 两级身份
+  # ==================================================================
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: 第一级 · 上科大统一身份认证登录
+      description: |
+        用上科大统一身份认证（CAS / OAuth）的授权码换取**可达鸭自有 JWT**。
+        本端点**只**产出身份（`userId` / 学号 / 姓名 / 院系），
+        **不产出**任何校园系统 cookie 或 session。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, code]
+              properties:
+                provider:
+                  type: string
+                  enum: [shanghaitech-cas, shanghaitech-oauth]
+                code:
+                  type: string
+                  description: 授权码
+                redirectUri:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [accessToken, refreshToken, expiresAt, user]
+                        properties:
+                          accessToken: { type: string }
+                          refreshToken: { type: string }
+                          expiresAt: { type: string, format: date-time }
+                          user: { $ref: '#/components/schemas/User' }
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: 刷新自有 JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        '200':
+          description: 刷新成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiSuccess' }
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+
+  /auth/me:
+    get:
+      tags: [auth]
+      summary: 当前身份（第一级）
+      description: 返回身份信息**以及**校园系统绑定状态摘要，但不返回任何 cookie/session。
+      responses:
+        '200':
+          description: 当前身份
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [user, campusBindings]
+                        properties:
+                          user: { $ref: '#/components/schemas/User' }
+                          campusBindings:
+                            type: array
+                            items: { $ref: '#/components/schemas/CampusBindingSummary' }
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+
+  /auth/campus-bindings:
+    get:
+      tags: [auth]
+      summary: 第二级 · 列出校园系统绑定
+      responses:
+        '200':
+          description: 绑定列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/CampusBindingSummary' }
+    post:
+      tags: [auth]
+      summary: 第二级 · 绑定校园系统
+      description: |
+        绑定 eGate / CpDaily / 教务 / 一卡通。绑定成功后后端持有该系统 session，
+        **绝不上抛为身份**。客户端永远拿不到 cookie。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [platform, credentials]
+              properties:
+                platform:
+                  type: string
+                  enum: [egate, cp-daily, academic, campus-card]
+                credentials:
+                  type: object
+                  description: 各平台不同的凭据形状；服务端加密存储
+                  additionalProperties: true
+      responses:
+        '200':
+          description: 绑定成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiSuccess' }
+        '502':
+          $ref: '#/components/responses/UpstreamUnavailable'
+
+  /auth/campus-bindings/{platform}:
+    delete:
+      tags: [auth]
+      summary: 第二级 · 解绑校园系统
+      parameters:
+        - name: platform
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [egate, cp-daily, academic, campus-card]
+      responses:
+        '200':
+          description: 解绑成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiSuccess' }
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================================================================
+  # groupbuy —— 完整资源示例（其余模块同形状）
+  # ==================================================================
+  /groupbuy/items:
+    get:
+      tags: [groupbuy]
+      summary: 拼单列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, full, closed, settled, cancelled]
+      responses:
+        '200':
+          description: 拼单列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/GroupbuyOrderPage' }
+    post:
+      tags: [groupbuy]
+      summary: 发起拼单
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GroupbuyOrderCreate' }
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/GroupbuyOrder' }
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /groupbuy/items/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [groupbuy]
+      summary: 拼单详情
+      responses:
+        '200':
+          description: 拼单详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/GroupbuyOrder' }
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [groupbuy]
+      summary: 更新拼单
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GroupbuyOrderCreate' }
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiSuccess' }
+    delete:
+      tags: [groupbuy]
+      summary: 取消拼单
+      responses:
+        '200':
+          description: 已取消
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiSuccess' }
+
+  /groupbuy/items/{id}/join:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [groupbuy]
+      summary: 参团（领域动作）
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties:
+                quantity: { type: integer, minimum: 1, default: 1 }
+                note: { type: string, maxLength: 200 }
+      responses:
+        '200':
+          description: 参团成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/GroupbuyOrder' }
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  # ==================================================================
+  # wellbeing —— 敏感模块（二次同意 + 审计 + 危机出口）
+  # ==================================================================
+  /wellbeing/items:
+    get:
+      tags: [wellbeing]
+      summary: 我的咨询预约
+      description: |
+        ⚠️ **最高敏感级**。需要二次同意（`CONSENT_REQUIRED`）。
+        每次读写都会落审计日志。返回数据不进入任何画像。
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: 预约列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/WellbeingAppointmentPage' }
+        '403':
+          $ref: '#/components/responses/ConsentRequired'
+    post:
+      tags: [wellbeing]
+      summary: 预约心理咨询
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WellbeingAppointmentCreate' }
+      responses:
+        '201':
+          description: 预约成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/WellbeingAppointment' }
+        '403':
+          $ref: '#/components/responses/ConsentRequired'
+
+  /wellbeing/crisis-resources:
+    get:
+      tags: [wellbeing]
+      summary: 危机干预资源（无需同意，永远可访问）
+      description: |
+        危机干预热线出口。**故意不要求任何认证或同意** ——
+        处于危机中的用户不应该被任何门槛拦住。
+      security: []
+      responses:
+        '200':
+          description: 危机资源
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/CrisisResource' }
+
+  /wellbeing/consent:
+    post:
+      tags: [wellbeing]
+      summary: 授予 / 撤回二次同意
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [module, granted]
+              properties:
+                module:
+                  type: string
+                  enum: [wellbeing, dorm-harmony, ai-portrait]
+                granted: { type: boolean }
+      responses:
+        '200':
+          description: 同意状态已更新
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiSuccess' }
+
+  # ==================================================================
+  # forum —— 完整资源示例（含治理）
+  # ==================================================================
+  /forum/items:
+    get:
+      tags: [forum]
+      summary: 帖子列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: boardId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: 帖子列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ForumPostPage' }
+    post:
+      tags: [forum]
+      summary: 发帖（支持匿名）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ForumPostCreate' }
+      responses:
+        '201':
+          description: 发布成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ForumPost' }
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /forum/items/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [forum]
+      summary: 帖子详情
+      responses:
+        '200':
+          description: 帖子详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ForumPost' }
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [forum]
+      summary: 删除帖子
+      responses:
+        '200':
+          description: 已删除
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiSuccess' }
+
+  /forum/items/{id}/report:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [forum]
+      summary: 举报（领域动作）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  enum: [spam, abuse, pii, illegal, other]
+                detail: { type: string, maxLength: 500 }
+      responses:
+        '200':
+          description: 已受理
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiSuccess' }
+
+  # ==================================================================
+  # 其余 15 个模块 —— 统一 list + create 形状
+  # ==================================================================
+  /schedule/items:
+    get:
+      tags: [schedule]
+      summary: 课程列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+        '409': { $ref: '#/components/responses/CampusBindingRequired' }
+    post:
+      tags: [schedule]
+      summary: 创建课程
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ScheduleCourseCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /campus-card/items:
+    get:
+      tags: [campus-card]
+      summary: 交易流水
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+        '409': { $ref: '#/components/responses/CampusBindingRequired' }
+    post:
+      tags: [campus-card]
+      summary: 创建充值单
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CampusCardTxnCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /profile/items:
+    get:
+      tags: [profile]
+      summary: 我的资料项
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [profile]
+      summary: 新增资料项
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfileItemCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /notifications/items:
+    get:
+      tags: [notifications]
+      summary: 通知列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [notifications]
+      summary: 标记通知（订阅消息授权等）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotificationCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /takeout-guard/items:
+    get:
+      tags: [takeout-guard]
+      summary: 外卖异常举报列表（支持匿名）
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [takeout-guard]
+      summary: 提交举报
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TakeoutReportCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /flea-market/items:
+    get:
+      tags: [flea-market]
+      summary: 二手闲置列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [flea-market]
+      summary: 发布闲置
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FleaItemCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /dorm-harmony/items:
+    get:
+      tags: [dorm-harmony]
+      summary: 调解申请列表（匿名）
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+        '403': { $ref: '#/components/responses/ConsentRequired' }
+    post:
+      tags: [dorm-harmony]
+      summary: 提交调解申请
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DormHarmonyCaseCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+        '403': { $ref: '#/components/responses/ConsentRequired' }
+
+  /errand/items:
+    get:
+      tags: [errand]
+      summary: 跑腿任务列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [errand]
+      summary: 发布跑腿悬赏
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ErrandTaskCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /buddy/items:
+    get:
+      tags: [buddy]
+      summary: 搭子招募列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [buddy]
+      summary: 发布搭子招募
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BuddyPostCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /lost-found/items:
+    get:
+      tags: [lost-found]
+      summary: 失物 / 招领列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: kind
+          in: query
+          schema:
+            type: string
+            enum: [lost, found]
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [lost-found]
+      summary: 登记丢失 / 拾获
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LostFoundItemCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /canteen/items:
+    get:
+      tags: [canteen]
+      summary: 菜品营养列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [canteen]
+      summary: 新增菜品营养数据
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CanteenDishCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /ai-portrait/items:
+    get:
+      tags: [ai-portrait]
+      summary: 我的校园画像（可解释）
+      description: |
+        ⚠️ 高敏感。需要二次同意。
+        **不得**读取 `wellbeing` / `dorm-harmony` 的任何数据。
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+        '403': { $ref: '#/components/responses/ConsentRequired' }
+    post:
+      tags: [ai-portrait]
+      summary: 请求生成 / 刷新画像
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AiPortraitRequestCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+        '403': { $ref: '#/components/responses/ConsentRequired' }
+
+  /faq/items:
+    get:
+      tags: [faq]
+      summary: 常见问题列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [faq]
+      summary: 提交问题条目 / 工单
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FaqEntryCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /techpie/items:
+    get:
+      tags: [techpie]
+      summary: TechPie 互联条目
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [techpie]
+      summary: 建立 TechPie 互联
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TechPieLinkCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /wildlife/items:
+    get:
+      tags: [wildlife]
+      summary: 校园动物活动点列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [wildlife]
+      summary: 上报动物目击 / 活动区域
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WildlifeSpotCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+
+# ====================================================================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 可达鸭自有 JWT（第一级身份），**不是**任何校园系统的 token
+
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: 游标分页指针；不传表示第一页
+      schema: { type: string }
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: 每页条数
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: 幂等键；同一键的重复写请求只生效一次
+      schema: { type: string }
+
+  schemas:
+    # ---------------- 信封 ----------------
+    ApiErrorCode:
+      type: string
+      description: 机器可读错误码（与 packages/contracts/src/envelope.ts 的 ApiErrorCode 联合类型一一对应）
+      enum:
+        - UNAUTHENTICATED
+        - FORBIDDEN
+        - NOT_FOUND
+        - VALIDATION_FAILED
+        - RATE_LIMITED
+        - CONFLICT
+        - CAMPUS_BINDING_REQUIRED
+        - CONSENT_REQUIRED
+        - UPSTREAM_UNAVAILABLE
+        - INTERNAL
+
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code: { $ref: '#/components/schemas/ApiErrorCode' }
+        message:
+          type: string
+          description: 面向用户的中文文案
+        details:
+          description: 可选结构化细节（字段级校验错误等）
+
+    ApiSuccess:
+      type: object
+      required: [ok, data, traceId]
+      properties:
+        ok: { type: boolean, const: true }
+        data: {}
+        traceId: { type: string }
+
+    ApiFailure:
+      type: object
+      required: [ok, error, traceId]
+      properties:
+        ok: { type: boolean, const: false }
+        error: { $ref: '#/components/schemas/ApiError' }
+        traceId: { type: string }
+
+    ApiEnvelope:
+      oneOf:
+        - $ref: '#/components/schemas/ApiSuccess'
+        - $ref: '#/components/schemas/ApiFailure'
+
+    # ---------------- 身份 ----------------
+    User:
+      type: object
+      required: [id, displayName]
+      properties:
+        id: { type: string }
+        studentId:
+          type: string
+          description: 学号；仅第一级身份持有
+        displayName: { type: string }
+        department: { type: string }
+        email: { type: string, format: email }
+        avatarUrl: { type: string, format: uri }
+
+    CampusBindingSummary:
+      type: object
+      description: |
+        校园系统绑定的**摘要**。注意：**不含**任何 cookie / session / tgc —— 
+        那些永远留在服务端（契约 §5）。
+      required: [platform, bound]
+      properties:
+        platform:
+          type: string
+          enum: [egate, cp-daily, academic, campus-card]
+        bound: { type: boolean }
+        expiresAt: { type: string, format: date-time }
+        lastRenewedAt: { type: string, format: date-time }
+
+    # ---------------- 业务实体 ----------------
+    GroupbuyOrder:
+      type: object
+      required: [id, title, status, amountFen, minMembers, memberCount, createdAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        status:
+          type: string
+          enum: [open, full, closed, settled, cancelled]
+        amountFen:
+          type: integer
+          description: 金额，**整数分**
+        minMembers: { type: integer, minimum: 2 }
+        memberCount: { type: integer }
+        deadline: { type: string, format: date-time }
+        pickupSpot: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    GroupbuyOrderCreate:
+      type: object
+      required: [title, amountFen, minMembers]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 80 }
+        description: { type: string, maxLength: 1000 }
+        amountFen: { type: integer, minimum: 0 }
+        minMembers: { type: integer, minimum: 2, maximum: 200 }
+        deadline: { type: string, format: date-time }
+        pickupSpot: { type: string, maxLength: 120 }
+
+    GroupbuyOrderPage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/GroupbuyOrder' }
+
+    WellbeingAppointment:
+      type: object
+      required: [id, status, scheduledAt]
+      properties:
+        id: { type: string }
+        status:
+          type: string
+          enum: [requested, confirmed, completed, cancelled]
+        scheduledAt: { type: string, format: date-time }
+        counselorName: { type: string }
+        mode:
+          type: string
+          enum: [in-person, online]
+        notes:
+          type: string
+          description: 加密存储；不进入任何画像
+
+    WellbeingAppointmentCreate:
+      type: object
+      required: [scheduledAt, mode]
+      properties:
+        scheduledAt: { type: string, format: date-time }
+        mode:
+          type: string
+          enum: [in-person, online]
+        topic: { type: string, maxLength: 500 }
+
+    WellbeingAppointmentPage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/WellbeingAppointment' }
+
+    CrisisResource:
+      type: object
+      required: [name, contact]
+      properties:
+        name: { type: string }
+        contact: { type: string }
+        hours: { type: string }
+        description: { type: string }
+
+    ForumPost:
+      type: object
+      required: [id, title, createdAt]
+      properties:
+        id: { type: string }
+        boardId: { type: string }
+        title: { type: string }
+        body: { type: string }
+        anonymous:
+          type: boolean
+          description: 匿名帖的作者身份与实名身份解耦存储
+        authorDisplay: { type: string }
+        replyCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    ForumPostCreate:
+      type: object
+      required: [title, body]
+      properties:
+        boardId: { type: string }
+        title: { type: string, minLength: 1, maxLength: 120 }
+        body: { type: string, minLength: 1, maxLength: 20000 }
+        anonymous: { type: boolean, default: false }
+
+    ForumPostPage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/ForumPost' }
+
+    PageMeta:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items: { type: array }
+        nextCursor:
+          type: [string, 'null']
+        total: { type: integer }
+
+    # ---------------- 其余 15 个模块的实体 ----------------
+    ScheduleCourse:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        teacher: { type: string }
+        location: { type: string }
+        weekday: { type: integer, minimum: 1, maximum: 7 }
+        startsAt: { type: string }
+        endsAt: { type: string }
+    ScheduleCourseCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 120 }
+        teacher: { type: string, maxLength: 60 }
+        location: { type: string, maxLength: 120 }
+        weekday: { type: integer, minimum: 1, maximum: 7 }
+
+    CampusCardTxn:
+      type: object
+      properties:
+        id: { type: string }
+        amountFen: { type: integer }
+        balanceFen: { type: integer }
+        merchant: { type: string }
+        occurredAt: { type: string, format: date-time }
+    CampusCardTxnCreate:
+      type: object
+      required: [amountFen]
+      properties:
+        amountFen: { type: integer, minimum: 100 }
+
+    ProfileItem:
+      type: object
+      properties:
+        id: { type: string }
+        key: { type: string }
+        value: { type: string }
+    ProfileItemCreate:
+      type: object
+      required: [key, value]
+      properties:
+        key: { type: string, maxLength: 60 }
+        value: { type: string, maxLength: 500 }
+
+    NotificationItem:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        body: { type: string }
+        read: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    NotificationCreate:
+      type: object
+      required: [channel]
+      properties:
+        channel:
+          type: string
+          enum: [in-app, wechat-subscribe, apns, fcm]
+        topic: { type: string }
+
+    TakeoutReport:
+      type: object
+      properties:
+        id: { type: string }
+        status:
+          type: string
+          enum: [submitted, evidence-needed, negotiating, resolved, rejected]
+        spot: { type: string }
+        occurredAt: { type: string, format: date-time }
+        anonymous: { type: boolean }
+    TakeoutReportCreate:
+      type: object
+      required: [spot, occurredAt]
+      properties:
+        spot: { type: string, maxLength: 120 }
+        occurredAt: { type: string, format: date-time }
+        description: { type: string, maxLength: 1000 }
+        anonymous: { type: boolean, default: true }
+
+    FleaItem:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        priceFen: { type: integer }
+        condition: { type: string }
+        status:
+          type: string
+          enum: [on-sale, reserved, sold, withdrawn]
+    FleaItemCreate:
+      type: object
+      required: [title, priceFen]
+      properties:
+        title: { type: string, maxLength: 80 }
+        priceFen: { type: integer, minimum: 0 }
+        condition:
+          type: string
+          enum: [new, like-new, good, fair, poor]
+        description: { type: string, maxLength: 2000 }
+        imageUrls:
+          type: array
+          items: { type: string, format: uri }
+          maxItems: 9
+
+    DormHarmonyCase:
+      type: object
+      properties:
+        id: { type: string }
+        status:
+          type: string
+          enum: [submitted, assigned, mediating, resolved, closed]
+        category:
+          type: string
+          enum: [noise, hygiene, schedule, belongings, other]
+        anonymous: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    DormHarmonyCaseCreate:
+      type: object
+      required: [category]
+      properties:
+        category:
+          type: string
+          enum: [noise, hygiene, schedule, belongings, other]
+        description: { type: string, maxLength: 3000 }
+        anonymous: { type: boolean, default: true }
+
+    ErrandTask:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        rewardFen: { type: integer }
+        status:
+          type: string
+          enum: [open, accepted, picked-up, delivered, completed, cancelled]
+        fromSpot: { type: string }
+        toSpot: { type: string }
+        deadline: { type: string, format: date-time }
+    ErrandTaskCreate:
+      type: object
+      required: [title, rewardFen, fromSpot, toSpot]
+      properties:
+        title: { type: string, maxLength: 120 }
+        rewardFen: { type: integer, minimum: 0 }
+        fromSpot: { type: string, maxLength: 120 }
+        toSpot: { type: string, maxLength: 120 }
+        deadline: { type: string, format: date-time }
+
+    BuddyPost:
+      type: object
+      properties:
+        id: { type: string }
+        activity:
+          type: string
+          enum: [sports, study, meal, travel, gaming, other]
+        title: { type: string }
+        capacity: { type: integer }
+        joined: { type: integer }
+        meetAt: { type: string, format: date-time }
+    BuddyPostCreate:
+      type: object
+      required: [activity, title]
+      properties:
+        activity:
+          type: string
+          enum: [sports, study, meal, travel, gaming, other]
+        title: { type: string, maxLength: 120 }
+        capacity: { type: integer, minimum: 2, maximum: 100 }
+        meetAt: { type: string, format: date-time }
+
+    LostFoundItem:
+      type: object
+      properties:
+        id: { type: string }
+        kind:
+          type: string
+          enum: [lost, found]
+        title: { type: string }
+        spot: { type: string }
+        status:
+          type: string
+          enum: [open, matched, returned, closed]
+        occurredAt: { type: string, format: date-time }
+    LostFoundItemCreate:
+      type: object
+      required: [kind, title, spot]
+      properties:
+        kind:
+          type: string
+          enum: [lost, found]
+        title: { type: string, maxLength: 120 }
+        spot: { type: string, maxLength: 120 }
+        description: { type: string, maxLength: 2000 }
+        occurredAt: { type: string, format: date-time }
+        imageUrls:
+          type: array
+          items: { type: string, format: uri }
+          maxItems: 9
+
+    CanteenDish:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        canteen: { type: string }
+        priceFen: { type: integer }
+        caloriesKcal: { type: integer }
+        proteinG: { type: number }
+        fatG: { type: number }
+        carbG: { type: number }
+    CanteenDishCreate:
+      type: object
+      required: [name, canteen, caloriesKcal]
+      properties:
+        name: { type: string, maxLength: 80 }
+        canteen: { type: string, maxLength: 60 }
+        priceFen: { type: integer, minimum: 0 }
+        caloriesKcal: { type: integer, minimum: 0 }
+        proteinG: { type: number, minimum: 0 }
+        fatG: { type: number, minimum: 0 }
+        carbG: { type: number, minimum: 0 }
+
+    AiPortrait:
+      type: object
+      description: 可解释画像。**不得**引用 wellbeing / dorm-harmony 数据。
+      properties:
+        id: { type: string }
+        generatedAt: { type: string, format: date-time }
+        interests:
+          type: array
+          items: { type: string }
+        explanation:
+          type: string
+          description: 为什么得出这些结论（可解释性要求）
+        sourceModules:
+          type: array
+          items: { type: string }
+          description: 数据来源模块白名单，绝不含敏感域
+    AiPortraitRequestCreate:
+      type: object
+      properties:
+        refresh: { type: boolean, default: false }
+
+    FaqEntry:
+      type: object
+      properties:
+        id: { type: string }
+        question: { type: string }
+        answer: { type: string }
+        category: { type: string }
+        helpfulCount: { type: integer }
+    FaqEntryCreate:
+      type: object
+      required: [question]
+      properties:
+        question: { type: string, maxLength: 300 }
+        answer: { type: string, maxLength: 5000 }
+        category: { type: string, maxLength: 60 }
+
+    TechPieLink:
+      type: object
+      properties:
+        id: { type: string }
+        kind:
+          type: string
+          enum: [sso, schedule, assignment, campus-card]
+        linked: { type: boolean }
+        linkedAt: { type: string, format: date-time }
+    TechPieLinkCreate:
+      type: object
+      required: [kind]
+      properties:
+        kind:
+          type: string
+          enum: [sso, schedule, assignment, campus-card]
+        token: { type: string }
+
+    WildlifeSpot:
+      type: object
+      properties:
+        id: { type: string }
+        species:
+          type: string
+          enum: [cat, bird, black-swan, other]
+        name: { type: string }
+        latitude: { type: number }
+        longitude: { type: number }
+        lastSeenAt: { type: string, format: date-time }
+        feedingAllowed: { type: boolean }
+    WildlifeSpotCreate:
+      type: object
+      required: [species, latitude, longitude]
+      properties:
+        species:
+          type: string
+          enum: [cat, bird, black-swan, other]
+        name: { type: string, maxLength: 60 }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        note: { type: string, maxLength: 500 }
+
+  responses:
+    Unauthenticated:
+      description: 未认证（第一级身份缺失或失效）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiFailure' }
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiFailure' }
+    ValidationFailed:
+      description: 参数校验失败
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiFailure' }
+    Conflict:
+      description: 状态冲突（如拼单已满）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiFailure' }
+    ConsentRequired:
+      description: 需要二次同意（`CONSENT_REQUIRED`，契约 §9）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiFailure' }
+    CampusBindingRequired:
+      description: 需要先绑定校园系统（`CAMPUS_BINDING_REQUIRED`，契约 §5）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiFailure' }
+    UpstreamUnavailable:
+      description: 上游校园系统不可用
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiFailure' }
+    ModuleList:
+      description: 模块资源列表（统一形状）
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiSuccess'
+              - type: object
+                properties:
+                  data: { $ref: '#/components/schemas/PageMeta' }
+    ModuleCreated:
+      description: 模块资源创建成功（统一形状）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiSuccess' }

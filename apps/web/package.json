@@ -1,0 +1,40 @@
+{
+  "name": "@kedaya/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "可达鸭 Web 门户 + 管理后台（Next.js App Router）",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf .next .turbo"
+  },
+  "dependencies": {
+    "@kedaya/contracts": "*",
+    "@kedaya/design-tokens": "*",
+    "@kedaya/shared": "*",
+    "@tanstack/react-query": "5.104.3",
+    "clsx": "2.1.1",
+    "lucide-react": "1.58.0",
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tailwind-merge": "3.7.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "eslint": "10.12.0",
+    "eslint-config-next": "16.4.2",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  }
+}

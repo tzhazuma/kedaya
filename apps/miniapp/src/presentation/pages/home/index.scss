@@ -1,0 +1,46 @@
+.kdy-home__hero {
+  padding: $kdy-space-6 $kdy-space-4 $kdy-space-4;
+  background-color: $kdy-color-brand;
+}
+
+.kdy-home__brand {
+  display: block;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-display;
+  font-weight: 700;
+}
+
+.kdy-home__slogan {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-home__session {
+  display: block;
+  margin-top: $kdy-space-3;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-home__grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.kdy-home__grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $kdy-space-1;
+  box-sizing: border-box;
+  width: 25%;
+  padding: $kdy-space-3 $kdy-space-1;
+}
+
+.kdy-home__grid-name {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+  text-align: center;
+}

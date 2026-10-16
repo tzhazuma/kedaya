@@ -1,0 +1,54 @@
+.kdy-discover__platform {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-discover__hint {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-discover__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin: $kdy-space-2 0;
+}
+
+.kdy-discover__result {
+  display: block;
+  padding: $kdy-space-2 $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.kdy-discover__cap {
+  padding: $kdy-space-3 0;
+  border-bottom: 1px solid $kdy-color-border;
+}
+
+.kdy-discover__cap-head {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-1;
+}
+
+.kdy-discover__cap-name {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: 600;
+}
+
+.kdy-discover__cap-line {
+  display: block;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}

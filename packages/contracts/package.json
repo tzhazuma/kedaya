@@ -1,0 +1,29 @@
+{
+  "name": "@kedaya/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "可达鸭三端共享契约：响应信封、错误码、模块注册表、OpenAPI",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./envelope": "./src/envelope.ts",
+    "./modules": "./src/modules.ts",
+    "./openapi": "./openapi/kedaya.v1.yaml"
+  },
+  "files": [
+    "src",
+    "openapi"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vitest": "5.0.5",
+    "yaml": "^2.9.1"
+  }
+}

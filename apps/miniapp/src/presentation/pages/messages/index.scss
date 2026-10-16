@@ -1,0 +1,23 @@
+.kdy-messages__hint {
+  display: block;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-messages__actions {
+  display: flex;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-messages__status {
+  display: block;
+  margin-top: $kdy-space-3;
+  padding: $kdy-space-2 $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
