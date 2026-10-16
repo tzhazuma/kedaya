@@ -97,12 +97,14 @@ apps/miniapp/
         ├── components/        #   KdyCard / KdyButton / KdyEmpty / KdyTag
         │                      #   + KdySwitch / KdySearchBar / KdyAccordion / KdyField
         │                      #   + KdyEthicsNotice / KdyPrivacyNotice（wildlife 的伦理与隐私提示）
+        │                      #   + KdyBuddyPrivacyNotice（buddy 的隐私提示，语义与 wildlife 不同）
         ├── hooks/             #   useStore（useSyncExternalStore 封装）
         ├── theme/tokens.scss  #   设计令牌入口（全局注入）
         └── pages/             #   home / discover / messages / profile
                                #   groupbuy/* · forum/{list,detail,create,report}
                                #   faq/{index,tickets}
                                #   wildlife/{map,report,tracks}
+                               #   buddy/{list,detail,create,profile,recommendations}
 ```
 
 **依赖方向（硬规则）**：`presentation → application → domain ← data`。
@@ -280,6 +282,69 @@ npm run build:weapp -w @kedaya/miniapp
 
 ---
 
+## 6.4 垂直切片：找搭子（`buddy`）
+
+对应 `docs/features/buddy-matching.md` 与契约 §11.2（动作名）/ §11.10-D（`joinedCount`）/
+§11.10-E（不透明游标）/ §11.10-G（三板块，**不做 dating**）。敏感级 **low**、**无同意门**。
+
+- **列表页** `presentation/pages/buddy/list`：**三板块分栏**（`academic` / `daily` / `sport`）+
+  下拉刷新 + 触底游标分页；卡片展示状态 / 时间 / 地点 / 人数 / 标签 / 发起人。
+- **详情页** `presentation/pages/buddy/detail`：完整信息 + 四个动作
+  （`join` 申请 / `leave` 撤回 / `decide` 审批 / `close` 关闭）+ 匹配反馈
+  （like / dislike / skip）。**申请列表仅发起人可见**（规格 §6.1 可见性矩阵）。
+- **发布页** `presentation/pages/buddy/create`：板块 → 活动类型（**派生**，不存 `section`）/
+  标题 / 说明（含联系方式拦截）/ 地点（白名单）/ 日期时间 / 时长 / 人数 / 性别准入 /
+  运动水平（**仅 sport**）/ 标签。
+- **我的匹配资料** `presentation/pages/buddy/profile`：院系、兴趣标签（≤20）、活动标签（≤10）、
+  **可用时段（周几 + 起止时间，可增删）**、常去区域（≤5）、运动水平（仅 sport）、
+  一句话自述、**匹配开关（默认关闭）**、**删除匹配资料（撤回）**。
+- **推荐页** `presentation/pages/buddy/recommendations`：**展示 `explainMatch()` 给出的结构化理由**
+  （「同一个院系」「共同兴趣 3 项」「时间能碰上」…）而不是只给一个分数；
+  `matchMode`（`vector`/`hash`/`rule`）**原样展示**，`rule` 模式下不会出现「智能推荐」。
+
+### 三条硬约束的落地（本模块最容易做错的地方）
+
+1. **封闭标签表（规格 §3.2）**：`interestTags` / `activityTags` / `BuddyPost.tags`
+   **一律取自服务端封闭标签表**。发布页与资料页**没有**标签输入框；
+   用例层的 `addTagByText()` 是唯一能"输入"标签的入口，任何未登记的字符串都会被拒
+   （`未登记的标签：xxx`，对齐服务端 `UNKNOWN_TAG:<key>`）。
+   理由：自由文本会让「羽毛球」/「打羽毛球」/`badminton` 互不匹配，而共同标签数
+   是本模块最精确、最可解释的匹配特征。
+   ⚠️ 本端的 `BUDDY_TAGS` 是**服务端权威表的逐字镜像**（62 项，
+   `services/api/src/modules/buddy/domain/tags.ts`），并由单测钉住规模与关键 key ——
+   初版凭规格文字自拟了 37 个 key，其中 7 个服务端并不存在（详见 §8.7(a)）。
+   由于服务端**当前没有** `GET /buddy/tags`，`listTags()` 失败时会**回落到这份镜像**
+   （仍是封闭表，不是自由输入）。
+2. **可用时段（规格 §3.3 F7）**：时段重叠是**硬过滤**，判定**直接调用**
+   `@kedaya/shared` 的 `overlapsAvailability`（与服务端同一套）。跨零点由活动时长表达
+   （时段本身不跨零点），例如周一 23:30 踢 90 分钟会命中**周二** 00:00–02:00 的时段。
+3. **可解释性（G3）**：理由由 `explainMatch()` 产出，并**显式区分两件事**：
+   - `reason`（标题）= **服务端下发的原文**，它才是排序依据的表述（客户端推算**不得**覆盖它）；
+   - `reasons`（标签）= 服务端结构化条目（有则用），否则客户端用
+     **公开信息**（活动标签 / 地点 / 时间）+ 我自己的资料经 `explainMatch()` 算出；
+   - `reasonSource` 标注标签来源（`server` / `client`），`serverReason` 保留服务端原文。
+   客户端**永远不**声称「同一个院系」或「共同兴趣 N 项」—— `BuddyProfile`
+   对任何人都不直接可见（规格 §6.1），发起人的院系/兴趣不在客户端，硬算只能靠编造。
+
+### 隐私提示（规格 §6，**硬要求**）
+
+`KdyBuddyPrivacyNotice` 在列表 / 详情 / 发布 / 资料 / 推荐五个页面常驻，三句话缺一不可：
+① 匹配资料（院系/兴趣/可用时段/区域/水平）**不对任何人展示**，只被算法使用；
+② 活动只公开活动信息、昵称与头像，**联系方式在申请通过后经站内信交换**；
+③ 匹配资料**可随时撤回**（关闭匹配或删除后立即移出推荐池）。
+
+> ⚠️ **未决项（诚实标注）**：
+> - `CAMPUS_AREAS` 已改为**逐字镜像服务端**的 `CAMPUS_LOCATIONS`（25 项），
+>   但服务端自己就标注了「真实清单必须由产品 + 运营确认后替换」—— 因此**仍是占位内容**
+>   （规格 U10 未提供真实清单）。镜像它至少保证两端彼此一致，不宣称它已真实。
+> - `SHTU_DEPARTMENTS` 是 UI 的**下拉建议值**（服务端对 `department` 只约束 ≤64 字，
+>   不校验白名单），与 Web 端的 `BUDDY_DEPARTMENTS` 逐字一致 ——
+>   两端不一致会让 `same-department` 规则永远不命中。
+> - 规格 §6.2 的「匹配成功后可见的联系方式」字段属 `profile` 模块（跨模块需求，U8），
+>   本端只做到「撮合」，站内信交换由 `notifications` 模块负责。
+
+---
+
 ## 7. 测试
 
 ```bash
@@ -317,6 +382,14 @@ npm run test -w @kedaya/miniapp
 | `src/data/repositories/__tests__/mockWildlifeRepository.test.ts` | 游标分页、三态控制面、**敏感区不存坐标 / 网格吸附真的生效**、E10 过滤、分类降级、个体重名 `CONFLICT` |
 | `src/data/repositories/__tests__/httpWildlifeRepository.test.ts` | `/wildlife/*` 路径映射、URL 编码、`Idempotency-Key`、**仓储层不做坐标转换（原样透传 WGS84）**、上传委托给 multipart 端口 |
 | `src/data/api/__tests__/mediaUpload.test.ts` | 上传表单字段（`clientPhotoId` 幂等依据）、响应解包、缺字段/非信封/未声明 `exifStripped` 的处理 |
+| `src/domain/models/__tests__/buddy.test.ts` | **封闭标签校验（自由文本被拒 / 下架标签被拒 / 上限）**、`sectionOf` 全 6 值、**`canTransitionPost` 5×5 全矩阵**、申请状态机、`joinedCount` 含发起人、F1–F6 资格、**可用时段边界（含跨零点：周一 23:30+90min 命中周二时段；22:30+90min 到 24:00 不算进入周二）**、资料校验（≤20/≤10/≤5）、联系方式检测**不误报日期**、发布表单校验、隐私三句话、**镜像标签表与地点白名单与服务端权威表一致（62 / 25 项，且初版 7 个伪造 key 已清掉）** |
+| `src/data/repositories/__tests__/mockBuddyRepository.test.ts` | 游标分页（`limit=1` 翻页不重不漏）、板块/标签筛选、**自由文本标签被拒（`UNKNOWN_TAG`）**、幂等键（同 key 同 body 复用 / 同 key 异 body `CONFLICT` / 缺 key `IDEMPOTENCY_KEY_REQUIRED`）、`join` 不占名额、`leave` 后重申请复用同一行、`decide(ACCEPTED)` 才递增 `joinedCount`、**非发起人 `FORBIDDEN`**、**申请列表仅发起人可见**、硬过滤 F1/F4/F6/F7、**反馈 section 隔离**、`explainMatch` 理由（academic 的「同一个院系」/ sport **不**产出它）、未开启匹配时「按时间排序」+ score 0、三态控制面 |
+| `src/data/repositories/__tests__/httpBuddyRepository.test.ts` | `/buddy/*` 路径映射、**五个动作名逐字等于契约 §11.2（且未自创 accept/reject/cancel）**、所有 `POST` 带 `Idempotency-Key`、**游标原样透传**、`GET /buddy/profile` 404 → `null`、错误映射带 `details.reason` |
+| `src/application/buddy/__tests__/listBuddyPosts.test.ts` | 契约 §8 同步 hydrate / 失败静默降级、三态、**缓存按板块分片（切板块不会串数据）**、游标续页与累积、快照引用稳定、摘要标签中文化 |
+| `src/application/buddy/__tests__/buddyRecommendations.test.ts` | **`deriveReasons` 与 `explainMatch` 输出逐字一致**、客户端补齐理由并标注 `reasonSource: client`、服务端理由优先、**客户端不声称「同一个院系」/「共同兴趣」**、`reasonText` 前 3 条 + 「有潜在匹配」回落、`matchMode` 三档原样暴露、资料拉取失败不阻塞推荐、**标题理由永远优先用服务端原文（客户端推算不得覆盖排序依据）**、`serverReason` 语义、反馈带当前板块并重拉、反馈本地记忆 UPSERT |
+| `src/application/buddy/__tests__/createBuddyPost.test.ts` | **`addTagByText` 拒绝自由文本**（三种写法）、`toggleTag` 同源校验、≤8 上限、标签表拉取失败**回落到封闭镜像**（不是清空、更不是自由输入）、`setSection` 派生 activity、离开 sport 清 `minSkillLevel`、未登录/校验失败不发请求、提交按 `+08:00` 转 UTC、幂等键复用与改动后变化、`reset` 保留标签表 |
+| `src/application/buddy/__tests__/buddyProfile.test.ts` | 契约 §8 hydrate、资料存在/不存在、**可用时段能填（含去重、非法时段被丢弃）**、兴趣 ≤20 / 活动 ≤10 / 区域 ≤5、`bio` 清空为 `null`、匹配开关默认关闭、**撤回调用 `DELETE /buddy/profile` 并清缓存**、撤回失败不谎报成功 |
+| `src/application/buddy/__tests__/buddyPostDetail.test.ts` | hydrate 含资格计算、`own-post` 判定、**申请列表可见性（非发起人 `FORBIDDEN` → 不可见而非页面错误）**、`join` 后重拉详情、幂等键与 (帖,人) 绑定、`decide` 传 `applicationId`+`decision`、`close` → `CLOSED`、**反馈用帖子的 `activity` 派生 section**、未加载帖子时拒绝反馈 |
 
 > 测试替身集中在 `src/application/__tests__/testDoubles.ts`（文件名不含 `.test.ts`，
 > 不会被 vitest 收集）。它刻意**不** import `data/` 下的实现，保持 `application` 层分层干净。
@@ -346,7 +419,13 @@ npm run test -w @kedaya/miniapp
 - 10 个复用组件：`KdyCard` / `KdyButton` / `KdyEmpty` / `KdyTag` / `KdySwitch` /
   `KdySearchBar` / `KdyAccordion` / `KdyField` / `KdyEthicsNotice` / `KdyPrivacyNotice`
   （全部取自设计令牌；地图叠加层色值走 `presentation/theme/mapColors.ts`，同样派生自 `tokens.json`）
-- 25 个 Vitest 测试文件 / 382 个测试（domain / 网络层 / mock 仓储 / http 仓储 / 用例 / 存储）
+- **找搭子（`buddy`）垂直切片**：三板块列表（游标分页 + 下拉刷新 + 触底加载）/ 详情
+  （`join` 申请 / `leave` 撤回 / `decide` 审批 / `close` 关闭）/ 发布（**封闭标签表，无自由输入**）/
+  我的匹配资料（**可用时段可填** —— F7 硬过滤的依据）/ 推荐（**展示 `explainMatch()` 的结构化理由**）；
+  匹配反馈 like/dislike/skip；隐私提示在五页常驻；`dating` **不做**（契约 §11.10-G）
+- 11 个复用组件（新增 `KdyBuddyPrivacyNotice`，buddy 的隐私提示与 wildlife 的
+  `KdyPrivacyNotice` 分开 —— 两者的「哪些信息会公开」语义完全不同）
+- 33 个 Vitest 测试文件 / 592 个测试（domain / 网络层 / mock 仓储 / http 仓储 / 用例 / 存储）
 
 ### ❌ 未实现（诚实清单）
 
@@ -371,6 +450,24 @@ npm run test -w @kedaya/miniapp
 - **论坛治理后台**：版主锁定 / 隐藏 / 申诉的**操作入口**未做（端上只消费治理结果）；
   主题/回复的删除、点赞、编辑也未做。
 - **FAQ 内容运营侧**：文章的新增/编辑/归档（`AnswerTicket`）未做，端上只读。
+- **`buddy` 未实现的部分（诚实清单）**：
+  - **问卷**（`BuddyQuestionnaire` / `BuddyQuestionnaireResponse`，规格 §2.6）—— 端点
+    `GET|POST /buddy/questionnaires*` 已定义，端上未做页面（本轮交付不含问卷）；
+  - **我的申请列表页**（`GET /buddy/applications`）—— 未做独立页面；
+    当前只在**详情页**展示「我对这条搭子的申请状态」（`BuddyPost.myApplication`）；
+  - **`PATCH /buddy/items/:id`（JSON Merge Patch 编辑）** 与
+    **`DELETE /buddy/items/:id`（转 `CANCELLED`）** —— 契约端点已定义，端上未做入口
+    （发起人目前只能 `close` 到 `CLOSED`，不能取消到 `CANCELLED`）；
+  - **内容安全（敏感词）**：只做了规格 §6.4 的**联系方式模式**前端预校验
+    （手机号 / 微信 / QQ），敏感词依赖 M2 的共享内容安全能力（规格 U9），未接入；
+  - **F5 性别准入的客户端预校验**：`BuddyProfile` **不采集性别**（规格 §6.3），
+    客户端无法独立判定，因此 `canApplyToPost` 的 `genderCompatible` 缺省为 `true`，
+    由服务端在 `join` 时返回 `FORBIDDEN` / `GENDER_PREFERENCE_MISMATCH`。
+    **这是刻意的**，不是遗漏 —— 客户端只负责提前给出好文案；
+  - **举报入口**：规格 §6.4 建议复用 `forum.report`，但那是针对 `forum` 内容的
+    （规格 U11 未决），端上**未**提供 buddy 的举报入口；
+  - **向量匹配（`vector` / `hash` 模式）**：mock 诚实返回 `matchMode: 'rule'`
+    （无 embedding）；端上不实现向量推理，只消费服务端的 `matchMode` 与 `score`。
 - **tabBar 图标**：未配置 `iconPath`（品牌图标未就位），当前只显示文字。
 - **H5 端未实机验证**：`build:h5` 脚本已就绪，但本轮只验证了 `weapp` 构建。
 - **CI / 真机预览**：未在真机与微信开发者工具中打开验证（无图形环境）。
@@ -435,6 +532,67 @@ npm run test -w @kedaya/miniapp
    `data/repositories/httpForumRepository.ts`、`data/repositories/httpFaqRepository.ts`。
    默认 mock 模式下不受影响，页面与用例层无需改动。
 
+7. **⚠️ `buddy` 的跨端一致性问题（M1 集成前必须由 Lead 裁决）**。
+   本端实现时**实际读了并行的 `services/api` / `apps/web` buddy 实现**（它们在同一个
+   worktree 里），据此校正了自己的 wire 假设。以下四项**都不是本端能单独修的**：
+
+   **(a) 三端的封闭标签表互不相同 —— 这是最严重的一项。**
+   | 端 | 位置 | key 数 | 与服务端差异 |
+   | --- | --- | --- | --- |
+   | **服务端（权威）** | `services/api/src/modules/buddy/domain/tags.ts:39` | **62** | — |
+   | Web | `apps/web/src/domain/models/buddy.ts` 的 `BUDDY_TAG_TABLE` | 46（active 30，含 1 条 `isActive:false` 的 `esports-league`） | 服务端有 **39** 个它没有；它有 **23** 个服务端没有（`airport-ride` / `metro` / `dinner` / `lunch` / `stadium` / `lab` …） |
+   | 小程序（本端） | `apps/miniapp/src/domain/models/buddy.ts` 的 `BUDDY_TAGS` | 62 | **已改为逐字镜像服务端，无差异** |
+
+   服务端用 `assertKnownTags()` 以 `UNKNOWN_TAG:<key>` 拒收未登记 key
+   （`application/buddy-validation.ts:29`）。因此 Web 端目前会提供**服务端不认**的标签 ——
+   用户点一个看起来正常的标签，提交时被拒。
+   **本端的处置**：把自拟的 37 项换成服务端 62 项的逐字副本（并加单测钉住规模与关键 key，
+   同时断言初版那 7 个伪造 key 已清掉）。**Web 端需要同样的修正**，或反过来把
+   Web 的标签补进服务端表 —— 但必须**只留一份**。
+
+   **(b) 服务端没有 `GET /buddy/tags`。** 契约 §11.11 允许 `GET /<mod>/<collection>`，
+   规格 §3.2 也说标签表"存在 DB（可运营）"，但 `buddy.controller.ts` 的路由表里没有它
+   （只有 `profile` / `items` / `recommendations` / `applications` / `questionnaires`）。
+   本端的处置：`listTags()` 失败时**回落到内置的封闭镜像**（不是清空、更不是自由输入）。
+   建议服务端补这个端点，让"服务端封闭表"成为可运营的唯一真相。
+
+   **(c) `/buddy/recommendations` 只回 `reason` 字符串，没有结构化理由。**
+   `application/buddy-recommend.service.ts:185` 是
+   `items.push({ post, score, reason })`。而规格 G3 要求可解释性、任务要求展示
+   `explainMatch()` 的理由。本端的处置：标题用服务端原文（**排序依据**），
+   结构化标签由客户端 `explainMatch()` 按**公开信息**推算，两者**分开标注**
+   （`reason` / `reasons` / `reasonSource` / `serverReason`）。
+   **早先版本在客户端能推算时用推算结果覆盖了服务端原文 —— 那会造出
+   「解释与排序不一致」，已修正。** 建议 OpenAPI 增加 `reasons: MatchReason[]`。
+
+   **(d) `@kedaya/shared` 的 `MatchTarget.tags` 字段未被读取。**
+   `ruleScoreFor` / `explainMatch` 只读 `target.creator`（对方 `BuddyProfile`），
+   `target.tags`（帖子自己的 `tags`）在实现里**没有任何引用**；
+   但规格 §3.2 说「`BuddyPost.tags` 是**匹配打分的主特征**」。
+   本端的处置：按规格 §3.4 的字面意思调用
+   （`target = { creator: 发起人画像, tags: post.tags }`）—— 与**服务端
+   `domain/matching.ts:127` 完全一致**（`{ creator: candidate.creator, tags: candidate.post.tags }`），
+   因此两端行为一致，只是"帖子标签不参与打分"这件事本身与规格 §3.2 的措辞矛盾。
+   建议 Lead 在 shared 里让两个函数读 `target.tags`，或删掉规格里那句话。
+   **这是 shared 包的缺口，不是本端偏离。**
+
+8. **`GET /buddy/items` 是否按 `status` 过滤，规格自相矛盾**（本端按 §5.3 实现）。
+   §5.3 的 query 表**没有** `status` 参数（只按 `startsAfter` 过滤时间），
+   而 §5.9 的分页示例里写了 `where: { status: 'OPEN', ... }`。
+   本端（mock）按 §5.3 实现 —— **不**按 `status` 过滤，因此 `FULL` / `CLOSED`
+   的活动仍会出现在列表里（用户需要知道「满了 / 关了」，而不是让它凭空消失）。
+   若 Lead 裁定跟 §5.9，只需在 `data/mock/buddyMemoryDatabase.ts` 的 `visibleInList`
+   加一个状态条件，并同步 `httpBuddyRepository` 的查询参数。
+
+9. **`build:weapp` 出现两条 webpack 性能警告（非错误，构建 exit 0）**：
+   `AssetsOverSizeLimitWarning: common.js (252 KiB) > 244 KiB` 与 `NoAsyncChunksWarning`。
+   **实测确认这两条是本切片引入的**：把 `app.config.ts` 里的 5 个 buddy 页面注册临时去掉后
+   重新构建，`dist/common.js` 为 **249839 字节**（恰好卡在 244 KiB = 249856 字节阈值下方，
+   无警告）；加回后为 **256246 字节**（首版）/ **257897 字节**（修正标签表后），触发警告。
+   即：**基线本来就贴着阈值**，任何新模块都会踩到。这属于仓库级的性能预算问题，
+   不在本端作用域内解决（建议 Lead 调整 `config/index.ts` 的 `performance` 阈值，
+   或对 buddy 页面做分包）。
+
 ---
 
 ## 9. 自检证据
@@ -473,4 +631,25 @@ apps/miniapp/dist/presentation/pages/wildlife/{map,report,tracks}/{index.js,inde
 dist/app.json → permission.scope.userLocation.desc 已声明；
                 requiredPrivateInfos = ["getLocation","chooseLocation"]；
                 tabBar.list 仍是 4 项（首页/发现/消息/我的），结构未改动
+```
+
+task-12（`buddy` 找搭子）验证过的命令 —— **真实输出见交付说明**：
+
+```bash
+export PATH="/opt/homebrew/bin:$PATH"
+./scripts/with-npm-lock.sh npm install        # exit 0（仅 npm warn install-scripts，无 error）
+npm run typecheck -w @kedaya/miniapp          # exit 0（无输出 = 无类型错误）
+npm run test      -w @kedaya/miniapp          # 33 files / 592 tests passed（基线 25/382，+8 文件 / +210 测试）
+npm run lint      -w @kedaya/miniapp          # exit 0（0 problems）
+npm run build:weapp -w @kedaya/miniapp        # exit 0（Compiled successfully in 3.88s；2 条性能警告见 §8.9）
+```
+
+构建产物抽查（真实命令输出）：
+
+```
+apps/miniapp/dist/presentation/pages/buddy/{list,detail,create,profile,recommendations}/{index.js,index.json,index.wxml,index.wxss}
+dist/app.json → pages 共 20 条，其中 5 条是 buddy；
+                tabBar.list 仍是 4 项（首页/发现/消息/我的），**结构未改动**；
+                requiredPrivateInfos 仍是 ["getLocation","chooseLocation"]（buddy 不需要定位）
+dist/common.js = 257897 字节（基线 249839 字节 → +8058；见 §8.9 的性能警告）
 ```

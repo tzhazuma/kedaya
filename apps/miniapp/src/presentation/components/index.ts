@@ -6,6 +6,9 @@
 export { KdyAccordion } from './KdyAccordion'
 export type { KdyAccordionProps } from './KdyAccordion'
 
+export { KdyBuddyPrivacyNotice } from './KdyBuddyPrivacyNotice'
+export type { KdyBuddyPrivacyNoticeProps } from './KdyBuddyPrivacyNotice'
+
 export { KdyButton } from './KdyButton'
 export type {
   KdyButtonOpenType,

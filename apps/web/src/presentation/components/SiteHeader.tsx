@@ -9,6 +9,7 @@ import { ThemeToggle } from '../theme/ThemeToggle';
 const NAV = [
   { href: '/', label: '首页' },
   { href: '/groupbuy', label: '拼单' },
+  { href: '/buddy', label: '找搭子' },
   { href: '/admin', label: '管理后台' },
 ] as const;
 

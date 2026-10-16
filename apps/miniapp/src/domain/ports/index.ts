@@ -1,3 +1,4 @@
+export * from './buddyRepository'
 export * from './cachePort'
 export * from './clockPort'
 export * from './errors'

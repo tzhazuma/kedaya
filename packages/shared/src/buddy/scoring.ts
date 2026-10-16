@@ -283,7 +283,12 @@ export function explainMatch(
   if (sa > 0) {
     reasons.push({ code: 'shared-activities', label: `共同活动 ${sa} 项`, weight: sa * 0.15 });
   }
-  if (opts.availabilityOverlaps) {
+  // ⚠️ **只有 `daily` 板块**才展示"时间能碰上" —— 因为 `ruleScoreFor` 也只在 daily 给这 0.2 分。
+  // 早先版本对三个板块都展示该理由，于是 academic/sport 的推荐会出现
+  // "时间合适"却**不加分**的矛盾：用户看到的理由解释不了他看到的排序。
+  // 可解释性的定义就是"理由必须能解释分数"，所以这里必须与打分表严格一致。
+  // （由 api 在实现 `buddy` 时发现并上报，Lead 裁决：改代码，不改规格。）
+  if (section === 'daily' && opts.availabilityOverlaps) {
     reasons.push({ code: 'availability-overlap', label: '时间能碰上', weight: 0.2 });
   }
   if (sameArea) {

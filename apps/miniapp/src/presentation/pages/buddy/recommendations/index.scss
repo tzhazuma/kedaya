@@ -1,0 +1,106 @@
+/* 推荐页（可解释性）。色值全部取自设计令牌（契约 §6.2）。 */
+
+.kdy-buddy-reco {
+  padding-bottom: $kdy-space-6;
+}
+
+.kdy-buddy-reco__tabs {
+  display: flex;
+  padding: $kdy-space-3 $kdy-space-4 $kdy-space-2;
+  background-color: $kdy-color-surface;
+  border-bottom: 1px solid $kdy-color-border;
+}
+
+.kdy-buddy-reco__tab {
+  flex: 1;
+  padding: $kdy-space-2 0;
+  text-align: center;
+  border-radius: $kdy-radius-pill;
+}
+
+.kdy-buddy-reco__tab--active {
+  background-color: $kdy-color-brand-soft;
+}
+
+.kdy-buddy-reco__tab-text {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-buddy-reco__tab--active .kdy-buddy-reco__tab-text {
+  color: $kdy-color-brand-strong;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-buddy-reco__mode {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  padding: $kdy-space-2 $kdy-space-4;
+}
+
+.kdy-buddy-reco__mode-note {
+  flex: 1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-buddy-reco__cta {
+  padding: 0 $kdy-space-4 $kdy-space-2;
+}
+
+.kdy-buddy-reco__card {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+}
+
+.kdy-buddy-reco__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+}
+
+.kdy-buddy-reco__title {
+  flex: 1;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-md;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-buddy-reco__score {
+  color: $kdy-color-brand-strong;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-buddy-reco__reasons,
+.kdy-buddy-reco__meta,
+.kdy-buddy-reco__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-buddy-reco__reason-line,
+.kdy-buddy-reco__reason-note,
+.kdy-buddy-reco__meta-text {
+  display: block;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-buddy-reco__reason-note {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-buddy-reco__error {
+  display: block;
+  padding: $kdy-space-2 $kdy-space-4;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}

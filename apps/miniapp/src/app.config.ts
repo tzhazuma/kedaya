@@ -30,6 +30,12 @@ export default {
     'presentation/pages/wildlife/map/index',
     'presentation/pages/wildlife/report/index',
     'presentation/pages/wildlife/tracks/index',
+    // 找搭子（`buddy`）—— 五页：三板块列表 / 详情 / 发布 / 我的匹配资料 / 推荐
+    'presentation/pages/buddy/list/index',
+    'presentation/pages/buddy/detail/index',
+    'presentation/pages/buddy/create/index',
+    'presentation/pages/buddy/profile/index',
+    'presentation/pages/buddy/recommendations/index',
   ],
   window: {
     backgroundTextStyle: 'light',

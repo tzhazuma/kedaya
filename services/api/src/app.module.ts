@@ -79,7 +79,23 @@ import { WildlifeModule } from './modules/wildlife/wildlife.module';
     WildlifeModule,
   ],
   providers: [
-    { provide: APP_PIPE, useClass: ZodValidationPipe },
+    /*
+     * ⚠️ 必须是 `useValue`，**不能**是 `useClass`。
+     *
+     * `ZodValidationPipe` 的构造函数是 `(schema?: ZodType, what = '请求参数')` ——
+     * 那两个参数是**可选的配置**，不是依赖。而 Nest 对 `useClass` 提供者
+     * 一律走依赖注入：它会按 `design:paramtypes` 去解析 index 0 的 `Object`，
+     * 解析不到就抛
+     *   `Nest can't resolve dependencies of the ZodValidationPipe (?, Object)`
+     * —— **整个应用起不来**（20 个模块一起挂）。
+     *
+     * 这个缺陷原先存在，是本次实现 buddy 时由
+     * `test/app-module.spec.ts`（真实装配 AppModule）抓出来的。
+     * 修法：用 `useValue` 直接给一个实例，绕开 DI 解析。
+     * 行为完全不变 —— 不带 schema 的全局管道本来就是透传形态，
+     * 逐路由校验一直由 `@ZodBody` / `@ZodQuery` 复用同一个 `parseWith`。
+     */
+    { provide: APP_PIPE, useValue: new ZodValidationPipe() },
     { provide: APP_INTERCEPTOR, useClass: EnvelopeInterceptor },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],

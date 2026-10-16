@@ -453,28 +453,17 @@ import { CAMPUS_SESSION_PORT, type CampusSessionPort } from '../auth/domain/auth
       needsActor: true,
     },
   },
-  {
-    id: 'buddy',
-    zh: '找搭子',
-    pascal: 'Buddy',
-    model: 'BuddyGroup',
-    delegate: 'buddyGroup',
-    ownerField: 'ownerId',
-    readOnly: ['createdAt', 'updatedAt'],
-    optionalCreate: ['status'],
-    fields: [
-      ['ownerId', 'string'],
-      ['activity', 'string'],
-      ['title', 'string'],
-      ['campusSpot', 'string'],
-      ['startsAt', 'date'],
-      ['capacity', 'int'],
-      ['status', 'string'],
-      ['createdAt', 'date'],
-      ['updatedAt', 'date'],
-    ],
-    action: { kind: 'update', name: 'close', summary: '结束招募', data: "{ status: 'closed' }" },
-  },
+  // ⚠️ `buddy` **已移出 SPEC 表**（2026-10-17）：
+  // 它的形状（三档降级 + pgvector 手写迁移 + `SELECT ... FOR UPDATE` 行锁事务 +
+  // MMR 多样性重排 + 问卷答案→资料的白名单同步 + 一张可见性矩阵）
+  // 远超"一套 CRUD + 一个动作"能表达的范围。因此与 auth / wellbeing /
+  // dorm-harmony / ai-portrait / forum / faq / wildlife 一样**改为手写**，
+  // 本脚本不再写盘（否则 `npm run scaffold` 会把手写实现覆盖掉）。
+  // 详见 `src/modules/buddy/` 与 `docs/features/buddy-matching.md`。
+  //
+  // 脚手架阶段的占位模型 `BuddyGroup`（status='recruiting' / campusSpot）
+  // 既不是冻结契约里的模型，也不承载规格 §3 的匹配特征，
+  // 已由迁移 `20261017050000_buddy` 退休（DROP TABLE + 建 BuddyPost 等 7 张表）。
   {
     id: 'lost-found',
     zh: '失物招领',

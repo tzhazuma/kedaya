@@ -1,0 +1,52 @@
+/* KdyBuddyPrivacyNotice —— 找搭子的隐私提示（规格 §6，硬要求）。
+   色值全部取自设计令牌，禁止手写色值（契约 §6.2）。 */
+
+.kdy-buddy-privacy {
+  margin: $kdy-space-3 $kdy-space-4;
+  padding: $kdy-space-3 $kdy-space-4;
+  background-color: $kdy-color-brand-soft;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-buddy-privacy__head {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-buddy-privacy__glyph {
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-buddy-privacy__title {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-buddy-privacy__body {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-buddy-privacy__points {
+  margin-top: $kdy-space-2;
+}
+
+.kdy-buddy-privacy__point {
+  display: block;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-loose;
+}
+
+.kdy-buddy-privacy__note {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}

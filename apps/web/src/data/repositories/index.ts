@@ -7,6 +7,7 @@
 import { API_BASE_PATH } from '@kedaya/contracts';
 
 import type { AuditLogRepository, ModuleSwitchRepository } from '@/domain/ports/audit';
+import type { BuddyRepository } from '@/domain/ports/buddy';
 import type { FaqRepository } from '@/domain/ports/faq';
 import type { ForumRepository } from '@/domain/ports/forum';
 import type { GroupBuyRepository } from '@/domain/ports/groupbuy';
@@ -17,6 +18,7 @@ import {
   createMockAdminRepositories,
   type MockAdminRepositories,
 } from '../mock/admin.repository';
+import { createMockBuddyRepository, type MockBuddyRepository } from '../mock/buddy.repository';
 import { createMockFaqRepository, type MockFaqRepository } from '../mock/faq.repository';
 import { createMockForumRepository, type MockForumRepository } from '../mock/forum.repository';
 import {
@@ -28,6 +30,7 @@ import {
   type MockWildlifeRepository,
 } from '../mock/wildlife.repository';
 import { createAuditLogHttpRepository, createModuleSwitchHttpRepository } from './admin.http';
+import { createBuddyHttpRepository } from './buddy.http';
 import { createFaqHttpRepository } from './faq.http';
 import { createForumHttpRepository } from './forum.http';
 import { createGroupBuyHttpRepository } from './groupbuy.http';
@@ -41,6 +44,7 @@ export interface RepositoryBundle {
   forum: ForumRepository;
   faq: FaqRepository;
   wildlife: WildlifeRepository;
+  buddy: BuddyRepository;
   auditLog: AuditLogRepository;
   moduleSwitches: ModuleSwitchRepository;
 }
@@ -62,6 +66,7 @@ export function createRepositories(mode: RepositoryMode = repositoryMode()): Rep
       forum: createForumHttpRepository(client),
       faq: createFaqHttpRepository(client),
       wildlife: createWildlifeHttpRepository(client),
+      buddy: createBuddyHttpRepository(client),
       auditLog: createAuditLogHttpRepository(client),
       moduleSwitches: createModuleSwitchHttpRepository(client),
     };
@@ -74,6 +79,9 @@ export function createRepositories(mode: RepositoryMode = repositoryMode()): Rep
     forum: createMockForumRepository(),
     faq: createMockFaqRepository(),
     wildlife: createMockWildlifeRepository(),
+    // mock 需要知道「我」是谁（真实 API 从 Bearer token 取）；
+    // 默认取 fixture 的 DEMO_BUDDY_USER_ID，与 application 的演示会话由单测锁死一致
+    buddy: createMockBuddyRepository(),
     auditLog: admin.auditLog,
     moduleSwitches: admin.moduleSwitches,
   };
@@ -112,6 +120,12 @@ export function getMockFaqRepository(): MockFaqRepository | undefined {
 export function getMockWildlifeRepository(): MockWildlifeRepository | undefined {
   const current = getRepositories();
   return current.mode === 'mock' ? (current.wildlife as MockWildlifeRepository) : undefined;
+}
+
+/** 拿到 mock 找搭子仓储（用于故障演练开关 / 测试） */
+export function getMockBuddyRepository(): MockBuddyRepository | undefined {
+  const current = getRepositories();
+  return current.mode === 'mock' ? (current.buddy as MockBuddyRepository) : undefined;
 }
 
 /** 测试/热重载用：丢弃单例 */

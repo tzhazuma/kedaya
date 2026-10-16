@@ -47,6 +47,13 @@ model User {
   /// 上报的动物观测（规格 §2.6 reporterId）。匿名上报时 API 层不得回传该关联
   wildlifeSightings WildlifeSighting[]
 
+  /// 找搭子（buddy-matching.md §2）。资料与账号资料刻意分离：撤回匹配只删资料行。
+  buddyProfile                BuddyProfile?
+  buddyPosts                  BuddyPost[]
+  buddyApplications           BuddyApplication[]
+  buddyFeedbacks              BuddyMatchFeedback[]
+  buddyQuestionnaireResponses BuddyQuestionnaireResponse[]
+
   @@index([createdAt])
 }
 
@@ -288,21 +295,219 @@ model ErrandTask {
   @@index([rewardFen])
 }
 
-/// 找搭子 · buddy（低敏感）
-model BuddyGroup {
-  id         String   @id @default(cuid())
-  ownerId    String
-  activity   String
-  title      String
-  campusSpot String
-  startsAt   DateTime
-  capacity   Int
-  status     String   @default("recruiting")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+/* ================================================================== *
+ * 找搭子 · buddy（低敏感，规格 docs/features/buddy-matching.md）
+ *
+ * 领域骨架见 `02-domain-model.md` §2.3（已冻结）：`BuddyPost` / `BuddyApplication`
+ * 的字段与状态机**不得改动**；本模块只在其上补 `BuddyProfile` /
+ * `BuddyMatchFeedback` / `BuddyQuestionnaire(+Response)` / `BuddyTag`。
+ *
+ * ⚠️ 脚手架占位表 `BuddyGroup`（status='recruiting'）已**退休**：
+ *    它既不是冻结契约里的模型，也不承载规格 §3 的匹配特征。
+ *    退休动作在 `20261017050000_buddy` 迁移里（DROP TABLE + 建新表）。
+ *
+ * ⚠️ `embedding Unsupported("vector(768)")?` 的三个真实限制（规格 §4.2）：
+ *    1. `prisma migrate dev` **不会**为它生成 DDL —— 本仓用手写迁移
+ *       （`prisma/migrations/20261017050000_buddy/migration.sql`）；
+ *    2. Prisma Client **不暴露**该字段给 create/update/select：
+ *       写入必须 `$executeRaw`，读取必须 `$queryRaw`（见 data/buddy-vector.repository.ts）；
+ *    3. `prisma db pull` 能识别 vector 列但**维度信息可能丢失**，重生成 schema 务必 diff。
+ * ================================================================== */
+
+/// 找搭子 · 匹配资料（规格 §2.2）。**不是**账号资料：`profile` 存"我是谁"，
+/// 本表只存"匹配要用的特征"。撤回匹配 = 硬删本行，不影响账号。
+///
+/// 访问域：buddy。**对任何人都不直接可见**（含发帖人），只被算法使用（规格 §6.1）。
+model BuddyProfile {
+  userId         String   @id
+  /// academic | daily | sport（至少 1 项才可被推荐）
+  sections       String[] @default([])
+  /// 封闭标签表的 key，≤20 项（规格 §3.2：不允许自由文本进入匹配特征）
+  interestTags   String[] @default([])
+  /// 封闭标签表的 key，≤10 项
+  activityTags   String[] @default([])
+  /// beginner | casual | regular | competitive（仅 sport 使用）
+  skillLevel     String?  @default("casual")
+  /// [{ dow, startMin, endMin }]，分钟粒度、Asia/Shanghai（规格 §3.3 F7）
+  availability   Json     @default("[]")
+  /// 校园地点白名单，≤5 项。**不是**精确坐标
+  preferredAreas String[] @default([])
+  department     String?
+  bio            String?
+  /// **默认关闭**：不主动开启就不进推荐池（规格 §6.3 的隐私决策）
+  matchEnabled   Boolean  @default(false)
+  /// pgvector 列。由 §3.4 的 profileText 生成；只能走 $queryRaw/$executeRaw
+  embedding      Unsupported("vector(768)")?
+  embeddingModel String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([matchEnabled])
+  @@map("BuddyProfile")
+}
+
+/// 找搭子 · 招募帖（契约 `02-domain-model.md:518-527` 冻结 + 规格 §2.3 新增可选字段）。
+///
+/// 状态机（冻结，规格 §2.8）：OPEN → FULL → OPEN / CLOSED / EXPIRED / CANCELLED。
+/// 流转只走 `domain/buddy-post.state.ts` 的 `canTransition` 纯函数。
+model BuddyPost {
+  id               String   @id @default(cuid())
+  creatorId        String
+  /// sport | study | meal | travel | game | other（冻结）。板块由它**派生**，不另存 section
+  activity         String
+  /// OPEN | FULL | CLOSED | EXPIRED | CANCELLED（冻结）
+  status           String   @default("OPEN")
+  title            String
+  description      String?
+  location         String
+  startsAt         DateTime
+  /// 预计时长（分钟）30–480，用于时段重叠判断
+  durationMin      Int?
+  /// 含发起人的总人数（规格 U2：初值 1、capacity 含发起人）
+  capacity         Int
+  joinedCount      Int      @default(1)
+  /// any | same | other（冻结）—— 发起人的准入约束，**不是**打分特征
+  genderPreference String   @default("any")
+  /// 封闭标签表的 key，≤8 项。**匹配打分的主特征**
+  tags             String[] @default([])
+  /// beginner | casual | regular | competitive（仅 sport）。**硬过滤 F6**，不是打分
+  minSkillLevel    String?
+  /// 到期自动转 EXPIRED 的时间，默认 = startsAt
+  autoCloseAt      DateTime?
+  /// pgvector 列（规格 §4.4：baseScore 比较"我的画像向量"与"帖子向量"）
+  embedding        Unsupported("vector(768)")?
+  embeddingModel   String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime?
+
+  creator      User                 @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  applications BuddyApplication[]
+  feedbacks    BuddyMatchFeedback[]
 
   @@index([status, startsAt])
-  @@index([activity])
+  @@index([activity, status, startsAt])
+  @@index([creatorId])
+  @@map("BuddyPost")
+}
+
+/// 找搭子 · 申请（契约 `02-domain-model.md:528-531` 冻结 + 规格 §2.4 新增字段）。
+///
+/// 状态机（冻结）：PENDING → ACCEPTED / REJECTED / WITHDRAWN；WITHDRAWN → PENDING
+/// （复用同一行，为 `@@unique([postId, applicantId])` 服务，规格 U7）。
+model BuddyApplication {
+  id          String    @id @default(cuid())
+  postId      String
+  applicantId String
+  /// PENDING | ACCEPTED | REJECTED | WITHDRAWN（冻结）
+  status      String    @default("PENDING")
+  message     String?
+  /// 接受/拒绝时刻，审计用
+  decidedAt   DateTime?
+  /// 必须等于 post.creatorId
+  decidedBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  post      BuddyPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  applicant User      @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  /// 同一人对同一活动只能有一条申请记录（撤回后重新申请是**更新**该行，不是插新行）
+  @@unique([postId, applicantId])
+  @@index([applicantId, status])
+  @@map("BuddyApplication")
+}
+
+/// 找搭子 · 匹配反馈（规格 §2.5，移植 STUMatch `MatchFeedback`）。
+///
+/// 适配：反馈目标是**帖子**而非用户 —— 对"这个人"表达不喜欢会变成对同学的隐性评价。
+model BuddyMatchFeedback {
+  id           String   @id @default(cuid())
+  userId       String
+  targetPostId String
+  /// academic | daily | sport。**隔离维度**：跨板块反馈会互相污染（规格 §3.6）
+  section      String
+  /// like | dislike | skip（与 STUMatch 同名同义）
+  action       String
+  /// 衰减计算基准
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetPost BuddyPost @relation(fields: [targetPostId], references: [id], onDelete: Cascade)
+
+  /// 同一板块内对同一帖子的反馈可覆盖（UPSERT），避免刷反馈（规格 D11）
+  @@unique([userId, targetPostId, section])
+  @@index([userId, section, createdAt])
+  @@map("BuddyMatchFeedback")
+}
+
+/// 找搭子 · 问卷定义（规格 §2.6）。题目存 DB（可运营调整，不需发版），答案存 JSON。
+model BuddyQuestionnaire {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  /// academic | daily | sport
+  section     String
+  description String?
+  /// 题目数组，schema 见规格 §2.6（single_choice | multiple_choice | rating | text）
+  questions   Json     @default("[]")
+  isActive    Boolean  @default(true)
+  /// 从 1 递增；**改题必须新建版本**，不原地改（否则历史答案无法解释）
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  responses BuddyQuestionnaireResponse[]
+
+  @@index([section, isActive])
+  @@map("BuddyQuestionnaire")
+}
+
+/// 找搭子 · 问卷答案（规格 §2.6）。只把白名单键同步进 `BuddyProfile`。
+model BuddyQuestionnaireResponse {
+  id              String   @id @default(cuid())
+  questionnaireId String
+  userId          String
+  /// { [questionId]: value }
+  answers         Json     @default("{}")
+  /// 冗余记录当时版本
+  version         Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  questionnaire BuddyQuestionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 一人一份；重新提交是更新（规格 §2.6 未明说，属本模块补充，见交付说明）
+  @@unique([questionnaireId, userId])
+  @@map("BuddyQuestionnaireResponse")
+}
+
+/// 找搭子 · 封闭标签表（规格 §3.2）。
+///
+/// 自由文本会导致"羽毛球"/"打羽毛球"/"badminton"互不匹配，因此
+/// `interestTags` / `activityTags` / `BuddyPost.tags` 一律取本表的 `key`。
+/// `aliases` **仅用于搜索**，不用于匹配。
+/// 标签表变更必须走 migration + 审计，**不得运行时改**（否则历史匹配不可复现）。
+model BuddyTag {
+  /// 机器值，如 badminton
+  key       String   @id
+  /// 中文显示名，如 羽毛球
+  label     String
+  /// sport | study | meal | travel | interest（供 UI 分栏）
+  group     String
+  aliases   String[] @default([])
+  /// 下架标签不删除（历史数据仍引用）
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([group, isActive])
+  @@map("BuddyTag")
 }
 
 /// 失物招领 · lost-found（低敏感）

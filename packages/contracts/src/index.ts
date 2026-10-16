@@ -7,3 +7,4 @@
 
 export * from './envelope';
 export * from './modules';
+export * from './buddy-tags';

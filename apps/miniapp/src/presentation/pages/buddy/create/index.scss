@@ -1,0 +1,95 @@
+/* 发布搭子页。色值全部取自设计令牌（契约 §6.2）。 */
+
+.kdy-buddy-create {
+  padding-bottom: $kdy-space-6;
+}
+
+.kdy-buddy-create__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-2;
+}
+
+.kdy-buddy-create__chip {
+  padding: $kdy-space-1 $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-pill;
+}
+
+.kdy-buddy-create__chip--active {
+  background-color: $kdy-color-brand-soft;
+}
+
+.kdy-buddy-create__chip-text {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-buddy-create__chip--active .kdy-buddy-create__chip-text {
+  color: $kdy-color-brand-strong;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-buddy-create__input,
+.kdy-buddy-create__picker {
+  box-sizing: border-box;
+  width: 100%;
+  padding: $kdy-space-2 $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-buddy-create__textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 160px;
+  padding: $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-buddy-create__group {
+  margin-top: $kdy-space-3;
+}
+
+.kdy-buddy-create__group-title {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-buddy-create__note,
+.kdy-buddy-create__warn {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-buddy-create__warn {
+  padding: $kdy-space-2 $kdy-space-4;
+  color: $kdy-color-warning;
+}
+
+.kdy-buddy-create__errors {
+  padding: 0 $kdy-space-4;
+}
+
+.kdy-buddy-create__error {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-buddy-create__actions {
+  display: flex;
+  gap: $kdy-space-2;
+  padding: $kdy-space-4;
+}

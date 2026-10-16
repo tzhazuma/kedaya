@@ -1,0 +1,114 @@
+/* 「我的匹配资料」页。色值全部取自设计令牌（契约 §6.2）。 */
+
+.kdy-buddy-profile {
+  padding-bottom: $kdy-space-6;
+}
+
+.kdy-buddy-profile__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-2;
+}
+
+.kdy-buddy-profile__chip {
+  padding: $kdy-space-1 $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-pill;
+}
+
+.kdy-buddy-profile__chip--active {
+  background-color: $kdy-color-brand-soft;
+}
+
+.kdy-buddy-profile__chip-text {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-buddy-profile__chip--active .kdy-buddy-profile__chip-text {
+  color: $kdy-color-brand-strong;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-buddy-profile__input,
+.kdy-buddy-profile__picker {
+  box-sizing: border-box;
+  padding: $kdy-space-2 $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-buddy-profile__input {
+  width: 100%;
+}
+
+.kdy-buddy-profile__group {
+  margin-top: $kdy-space-3;
+}
+
+.kdy-buddy-profile__group-title {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-buddy-profile__note,
+.kdy-buddy-profile__empty {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-buddy-profile__slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $kdy-space-2 0;
+  border-bottom: 1px solid $kdy-color-border;
+}
+
+.kdy-buddy-profile__slot-text {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-buddy-profile__slot-remove {
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-buddy-profile__slot-form {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-buddy-profile__to {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-buddy-profile__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
+  padding: 0 $kdy-space-4;
+}
+
+.kdy-buddy-profile__errors {
+  padding: 0 $kdy-space-4;
+}
+
+.kdy-buddy-profile__error {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}

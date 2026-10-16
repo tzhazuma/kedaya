@@ -6,6 +6,7 @@ import '../data/api/kedaya_api_client.dart';
 import '../data/mock/dev_unified_identity.dart';
 import '../data/mock/in_memory_stores.dart';
 import '../data/mock/mock_auth_repository.dart';
+import '../data/mock/mock_buddy_repository.dart';
 import '../data/mock/mock_campus_session_repository.dart';
 import '../data/mock/mock_consent_store.dart';
 import '../data/mock/mock_controls.dart';
@@ -19,6 +20,7 @@ import '../data/mock/mock_media_picker.dart';
 import '../data/mock/mock_wellbeing_repository.dart';
 import '../data/mock/mock_wildlife_repository.dart';
 import '../data/repositories/remote_auth_repository.dart';
+import '../data/repositories/remote_buddy_repository.dart';
 import '../data/repositories/remote_campus_session_repository.dart';
 import '../data/repositories/remote_consent_repository.dart';
 import '../data/repositories/remote_errand_repository.dart';
@@ -32,6 +34,7 @@ import '../data/storage/cache_theme_mode_store.dart';
 import '../data/storage/preferences_cache_store.dart';
 import '../data/storage/secure_credential_store.dart';
 import '../domain/ports/auth_port.dart';
+import '../domain/ports/buddy_port.dart';
 import '../domain/ports/campus_session_port.dart';
 import '../domain/ports/consent_port.dart';
 import '../domain/ports/credential_store_port.dart';
@@ -70,6 +73,7 @@ final class AppRuntime {
     required this.consent,
     required this.groupbuy,
     required this.forum,
+    required this.buddy,
     required this.faq,
     required this.errand,
     required this.lostFound,
@@ -104,6 +108,12 @@ final class AppRuntime {
 
   /// 论坛（契约 §4.1 `forum`，敏感级中；支持匿名，契约 §9）。
   final ForumPort forum;
+
+  /// 找搭子（契约 §4.1 `buddy`，敏感级**低**、**无同意门**）。
+  ///
+  /// 规格 §5.10 显式声明：`buddy` **不用** `CAMPUS_BINDING_REQUIRED`
+  /// 与 `CONSENT_REQUIRED` —— 它不需要任何校园系统能力，也不设同意门。
+  final BuddyPort buddy;
 
   /// 常见问题（契约 §4.1 `faq`，敏感级低；检索无需登录）。
   final FaqPort faq;
@@ -159,6 +169,7 @@ final class AppRuntime {
       consent: consent,
       groupbuy: MockGroupbuyRepository(controls: controls),
       forum: MockForumRepository(controls: controls),
+      buddy: MockBuddyRepository(controls: controls),
       faq: MockFaqRepository(controls: controls),
       errand: MockErrandRepository(),
       lostFound: MockLostFoundRepository(),
@@ -237,6 +248,7 @@ final class AppRuntime {
       consent: consent,
       groupbuy: RemoteGroupbuyRepository(api),
       forum: RemoteForumRepository(api),
+      buddy: RemoteBuddyRepository(api),
       faq: RemoteFaqRepository(api),
       errand: RemoteErrandRepository(api),
       lostFound: RemoteLostFoundRepository(api),

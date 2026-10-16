@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/buddy/presentation/pages/buddy_board_page.dart';
+import '../features/buddy/presentation/pages/buddy_compose_page.dart';
+import '../features/buddy/presentation/pages/buddy_post_detail_page.dart';
+import '../features/buddy/presentation/pages/buddy_privacy_page.dart';
+import '../features/buddy/presentation/pages/buddy_profile_page.dart';
+import '../features/buddy/presentation/pages/buddy_recommend_page.dart';
 import '../features/faq/presentation/pages/faq_home_page.dart';
 import '../features/faq/presentation/pages/faq_tickets_page.dart';
 import '../features/forum/presentation/pages/forum_board_page.dart';
@@ -33,6 +39,8 @@ final GlobalKey<NavigatorState> kedaYaRootNavigatorKey = GlobalKey<NavigatorStat
 /// 结构：
 ///   - `StatefulShellRoute` 承载底部导航三个分支：`/home` `/modules` `/profile`
 ///   - `/groupbuy` 与 `/groupbuy/:id`：拼单垂直切片（全屏，盖住底部导航）
+///   - `/buddy`（三板块分栏列表）、`/buddy/compose`、`/buddy/recommend`、
+///     `/buddy/profile`、`/buddy/privacy`、`/buddy/:id`：找搭子切片
 ///   - `/forum`、`/forum/compose`、`/forum/:id`：论坛（列表 / 发帖 / 主题详情）
 ///   - `/faq`、`/faq/tickets`：常见问题（分类+搜索+手风琴 / 我的工单）
 ///   - `/wildlife`（地图）、`/wildlife/report`（上报）、`/wildlife/sightings[/:id]`、
@@ -89,6 +97,44 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
           name: 'groupbuy-detail',
           builder: (BuildContext context, GoRouterState state) =>
               GroupbuyDetailPage(orderId: state.pathParameters['id'] ?? ''),
+        ),
+      ],
+    ),
+    GoRoute(
+      path: '/buddy',
+      name: 'buddy',
+      builder: (BuildContext context, GoRouterState state) => const BuddyBoardPage(),
+      routes: <RouteBase>[
+        // ⚠️ 静态段必须声明在 `:id` **之前**，否则 `/buddy/compose`
+        // 会被 `:id` 吃掉（go_router 同级路由按声明顺序匹配）。
+        GoRoute(
+          path: 'compose',
+          name: 'buddy-compose',
+          builder: (BuildContext context, GoRouterState state) => const BuddyComposePage(),
+        ),
+        GoRoute(
+          path: 'recommend',
+          name: 'buddy-recommend',
+          builder: (BuildContext context, GoRouterState state) =>
+              const BuddyRecommendPage(),
+        ),
+        GoRoute(
+          path: 'profile',
+          name: 'buddy-profile',
+          builder: (BuildContext context, GoRouterState state) =>
+              const BuddyProfilePage(),
+        ),
+        GoRoute(
+          path: 'privacy',
+          name: 'buddy-privacy',
+          builder: (BuildContext context, GoRouterState state) =>
+              const BuddyPrivacyPage(),
+        ),
+        GoRoute(
+          path: ':id',
+          name: 'buddy-post',
+          builder: (BuildContext context, GoRouterState state) =>
+              BuddyPostDetailPage(postId: state.pathParameters['id'] ?? ''),
         ),
       ],
     ),

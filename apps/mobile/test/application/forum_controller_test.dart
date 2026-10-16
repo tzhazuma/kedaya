@@ -133,7 +133,7 @@ void main() {
     test('loadMore：追加下一页；翻页失败时保留已有列表', () async {
       final MockControls controls = MockControls(latency: Duration.zero);
       final ProviderContainer container = containerWith(
-        MockForumRepository(seed: seedPosts(12), controls: controls),
+        MockForumRepository(posts: seedPosts(12), controls: controls),
       );
 
       ForumListState state = await container.read(forumListControllerProvider.future);

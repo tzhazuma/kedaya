@@ -22,6 +22,11 @@ export const PAGE_PATHS = {
   wildlifeMap: '/presentation/pages/wildlife/map/index',
   wildlifeReport: '/presentation/pages/wildlife/report/index',
   wildlifeTracks: '/presentation/pages/wildlife/tracks/index',
+  buddyList: '/presentation/pages/buddy/list/index',
+  buddyDetail: '/presentation/pages/buddy/detail/index',
+  buddyCreate: '/presentation/pages/buddy/create/index',
+  buddyProfile: '/presentation/pages/buddy/profile/index',
+  buddyRecommendations: '/presentation/pages/buddy/recommendations/index',
 } as const
 
 export type PagePath = (typeof PAGE_PATHS)[keyof typeof PAGE_PATHS]
@@ -39,6 +44,8 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   faq: PAGE_PATHS.faq,
   // `wildlife` 的入口是**地图页**（模块主界面），上报与轨迹从地图页进入
   wildlife: PAGE_PATHS.wildlifeMap,
+  // `buddy` 的入口是**三板块列表**（模块主界面），发布 / 资料 / 推荐从列表页进入
+  buddy: PAGE_PATHS.buddyList,
 }
 
 export function moduleEntryPath(moduleId: string): string | null {
@@ -123,4 +130,30 @@ export function wildlifeTracksPath(): string {
 
 export function wildlifeMapPath(): string {
   return PAGE_PATHS.wildlifeMap
+}
+
+/* ------------------------------------------------------------------ *
+ * buddy（找搭子）
+ * ------------------------------------------------------------------ */
+
+export function buddyDetailPath(id: string): string {
+  return `${PAGE_PATHS.buddyDetail}?id=${encodeURIComponent(id)}`
+}
+
+/** 发布页；可选带上板块，进入后默认选中该板块的活动类型 */
+export function buddyCreatePath(section?: string | null): string {
+  return section == null || section === ''
+    ? PAGE_PATHS.buddyCreate
+    : `${PAGE_PATHS.buddyCreate}?section=${encodeURIComponent(section)}`
+}
+
+export function buddyProfilePath(): string {
+  return PAGE_PATHS.buddyProfile
+}
+
+/** 推荐页；可选带上板块，进入后默认选中 */
+export function buddyRecommendationsPath(section?: string | null): string {
+  return section == null || section === ''
+    ? PAGE_PATHS.buddyRecommendations
+    : `${PAGE_PATHS.buddyRecommendations}?section=${encodeURIComponent(section)}`
 }

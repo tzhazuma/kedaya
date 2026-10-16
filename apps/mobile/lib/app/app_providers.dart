@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../data/mock/mock_controls.dart';
 import '../domain/ports/auth_port.dart';
+import '../domain/ports/buddy_port.dart';
 import '../domain/ports/campus_session_port.dart';
 import '../domain/ports/consent_port.dart';
 import '../domain/ports/errand_port.dart';
@@ -74,6 +75,15 @@ final lostFoundRepositoryProvider = Provider<LostFoundPort>(
 
 final wellbeingRepositoryProvider = Provider<WellbeingPort>(
   (ref) => ref.watch(appRuntimeProvider).wellbeing,
+);
+
+/// 找搭子（契约 §4.1 `buddy`；敏感级**低**、**无同意门**）。
+///
+/// 与 `wildlife` 同理：`buddy` 不设同意门是契约 §9 判定规则的结果
+/// （`packages/contracts/src/modules.test.ts`），因此这里**不经过** `consent`，
+/// 也**不会**返回 `CONSENT_REQUIRED`（规格 §5.10 显式声明）。
+final buddyRepositoryProvider = Provider<BuddyPort>(
+  (ref) => ref.watch(appRuntimeProvider).buddy,
 );
 
 /// 校园动物（契约 §4.1 `wildlife`；敏感级低、**无同意门**）。

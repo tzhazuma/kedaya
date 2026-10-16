@@ -14,6 +14,7 @@ import '../theme/kedaya_tokens.dart';
 /// 未列出的模块仍然只有"尚未实现"的如实说明，没有假页面、没有假成功。
 const Map<String, String> implementedModuleRoutes = <String, String>{
   'groupbuy': '/groupbuy',
+  'buddy': '/buddy',
   'forum': '/forum',
   'faq': '/faq',
   'wildlife': '/wildlife',
@@ -134,6 +135,10 @@ class ModuleDetailPage extends ConsumerWidget {
                   switch (module.id) {
                     'groupbuy' => '本模块已实现：列表 + 详情 + 参团，'
                         '走 domain/ports 的 GroupbuyPort。',
+                    'buddy' => '本模块已实现：三板块分栏列表（游标分页）+ 详情 + 申请/审批/关闭 + '
+                        '发布（封闭标签选择器）+ 我的匹配资料（可用时段含跨零点）+ '
+                        '可解释推荐（展示匹配理由）+ like/dislike/skip 反馈 + 隐私说明，'
+                        '走 BuddyPort。**不含 dating 板块**（契约 §11.10-G）。',
                     'forum' => '本模块已实现：版块筛选 + 主题列表（游标分页）+ 主题详情 + '
                         '回复 + 发帖（含匿名开关）+ 举报 + 分享，走 ForumPort。',
                     'faq' => '本模块已实现：分类导航 + 搜索 + 手风琴展开 + '

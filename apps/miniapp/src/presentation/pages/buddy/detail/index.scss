@@ -1,0 +1,109 @@
+/* 搭子详情页。色值全部取自设计令牌（契约 §6.2）。 */
+
+.kdy-buddy-detail {
+  padding-bottom: $kdy-space-6;
+}
+
+.kdy-buddy-detail__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+}
+
+.kdy-buddy-detail__title {
+  flex: 1;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-lg;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-buddy-detail__meta,
+.kdy-buddy-detail__tags,
+.kdy-buddy-detail__actions,
+.kdy-buddy-detail__mine-head {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-buddy-detail__meta,
+.kdy-buddy-detail__tags {
+  flex-wrap: wrap;
+  margin-top: $kdy-space-2;
+}
+
+.kdy-buddy-detail__actions {
+  flex-wrap: wrap;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-buddy-detail__mine-head {
+  justify-content: space-between;
+}
+
+.kdy-buddy-detail__rows {
+  margin-top: $kdy-space-2;
+}
+
+.kdy-buddy-detail__row {
+  display: block;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-buddy-detail__description {
+  display: block;
+  margin-top: $kdy-space-3;
+  padding-top: $kdy-space-3;
+  border-top: 1px solid $kdy-color-border;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-sm;
+  line-height: $kdy-line-height-loose;
+}
+
+.kdy-buddy-detail__textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 140px;
+  margin-top: $kdy-space-2;
+  padding: $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-buddy-detail__note,
+.kdy-buddy-detail__hint {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-buddy-detail__hint {
+  padding: 0 $kdy-space-4;
+}
+
+.kdy-buddy-detail__blocked {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-buddy-detail__error {
+  display: block;
+  padding: $kdy-space-2 $kdy-space-4;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-buddy-detail__mine,
+.kdy-buddy-detail__application {
+  padding: $kdy-space-2 0;
+  border-bottom: 1px solid $kdy-color-border;
+}

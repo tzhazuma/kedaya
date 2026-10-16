@@ -1,0 +1,110 @@
+/* 搭子列表页（三板块分栏 + 游标分页）。色值全部取自设计令牌（契约 §6.2）。 */
+
+.kdy-buddy-list {
+  padding-bottom: $kdy-space-6;
+}
+
+.kdy-buddy-list__tabs {
+  display: flex;
+  padding: $kdy-space-3 $kdy-space-4 $kdy-space-2;
+  background-color: $kdy-color-surface;
+  border-bottom: 1px solid $kdy-color-border;
+}
+
+.kdy-buddy-list__tab {
+  flex: 1;
+  padding: $kdy-space-2 0;
+  text-align: center;
+  border-radius: $kdy-radius-pill;
+}
+
+.kdy-buddy-list__tab--active {
+  background-color: $kdy-color-brand-soft;
+}
+
+.kdy-buddy-list__tab-text {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-buddy-list__tab--active .kdy-buddy-list__tab-text {
+  color: $kdy-color-brand-strong;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-buddy-list__actions,
+.kdy-buddy-list__demo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  padding: $kdy-space-3 $kdy-space-4 0;
+}
+
+.kdy-buddy-list__hint,
+.kdy-buddy-list__more,
+.kdy-buddy-list__soft-error {
+  display: block;
+  padding: $kdy-space-2 $kdy-space-4;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-buddy-list__soft-error {
+  color: $kdy-color-warning;
+}
+
+/* ---------------- 卡片 ---------------- */
+
+.kdy-buddy-card {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+}
+
+.kdy-buddy-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+}
+
+.kdy-buddy-card__title {
+  flex: 1;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-md;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-buddy-card__meta,
+.kdy-buddy-card__row,
+.kdy-buddy-card__foot,
+.kdy-buddy-card__tags {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-buddy-card__tags {
+  flex-wrap: wrap;
+}
+
+.kdy-buddy-card__foot {
+  justify-content: space-between;
+}
+
+.kdy-buddy-card__time,
+.kdy-buddy-card__place,
+.kdy-buddy-card__count,
+.kdy-buddy-card__creator,
+.kdy-buddy-card__created {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-buddy-card__row {
+  justify-content: space-between;
+}
+
+.kdy-buddy-card__count {
+  color: $kdy-color-brand-strong;
+}

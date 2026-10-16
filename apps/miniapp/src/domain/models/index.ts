@@ -1,3 +1,4 @@
+export * from './buddy'
 export * from './faq'
 export * from './forum'
 export * from './groupbuy'

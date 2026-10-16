@@ -1,3 +1,13 @@
+import { createBuddyPostDetailUseCase } from '../application/buddy/buddyPostDetail'
+import type { BuddyPostDetailUseCase } from '../application/buddy/buddyPostDetail'
+import { createBuddyProfileUseCase } from '../application/buddy/buddyProfile'
+import type { BuddyProfileUseCase } from '../application/buddy/buddyProfile'
+import { createBuddyRecommendationsUseCase } from '../application/buddy/buddyRecommendations'
+import type { BuddyRecommendationUseCase } from '../application/buddy/buddyRecommendations'
+import { createCreateBuddyPostUseCase } from '../application/buddy/createBuddyPost'
+import type { CreateBuddyPostUseCase } from '../application/buddy/createBuddyPost'
+import { createListBuddyPostsUseCase } from '../application/buddy/listBuddyPosts'
+import type { ListBuddyPostsUseCase } from '../application/buddy/listBuddyPosts'
 import { createBrowseFaqUseCase } from '../application/faq/browseFaq'
 import type { BrowseFaqUseCase } from '../application/faq/browseFaq'
 import { createMyTicketsUseCase } from '../application/faq/myTickets'
@@ -31,10 +41,13 @@ import type { WildlifeMapUseCase } from '../application/wildlife/wildlifeMap'
 import { createApiClient, createAuthRefresher, createTaroHttpPort, createTracePort } from '../data/api'
 import type { ApiClient } from '../data/api'
 import { createTaroMediaUploader } from '../data/api/mediaUpload'
+import { createHttpBuddyRepository } from '../data/repositories/httpBuddyRepository'
 import { createHttpFaqRepository } from '../data/repositories/httpFaqRepository'
 import { createHttpForumRepository } from '../data/repositories/httpForumRepository'
 import { createHttpGroupBuyRepository } from '../data/repositories/httpGroupBuyRepository'
 import { createHttpWildlifeRepository } from '../data/repositories/httpWildlifeRepository'
+import { createMockBuddyRepository } from '../data/repositories/mockBuddyRepository'
+import type { MockBuddyRepository } from '../data/repositories/mockBuddyRepository'
 import { createMockFaqRepository } from '../data/repositories/mockFaqRepository'
 import type { MockFaqRepository } from '../data/repositories/mockFaqRepository'
 import { createMockForumRepository } from '../data/repositories/mockForumRepository'
@@ -49,6 +62,7 @@ import { StorageKeys } from '../data/storage/keys'
 import { createTaroStorage } from '../data/storage/taroStorage'
 import type { CachePort } from '../domain/ports/cachePort'
 import type { ClockPort } from '../domain/ports/clockPort'
+import type { BuddyRepository } from '../domain/ports/buddyRepository'
 import type { FaqRepository } from '../domain/ports/faqRepository'
 import type { ForumRepository } from '../domain/ports/forumRepository'
 import type { GroupBuyRepository } from '../domain/ports/groupbuyRepository'
@@ -102,6 +116,7 @@ export interface AppContainer {
   forumRepository: ForumRepository
   faqRepository: FaqRepository
   wildlifeRepository: WildlifeRepository
+  buddyRepository: BuddyRepository
   /** 仅 mock 模式下非空 —— 页面用它演示「三态」 */
   mockControls: MockGroupBuyRepository | null
   /** 论坛的 mock 演示控制面（仅 mock 模式下非空） */
@@ -110,6 +125,8 @@ export interface AppContainer {
   mockFaqControls: MockFaqRepository | null
   /** 野生动物的 mock 演示控制面（仅 mock 模式下非空） */
   mockWildlifeControls: MockWildlifeRepository | null
+  /** 找搭子的 mock 演示控制面（仅 mock 模式下非空） */
+  mockBuddyControls: MockBuddyRepository | null
   useCases: {
     session: SessionUseCase
     listGroupBuys: ListGroupBuysUseCase
@@ -126,6 +143,11 @@ export interface AppContainer {
     wildlifeMap: WildlifeMapUseCase
     wildlifeTracks: WildlifeTracksUseCase
     reportSighting: ReportSightingUseCase
+    listBuddyPosts: ListBuddyPostsUseCase
+    buddyPostDetail: BuddyPostDetailUseCase
+    createBuddyPost: CreateBuddyPostUseCase
+    buddyProfile: BuddyProfileUseCase
+    buddyRecommendations: BuddyRecommendationUseCase
   }
 }
 
@@ -136,6 +158,7 @@ export interface ContainerOverrides {
   forumRepository?: ForumRepository
   faqRepository?: FaqRepository
   wildlifeRepository?: WildlifeRepository
+  buddyRepository?: BuddyRepository
   env?: Partial<AppEnv>
 }
 
@@ -180,6 +203,23 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
   const mockWildlifeRepository = env.useMock
     ? createMockWildlifeRepository({ latencyMs: env.mockLatencyMs })
     : null
+  /**
+   * 找搭子仓储。
+   *
+   * ⚠️ `currentUser` 由**会话**注入，而不是作为端口参数到处传：
+   * 真后端模式下身份来自 `Authorization: Bearer`，端口签名里没有 userId
+   * （与 `groupbuy` 不同 —— 那个模块的 `join` body 本身就要带 displayName）。
+   * 身份是环境属性，不是参数。
+   */
+  const mockBuddyRepository = env.useMock
+    ? createMockBuddyRepository({
+        latencyMs: env.mockLatencyMs,
+        currentUser: () => {
+          const profile = sessionStore.getSnapshot().profile
+          return profile === null ? null : { id: profile.id, nickname: profile.nickname }
+        },
+      })
+    : null
 
   const groupBuyRepository: GroupBuyRepository =
     overrides.repository ?? mockRepository ?? createHttpGroupBuyRepository(apiClient)
@@ -204,6 +244,9 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     overrides.wildlifeRepository ??
     mockWildlifeRepository ??
     createHttpWildlifeRepository(apiClient, wildlifeUploader)
+
+  const buddyRepository: BuddyRepository =
+    overrides.buddyRepository ?? mockBuddyRepository ?? createHttpBuddyRepository(apiClient)
 
   const session = createSessionUseCase(sessionStore)
   const listGroupBuys = createListGroupBuysUseCase({
@@ -295,6 +338,43 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     ethicsCacheKey: StorageKeys.wildlifeEthicsAck,
   })
 
+  /* ---------------- 找搭子（`buddy`） ---------------- */
+
+  const listBuddyPosts = createListBuddyPostsUseCase({
+    repository: buddyRepository,
+    cache,
+    clock,
+    // 缓存按板块分片 —— 否则切板块时 hydrate() 会把上一个板块的数据渲染出来
+    cacheKeyFor: (section) => `${StorageKeys.buddyListCache}:${section}`,
+  })
+  const buddyPostDetail = createBuddyPostDetailUseCase({
+    repository: buddyRepository,
+    cache,
+    clock,
+    cacheKeyFor: (id) => `${StorageKeys.buddyDetailCache}:${id}`,
+    session: sessionStore,
+  })
+  const createBuddyPost = createCreateBuddyPostUseCase({
+    repository: buddyRepository,
+    session: sessionStore,
+    clock,
+  })
+  const buddyProfile = createBuddyProfileUseCase({
+    repository: buddyRepository,
+    cache,
+    clock,
+    session: sessionStore,
+    cacheKey: StorageKeys.buddyProfileCache,
+  })
+  const buddyRecommendations = createBuddyRecommendationsUseCase({
+    repository: buddyRepository,
+    cache,
+    clock,
+    session: sessionStore,
+    cacheKeyFor: (section) => `${StorageKeys.buddyRecommendationCache}:${section}`,
+    feedbackCacheKey: StorageKeys.buddyFeedback,
+  })
+
   return {
     env,
     trace,
@@ -308,10 +388,12 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     forumRepository,
     faqRepository,
     wildlifeRepository,
+    buddyRepository,
     mockControls: mockRepository,
     mockForumControls: mockForumRepository,
     mockFaqControls: mockFaqRepository,
     mockWildlifeControls: mockWildlifeRepository,
+    mockBuddyControls: mockBuddyRepository,
     useCases: {
       session,
       listGroupBuys,
@@ -328,6 +410,11 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       wildlifeMap,
       wildlifeTracks,
       reportSighting,
+      listBuddyPosts,
+      buddyPostDetail,
+      createBuddyPost,
+      buddyProfile,
+      buddyRecommendations,
     },
   }
 }

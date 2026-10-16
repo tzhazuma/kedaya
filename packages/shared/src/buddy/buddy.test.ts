@@ -277,6 +277,25 @@ describe('explainMatch', () => {
     }
   });
 
+  it('⚠️「时间能碰上」只在 daily 出现 —— 理由必须能解释分数', () => {
+    // ruleScoreFor 只在 daily 给这 0.2 分，故 academic/sport 不得展示该理由
+    const target = { creator: { interestTags: ['badminton'] }, tags: [] };
+    for (const section of ['academic', 'sport'] as const) {
+      const codes = explainMatch(section, me, target, { availabilityOverlaps: true }).map((r) => r.code);
+      expect(codes, `${section} 不该出现 availability-overlap`).not.toContain('availability-overlap');
+      // 且该理由对应的加分确实不存在：开关它不改变分数
+      const on = ruleScoreFor(section, me, target, { availabilityOverlaps: true });
+      const off = ruleScoreFor(section, me, target, { availabilityOverlaps: false });
+      expect(on, `${section} 的分数不应受时段重叠影响`).toBeCloseTo(off, 9);
+    }
+    // daily 两者都要有
+    const dailyCodes = explainMatch('daily', me, target, { availabilityOverlaps: true }).map((r) => r.code);
+    expect(dailyCodes).toContain('availability-overlap');
+    expect(ruleScoreFor('daily', me, target, { availabilityOverlaps: true })).toBeGreaterThan(
+      ruleScoreFor('daily', me, target, { availabilityOverlaps: false }),
+    );
+  });
+
   it('无共同点 → 空理由（不编造）', () => {
     expect(explainMatch('daily', me, { creator: { interestTags: [], activityTags: [] }, tags: [] })).toEqual([]);
   });

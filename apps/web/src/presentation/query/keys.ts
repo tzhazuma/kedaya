@@ -4,6 +4,20 @@
 import type { FaqTicketStatus } from '@/domain/models/faq';
 import type { ForumPostStatus } from '@/domain/models/forum';
 import type { GroupBuyStatus } from '@/domain/models/groupbuy';
+import type { BuddySection } from '@/domain/models/buddy';
+
+/** 找搭子列表筛选（板块 / 封闭标签 / 关键词 / 是否含非 OPEN 状态） */
+export interface BuddyListFilters {
+  section: BuddySection | 'all';
+  tags: readonly string[];
+  keyword: string;
+  includeClosed: boolean;
+}
+
+export interface BuddyRecommendationFilters {
+  section: BuddySection;
+  userId: string;
+}
 
 export interface GroupBuyListFilters {
   status: GroupBuyStatus | 'all';
@@ -87,5 +101,21 @@ export const queryKeys = {
     zones: (speciesId: string) => ['wildlife', 'zones', speciesId] as const,
     tracks: (speciesId: string) => ['wildlife', 'tracks', speciesId] as const,
     catalog: ['wildlife', 'catalog'] as const,
+  },
+  buddy: {
+    root: ['buddy'] as const,
+    list: (filters: BuddyListFilters) =>
+      [
+        'buddy',
+        'list',
+        filters.section,
+        filters.tags.join(','),
+        filters.keyword,
+        filters.includeClosed,
+      ] as const,
+    detail: (id: string) => ['buddy', 'detail', id] as const,
+    recommendations: (filters: BuddyRecommendationFilters) =>
+      ['buddy', 'recommendations', filters.section, filters.userId] as const,
+    profile: (userId: string) => ['buddy', 'profile', userId] as const,
   },
 } as const;

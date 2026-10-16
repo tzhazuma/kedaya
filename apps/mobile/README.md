@@ -11,9 +11,9 @@ iOS / Android / **鸿蒙** 三端原生客户端骨架。包名 `kedaya`，Dart 
 
 | 项 | 状态 |
 | --- | --- |
-| 代码 | 已写完（六边形分层 + 拼单/论坛/常见问题/校园动物四个垂直切片 + 亮/暗主题 + 32 个测试文件 / 392 个用例） |
+| 代码 | 已写完（六边形分层 + 拼单/论坛/常见问题/校园动物/**找搭子**五个垂直切片 + 亮/暗主题 + 42 个测试文件） |
 | **本机编译验证** | ❌ **未验证** —— 开发机上**没有安装 Flutter SDK**（`flutter` / `dart` 命令都不存在），因此 `flutter pub get` / `flutter analyze` / `flutter test` **一次都没有跑过** |
-| 静态自检（替代验证） | ✅ **已实际执行**：`/opt/homebrew/bin/python3 tool/selfcheck.py` —— 10 项文本检查全部通过（174 个 Dart 文件：lib 142 + test 32，0 处违规），见 §6.5 |
+| 静态自检（替代验证） | ✅ **已实际执行**：`/opt/homebrew/bin/python3 tool/selfcheck.py` —— 10 项文本检查全部通过（203 个 Dart 文件：lib 161 + test 42，0 处违规），见 §6.5 |
 | 依赖版本解析 | ❌ 未验证（`pubspec.yaml` 的版本区间是按 TechPie 的可用组合与 pub.dev 常见版本手写的，`pub get` 可能要求微调） |
 | 静态分析 | ❌ 未验证（`analysis_options.yaml` 打开了 `strict-casts` / `strict-inference` / `strict-raw-types`，代码按这些规则手写，但仍需 `flutter analyze` 复核） |
 | 运行时行为 | ❌ 未验证（未在真机/模拟器上启动过） |
@@ -95,10 +95,11 @@ apps/mobile/
 │       ├── groupbuy/                 #   ✅ 已跑通的垂直切片（拼单）
 │       ├── forum/                    #   ✅ 论坛（含匿名开关 + 举报）
 │       ├── faq/                      #   ✅ 常见问题（含幂等「有用」+ 我的工单）
-│       └── wildlife/                 #   ✅ 校园动物（静态底图 + 叠加层 + 上报 + 推断轨迹）
+│       ├── wildlife/                 #   ✅ 校园动物（静态底图 + 叠加层 + 上报 + 推断轨迹）
+│       └── buddy/                    #   ✅ 找搭子（三板块列表 + 申请/审批/关闭 + 发布 + 匹配资料 + 可解释推荐）
 ├── tool/
 │   └── selfcheck.py                  # 替代验证：本机无 Flutter SDK，用静态自检覆盖能查的部分
-└── test/                             # 32 个测试文件
+└── test/                             # 42 个测试文件
     ├── domain/  data/  application/  presentation/
 ```
 
@@ -223,10 +224,12 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | **论坛切片**：版块筛选 + 主题列表（游标分页 + 下拉刷新 + 触底加载）+ 主题详情 + 回复列表/输入 + 发帖（**匿名开关**）+ 举报 + 分享 | `lib/features/forum/` |
 | **常见问题切片**：分类导航 + 搜索（防抖）+ 手风琴展开 + **幂等「有用」** + 我的工单 | `lib/features/faq/` |
 | **校园动物切片**：静态底图（方案 B）+ `CustomPaint` 叠加层（区域/聚合热点/推断轨迹）+ 观测与区域与轨迹页 + 上报（选图/上传/定位/地图点选/分类建议/命名个体/伦理确认）+ **仿射标定**（纯 Dart，像素↔经纬度往返 < 1 px） | `lib/features/wildlife/`（见其 README） |
+| **找搭子切片**：三板块分栏列表（游标分页 + 下拉刷新 + 触底加载）+ 详情 + 申请/撤回/审批/关闭 + 发布（**封闭标签选择器**）+ 我的匹配资料（**可用时段编辑器含跨零点**）+ **可解释推荐（展示匹配理由）** + like/dislike/skip 反馈 + 隐私说明；**不含 dating**（契约 §11.10-G） | `lib/features/buddy/`（见其 README） |
+| **匹配算法 Dart 侧镜像**（`ruleScoreFor` 系数 / `explainMatch` 理由 / `overlapsAvailability` 含跨零点 / 反馈衰减；与规格 §3.3 逐字一致，有守门测试） | `lib/domain/models/buddy_matching.dart` |
 | **匿名身份与实名身份在模型层解耦**（契约 §9）：`ForumAuthor` sealed 类型 + `AnonymousIdentity` | `lib/domain/models/{forum,anonymous_identity}.dart` |
 | 底部导航 + 每个模块的路由段 | `lib/app/app_router.dart`、`lib/presentation/pages/module_detail_page.dart` |
 | 二次同意门（`wellbeing`/`dorm-harmony`/`ai-portrait`） | `lib/application/consent_controller.dart` |
-| 19 个测试文件 | `test/`（见第 5 节） |
+| 42 个测试文件 | `test/`（见第 5 节） |
 | 静态自检脚本（本机替代验证） | `tool/selfcheck.py`（见第 6.5 节） |
 
 ### ❌ 未实现（如实列出，没有用 TODO 占位函数冒充）
@@ -234,7 +237,7 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | 项 | 说明 |
 | --- | --- |
 | 原生工程目录 | `android/` `ios/` `ohos/` 未生成（用 `flutter create` 生成，见 §1） |
-| 除 `groupbuy` / `forum` / `faq` / `wildlife` 外的 15 个模块页面 | 只有 `/module/:id` 落地页展示注册表信息并**明说"尚未实现"**；没有假数据、没有假成功 |
+| 除 `groupbuy` / `forum` / `faq` / `wildlife` / `buddy` 外的 14 个模块页面 | 只有 `/module/:id` 落地页展示注册表信息并**明说"尚未实现"**；没有假数据、没有假成功 |
 | 论坛的版主治理界面 | 数据层已实现"3 个不同用户举报 → 自动隐藏"与 `LOCKED` 拒答，但**没有**版主 moderation / Lock / Hide 的 UI |
 | 发帖/回复频率限制、敏感词拦截 | ❌ 未实现（属于服务端限流与内容审核；客户端只做长度校验） |
 | FAQ 工单追问 / 关闭 | `FaqTicketStatus.canFollowUp` 已在模型里就绪，但没有 UI |
@@ -257,7 +260,7 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 
 ---
 
-## 5. 测试（32 个文件，共 392 个用例；其中 `wildlife` 新增 13 个文件 / 184 个用例）
+## 5. 测试（42 个文件；其中 `wildlife` 新增 13 个文件 / 184 个用例，`buddy` 新增 10 个文件 / 199 个用例）
 
 > ⚠️ **全部用例都没有在本机执行过**（没有 Flutter SDK）。下面是"每个文件测什么"的清单，
 > 不是"测试通过"的证据。
@@ -303,6 +306,21 @@ mock repository 行为 2 个 + application 三态/幂等 2 个**。
 `wildlife` 追加 13 个文件 / 184 个用例（加粗，见上表）：**domain 纯逻辑 6 个（含
 坐标系与 GCJ-02 边界）+ mock 行为 3 个（含隐私）+ application 3 个 + 组件 1 个**。
 
+`buddy`（本次交付）追加 **10 个文件 / 199 个用例**：
+
+| 文件 | 覆盖 |
+| --- | --- |
+| `test/domain/buddy_matching_test.dart` | **规格 §3.3 系数逐字校验**、三板块上限、**§5.7 理由（文档示例逐字一致）**、**F7 跨零点 + 时区边界**、融合公式、反馈权重与 `buddyExpNeg` 精度、`matchMode` 诚实文案 |
+| `test/domain/buddy_post_test.dart` | `sectionOf` 全覆盖、**5×5 状态机矩阵**、`section: dating` 被忽略、敏感键不被读取、发布草稿逐条校验 |
+| `test/domain/buddy_profile_test.dart` | `AvailabilitySlot` 校验、**跨零点拆分**、本地时间文案、`matchEnabled` 默认 false、**封闭标签表完整性 + 别名搜索** |
+| `test/domain/buddy_application_test.dart` | 申请状态机 4×4 矩阵、`BuddyDecision`、留言校验、命令请求体形状 |
+| `test/domain/buddy_privacy_boundary_test.dart` | **无 dating**（枚举 + `fromWire` + 源码机械扫描）、响应键名黑名单、`BuddyCreator` 只有三字段、**端口没有读他人资料的出口** |
+| `test/data/mock_buddy_repository_test.dart` | 过滤 / **游标不重不漏** / 损坏游标容错、`join` 不占名额、撤回后复用同一行、F5/F6、`decide` 名额、`close` 归属、申请可见性、反馈 UPSERT、资料保存删除 |
+| `test/data/mock_buddy_recommend_test.dart` | 未开启匹配 → 「按时间排序」、**F1–F7 逐条**、分数与理由逐字断言、**反馈影响分数**、**section 隔离** |
+| `test/application/buddy_controller_test.dart` | 三态、三板块分栏切换、翻页失败保留列表、写操作后的 provider 失效 |
+| `test/application/buddy_recommend_controller_test.dart` | 三态、**打开匹配开关后从降级变成可解释推荐**、反馈后 refresh 生效、删除资料后回到诚实降级 |
+| `test/presentation/buddy_widget_test.dart` | **理由必须展示**、**降级档不出现「为你智能推荐」**、分栏只有三个板块、时段编辑器预览跨零点、隐私页九条承诺、**亮/暗主题下列表页与推荐页均可用** |
+
 ---
 
 ## 6. 装好 Flutter 后的验证命令（按顺序执行）
@@ -331,6 +349,10 @@ flutter test test/domain/wildlife_geo_test.dart           # 单跑坐标/仿射�
 flutter test test/domain/wildlife_datum_boundary_test.dart # 单跑「GCJ-02 不得入库」边界
 flutter test test/data/mock_wildlife_privacy_test.dart    # 单跑位置模糊化/敏感区无坐标
 flutter test test/presentation/wildlife_widget_test.dart  # 单跑「推断轨迹」文案与亮暗主题
+flutter test test/domain/buddy_matching_test.dart         # 单跑 §3.3 系数逐字校验 + 跨零点时段
+flutter test test/domain/buddy_privacy_boundary_test.dart # 单跑「无 dating + 响应键名黑名单」
+flutter test test/data/mock_buddy_recommend_test.dart     # 单跑推荐硬过滤 F1–F7 与理由
+flutter test test/presentation/buddy_widget_test.dart     # 单跑「推荐理由必须展示」与亮暗主题
 
 # 4) 格式化检查（代码按 dart format 风格手写，未在本机跑过）
 dart format --output=none --set-exit-if-changed lib test
@@ -503,3 +525,31 @@ cd apps/mobile
     `lib/domain/` 的公共面，建议 Lead 知悉。
 28. **`FutureProvider.family<..., String?>`**（个体列表按物种过滤）用**可空 String**
     作 family 参数：riverpod 2.6.x 允许，但这是一个容易被 3.x 改掉的用法。
+
+### 8.4 `buddy` 新增的风险点（需要 `flutter analyze` 复核）
+
+29. **`DropdownButtonFormField.value`**（发布页的地点选择）按 Flutter **3.27** 书写；
+    若 SDK ≥ 3.32，该参数被 `initialValue` 取代（deprecation 警告，仍可编译）。
+    若要在新 SDK 上消掉警告，把 `value:` 换成 `initialValue:` 即可（只有一处）。
+30. **`showTimePicker` / `showDatePicker` / `SegmentedButton` / `FilterChip` /
+    `InputChip` / `Slider`** 均按 Flutter 3.27 的 API 书写。
+31. **`buddyRecommendControllerProvider` 在 `build()` 里 `ref.watch(buddyProfileProvider)`**
+    （为了让"刚打开匹配开关"立刻反映到推荐）。这会让推荐控制器在资料 provider
+    从 loading 变 data 时**重建一次**（多一次本地 mock 查询，零延迟）。
+    若实测有抖动，改成在 `BuddyActions.saveProfile` 里显式 `ref.invalidate` 即可
+    （**已经**有那次 invalidate，watch 只是兜底）。
+32. **`test/application/buddy_recommend_controller_test.dart` 的时序假设**：
+    依赖"资料失效后的重建已完成"，用了轮询到非 loading 的 `settle()` 辅助函数
+    （最多 50 次 `await Future.delayed(Duration.zero)`）。这是本机无法验证的部分里
+    **最可能先失败**的一处（与 `forum`/`faq` 的同类辅助函数一致）。
+33. **`test/domain/buddy_privacy_boundary_test.dart` 会读源码**（`File('lib/...')`）：
+    相对路径依赖 `flutter test` 的工作目录 = 包根目录。若 CI 换了工作目录，
+    该用例的 `expect(targets, isNotEmpty)` 会先失败（这是刻意的自检）。
+34. **`buddyCampusLocations` 是占位白名单**（规格 §9 U10 未关闭）：
+    上线前必须由产品/运营替换，落点是**一个常量**。
+35. **`buddyTagCatalog` 是服务端标签表的客户端镜像**（规格 §3.2）：
+    服务端新增标签后客户端选不到（功能缺失，不是数据损坏），需同步本表。
+36. **顺手修掉了一个既有测试文件的编译错误**：`test/application/forum_controller_test.dart`
+    第 136 行用了 `MockForumRepository(seed: ...)`，而该构造函数没有 `seed` 参数
+    （`MockGroupbuyRepository` 才有）→ 已改为 `posts:`。这是与 `buddy` 无关的
+    既有缺陷，会让**整套** `flutter test` 编译失败，因此一并修掉。

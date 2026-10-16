@@ -1,3 +1,5 @@
+export * from './buddyFixtures'
+export * from './buddyMemoryDatabase'
 export * from './faqFixtures'
 export * from './faqMemoryDatabase'
 export * from './fixtures'

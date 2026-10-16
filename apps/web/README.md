@@ -90,11 +90,12 @@ apps/web/
 | **论坛切片** | `app/(portal)/forum/**` | 版块导航 + 主题列表（游标分页 / 版块筛选 / 关键词 / **被治理主题显式标注状态**）；详情（正文 + 回复列表 + 回复框 + **举报弹层**）；发帖页（**匿名开关** + 隐私说明） |
 | **FAQ 切片** | `app/(portal)/faq/**` | 分类导航 + 搜索 + 手风琴条目 + **「有用/无用」乐观更新与失败回滚**；`/faq/tickets` 我的工单（提交 + 状态 + 脱敏联系方式） |
 | **wildlife 切片** | `app/(portal)/wildlife/**`、`app/(admin)/admin/wildlife/page.tsx` | 动物地图（静态底图 + SVG 叠加层）、观测列表/详情、区域列表、推断轨迹页、上报表单（照片上传 + 地图点选 + 自动分类降级）、审核队列（`moderate` 冻结动作）—— 见 §8 |
+| **找搭子切片** | `app/(portal)/buddy/**` | 搭子广场（三板块分栏 + 封闭标签筛选 + 游标分页）、详情（`join` 申请 / `leave` 撤回 / `decide` 审批 / `close` 关闭）、发布（**封闭标签选择器，无自由文本**）、我的匹配资料（**可用时段编辑器，支持跨零点**）、推荐（**展示 `explainMatch` 的理由**，不是只给分数）+ `like`/`dislike`/`skip` 反馈 —— 见 §9 |
 | 管理后台占位 | `app/(admin)/admin/page.tsx` | 模块开关表（20 行，受权限约束）+ 审计日志表（§9 字段齐全）+ 合规概览 |
-| 5+ 复用组件 | `presentation/components/` | `KdyCard` `KdyButton` `KdyBadge` `KdyEmpty` `KdySkeleton` `KdyAlert` `ModuleGrid` `PageHeader` `SiteHeader` `SiteFooter` `UnofficialNotice` + forum/faq 专属组件 |
+| 5+ 复用组件 | `presentation/components/` | `KdyCard` `KdyButton` `KdyBadge` `KdyEmpty` `KdySkeleton` `KdyAlert` `ModuleGrid` `PageHeader` `SiteHeader` `SiteFooter` `UnofficialNotice` + forum/faq/wildlife/buddy 专属组件 |
 | 主题 Provider | `presentation/theme/` | light/dark/system 三态；`useSyncExternalStore` 订阅 `localStorage` + `matchMedia`；写 `<html data-theme>`（system 移除）+ `dark` class + `color-scheme`，暗色配色来自令牌 `colorDark` |
 | 品牌资源 | `public/brand/` | `kedaya-mascot.svg`、`kedaya-cover.svg`（复制，源文件未动）+ `cover.png`（1200×630，`rsvg-convert`） |
-| 测试 | `src/**/*.test.ts` | 15 个文件 / **243 个用例**，全部纯逻辑（node 环境，无需 jsdom） |
+| 测试 | `src/**/*.test.ts` | 26 个文件 / **577 个用例**，全部纯逻辑（node 环境，无需 jsdom） |
 
 ### 测试覆盖
 
@@ -595,3 +596,137 @@ $ npm run build -w @kedaya/web
 > 本次验证是把标签页"伪装为可见"（覆写 `document.visibilityState` 并派发 `visibilitychange`）
 > 之后才拿到上面那条错误态输出的。`/groupbuy`（既有页面）在 HTTP 模式下表现完全相同，
 > 详见 §8.7 偏差 4。
+
+---
+
+## 9. 找搭子切片（buddy）
+
+> 规格：`docs/features/buddy-matching.md` · 契约：`00-FROZEN-CONTRACT.md`
+> §4.1 / §6.1 / §11.2（5 个冻结动作名）/ §11.10-D（`joinedCount` 含发起人）/ §11.10-E（不透明复合游标）/ §11.10-G（不做交友/约会板块）
+
+### 9.1 交付内容（全部在 `apps/web/` 内）
+
+| 层 | 文件 |
+| --- | --- |
+| domain（模型） | `src/domain/models/buddy.ts`（板块派生 / 状态机 / **封闭标签表** / 地点白名单 / 校验 / **可用时段含跨零点** / 隐私矩阵） |
+| domain（端口） | `src/domain/ports/buddy.ts` |
+| data（传输层） | `src/data/schemas/buddy.ts`（zod + schema↔domain 双向断言 + **禁止字段负向检查**） |
+| data（mock） | `src/data/mock/fixtures/buddy.ts`、`src/data/mock/buddy.repository.ts`（**服务端替身**：复合游标 / 硬过滤 F1–F7 / `explainMatch` 理由 / MMR / 幂等键） |
+| data（HTTP） | `src/data/repositories/buddy.http.ts` |
+| application | `src/application/buddy/{session,ids,listBuddyPosts,getBuddyPostDetail,publishBuddyPost,buddyProfile,recommendations}.ts` |
+| presentation | `src/presentation/components/buddy/*`（列表 / 卡片 / 板块导航 / 详情 / 发布表单 / **封闭标签选择器** / **可用时段编辑器** / 资料编辑器 / 推荐 / 隐私说明） |
+| 页面 | `/buddy`、`/buddy/[id]`、`/buddy/new`、`/buddy/profile`、`/buddy/recommendations` |
+
+### 9.2 硬要求逐条落地
+
+| 要求 | 落地 |
+| --- | --- |
+| **三板块分栏** | `BUDDY_SECTIONS = ['academic','daily','sport']`，板块由 `sectionOf(activity)` **派生**（不新增字段）；有机器守卫断言源码里不出现第四个板块 |
+| **封闭标签（不许自由文本）** | `BUDDY_TAG_TABLE` 是唯一真相（30 条，含 1 条下架样例）；`BuddyTagPicker` **没有**任何文本输入框；未知标签 → `VALIDATION_FAILED` / `UNKNOWN_TAG:<key>` |
+| **游标分页** | mock 用 base64url 复合游标 `(sort, sortKey, id)`；客户端只原样回传；切 `sort` / 换筛选 → `VALIDATION_FAILED` / `INVALID_CURSOR` |
+| **`explainMatch` 理由** | 服务端（mock）用 `@kedaya/shared` 的 `explainMatch` 产出结构化 `reasons`；推荐页逐条展示徽章 + 拼接文案；无命中回落 `有潜在匹配` |
+| **可用时段（含跨零点）** | 编辑器 `dow + start + end`；`endMin < startMin` 表示跨到**次日**（与共享纯函数同一语义）；`endMin === startMin` 被拒 |
+| **三态齐全** | `deriveViewState` 纯函数 + 骨架 / `role="alert"` + 重试 / 空态引导（含「清空筛选」「去发布」） |
+| **隐私说明（硬要求）** | `BUDDY_PRIVACY_ITEMS` 八行可见性矩阵：公开项 / **匹配资料对任何人不可见（含活动发起人）** / **联系方式仅申请通过后经站内信交换** / **资料可撤回（关闭开关或硬删）** |
+| **零手写色值** | `buddy-tokens.test.ts` 扫描全部 buddy 源文件；暗色实测 `--kdy-color-brand = #ffd666` |
+| **不做交友/约会板块** | `buddy-tokens.test.ts` 断言源码里不出现该板块标识；三个板块枚举逐字断言 |
+
+### 9.3 测试（新增 **202** 个用例，web 375 → **577**）
+
+| 文件 | 用例数 | 覆盖 |
+| --- | --- | --- |
+| `domain/models/buddy.test.ts` | 55 | **`sectionOf` 全映射**、**帖子状态机 5×5 全矩阵**、申请状态机（含 `WITHDRAWN→PENDING`）、名额/进度/可申请性、性别准入（未填写不拦）、技能门槛、**封闭标签**（未知标签 / 下架标签 / 上限 / 别名仅搜索）、地点白名单、发布草稿校验、联系方式四类模式、**可用时段含跨零点**（长度 / 格式化 / 校验 / 共享 `overlapsAvailability` 的跨零点用例）、资料校验、隐私矩阵 |
+| `application/buddy/buddy.test.ts` | 41 | 本地化文案（绝对时间不依赖 ICU 格式）、卡片/列表/详情 VM、**`explainMatch` 五条理由与回落**、匹配模式诚实说明、发布（标签与联系方式拦截）、`datetime-local` 互转、**时段编辑器（追加/修改/删除/非法输入忽略/跨零点）**、资料读写与撤回、join/leave/decide/close 编排、会话与 fixture 对齐 |
+| `data/mock/buddy.repository.test.ts` | 68 | **游标分页不重不漏（limit=1/4、两套排序、切 sort 失效、脏游标）**、板块/标签/时间/非 OPEN 过滤、join（不占名额 / 幂等 / 6 类拒绝）、leave（冷却期 / 复用同一行）、decide（非发起人 / 递增 / 满员转 FULL / 拒绝不递增）、close、**发起人视角（自己发布的活动）**、详情可见性、发布校验与幂等（T17）、**推荐理由来自 `explainMatch` + F3–F7 硬过滤 + rule 降级 + 删除资料移出推荐池（T30）**、**反馈板块隔离（T6）**、MMR、资料读写、故障演练与 reset |
+| `data/repositories/buddy.http.test.ts` | 21 | 路由由模块注册表派生、**5 个冻结动作名**、`Idempotency-Key`、`creator` 不下发、**游标原样透传**、`userId` 不下发、zod 脏数据 → INTERNAL、错误码与 `details.reason` 透传、资料 PUT/DELETE、申请列表两种响应形状 |
+| `presentation/theme/buddy-tokens.test.ts` | 17 | **零手写色值**、暗色令牌可达、**不做交友/约会板块**、**presentation 不得直接发请求**、**发布表单无自由文本标签输入**、隐私说明四处硬要求、推荐页展示模式说明 |
+
+### 9.4 未实现 / 已知限制（如实列出）
+
+1. **问卷（规格 §2.6 / §5.1 端点 16–19）未实现**：本端任务书只要求 5 个页面 + 反馈，问卷不在交付面内。
+2. **只有 `hash` 与 `rule` 两档**：`vector` 需要 embedding 服务；规格 §3.4 明确**不做双塔**，因此 `towerScore` 恒不存在。
+3. **身份层仍是占位**（`DEMO_BUDDY_SESSION`）：`gender` / `skillLevel` 只用于准入判定，性别**不进**匹配特征（规格 §1.2 N5）。
+4. **mock 的模糊化弱于真实后端**：mock 只有内存状态，**整页刷新即回到种子数据**（发布的活动会消失），与 groupbuy/forum/wildlife 一致。
+5. **校园地点白名单是占位**（规格未决问题 U10 未关闭）。
+6. **`includeClosed` 是本端的显式扩展**（见 §9.5 偏差 1），HTTP 模式下需要后端支持该参数。
+7. **隐藏标签页里错误态不会自己出现**（全局既有行为，见 §8.7 偏差 4）：`/buddy` 同样复现，实测需把标签页伪装为可见后才拿到错误态输出。
+8. **`/buddy/[id]` 是动态路由**（`ƒ`），不做 SSG（活动 id 由数据决定）。
+
+### 9.5 与冻结契约的偏差（需 Lead 裁定）
+
+1. **`includeClosed` 查询参数**：规格 §5.3 没有这个参数，§5.9 的 `where` 是 `status: 'OPEN'`。
+   但「已满 / 已关闭」必须能被用户看到（否则状态静默消失），所以列表加了该参数（默认 `false`，保持规格默认行为）。
+   **建议**：后端支持它，或另给一个显式的状态筛选参数。
+2. **推荐的 `reasons` 是结构化数组**（`{code,label,weight}[]`，即 `explainMatch` 输出），
+   规格 §5.7 只写了字符串 `reason`。两者都下发（`reason` 保留为拼接文案）。
+   服务端**只下发聚合短语**（如「共同兴趣 3 项」），**不下发**对方原始标签集 —— 这是 §6.1 的隐私边界。
+3. **端口里的 `userId`**：`recommendations` / `listMyApplications` / `getProfile` 在 mock 里需要知道"我是谁"，
+   但 HTTP 适配器**刻意不下发**该参数（身份来自 `Bearer` token，让客户端传 userId 等于把越权面交给客户端）。
+4. **可用时段允许跨零点**：规格 §2.2 写的是 `endMin > startMin`；本端接受 `endMin < startMin` 并解释为跨到次日，
+   与 `@kedaya/shared` 的 `overlapsAvailabilityMinutes` 语义一致（`endMin === startMin` 仍被拒）。
+5. **`z.iso.datetime({ offset: true })`**：同时接受 `Z` 与 `+08:00`（规格 §5.4 的请求示例就是 `+08:00`）。
+6. **MMR 在 mock 里实现**（λ 默认 0.7，用 `hashVector` 相似度），真实排序由服务端负责。
+7. **演示数据里有一条「我发布的」活动（`bp-1013`）**：否则演示会话永远是申请人视角，
+   发起人的申请管理 / 审批 / 关闭在浏览器里点不到。
+
+### 9.6 自检证据（真实执行输出摘要）
+
+```bash
+$ ./scripts/with-npm-lock.sh npm install
+（成功；仅 npm warn install-scripts 提示 14 个包有 install scripts 未审批）
+
+$ npm run typecheck -w @kedaya/web
+> tsc --noEmit -p tsconfig.json
+（无输出 = 0 错误，exit 0）
+
+$ npm run lint -w @kedaya/web
+> eslint .
+（无输出 = 0 problems）
+
+$ npm run test -w @kedaya/web
+ ✓ src/domain/models/buddy.test.ts (55 tests)
+ ✓ src/application/buddy/buddy.test.ts (41 tests)
+ ✓ src/data/mock/buddy.repository.test.ts (68 tests)
+ ✓ src/data/repositories/buddy.http.test.ts (21 tests)
+ ✓ src/presentation/theme/buddy-tokens.test.ts (17 tests)
+ Test Files  26 passed (26)
+      Tests  577 passed (577)     # 基线 375 + buddy 新增 202
+
+$ npm run build -w @kedaya/web
+▲ Next.js 16.4.2 (Turbopack)
+✓ Compiled successfully in 444ms
+✓ Generating static pages using 11 workers (38/38) in 356ms
+├ ○ /buddy   ├ ƒ /buddy/[id]   ├ ○ /buddy/new   ├ ○ /buddy/profile   ├ ○ /buddy/recommendations
+```
+
+生产服务器冒烟（`next start -p 3399`，真实 curl）：`/buddy` `/buddy/new` `/buddy/profile`
+`/buddy/recommendations` `/buddy/bp-1001` `/buddy/nope` **全部 HTTP 200**。
+
+浏览器实测（真实 Chromium，`http://127.0.0.1:3399`，数据全部来自 mock，**无后端**）：
+
+- `/buddy`：`共 10 条 · 当前展示 4 条` → 点「加载更多（游标分页）」两次 → `8 条` → `10 条`，
+  10 张卡片 id 互不重复、按钮消失（`nextCursor=null`）；板块计数 `自习与学术（1）/ 日常与出行（1）/ 运动组队（2）`；
+  我发布的活动带「我发布的」徽章 + `不能申请自己发布的活动`；已申请的活动显示 `已提交申请，等待发起人审批。`
+- `/buddy` **错误态**：点「演练故障」→ `role="alert"`
+  「搭子列表加载失败 / 找搭子服务暂时不可用（mock 故障演练）/ 契约 §8 要求失败静默降级而非白屏。下方展示的是上一次成功获取的数据。」+「重试」，
+  **10 张卡片保留**；点「恢复正常」→ 提示消失。
+- `/buddy` **空态**：搜索「这个词一定搜不到」→ 「这个筛选下还没有搭子 / 没有找到包含「这个词一定搜不到」的活动。换个关键词，或者由你来发第一条。」+「清空筛选」「去发布」。
+- `/buddy/recommendations`：`匹配模式：标签 + 本地降级打分`，`共 1 条 · 其中 1 条带明确理由`；
+  理由徽章逐条渲染 **`同一个院系` / `共同兴趣 2 项` / `时间能碰上` / `共同活动 1 项` / `常在同一个区域`**，
+  拼接文案 `同一个院系、共同兴趣 2 项、时间能碰上、共同活动 1 项、常在同一个区域`，匹配分 `0.470`（47%）；
+  诚实说明「当前是降级档…它不是语义相似」；`感兴趣 / 不感兴趣 / 先跳过` 三个反馈按钮。
+- `/buddy/profile`：可用时段编辑器 **8 段**，摘要 `每周 8 段 · 共约 101 小时 · 1 段跨零点`，
+  跨零点段显示 `跨零点 · 次日 01:00` 与 `共 2 小时`；两个封闭标签选择器；匹配开关默认状态可见；撤回说明可见。
+- `/buddy/new`：板块 chips + 活动类型下拉（由板块反查）+ **无自由文本标签输入**；
+  正文填 `想来的同学加我微信：duck2026` → 提交被拒：
+  `正文里不能写微信号：申请通过后系统会经站内信交换联系方式。`；改成普通描述 → 提交成功
+  `活动已发布，编号 bp-9014。`（附「查看详情」链接）。
+- `/buddy/bp-1013`（我发布的活动）：`收到的申请 待审批 2`，两条申请各带「接受 / 拒绝」；
+  点「接受」→ 回执 `已通过 早八人 的申请。`、人数 `1/4 → 2/4 人`、待审批 `2 → 1`、已通过 `0 → 1`；
+  点「关闭招募」→ 回执 `活动已关闭（CLOSED），不再接受申请。`、状态 `已关闭`、
+  出现「发起人已关闭这条招募，不再接受申请。」、关闭按钮消失（终态）。
+- `/buddy/bp-1001`（他人活动）：填留言点「申请加入」→ 回执
+  `申请已提交，等待发起人审批（join 只是申请，不占名额）。`、`我的申请状态：待审批 · 留言：我也常打，一起？`、
+  **人数保持 `2/4 人`（`join` 确实不占名额）**、出现「撤回申请」。
+- 暗色：点「深色」→ `<html data-theme="dark">`、`color-scheme: dark`、`--kdy-color-brand = #ffd666`（= 令牌 `colorDark.brand`）、
+  卡片背景 `rgb(21, 28, 40)`（= 令牌暗色 surface）→ **buddy 页面零手写色值、暗色由令牌驱动**。

@@ -1,5 +1,24 @@
 import { err, ok, type Result } from '@kedaya/shared'
 
+import type {
+  BuddyApplication,
+  BuddyPost,
+  BuddyProfile,
+  BuddySection,
+  BuddyTag,
+} from '../../domain/models/buddy'
+import type {
+  BuddyApplicationPage,
+  BuddyFeedbackInput,
+  BuddyFeedbackResult,
+  BuddyItemPage,
+  BuddyRecommendationPage,
+  BuddyRepository,
+  CreateBuddyPostInput,
+  DecideBuddyApplicationInput,
+  JoinBuddyInput,
+  ListBuddyItemsQuery,
+} from '../../domain/ports/buddyRepository'
 import type { FaqArticle, FaqTicket } from '../../domain/models/faq'
 import type { ForumBoard, ForumPost, ForumReport, ForumReply } from '../../domain/models/forum'
 import type { AuthTokens, Session, UserProfile } from '../../domain/models/session'
@@ -632,6 +651,214 @@ export function createFakeWildlifeRepository(
     async classify(mediaId) {
       this.classifyCalls.push(mediaId)
       return this.classifyResult
+    },
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * buddy（找搭子）仓储替身
+ * ------------------------------------------------------------------ */
+
+export function buddyPost(id: string, overrides: Partial<BuddyPost> = {}): BuddyPost {
+  return {
+    id,
+    activity: 'sport',
+    status: 'OPEN',
+    title: `搭子 ${id}`,
+    description: '说明',
+    location: '体育馆',
+    startsAt: '2026-10-24T06:00:00.000Z',
+    durationMin: 120,
+    capacity: 4,
+    joinedCount: 1,
+    genderPreference: 'any',
+    tags: ['badminton'],
+    minSkillLevel: null,
+    creator: { id: 'u-other', nickname: '同学', avatarUrl: null },
+    createdAt: '2026-10-16T09:00:00.000Z',
+    updatedAt: '2026-10-16T09:00:00.000Z',
+    myApplication: null,
+    ...overrides,
+  }
+}
+
+export function buddyApplication(
+  id: string,
+  overrides: Partial<BuddyApplication> = {},
+): BuddyApplication {
+  return {
+    id,
+    postId: 'bp-1',
+    applicantId: 'u-me',
+    applicantName: '可达鸭测试号',
+    message: null,
+    status: 'PENDING',
+    createdAt: '2026-10-16T09:00:00.000Z',
+    decidedAt: null,
+    ...overrides,
+  }
+}
+
+export function buddyProfile(overrides: Partial<BuddyProfile> = {}): BuddyProfile {
+  return {
+    userId: TEST_PROFILE.id,
+    sections: ['sport'],
+    interestTags: ['programming'],
+    activityTags: ['badminton'],
+    skillLevel: 'regular',
+    // 周一 18:00–22:00（dow 1 = 周一，与 `AvailabilitySlot` 的约定一致）
+    availability: [{ dow: 1, startMin: 18 * 60, endMin: 22 * 60 }],
+    preferredAreas: ['体育馆'],
+    department: '信息科学与技术学院',
+    bio: null,
+    matchEnabled: true,
+    updatedAt: '2026-10-16T09:00:00.000Z',
+    ...overrides,
+  }
+}
+
+export function buddyTag(key: string, overrides: Partial<BuddyTag> = {}): BuddyTag {
+  return {
+    key,
+    label: `标签 ${key}`,
+    group: 'sport',
+    aliases: [],
+    isActive: true,
+    ...overrides,
+  }
+}
+
+export interface FakeBuddyRepository extends BuddyRepository {
+  itemsQueue: Array<Result<BuddyItemPage, RepositoryError>>
+  detailQueue: Array<Result<BuddyPost, RepositoryError>>
+  createResult: Result<BuddyPost, RepositoryError>
+  joinResult: Result<BuddyApplication, RepositoryError>
+  leaveResult: Result<BuddyApplication, RepositoryError>
+  closeResult: Result<BuddyPost, RepositoryError>
+  decideResult: Result<BuddyPost, RepositoryError>
+  applicationsResult: Result<BuddyApplicationPage, RepositoryError>
+  recommendationsResult: Result<BuddyRecommendationPage, RepositoryError>
+  feedbackResult: Result<BuddyFeedbackResult, RepositoryError>
+  profileResult: Result<BuddyProfile | null, RepositoryError>
+  putProfileResult: Result<BuddyProfile, RepositoryError>
+  deleteProfileResult: Result<true, RepositoryError>
+  tagsQueue: Array<Result<BuddyTag[], RepositoryError>>
+  /** 断言用：记录全部调用参数 */
+  listQueries: ListBuddyItemsQuery[]
+  created: Array<{ body: CreateBuddyPostInput; idempotencyKey: string | undefined }>
+  joins: Array<{ id: string; input: JoinBuddyInput }>
+  leaves: Array<{ id: string; idempotencyKey: string | undefined }>
+  closes: Array<{ id: string; idempotencyKey: string | undefined }>
+  decisions: Array<{ id: string; input: DecideBuddyApplicationInput }>
+  applicationQueries: string[]
+  recommendationQueries: Array<{ section: BuddySection; limit: number | undefined }>
+  feedbacks: Array<{ id: string; input: BuddyFeedbackInput }>
+  putProfiles: Array<{ profile: BuddyProfile; idempotencyKey: string | undefined }>
+  deleteProfileCalls: number
+}
+
+export interface FakeBuddyRepositoryOptions {
+  items?: Array<Result<BuddyItemPage, RepositoryError>>
+  detail?: Array<Result<BuddyPost, RepositoryError>>
+  create?: Result<BuddyPost, RepositoryError>
+  join?: Result<BuddyApplication, RepositoryError>
+  leave?: Result<BuddyApplication, RepositoryError>
+  close?: Result<BuddyPost, RepositoryError>
+  decide?: Result<BuddyPost, RepositoryError>
+  applications?: Result<BuddyApplicationPage, RepositoryError>
+  recommendations?: Result<BuddyRecommendationPage, RepositoryError>
+  feedback?: Result<BuddyFeedbackResult, RepositoryError>
+  profile?: Result<BuddyProfile | null, RepositoryError>
+  putProfile?: Result<BuddyProfile, RepositoryError>
+  deleteProfile?: Result<true, RepositoryError>
+  tags?: Array<Result<BuddyTag[], RepositoryError>>
+}
+
+export function createFakeBuddyRepository(
+  options: FakeBuddyRepositoryOptions = {},
+): FakeBuddyRepository {
+  return {
+    itemsQueue: [...(options.items ?? [])],
+    detailQueue: [...(options.detail ?? [])],
+    createResult: options.create ?? ok(buddyPost('bp-new', { creator: { id: TEST_PROFILE.id, nickname: '可达鸭测试号', avatarUrl: null } })),
+    joinResult: options.join ?? ok(buddyApplication('ba-1')),
+    leaveResult: options.leave ?? ok(buddyApplication('ba-1', { status: 'WITHDRAWN' })),
+    closeResult: options.close ?? ok(buddyPost('bp-1', { status: 'CLOSED' })),
+    decideResult: options.decide ?? ok(buddyPost('bp-1', { joinedCount: 2 })),
+    applicationsResult: options.applications ?? ok({ items: [], nextCursor: null }),
+    recommendationsResult: options.recommendations ?? ok({ items: [], nextCursor: null, matchMode: 'rule' }),
+    feedbackResult: options.feedback ?? ok({ action: 'like' }),
+    profileResult: options.profile ?? ok(buddyProfile()),
+    putProfileResult: options.putProfile ?? ok(buddyProfile()),
+    deleteProfileResult: options.deleteProfile ?? ok(true),
+    tagsQueue: [...(options.tags ?? [])],
+    listQueries: [],
+    created: [],
+    joins: [],
+    leaves: [],
+    closes: [],
+    decisions: [],
+    applicationQueries: [],
+    recommendationQueries: [],
+    feedbacks: [],
+    putProfiles: [],
+    deleteProfileCalls: 0,
+
+    async listTags() {
+      const next = this.tagsQueue.shift()
+      return next ?? ok([buddyTag('badminton', { label: '羽毛球' })])
+    },
+    async listItems(query: ListBuddyItemsQuery = {}) {
+      this.listQueries.push(query)
+      const next = this.itemsQueue.shift()
+      return next ?? ok({ items: [], nextCursor: null, total: 0 })
+    },
+    async itemDetail() {
+      const next = this.detailQueue.shift()
+      return next ?? ok(buddyPost('bp-1'))
+    },
+    async createItem(body: CreateBuddyPostInput, idempotencyKey?: string) {
+      this.created.push({ body, idempotencyKey })
+      return this.createResult
+    },
+    async join(id: string, input: JoinBuddyInput) {
+      this.joins.push({ id, input })
+      return this.joinResult
+    },
+    async leave(id: string, idempotencyKey?: string) {
+      this.leaves.push({ id, idempotencyKey })
+      return this.leaveResult
+    },
+    async close(id: string, idempotencyKey?: string) {
+      this.closes.push({ id, idempotencyKey })
+      return this.closeResult
+    },
+    async decide(id: string, input: DecideBuddyApplicationInput) {
+      this.decisions.push({ id, input })
+      return this.decideResult
+    },
+    async listApplications(postId: string) {
+      this.applicationQueries.push(postId)
+      return this.applicationsResult
+    },
+    async recommendations(section: BuddySection, limit?: number) {
+      this.recommendationQueries.push({ section, limit })
+      return this.recommendationsResult
+    },
+    async feedback(id: string, input: BuddyFeedbackInput) {
+      this.feedbacks.push({ id, input })
+      return this.feedbackResult
+    },
+    async getProfile() {
+      return this.profileResult
+    },
+    async putProfile(profile: BuddyProfile, idempotencyKey?: string) {
+      this.putProfiles.push({ profile, idempotencyKey })
+      return this.putProfileResult
+    },
+    async deleteProfile() {
+      this.deleteProfileCalls += 1
+      return this.deleteProfileResult
     },
   }
 }

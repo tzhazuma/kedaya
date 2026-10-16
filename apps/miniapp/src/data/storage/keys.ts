@@ -40,6 +40,25 @@ export const StorageKeys = {
    * 这里存的是「表单操作确认」的时间戳，不产生任何授权状态。
    */
   wildlifeEthicsAck: `${STORAGE_PREFIX}wildlife:ethics-ack`,
+  /* ---------------- 找搭子（`buddy`） ---------------- */
+  /**
+   * 搭子列表缓存（按板块分片：`${buddyListCache}:${section}`）。
+   * 分片是必须的 —— 否则切板块时 `hydrate()` 会把上一个板块的缓存渲染出来。
+   */
+  buddyListCache: `${STORAGE_PREFIX}cache:buddy:list`,
+  /** 搭子详情缓存（按 id 分片） */
+  buddyDetailCache: `${STORAGE_PREFIX}cache:buddy:detail`,
+  /** 推荐缓存（按板块分片） */
+  buddyRecommendationCache: `${STORAGE_PREFIX}cache:buddy:recommendations`,
+  /** 我的匹配资料缓存 */
+  buddyProfileCache: `${STORAGE_PREFIX}cache:buddy:profile`,
+  /**
+   * 我提交过的匹配反馈（本地记忆，UPSERT 语义）。
+   *
+   * 只用于**按钮态**（哪个已 like / dislike / skip）与离线提示；
+   * 真正的反馈数据在服务端（`@@unique([userId, targetPostId, section])`）。
+   */
+  buddyFeedback: `${STORAGE_PREFIX}buddy:feedback`,
   /** 敏感模块二次同意记录（契约 §9） */
   consent: `${STORAGE_PREFIX}consent`,
 } as const
