@@ -9,3 +9,4 @@ export * from './result';
 export * from './money';
 export * from './time';
 export * from './validate';
+export * from './geo';
