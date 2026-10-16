@@ -1074,25 +1074,245 @@ paths:
         '201': { $ref: '#/components/responses/ModuleCreated' }
         '409': { $ref: '#/components/responses/Conflict' }
 
-  /wildlife/items:
+  # ==================================================================
+  # wildlife —— 猫/鸟/黑天鹅活动区域与轨迹
+  # 规格：docs/features/wildlife-map.md §10
+  # ⚠️ 全链路 WGS84；GCJ-02 只在客户端渲染前一刻转换（规格 §3.2）
+  # ==================================================================
+  /wildlife/basemap:
     get:
       tags: [wildlife]
-      summary: 校园动物活动点列表
-      parameters:
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Limit'
+      summary: 当前底图配置（含仿射标定 / 署名 / 许可）
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+
+  /wildlife/species:
+    get:
+      tags: [wildlife]
+      summary: 物种列表（分类树）
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+
+  /wildlife/zones:
+    get:
+      tags: [wildlife]
+      summary: 区域列表（含投喂规范与告示文案）
+      description: 无需登录（契约 §11.11：`GET` 集合路由不是 action）。
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+
+  /wildlife/zones/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [wildlife]
+      summary: 区域详情
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /wildlife/spots:
+    get:
+      tags: [wildlife]
+      summary: 聚合热点（**派生只读**，延迟 ≥24h）
+      description: |
+        由 Worker 聚合生成，**没有写端点**。延迟 ≥24h 是隐私设计的一部分：
+        近实时的热点会削弱位置模糊化的效果（规格 §6.1）。
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+
+  /wildlife/tracks:
+    get:
+      tags: [wildlife]
+      summary: 推断轨迹列表
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+
+  /wildlife/tracks/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [wildlife]
+      summary: 轨迹详情
+      description: |
+        ⚠️ 返回的 `isInferred` **恒为 true** —— 这是由离散观测点推断的轨迹，
+        **不是**实测路径。客户端必须显著标注，不得暗示这是动物真实走过的路线。
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+
+  /wildlife/individuals:
+    get:
+      tags: [wildlife]
+      summary: 已命名个体列表
+      security: []
       responses:
         '200': { $ref: '#/components/responses/ModuleList' }
     post:
       tags: [wildlife]
-      summary: 上报动物目击 / 活动区域
+      summary: 创建命名个体（"手动给个名字"）
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/WildlifeSpotCreate' }
+            schema: { $ref: '#/components/schemas/WildlifeIndividualCreate' }
       responses:
         '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /wildlife/items:
+    get:
+      tags: [wildlife]
+      summary: 观测记录列表（游标分页，**仅 PUBLISHED**）
+      description: 无需登录。返回的坐标**已经过四层模糊化**（规格 §9）。
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: speciesId
+          in: query
+          schema: { type: string }
+        - name: zoneId
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [wildlife]
+      summary: 上报观测（**发现时间 + 地点 + 照片 + 物种**）
+      description: |
+        服务端在此端点内完成：EXIF 剥离 → 四层位置模糊化 → 分类建议（可选）。
+        客户端上传的坐标**必须是 WGS84**（从小程序地图点选拿到的是 GCJ-02，须先转换）。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WildlifeSightingCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /wildlife/items/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [wildlife]
+      summary: 观测详情
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [wildlife]
+      summary: 修正自己的上报（物种纠正，JSON Merge Patch）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                speciesId: { type: string }
+                observedAt: { type: string, format: date-time }
+                note: { type: string, maxLength: 500 }
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+    delete:
+      tags: [wildlife]
+      summary: 撤回自己的上报（软删）
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+
+  /wildlife/items/{id}/moderate:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [wildlife]
+      summary: 审核观测（契约 §11.2 冻结 action：`moderate`）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision:
+                  type: string
+                  enum: [PUBLISHED, REJECTED]
+                reason: { type: string, maxLength: 500 }
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+        '403': { $ref: '#/components/responses/ConsentRequired' }
+
+  /wildlife/media:
+    post:
+      tags: [wildlife]
+      summary: 上传照片（返回 mediaId）
+      description: |
+        **服务端强制剥离 EXIF**（含 GPS）—— 客户端承诺不算数，服务端必须断言。
+        未剥离 GPS 的照片会直接泄漏拍摄点，绕过全部位置模糊化。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /wildlife/classify:
+    post:
+      tags: [wildlife]
+      summary: 请求自动分类建议（可选；无能力时返回空）
+      description: |
+        可插拔分类器。**无 API key 时必须优雅降级为"手动选择物种"**，
+        不得返回错误阻塞上报流程（规格 §5.2）。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mediaId]
+              properties:
+                mediaId: { type: string }
+      responses:
+        '200':
+          description: 分类建议（`suggestions` 可为空数组表示无能力）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          suggestions:
+                            type: array
+                            items: { $ref: '#/components/schemas/WildlifeClassification' }
+                          degraded:
+                            type: boolean
+                            description: true 表示分类能力不可用，请用户手动选择
 
 # ====================================================================
 components:
@@ -1700,29 +1920,207 @@ components:
         answer: { type: string }
         createdAt: { type: string, format: date-time }
 
-    WildlifeSpot:
+    # ---- wildlife：区域 / 观测 / 热点 / 轨迹 / 个体 / 分类 ----
+    WildlifeZone:
       type: object
+      description: 管理端划定的区域（**不是**观测点）。含投喂规范与模糊半径。
+      required: [id, name]
       properties:
         id: { type: string }
-        species:
-          type: string
-          enum: [cat, bird, black-swan, other]
         name: { type: string }
-        latitude: { type: number }
-        longitude: { type: number }
-        lastSeenAt: { type: string, format: date-time }
-        feedingAllowed: { type: boolean }
-    WildlifeSpotCreate:
-      type: object
-      required: [species, latitude, longitude]
-      properties:
-        species:
+        speciesIds:
+          type: array
+          items: { type: string }
+        centerLat:
+          type: number
+          description: WGS84
+        centerLng:
+          type: number
+          description: WGS84
+        radiusM: { type: integer }
+        feedingPolicy:
           type: string
-          enum: [cat, bird, black-swan, other]
-        name: { type: string, maxLength: 60 }
-        latitude: { type: number, minimum: -90, maximum: 90 }
-        longitude: { type: number, minimum: -180, maximum: 180 }
+          enum: [allowed, discouraged, forbidden]
+        noticeText:
+          type: string
+          description: 告示文案（黑天鹅等）；文案需校方审核后方可上线
+        fuzzRadiusM:
+          type: integer
+          description: 该区域的模糊半径（米），默认 50
+        isSensitive:
+          type: boolean
+          description: 敏感区（宿舍/保育/巢区）→ **不输出任何坐标**，只给 zoneId
+        sortOrder: { type: integer }
+
+    WildlifeSpecies:
+      type: object
+      required: [id, scientificName, commonNameZh]
+      properties:
+        id: { type: string }
+        scientificName: { type: string }
+        commonNameZh: { type: string }
+        commonNameEn: { type: string }
+        taxonRank:
+          type: string
+          enum: [species, genus, family, order]
+        parentId: { type: [string, 'null'] }
+        isProtected: { type: boolean }
+        isNestingSensitive:
+          type: boolean
+          description: 繁殖期敏感 → 模糊半径季节性放大（规格 §9.4）
+        nestingMonths:
+          type: array
+          items: { type: integer }
+        defaultFeedingPolicy:
+          type: string
+          enum: [allowed, discouraged, forbidden]
+
+    WildlifeIndividual:
+      type: object
+      description: 被命名的个体（"手动给个名字"）
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        speciesId: { type: string }
+        note: { type: string }
+        photoMediaId: { type: string }
+
+    WildlifeIndividualCreate:
+      type: object
+      required: [name, speciesId]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        speciesId: { type: string }
         note: { type: string, maxLength: 500 }
+        photoMediaId: { type: string }
+
+    WildlifeSighting:
+      type: object
+      description: 一条观测上报。坐标字段是**模糊后**的公开坐标。
+      required: [id, observedAt, status]
+      properties:
+        id: { type: string }
+        speciesId: { type: [string, 'null'] }
+        speciesSource:
+          type: string
+          enum: [manual, auto, corrected]
+          description: 物种是怎么确定的（手动 / 自动分类 / 事后纠正）
+        observedAt:
+          type: string
+          format: date-time
+          description: |
+            **发现时间**（观察时刻，客户端采集），区别于 `createdAt`（服务端入库时刻）。
+            补录与离线同步时两者会相差很久，因此必须分开（契约 §11.10-A）。
+        fuzzedGeo:
+          type: object
+          description: |
+            模糊后的公开坐标（WGS84）。**敏感区内该字段为空**，只给 zoneId。
+          properties:
+            lat: { type: number }
+            lng: { type: number }
+        zoneId: { type: [string, 'null'] }
+        fuzzLevel:
+          type: string
+          enum: [grid, zone-only, coarsened]
+          description: 实际生效的模糊层级（zone-only = 因敏感区或 k<3 而降级）
+        mediaIds:
+          type: array
+          items: { type: string }
+          maxItems: 9
+        note: { type: string }
+        status:
+          type: string
+          enum: [PENDING, PUBLISHED, REJECTED, WITHDRAWN]
+        isInferred: { type: boolean, const: false }
+        createdAt: { type: string, format: date-time }
+
+    WildlifeSightingCreate:
+      type: object
+      required: [observedAt, latitude, longitude]
+      properties:
+        observedAt:
+          type: string
+          format: date-time
+          description: 发现时间。不得晚于入库时刻 +5 分钟，不得早于 −30 天（契约 §11.10-A）
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+          description: '**WGS84**。小程序地图点选得到的是 GCJ-02，必须先转换。'
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+          description: '**WGS84**'
+        speciesId:
+          type: [string, 'null']
+          description: 用户手动选择的物种（可空，允许"先上传后鉴定"）
+        individualId: { type: [string, 'null'] }
+        mediaIds:
+          type: array
+          items: { type: string }
+          maxItems: 9
+        note: { type: string, maxLength: 500 }
+
+    WildlifeSpot:
+      type: object
+      description: |
+        **聚合热点**（派生只读，由 Worker 生成，延迟 ≥24h）。
+        注意它与 `WildlifeZone`（管理端划定）和 `WildlifeSighting`（一次上报）都不同。
+      properties:
+        id: { type: string }
+        speciesId: { type: string }
+        zoneId: { type: [string, 'null'] }
+        fuzzedGeo:
+          type: object
+          properties:
+            lat: { type: number }
+            lng: { type: number }
+        sightingCount: { type: integer }
+        distinctReporters: { type: integer }
+        firstSeenAt: { type: string, format: date-time }
+        lastSeenAt: { type: string, format: date-time }
+        computedAt: { type: string, format: date-time }
+
+    WildlifeTrack:
+      type: object
+      description: 推断轨迹（**不是**实测路径）
+      properties:
+        id: { type: string }
+        speciesId: { type: string }
+        individualId: { type: [string, 'null'] }
+        isInferred:
+          type: boolean
+          const: true
+          description: 恒为 true。由离散观测点推断，客户端必须显著标注。
+        points:
+          type: array
+          items:
+            type: object
+            properties:
+              lat: { type: number }
+              lng: { type: number }
+              observedAt: { type: string, format: date-time }
+        pointCount: { type: integer }
+        startedAt: { type: string, format: date-time }
+        endedAt: { type: string, format: date-time }
+        disclaimer:
+          type: string
+          description: 服务端下发的免责说明，客户端必须原样展示
+
+    WildlifeClassification:
+      type: object
+      required: [speciesId, confidence]
+      properties:
+        speciesId: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        provider: { type: string }
+        #
+        # 误分类的责任边界见规格 §5.7：自动分类只是**建议**，
+        # 最终由用户确认；平台不对自动分类结果作准确性承诺。
+        #
+        isSuggestion: { type: boolean, const: true }
 
   responses:
     Unauthenticated:
