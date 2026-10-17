@@ -17,10 +17,18 @@ import './index.scss'
  *
  * 两条路径签发的是**同一套 KedaYa 自有 JWT**（契约 §5 第一级身份层）：
  *   · 微信：`Taro.login()` → code → 后端 `jscode2session` → openid → 自有 JWT；
- *     首次登录会自动建号（`isNewUser`），随后引导「完善昵称与头像」。
+ *     首次登录会自动建号，一步到位。
  *   · 邮箱：`/auth/account/login`。
  * 登录 ≠ 已绑定校园系统：`profile.campusBound` 恒为 false，
  * 校园能力由后端返回 `CAMPUS_BINDING_REQUIRED` 引导用户去绑定。
+ *
+ * 页面顺序是**先微信、后邮箱**：小程序里绝大多数用户只有一种可用登录方式，
+ * 把邮箱表单放在首屏第一眼会让人以为"必须先注册个邮箱账号"。
+ * 所以首屏是一块"一键登录"的主视觉，邮箱表单退到「或使用邮箱密码」之后 ——
+ * 需要它的人一眼能找到，不需要它的人不用先读三个输入框。
+ *
+ * 这一页**不出现任何演示账号 / 演示模式的字样**：它是产品给真实用户看的门面，
+ * Mock 凭据放在开发用的折叠面板里（见 `KdyDemoTools`）与 `docs/local-development.md`。
  */
 export default function LoginPage() {
   const container = getContainer()
@@ -49,27 +57,37 @@ export default function LoginPage() {
 
   return (
     <View className='kdy-page kdy-auth'>
-      <KdyHeading
-        title='欢迎回来'
-        subtitle='登录后即可发布、接单、发帖。'
-      />
+      <KdyHeading title='欢迎回来' subtitle='登录后即可发布、接单、发帖。' />
 
-      <KdyCard title='微信一键登录' elevated={false}>
-        <Text className='kdy-auth__tip'>
-          使用当前微信账号登录；第一次使用会自动创建可达鸭账号，
-          随后你可以设置昵称与头像。我们只获取微信标识用于登录，不会读取你的聊天记录。
-        </Text>
+      <KdyCard className='kdy-auth__quick-card' elevated>
+        <View className='kdy-auth__quick'>
+          <View className='kdy-auth__quick-mark'>
+            <Text className='kdy-auth__quick-emoji'>🦆</Text>
+          </View>
+          <View className='kdy-auth__quick-body'>
+            <Text className='kdy-auth__quick-title'>微信一键登录</Text>
+            <Text className='kdy-auth__quick-note'>
+              首次使用会自动建号，昵称与头像稍后随时可改。
+            </Text>
+          </View>
+        </View>
 
         {wechat.error !== null && <Text className='kdy-auth__error'>{wechat.error}</Text>}
 
         <View className='kdy-auth__actions'>
-          <KdyButton block loading={wechat.pending} onClick={() => void wechat.loginWithWechat()}>
-            微信一键登录 / 注册
+          <KdyButton size='lg' block loading={wechat.pending} onClick={() => void wechat.loginWithWechat()}>
+            一键登录
           </KdyButton>
         </View>
       </KdyCard>
 
-      <KdyCard title='邮箱登录' elevated={false}>
+      <View className='kdy-auth__divider'>
+        <View className='kdy-auth__divider-line' />
+        <Text className='kdy-auth__divider-text'>或使用邮箱密码</Text>
+        <View className='kdy-auth__divider-line' />
+      </View>
+
+      <KdyCard elevated={false}>
         <View className='kdy-auth__form'>
           <KdyField
             label='邮箱'
@@ -89,12 +107,6 @@ export default function LoginPage() {
         </View>
 
         {error !== null && <Text className='kdy-auth__error'>{error}</Text>}
-
-        {container.env.useMock && (
-          <Text className='kdy-auth__dev'>
-            演示模式（未连后端）· 演示账号 demo@kedaya.dev / Kedaya2026
-          </Text>
-        )}
 
         <View className='kdy-auth__actions'>
           <KdyButton variant='secondary' block loading={submitting} onClick={() => void handleSubmit()}>

@@ -19,7 +19,8 @@ import './index.scss'
  *
  * 邮箱三步都在同一页完成（不分页），因为验证码只有 10 分钟有效，
  * 跳来跳去容易超时；而且用户能一直看到自己填过的邮箱。
- * 微信路径不填表单：`Taro.login()` → 后端建号 → 引导「完善资料」。
+ * 微信路径不填任何表单：`Taro.login()` → 后端建号 → 直接就是已登录状态
+ * （昵称与头像在「我的 → 编辑资料」里随时可补，不挡在注册流程中间）。
  */
 export default function RegisterPage() {
   const container = getContainer()
@@ -83,22 +84,35 @@ export default function RegisterPage() {
         subtitle='一个邮箱就够了。不会向任何校园系统索要你的密码。'
       />
 
-      <KdyCard title='微信快捷注册' elevated={false}>
-        <Text className='kdy-auth__tip'>
-          不想填邮箱？直接用微信一键注册：第一次使用会自动建号，
-          之后可以随时补上邮箱密码作为第二登录方式。
-        </Text>
+      <KdyCard className='kdy-auth__quick-card' elevated>
+        <View className='kdy-auth__quick'>
+          <View className='kdy-auth__quick-mark'>
+            <Text className='kdy-auth__quick-emoji'>🦆</Text>
+          </View>
+          <View className='kdy-auth__quick-body'>
+            <Text className='kdy-auth__quick-title'>微信一键注册</Text>
+            <Text className='kdy-auth__quick-note'>
+              不想填邮箱？直接建号，之后随时可以补邮箱密码。
+            </Text>
+          </View>
+        </View>
 
         {wechat.error !== null && <Text className='kdy-auth__error'>{wechat.error}</Text>}
 
         <View className='kdy-auth__actions'>
-          <KdyButton block loading={wechat.pending} onClick={() => void wechat.loginWithWechat()}>
-            微信一键注册
+          <KdyButton size='lg' block loading={wechat.pending} onClick={() => void wechat.loginWithWechat()}>
+            一键注册
           </KdyButton>
         </View>
       </KdyCard>
 
-      <KdyCard title='填写信息' elevated={false}>
+      <View className='kdy-auth__divider'>
+        <View className='kdy-auth__divider-line' />
+        <Text className='kdy-auth__divider-text'>或用邮箱注册</Text>
+        <View className='kdy-auth__divider-line' />
+      </View>
+
+      <KdyCard elevated={false}>
         <View className='kdy-auth__form'>
           <View className='kdy-auth__inline'>
             <KdyField

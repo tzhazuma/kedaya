@@ -266,6 +266,16 @@ export default function DiscoverPage() {
       </KdyCard>
 
       <KdyDemoTools>
+        <KdyCard title='Mock 登录凭据' elevated={false}>
+          <Text className='kdy-discover__hint'>
+            本地默认 Mock 后端（TARO_APP_USE_MOCK=true）。演示账号
+            demo@kedaya.dev / Kedaya2026，六类角色见 docs/local-development.md。
+          </Text>
+          <Text className='kdy-discover__hint'>
+            登录页不显示这些字样：它是给真实用户的页面，Mock 凭据只在这里和文档里。
+          </Text>
+        </KdyCard>
+
         <KdyCard title='当前运行端' elevated={false}>
           <View className='kdy-discover__platform'>
             <KdyTag tone='brand'>{currentPlatform()}</KdyTag>

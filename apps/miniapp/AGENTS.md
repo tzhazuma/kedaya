@@ -4,17 +4,22 @@
 
 - UI 基础组件统一使用 **Taroify**（`@taroify/core`），图标使用 `@taroify/icons`。不得引入第二套 UI 库。
 - 优先复用 `src/presentation/components/` 的 Kdy 封装；按钮、标签、加载、空态、表单、弹层、进度等标准交互使用 Taroify，不得另写一套基础控件。Taro 的 View/Text 用于布局与文字，原生平台能力可按需适配。
-- 视觉为「可达鸭黄 + 暖白背景 + 深色文字」，卡片圆角 20px、主视觉容器 26px，
+- 视觉为「可达鸭黄 + 暖白背景 + 深色文字」，卡片圆角 22px、主视觉容器 28px，
   尺寸/效果档位来自 `presentation/theme/tokens.scss` 的派生层。
-  黄色用于主操作与选中状态；正文保持高对比，不使用黄色小字。
-  品牌渐变只用于 Hero / 主按钮 / 悬浮球 / 宫格图标底（`$kdy-gradient-brand`，
-  两端都是令牌色），渐变面上**一律深色文字**（黄底白字在阳光下看不清）；
+  黄色用于主操作与选中状态（选中的 `KdyChip` 是**品牌渐变实心**，不是浅黄描边；
+  深浅差别在一屏十几个胶囊里分不出来）；正文保持高对比，不使用黄色小字。
+  品牌渐变只用于 Hero / 主按钮 / 选中胶囊 / 悬浮球 / 宫格图标底 / 校园卡余额块
+  （`$kdy-gradient-brand`，两端都是令牌色），渐变面上**一律深色文字**
+  （黄底白字在阳光下看不清），压在渐变上的状态用玻璃胶囊 `.kdy-pill`，
+  深色胶囊 `.kdy-pill--dark` 只放状态不放操作；
   宫格图标的"分类色"按用途映射（`KdyModuleIcon` 的 `MODULE_TONES`，六档 tone），
   不是彩虹；层次靠阴影叠层而不是厚重单层阴影；emoji 只允许用于吉祥物，
   不充当功能图标。
+- 表单控件（`KdyField`）是"浅底实心面 + 16px 圆角"，出错才出现危险色描边；
+  输入框不要退回"白底 + 灰细线"的老写法。
 - 色值只来自 `packages/design-tokens/tokens.json`。小程序主题映射放在 `src/presentation/theme/`，不要修改生成的 SCSS；不要为小程序改动 Web 的公共主题。
 - 设计稿基准宽度为 **375 CSS px**。间距使用 4px 栅格和 `$kdy-space-*`，正文 14–16px、辅助文案至少 12px，按钮触摸区域至少 44px。
-- 磨砂效果只用于少量重点区域（当前只有 agent 页的 sticky 头部、输入区与悬浮球）；必须先有足够不透明、可读的背景作为降级。禁止在长列表或多层容器叠加 blur。
+- 磨砂效果只用于少量重点区域（agent 页的 sticky 头部、输入区与悬浮球、`elevated` 的主视觉卡）；必须先有足够不透明、可读的背景作为降级。禁止在长列表或多层容器叠加 blur。
 - 页面包含清晰标题与说明，列表保留 loading / empty / error / retry，禁用与加载态必须可辨认。底部操作区处理安全区，长标题、长金额和窄屏不得溢出。
 - 模块来源仍为 `@kedaya/contracts`，不得重复维护模块清单。未实现能力明确告知，Mock 操作放在折叠的演示工具中。保留非官方声明和敏感模块同意要求。
 - 分层：`domain` 与 `application` 禁止 import `data/**` 或 `@tarojs/*`（ESLint 强制），平台能力一律经 `src/platform/**`。数据层错误类型用 `domain/ports/errors.ts` 的 `RepositoryError`。

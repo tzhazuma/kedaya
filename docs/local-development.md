@@ -38,11 +38,14 @@ nvm use
   （报错形如 `[ WXSS 文件编译错误] ./common.wxss(1:xxxxx): error at token ':'`）。
   单测 `src/presentation/theme/__tests__/wxss-safety.test.ts` 会扫描全部 scss 拦截。
 
-小程序默认 Mock，**账号也是 Mock**：登录页会提示演示账号
+小程序默认 Mock，**账号也是 Mock**。凭据**不显示在登录页**（那是给真实用户看的门面）：
 
 | 账号 | 密码 |
 | --- | --- |
 | `demo@kedaya.dev` | `Kedaya2026` |
+
+Mock 凭据只出现在两处：本文档，以及小程序「发现 → 演示与调试工具」的**折叠面板**里
+（点开才看得到，且写明了它是本地 Mock 后端）。
 
 Mock 账号复刻了真实后端的规则（验证码一次性、密码错误文案统一、改密后旧令牌失效），
 因此「Mock 下点得通、接后端就崩」这类问题不会出现。

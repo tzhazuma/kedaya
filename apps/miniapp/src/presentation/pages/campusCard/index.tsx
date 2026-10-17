@@ -129,13 +129,25 @@ export default function CampusCardPage() {
 
       {overview !== null && (
         <>
-          {/* 主数字：余额 */}
+          {/* 主数字：余额。整页唯一的重色块，用"大数字 + 品牌渐变"把余额立起来 */}
           <KdyCard>
-            <View className='kdy-card-page__balance'>
-              <Text className='kdy-card-page__balance-label'>当前余额</Text>
-              <Text className='kdy-card-page__balance-value'>{formatYuan(overview.balanceFen)}</Text>
-              {overview.lowBalance && <KdyTag tone='warning'>余额偏低，建议充值</KdyTag>}
-              {overview.simulated && <KdyTag tone='neutral'>演示数据</KdyTag>}
+            <View className='kdy-card-page__hero'>
+              <Text className='kdy-card-page__hero-label'>当前余额</Text>
+              <Text className='kdy-card-page__hero-value'>{formatYuan(overview.balanceFen)}</Text>
+              {(overview.lowBalance || overview.simulated) && (
+                <View className='kdy-card-page__hero-badges'>
+                  {overview.lowBalance && (
+                    <View className='kdy-pill'>
+                      <Text>余额偏低，建议充值</Text>
+                    </View>
+                  )}
+                  {overview.simulated && (
+                    <View className='kdy-pill'>
+                      <Text>演示数据</Text>
+                    </View>
+                  )}
+                </View>
+              )}
             </View>
             {daysLeftLabel(overview) !== null && (
               <Text className='kdy-card-page__muted'>{daysLeftLabel(overview)}</Text>

@@ -1,262 +1,602 @@
 /**
  * 可达鸭页面样式。
  *
- * 布局要点：
- *   · 头部 sticky，滚动时"我是谁 / 现在是规则还是模型"始终可见；
- *   · 气泡左右分栏 —— 用户靠右，可达鸭靠左带头像，符合聊天直觉；
- *   · 事实（facts）用独立的小卡片块与正文区分：正文是"话"，
- *     事实是"数据"，两者的可信度不一样，视觉上必须分开。
+ * 这一版把页面从"表单里插几句话"改成一屏像样的对话界面，四个要点：
+ *   · **头部**是玻璃条，滚动时"和谁在说话"始终可见，右侧一枚深色状态胶囊
+ *     （深色胶囊在这个暖白体系里是唯一的"重"元素，用来放状态最合适）；
+ *   · **空态**是一张欢迎卡：标题 + 建议问题胶囊 + 一句"我不会做的事"，
+ *     用户打开就知道能问什么，而不是对着一个空输入框；
+ *   · **气泡**左右分栏，用户侧品牌渐变、助手侧玻璃；助手气泡里正文是"话"，
+ *     数据与出处收进可展开的「思考过程」—— 同一条信息不重复两遍；
+ *   · **输入区**是底部玻璃悬浮条 + 一枚渐变圆形发送键；
+ *     等待时给三个跳动的点，而不是一句干等的文案。
  */
 
 .kdy-agent {
   display: flex;
   flex-direction: column;
+}
 
-  &__header {
-    position: sticky;
-    top: 0;
-    z-index: $kdy-z-index-sticky;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding: $kdy-space-4 $kdy-space-5 $kdy-space-3;
-    /* sticky 头部是毛玻璃的正当用法：内容从它下面滚过去，用户仍要知道"我在和谁说话" */
-    background: $kdy-surface-glass;
-    border-bottom: 1px solid $kdy-border-hairline;
-    backdrop-filter: $kdy-glass-blur;
-    -webkit-backdrop-filter: $kdy-glass-blur;
-  }
+/* ==================================================================== *
+ * 头部
+ * ==================================================================== */
 
-  &__header-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding-right: $kdy-space-3;
-  }
+.kdy-agent__header {
+  position: sticky;
+  top: 0;
+  z-index: $kdy-z-index-sticky;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: $kdy-space-3;
+  padding: $kdy-space-3 $kdy-space-5;
+  /* sticky 头部是毛玻璃的正当用法：内容从它下面滚过去，用户仍要知道"我在和谁说话" */
+  background: $kdy-surface-glass;
+  border-bottom: 1px solid $kdy-border-hairline;
+  backdrop-filter: $kdy-glass-blur;
+  -webkit-backdrop-filter: $kdy-glass-blur;
+}
 
-  &__title {
-    color: $kdy-color-ink;
-    font-size: $kdy-font-size-lg;
-    font-weight: 700;
-  }
+.kdy-agent__header-main {
+  flex: 1;
+  min-width: 0;
+}
 
-  &__subtitle {
-    margin-top: 2px;
-    color: $kdy-color-text-muted;
-    font-size: $kdy-font-size-xs;
-    line-height: $kdy-line-height-normal;
-  }
+.kdy-agent__title {
+  display: block;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-lg;
+  font-weight: 700;
+  line-height: 1.25;
+}
 
-  &__muted {
-    display: block;
-    color: $kdy-color-text-muted;
-    font-size: $kdy-font-size-xs;
-  }
+.kdy-agent__subtitle {
+  display: block;
+  margin-top: 2px;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
 
-  &__chips {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: $kdy-space-2;
-    margin-top: $kdy-space-2;
-  }
+/* 深色状态胶囊：整个页面唯一的深色块，一眼能定位"在线 / 基础回答" */
+.kdy-agent__status {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: row;
+  align-items: center;
+  gap: $kdy-space-1;
+  padding: 6px $kdy-space-3;
+  border-radius: $kdy-radius-pill;
+  background: $kdy-color-ink;
+}
 
-  &__caps {
-    margin-top: $kdy-space-3;
-    padding-top: $kdy-space-3;
-    border-top: 1px solid $kdy-color-border;
-  }
+.kdy-agent__status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: $kdy-color-success;
+}
 
-  &__caps-title {
-    display: block;
-    margin-bottom: $kdy-space-1;
-    color: $kdy-color-ink-soft;
-    font-size: $kdy-font-size-sm;
-    font-weight: 600;
-  }
+.kdy-agent__status-text {
+  color: $kdy-color-text-inverse;
+  font-size: $kdy-font-size-xs;
+  font-weight: $kdy-font-weight-medium;
+  line-height: 1.2;
+}
 
-  &__caps-line {
-    display: block;
-    color: $kdy-color-text-muted;
-    font-size: $kdy-font-size-xs;
-    line-height: $kdy-line-height-loose;
-  }
+.kdy-agent__muted {
+  display: block;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
 
-  &__row {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    margin: $kdy-space-2 $kdy-space-5;
+/* ==================================================================== *
+ * 空态（欢迎卡）
+ * ==================================================================== */
 
-    &--user {
-      justify-content: flex-end;
-    }
+.kdy-agent__welcome {
+  box-sizing: border-box;
+  margin: $kdy-space-4 $kdy-space-5 $kdy-space-2;
+  padding: $kdy-space-5;
+  border: 1px solid $kdy-border-glass;
+  border-radius: $kdy-radius-3xl;
+  background: $kdy-gradient-soft;
+  box-shadow: $kdy-shadow-card;
+}
 
-    &--agent {
-      justify-content: flex-start;
-    }
-  }
+.kdy-agent__welcome-title {
+  display: block;
+  color: $kdy-color-ink;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+}
 
-  &__avatar {
-    flex: 0 0 32px;
-    width: 32px;
-    height: 32px;
-    margin-right: $kdy-space-2;
-    border-radius: $kdy-radius-pill;
-    background: $kdy-gradient-brand;
-    box-shadow: 0 2px 6px rgba($kdy-color-brand-strong, 0.35);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+.kdy-agent__welcome-sub {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
 
-  &__avatar-emoji {
-    font-size: $kdy-font-size-md;
-    line-height: 1;
-  }
+.kdy-agent__chips {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-4;
+}
 
-  &__bubble {
-    max-width: 78%;
-    padding: $kdy-space-3 $kdy-space-4;
-    border-radius: $kdy-radius-2xl;
+/* 建议问题：一行一枚、左对齐带放大镜，点一下就是一次提问 */
+.kdy-agent__chip {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: $kdy-space-2;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: $kdy-space-2 $kdy-space-3;
+  border: 1px solid $kdy-border-hairline;
+  border-radius: $kdy-radius-2xl;
+  background: $kdy-surface-glass-strong;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-sm;
+}
 
-    &--user {
-      background: $kdy-gradient-brand;
-      box-shadow: 0 4px 12px rgba($kdy-color-brand-strong, 0.28);
-    }
+.kdy-agent__chip--pressed {
+  background: rgba($kdy-color-brand-soft, 0.7);
+  border-color: rgba($kdy-color-brand, 0.5);
+}
 
-    &--agent {
-      background: $kdy-surface-glass-strong;
-      border: 1px solid $kdy-border-hairline;
-      box-shadow: 0 2px 8px rgba($kdy-color-ink, 0.06);
-    }
-  }
+.kdy-agent__chip-text {
+  flex: 1;
+  min-width: 0;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.4;
+}
 
-  &__bubble-text {
-    color: $kdy-color-text;
-    font-size: $kdy-font-size-sm;
-    line-height: $kdy-line-height-loose;
-    word-break: break-word;
-  }
+/* 承诺：一句短话，放在最下面当时刻都在的说明，不抢建议问题 */
+.kdy-agent__promise {
+  margin-top: $kdy-space-4;
+  padding-top: $kdy-space-3;
+  border-top: 1px solid $kdy-border-hairline;
+}
 
-  &__answer {
-    display: flex;
-    flex-direction: column;
-  }
+.kdy-agent__promise-text {
+  display: block;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
 
-  &__answer-line {
-    color: $kdy-color-text;
-    font-size: $kdy-font-size-sm;
-    line-height: $kdy-line-height-loose;
-    word-break: break-word;
-  }
+/* ==================================================================== *
+ * 消息
+ * ==================================================================== */
 
-  &__facts {
-    margin-top: $kdy-space-2;
-    padding-top: $kdy-space-2;
-    border-top: 1px solid $kdy-color-border;
-  }
+.kdy-agent__row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: $kdy-space-2;
+  margin: $kdy-space-3 $kdy-space-5;
 
-  &__fact {
-    margin-bottom: $kdy-space-2;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-
-  &__fact-label {
-    display: block;
-    color: $kdy-color-ink-soft;
-    font-size: $kdy-font-size-xs;
-    font-weight: 600;
-  }
-
-  &__fact-value {
-    display: block;
-    margin-top: 2px;
-    color: $kdy-color-text;
-    font-size: $kdy-font-size-sm;
-    line-height: $kdy-line-height-normal;
-    word-break: break-word;
-  }
-
-  &__sources {
-    margin-top: $kdy-space-2;
-  }
-
-  &__sources-title {
-    display: block;
-    color: $kdy-color-text-muted;
-    font-size: $kdy-font-size-xs;
-  }
-
-  &__source {
-    display: block;
-    color: $kdy-color-text-muted;
-    font-size: $kdy-font-size-xs;
-    line-height: $kdy-line-height-loose;
-  }
-
-  &__meta {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: $kdy-space-1;
-    margin-top: $kdy-space-2;
-  }
-
-  &__badge {
-    padding: 2px $kdy-space-2;
-    border: 1px solid $kdy-border-hairline;
-    border-radius: $kdy-radius-pill;
-    background: rgba($kdy-color-surface, 0.9);
-    color: $kdy-color-text-muted;
-    font-size: $kdy-font-size-xs;
-  }
-
-  &__actions {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: $kdy-space-2;
-    margin-top: $kdy-space-3;
-  }
-
-  &__retry {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    margin-top: $kdy-space-2;
-  }
-
-  &__composer {
-    position: sticky;
-    bottom: 0;
-    margin: $kdy-space-3 $kdy-space-5 0;
-    padding: $kdy-space-3;
-    border: 1px solid $kdy-border-glass;
-    border-radius: $kdy-radius-2xl;
-    background: $kdy-surface-glass-strong;
-    box-shadow: $kdy-shadow-card;
-    backdrop-filter: $kdy-glass-blur;
-    -webkit-backdrop-filter: $kdy-glass-blur;
-  }
-
-  &__composer-action {
-    display: flex;
-    flex-direction: row;
+  &--user {
     justify-content: flex-end;
-    margin-top: $kdy-space-2;
   }
 
-  &__footnote {
-    display: block;
-    padding: $kdy-space-4 $kdy-space-5;
-    color: $kdy-color-text-muted;
-    font-size: $kdy-font-size-xs;
-    line-height: $kdy-line-height-loose;
-    text-align: center;
+  &--agent {
+    justify-content: flex-start;
   }
+}
+
+.kdy-agent__avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba($kdy-color-surface, 0.7);
+  border-radius: $kdy-radius-pill;
+  background: $kdy-gradient-brand;
+  box-shadow: 0 4px 10px rgba($kdy-color-brand-strong, 0.3);
+}
+
+.kdy-agent__avatar--header {
+  width: 38px;
+  height: 38px;
+}
+
+.kdy-agent__avatar-emoji {
+  font-size: $kdy-font-size-md;
+  line-height: 1;
+}
+
+/*
+ * 气泡：尖端那个角（用户右下 / 助手左上）收小，是"从谁嘴里说出来"的
+ * 唯一形状提示 —— 只靠左右对齐的话，长回答会看起来像一条页面公告。
+ */
+.kdy-agent__bubble {
+  max-width: 78%;
+  padding: $kdy-space-3 $kdy-space-4;
+  border-radius: $kdy-radius-2xl;
+
+  &--user {
+    border-bottom-right-radius: $kdy-radius-md;
+    background: $kdy-gradient-brand;
+    box-shadow: 0 6px 16px rgba($kdy-color-brand-strong, 0.28);
+  }
+
+  &--agent {
+    border-top-left-radius: $kdy-radius-md;
+    background: $kdy-surface-glass-strong;
+    border: 1px solid $kdy-border-hairline;
+    box-shadow: $kdy-shadow-card;
+  }
+
+  &--pending {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: $kdy-space-2;
+  }
+}
+
+.kdy-agent__bubble-text {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  line-height: $kdy-line-height-loose;
+  word-break: break-word;
+}
+
+.kdy-agent__answer {
+  display: flex;
+  flex-direction: column;
+}
+
+.kdy-agent__answer-line {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: $kdy-line-height-loose;
+  word-break: break-word;
+}
+
+/* 等待：三个跳动的点 */
+.kdy-agent__dots {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.kdy-agent__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: $kdy-color-brand-strong;
+  animation: kdy-agent-bounce 1.2s infinite ease-in-out;
+
+  &:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+}
+
+@keyframes kdy-agent-bounce {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+.kdy-agent__pending-text {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+/* ==================================================================== *
+ * 思考过程（可折叠）
+ * ==================================================================== */
+
+.kdy-agent__thinking {
+  margin-top: $kdy-space-3;
+  border-top: 1px solid $kdy-border-hairline;
+}
+
+.kdy-agent__thinking-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: $kdy-space-2;
+  min-height: 36px;
+}
+
+.kdy-agent__thinking-title {
+  flex-shrink: 0;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-agent__thinking-summary {
+  flex: 1;
+  min-width: 0;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-agent__thinking-caret {
+  flex-shrink: 0;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1;
+  transition: transform 0.15s ease;
+
+  &--open {
+    transform: rotate(180deg);
+  }
+}
+
+.kdy-agent__thinking-body {
+  padding-bottom: $kdy-space-1;
+}
+
+/* 每一步：一个 ✓/✗ 标记 + 工具的人话名 */
+.kdy-agent__step {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: $kdy-space-2;
+  padding: $kdy-space-1 0;
+}
+
+.kdy-agent__step-mark {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: rgba($kdy-color-warning, 0.16);
+  color: color.mix($kdy-color-warning, $kdy-color-ink, 70%);
+  font-size: 10px;
+
+  &--ok {
+    background: rgba($kdy-color-success, 0.16);
+    color: color.mix($kdy-color-success, $kdy-color-ink, 70%);
+  }
+}
+
+.kdy-agent__step-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.kdy-agent__step-title {
+  display: block;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+  font-weight: $kdy-font-weight-medium;
+}
+
+.kdy-agent__step-error {
+  display: block;
+  margin-top: 2px;
+  color: $kdy-color-warning;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+/*
+ * 事实（数据）：与正文分开的"附录"。
+ *
+ * 用一个更实的浅底 + 左侧品牌色细条，让它在气泡里既**看得出是数据**、
+ * 又不至于抢正文的注意力 —— 正文是"话"，这个是"凭据"。
+ */
+.kdy-agent__fact {
+  margin-top: $kdy-space-2;
+  padding: $kdy-space-2 $kdy-space-3;
+  border-left: 3px solid rgba($kdy-color-brand, 0.75);
+  border-radius: $kdy-radius-sm;
+  background: rgba($kdy-color-brand-soft, 0.34);
+}
+
+.kdy-agent__fact-label {
+  display: block;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-agent__fact-value {
+  display: block;
+  margin-top: 2px;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+  word-break: break-word;
+}
+
+.kdy-agent__source {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: $kdy-space-2;
+  padding: 3px 0;
+}
+
+.kdy-agent__source-kind {
+  flex-shrink: 0;
+  padding: 1px $kdy-space-2;
+  border-radius: $kdy-radius-pill;
+  background: $kdy-color-surface-alt;
+  color: $kdy-color-text-muted;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.kdy-agent__source-title {
+  flex: 1;
+  min-width: 0;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  word-break: break-word;
+}
+
+/* ==================================================================== *
+ * 元信息 / 动作
+ * ==================================================================== */
+
+.kdy-agent__meta {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: $kdy-space-1;
+  margin-top: $kdy-space-2;
+}
+
+.kdy-agent__badge {
+  padding: 2px $kdy-space-2;
+  border: 1px solid $kdy-border-hairline;
+  border-radius: $kdy-radius-pill;
+  background: rgba($kdy-color-surface, 0.9);
+  color: $kdy-color-text-muted;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.kdy-agent__actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-agent__retry {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  margin-top: $kdy-space-2;
+}
+
+.kdy-agent__clear {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  margin: $kdy-space-2 0 $kdy-space-4;
+}
+
+.kdy-agent__clear-text {
+  padding: 6px $kdy-space-4;
+  border: 1px solid $kdy-border-hairline;
+  border-radius: $kdy-radius-pill;
+  background: $kdy-surface-glass-strong;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+/* ==================================================================== *
+ * 输入区
+ * ==================================================================== */
+
+/*
+ * 底部玻璃条**常驻**（`position: fixed`）。
+ *
+ * 不用 `sticky`：sticky 元素在文档流里占位置，消息少的时候输入框会浮在
+ * 屏幕中间而不是贴着底边，看起来就不像"对话框"了。
+ * 页面容器（`.kdy-page.kdy-agent`）额外留出它的高度 + 安全区，
+ * 所以最后一条消息不会被输入框压住（含 iPhone 底部横条）。
+ */
+.kdy-page.kdy-agent {
+  /* 同上：连写抬优先级，避免与 `.kdy-page` 的 padding-bottom 打架 */
+  padding-bottom: calc(112px + env(safe-area-inset-bottom));
+}
+
+.kdy-agent__composer {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: $kdy-z-index-sticky;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: $kdy-space-2;
+  box-sizing: border-box;
+  margin: 0 $kdy-space-5;
+  padding: $kdy-space-2 $kdy-space-2 $kdy-space-2 $kdy-space-4;
+  padding-bottom: calc(#{$kdy-space-2} + env(safe-area-inset-bottom));
+  border: 1px solid $kdy-border-glass;
+  border-radius: $kdy-radius-3xl;
+  background: $kdy-surface-glass;
+  box-shadow: $kdy-shadow-float;
+  backdrop-filter: $kdy-glass-blur;
+  -webkit-backdrop-filter: $kdy-glass-blur;
+}
+
+.kdy-agent__composer-input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}
+
+/* 发送键：渐变圆形。禁用时降到 45% 不透明度并去掉光晕，一眼能看出"还发不出去" */
+.kdy-agent__send {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: $kdy-gradient-brand;
+  box-shadow: $kdy-shadow-accent;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-md;
+  line-height: 1;
+
+  &--disabled {
+    background: $kdy-color-surface-alt;
+    box-shadow: none;
+    color: $kdy-color-text-muted;
+    opacity: 0.75;
+  }
+
+  &--pressed {
+    opacity: 0.9;
+  }
+}
+
+.kdy-agent__error {
+  display: block;
+  padding: $kdy-space-2 $kdy-space-5 0;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-agent__footnote {
+  display: block;
+  padding: $kdy-space-3 $kdy-space-5 $kdy-space-6;
+  color: $kdy-color-text-muted;
+  font-size: 10px;
+  line-height: 1.6;
+  text-align: center;
 }

@@ -1,5 +1,4 @@
 import { Text, View } from '@tarojs/components'
-import { useRouter } from '@tarojs/taro'
 import { useState } from 'react'
 
 import { getContainer } from '../../../../app/container'
@@ -16,9 +15,10 @@ import './index.scss'
 /**
  * 编辑资料（昵称 / 头像）。
  *
- * 两个入口共用一页，文案随之切换：
- *   · `?from=wechat` —— 微信首次登录后的「完善资料」（给个跳过按钮，不强迫）；
- *   · 无参数 —— 「我的 → 编辑资料」（保存后返回上一页）。
+ * 入口只有一个：「我的 → 编辑资料」（保存后返回上一页）。
+ * 以前还有第二个入口（`?from=wechat`，微信首次登录后的「完善资料」），
+ * 但那一页在用户眼里就是一个**登录关卡**：点了一键登录却还要再填一次、再按一次保存。
+ * 现在微信建号即登录，昵称与头像回到"随时可改"的位置，这一页也只剩一种语义。
  *
  * 微信侧的硬约束（决定了本页的交互）：
  *   · 昵称必须由用户在 `<input type="nickname">` 里确认，代码拿不到；
@@ -28,12 +28,10 @@ import './index.scss'
  */
 export default function ProfileEditPage() {
   const container = getContainer()
-  const router = useRouter()
   const auth = container.useCases.auth
   const avatarPicker = container.avatarPicker
 
   const state = useStore(container.useCases.session)
-  const fromWechat = router.params.from === 'wechat'
 
   const [nickname, setNickname] = useState(state.profile?.nickname ?? '')
   const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null)
@@ -92,20 +90,9 @@ export default function ProfileEditPage() {
     await backAfterAuthSuccess()
   }
 
-  async function handleSkip(): Promise<void> {
-    await backAfterAuthSuccess()
-  }
-
   return (
     <View className='kdy-page kdy-auth'>
-      <KdyHeading
-        title={fromWechat ? '完善你的资料' : '编辑资料'}
-        subtitle={
-          fromWechat
-            ? '账号已经建好了。填个昵称和头像，让同学认得出你 —— 也可以稍后再改。'
-            : '昵称与头像会显示在你发布的内容旁边。'
-        }
-      />
+      <KdyHeading title='编辑资料' subtitle='昵称与头像会显示在你发布的内容旁边。' />
 
       <KdyCard title='头像' elevated={false}>
         <View className='kdy-profile-edit__avatar'>
@@ -150,11 +137,6 @@ export default function ProfileEditPage() {
         <KdyButton block loading={saving} onClick={() => void handleSave()}>
           保存
         </KdyButton>
-        {fromWechat && (
-          <KdyButton variant='ghost' block onClick={() => void handleSkip()}>
-            先用微信名，稍后再改
-          </KdyButton>
-        )}
       </View>
 
       <Text className='kdy-disclaimer'>

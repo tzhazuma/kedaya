@@ -62,6 +62,23 @@ page,
   line-height: 1.2;
 }
 
+/**
+ * 深色胶囊：状态类信息（在线 / 已连接 / 计数）。
+ *
+ * 整个暖白体系里唯一的"重"色块，所以它只用来放**需要一眼扫到**的状态，
+ * 不用于操作（操作是黄色的）。深底 + 白字是这套配色里对比度最高的一档，
+ * 在浅色页面上不需要描边也站得住。
+ */
+.kdy-pill--dark {
+  border-color: transparent;
+  background: $kdy-color-ink;
+  color: $kdy-color-text-inverse;
+}
+
+.kdy-pill--pressed {
+  opacity: 0.85;
+}
+
 /* ==================================================================== *
  * 标题
  * ==================================================================== */
@@ -70,13 +87,20 @@ page,
   padding: $kdy-space-5 $kdy-space-5 $kdy-space-2;
 }
 
+/*
+ * 页面标题。
+ *
+ * 28px / 字重 700 / 负字距：这是参考稿里"大标题压住整页"的做法 ——
+ * 一屏只有一个最大的字，用户扫一眼就知道这是哪一页。
+ * 负字距对中文生效（字面本来就留有边距），所以不会挤在一起。
+ */
 .kdy-page-title {
   display: block;
   color: $kdy-color-ink;
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 0.5px;
+  line-height: 1.15;
+  letter-spacing: -0.3px;
 }
 
 .kdy-page-subtitle {
