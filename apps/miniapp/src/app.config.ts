@@ -45,6 +45,10 @@ const subPackages = [
   { root: 'presentation/pages/buddy', pages: ['list/index', 'create/index', 'detail/index'] },
   { root: 'presentation/pages/lostFound', pages: ['list/index', 'create/index', 'detail/index'] },
   { root: 'presentation/pages/forum', pages: ['list/index', 'create/index', 'detail/index'] },
+  { root: 'presentation/pages/wildlife', pages: ['list/index', 'create/index', 'detail/index'] },
+  { root: 'presentation/pages/canteen', pages: ['list/index', 'create/index', 'detail/index'] },
+  { root: 'presentation/pages/faq', pages: ['list/index', 'create/index', 'detail/index'] },
+  { root: 'presentation/pages/takeoutGuard', pages: ['list/index', 'create/index', 'detail/index'] },
   { root: 'presentation/pages/dormHarmony', pages: ['index/index'] },
 ]
 

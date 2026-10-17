@@ -62,6 +62,21 @@ export const StorageKeys = {
   privacySettingsCache: `${STORAGE_PREFIX}cache:privacy:settings`,
   /** 站内信列表缓存：断网进「消息」页也能看到上次拉到的通知 */
   notificationListCache: `${STORAGE_PREFIX}cache:notifications:list`,
+  /** 猫鸟黑天鹅列表缓存 */
+  wildlifeListCache: `${STORAGE_PREFIX}cache:wildlife:list`,
+  /** 食堂营养列表缓存 */
+  canteenListCache: `${STORAGE_PREFIX}cache:canteen:list`,
+  /** 常见问题列表缓存 */
+  faqListCache: `${STORAGE_PREFIX}cache:faq:list`,
+  /**
+   * 「我已标记有帮助」的本地记录。
+   *
+   * 与列表缓存分开：它是**用户行为**，形状也不同（`string[]`），
+   * 被一次列表刷新覆盖掉会导致重复计数。
+   */
+  faqHelpfulMarks: `${STORAGE_PREFIX}faq:helpful-marks`,
+  /** 偷外卖列表缓存（仅"我的记录"） */
+  takeoutGuardListCache: `${STORAGE_PREFIX}cache:takeout-guard:list`,
 } as const
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys]

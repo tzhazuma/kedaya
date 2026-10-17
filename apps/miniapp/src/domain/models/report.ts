@@ -14,6 +14,10 @@ export type ReportTargetType =
   | 'lost-found-item'
   | 'forum-post'
   | 'forum-reply'
+  // 同学共建型内容（食堂菜品 / 常见问题 / 动物观察点）
+  | 'canteen-dish'
+  | 'faq-entry'
+  | 'wildlife-spot'
 
 export type ReportReason =
   | 'illegal'

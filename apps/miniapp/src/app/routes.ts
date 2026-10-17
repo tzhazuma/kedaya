@@ -43,6 +43,22 @@ export const PAGE_PATHS = {
   forumList: '/presentation/pages/forum/list/index',
   forumCreate: '/presentation/pages/forum/create/index',
   forumDetail: '/presentation/pages/forum/detail/index',
+  // 猫鸟黑天鹅（校园动物观察点）
+  wildlifeList: '/presentation/pages/wildlife/list/index',
+  wildlifeCreate: '/presentation/pages/wildlife/create/index',
+  wildlifeDetail: '/presentation/pages/wildlife/detail/index',
+  // 食堂营养（同学共建菜品库）
+  canteenList: '/presentation/pages/canteen/list/index',
+  canteenCreate: '/presentation/pages/canteen/create/index',
+  canteenDetail: '/presentation/pages/canteen/detail/index',
+  // 常见问题（问答库）
+  faqList: '/presentation/pages/faq/list/index',
+  faqCreate: '/presentation/pages/faq/create/index',
+  faqDetail: '/presentation/pages/faq/detail/index',
+  // 偷外卖（本人可见的报备记录，不是公开举报墙）
+  takeoutGuardList: '/presentation/pages/takeoutGuard/list/index',
+  takeoutGuardCreate: '/presentation/pages/takeoutGuard/create/index',
+  takeoutGuardDetail: '/presentation/pages/takeoutGuard/detail/index',
   // 宿舍矛盾（匿名，凭追踪码查看）
   dormHarmonyHome: '/presentation/pages/dormHarmony/index/index',
   // 四个核心模块：身份 / 课表 / 校园卡 / 我的（隐私与数据）
@@ -102,7 +118,13 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   buddy: PAGE_PATHS.buddyList,
   'lost-found': PAGE_PATHS.lostFoundList,
   forum: PAGE_PATHS.forumList,
+  wildlife: PAGE_PATHS.wildlifeList,
+  canteen: PAGE_PATHS.canteenList,
+  faq: PAGE_PATHS.faqList,
+  'takeout-guard': PAGE_PATHS.takeoutGuardList,
   'dorm-harmony': PAGE_PATHS.dormHarmonyHome,
+  // 站内通知：就是 tabBar 上的「消息」页（用 switchTab 跳，navigateTo 会失败）
+  notifications: PAGE_PATHS.messages,
   // 四个核心模块（身份 / 课表 / 校园卡 / 我的）
   auth: PAGE_PATHS.identity,
   schedule: PAGE_PATHS.schedule,
@@ -142,6 +164,22 @@ export function lostFoundDetailPath(id: string): string {
 
 export function forumDetailPath(id: string): string {
   return detailPath(PAGE_PATHS.forumDetail, id)
+}
+
+export function wildlifeDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.wildlifeDetail, id)
+}
+
+export function canteenDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.canteenDetail, id)
+}
+
+export function faqDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.faqDetail, id)
+}
+
+export function takeoutGuardDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.takeoutGuardDetail, id)
 }
 
 /** 宿舍矛盾：详情靠追踪码而不是 id 寻址 */

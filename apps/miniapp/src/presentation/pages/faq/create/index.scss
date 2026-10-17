@@ -1,0 +1,44 @@
+.kdy-faq-create__intro {
+  display: block;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.7;
+}
+
+.kdy-faq-create__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+}
+
+.kdy-faq-create__hint {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.7;
+}
+
+.kdy-faq-create__actions {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-3;
+  margin-top: $kdy-space-5;
+}
+
+.kdy-faq-create__problems,
+.kdy-faq-create__error {
+  display: block;
+  margin-top: $kdy-space-3;
+  padding: $kdy-space-2 $kdy-space-3;
+  color: $kdy-color-text-muted;
+  background: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-sm;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-faq-create__error {
+  color: $kdy-color-danger;
+  background: rgba(211, 63, 63, 0.08);
+}

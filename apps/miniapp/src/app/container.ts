@@ -36,6 +36,14 @@ import { createMediaUseCases } from '../application/media/mediaUseCases'
 import { createReportUseCases } from '../application/report/reportUseCases'
 import type { MediaUseCases } from '../application/media/mediaUseCases'
 import type { ReportUseCases } from '../application/report/reportUseCases'
+import { createCanteenUseCases } from '../application/canteen/canteenUseCases'
+import type { CanteenUseCases } from '../application/canteen/canteenUseCases'
+import { createFaqUseCases } from '../application/faq/faqUseCases'
+import type { FaqUseCases } from '../application/faq/faqUseCases'
+import { createWildlifeUseCases } from '../application/wildlife/wildlifeUseCases'
+import type { WildlifeUseCases } from '../application/wildlife/wildlifeUseCases'
+import { createTakeoutGuardUseCases } from '../application/takeoutGuard/takeoutGuardUseCases'
+import type { TakeoutGuardUseCases } from '../application/takeoutGuard/takeoutGuardUseCases'
 import { createApiClient, createAuthRefresher, createTaroHttpPort, createTracePort } from '../data/api'
 import type { ApiClient } from '../data/api'
 import { createHttpGroupBuyRepository } from '../data/repositories/httpGroupBuyRepository'
@@ -68,6 +76,14 @@ import { createHttpMediaRepository } from '../data/repositories/httpMediaReposit
 import { createHttpReportRepository } from '../data/repositories/httpReportRepository'
 import { createMockMediaRepository } from '../data/repositories/mockMediaRepository'
 import { createMockReportRepository } from '../data/repositories/mockReportRepository'
+import { createHttpCanteenRepository } from '../data/repositories/httpCanteenRepository'
+import { createMockCanteenRepository } from '../data/repositories/mockCanteenRepository'
+import { createHttpFaqRepository } from '../data/repositories/httpFaqRepository'
+import { createMockFaqRepository } from '../data/repositories/mockFaqRepository'
+import { createHttpWildlifeRepository } from '../data/repositories/httpWildlifeRepository'
+import { createMockWildlifeRepository } from '../data/repositories/mockWildlifeRepository'
+import { createHttpTakeoutGuardRepository } from '../data/repositories/httpTakeoutGuardRepository'
+import { createMockTakeoutGuardRepository } from '../data/repositories/mockTakeoutGuardRepository'
 import { createHttpTelemetryRepository } from '../data/repositories/httpTelemetryRepository'
 import { createConsoleTelemetryRepository } from '../data/repositories/consoleTelemetryRepository'
 import { mockNow } from '../data/mock/fixtures'
@@ -95,6 +111,10 @@ import type { ErrandTaskRepository } from '../domain/ports/errandRepository'
 import type { FleaItemRepository } from '../domain/ports/fleaMarketRepository'
 import type { ForumRepository } from '../domain/ports/forumRepository'
 import type { LostFoundRepository } from '../domain/ports/lostFoundRepository'
+import type { CanteenRepository } from '../domain/ports/canteenRepository'
+import type { FaqRepository } from '../domain/ports/faqRepository'
+import type { WildlifeRepository } from '../domain/ports/wildlifeRepository'
+import type { TakeoutGuardRepository } from '../domain/ports/takeoutGuardRepository'
 import type { GroupBuyRepository } from '../domain/ports/groupbuyRepository'
 import type { NotificationRepository } from '../domain/ports/notificationRepository'
 import type { AuthRefresherPort, SessionStorePort, TokenStorePort } from '../domain/ports/sessionPort'
@@ -168,6 +188,10 @@ export interface AppContainer {
   buddyRepository: BuddyRepository
   lostFoundRepository: LostFoundRepository
   forumRepository: ForumRepository
+  canteenRepository: CanteenRepository
+  faqRepository: FaqRepository
+  wildlifeRepository: WildlifeRepository
+  takeoutGuardRepository: TakeoutGuardRepository
   dormHarmonyRepository: DormHarmonyRepository
   identityRepository: IdentityRepository
   scheduleRepository: ScheduleRepository
@@ -190,6 +214,10 @@ export interface AppContainer {
     buddy: BuddyUseCases
     lostFound: LostFoundUseCases
     forum: ForumUseCases
+    canteen: CanteenUseCases
+    faq: FaqUseCases
+    wildlife: WildlifeUseCases
+    takeoutGuard: TakeoutGuardUseCases
     dormHarmony: DormHarmonyUseCases
     campus: CampusUseCases
     privacy: PrivacyUseCase
@@ -395,6 +423,54 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     viewerId,
   })
 
+  /**
+   * 四个「共建型」模块（食堂菜品 / 常见问题 / 动物观察点 / 偷外卖报备）。
+   *
+   * 前三个是**匿名共建**（没有归属，因此不需要 viewerId）；
+   * 偷外卖是**本人可见**的报备记录，需要 viewerId 来在发请求前挡住注定 401 的动作。
+   */
+  const canteenRepository: CanteenRepository = env.useMock
+    ? createMockCanteenRepository({ cache, latencyMs: env.mockLatencyMs, now: clock.now })
+    : createHttpCanteenRepository(apiClient)
+  const canteen = createCanteenUseCases({
+    repository: canteenRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.canteenListCache,
+  })
+
+  const faqRepository: FaqRepository = env.useMock
+    ? createMockFaqRepository({ latencyMs: env.mockLatencyMs, now: clock.now })
+    : createHttpFaqRepository(apiClient)
+  const faq = createFaqUseCases({
+    repository: faqRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.faqListCache,
+    helpfulMarksKey: StorageKeys.faqHelpfulMarks,
+  })
+
+  const wildlifeRepository: WildlifeRepository = env.useMock
+    ? createMockWildlifeRepository({ cache, latencyMs: env.mockLatencyMs, now: clock.now })
+    : createHttpWildlifeRepository(apiClient)
+  const wildlife = createWildlifeUseCases({
+    repository: wildlifeRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.wildlifeListCache,
+  })
+
+  const takeoutGuardRepository: TakeoutGuardRepository = env.useMock
+    ? createMockTakeoutGuardRepository({ viewerId, latencyMs: env.mockLatencyMs, now: clock.now })
+    : createHttpTakeoutGuardRepository(apiClient)
+  const takeoutGuard = createTakeoutGuardUseCases({
+    repository: takeoutGuardRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.takeoutGuardListCache,
+    viewerId,
+  })
+
   // 宿舍矛盾是匿名模块：没有「我的」概念，也不用缓存列表
   const dormHarmonyRepository: DormHarmonyRepository = env.useMock
     ? createMockDormHarmonyRepository({ cache, latencyMs: env.mockLatencyMs, now: clock.now })
@@ -540,6 +616,10 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     buddyRepository,
     lostFoundRepository,
     forumRepository,
+    canteenRepository,
+    faqRepository,
+    wildlifeRepository,
+    takeoutGuardRepository,
     dormHarmonyRepository,
     identityRepository,
     scheduleRepository,
@@ -561,6 +641,10 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       buddy,
       lostFound,
       forum,
+      canteen,
+      faq,
+      wildlife,
+      takeoutGuard,
       dormHarmony,
       campus,
       privacy,
