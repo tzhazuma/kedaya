@@ -13,8 +13,9 @@
   （黄底白字在阳光下看不清），压在渐变上的状态用玻璃胶囊 `.kdy-pill`，
   深色胶囊 `.kdy-pill--dark` 只放状态不放操作；
   宫格图标的"分类色"按用途映射（`KdyModuleIcon` 的 `MODULE_TONES`，六档 tone），
-  不是彩虹；层次靠阴影叠层而不是厚重单层阴影；emoji 只允许用于吉祥物，
-  不充当功能图标。
+  不是彩虹；层次靠阴影叠层而不是厚重单层阴影；emoji 既不充当功能图标、也不充当吉祥物
+  （吉祥物是固定贴图 `assets/mascot/duck.png`，经 `KdyMascot` 使用 —— emoji 在不同微信
+  版本 / 机型上渲染成各家字形，颜色与形状都不可控）。
 - 表单控件（`KdyField`）是"浅底实心面 + 16px 圆角"，出错才出现危险色描边；
   输入框不要退回"白底 + 灰细线"的老写法。
 - 色值只来自 `packages/design-tokens/tokens.json`。小程序主题映射放在 `src/presentation/theme/`，不要修改生成的 SCSS；不要为小程序改动 Web 的公共主题。
