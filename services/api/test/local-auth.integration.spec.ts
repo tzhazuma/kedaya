@@ -23,7 +23,11 @@ import { PrismaService } from '../src/prisma/prisma.service';
  * 这是刻意设计：基础设施缺失 ≠ 代码有 bug。
  */
 
-const EMAIL_DOMAIN = 'kedaya.test';
+// ⚠️ 必须用**校园邮箱域**：`LocalAuthService.normalizeTarget()` 现在只放行
+// `CAMPUS_EMAIL_DOMAINS`（`@shanghaitech.edu.cn` / `@stu.shanghaitech.edu.cn`），
+// 其它域名会以 `CAMPUS_EMAIL_REQUIRED` 被拒。这里用学生邮箱子域，
+// 并且**只**用 `it-` 前缀的随机邮箱，便于 afterAll 精确清理。
+const EMAIL_DOMAIN = 'stu.shanghaitech.edu.cn';
 
 function uniqueEmail(): string {
   return `it-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}@${EMAIL_DOMAIN}`;

@@ -168,4 +168,14 @@ export default tseslint.config(
       'no-undef': 'error',
     },
   },
+  {
+    // CommonJS 脚本（微信发布 / 构建校验 / 锁文件）只能用 `require()` 加载模块 ——
+    // 关掉这条 TS 规则；空 catch 在这些"尽力清理"的工具代码里是刻意写法（见 build-weapp.cjs 的 release()）。
+    // ⚠️ 只对 `.cjs` 放开，`.mjs` 仍按 ESM 严格要求禁用 require。
+    files: ['**/*.cjs'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+      'no-empty': ['error', { allowEmptyCatch: true }],
+    },
+  },
 )

@@ -99,11 +99,8 @@ export function CampusLeafletMap({
   className,
 }: CampusLeafletMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const poiLayerRef = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerLayerRef = useRef<any>(null);
 
   /* ---------- 初始化（只做一次） ---------- */

@@ -63,26 +63,6 @@ export const CONSENT_GATED_MODULES: readonly PortalModule[] = consentGatedModule
 /** 需要审计的模块（high + critical；注意 auth / campus-card 在列但**无同意门**） */
 export const AUDITED_MODULES: readonly PortalModule[] = auditedModules(PORTAL_MODULES);
 
-/** Web 门户已有真实页面的模块（`delivery.stage === 'web'`） */
-export const WEB_READY_MODULES: readonly PortalModule[] = PORTAL_MODULES.filter(
-  (m) => m.delivery.stage === 'web',
-);
-
-/** 只在微信小程序端上线的模块 */
-export const MINIAPP_MODULES: readonly PortalModule[] = PORTAL_MODULES.filter(
-  (m) => m.delivery.stage === 'miniapp',
-);
-
-/** 端上已经能用的模块（Web + 小程序任一端上线） */
-export const DELIVERED_MODULES: readonly PortalModule[] = PORTAL_MODULES.filter((m) =>
-  isDelivered(m.delivery),
-);
-
-/** 只有后端接口、端上页面还没做的模块 */
-export const API_ONLY_MODULES: readonly PortalModule[] = PORTAL_MODULES.filter(
-  (m) => !isDelivered(m.delivery),
-);
-
 /** 模块总数 —— 与契约对齐（5 基础 + 15 业务 = 20，含 §11.10-C 新增的 facility） */
 export const PORTAL_MODULE_COUNT = PORTAL_MODULES.length;
 
