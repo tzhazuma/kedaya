@@ -59,6 +59,17 @@ export const PAGE_PATHS = {
   takeoutGuardList: '/presentation/pages/takeoutGuard/list/index',
   takeoutGuardCreate: '/presentation/pages/takeoutGuard/create/index',
   takeoutGuardDetail: '/presentation/pages/takeoutGuard/detail/index',
+  // 校园技术服务目录（同学共建）
+  techpieList: '/presentation/pages/techpie/list/index',
+  techpieCreate: '/presentation/pages/techpie/create/index',
+  techpieDetail: '/presentation/pages/techpie/detail/index',
+  // 心理支持（倾听与预约入口；危机出口在首屏，来自 /wellbeing/crisis-line）
+  wellbeingList: '/presentation/pages/wellbeing/list/index',
+  wellbeingCreate: '/presentation/pages/wellbeing/create/index',
+  wellbeingDetail: '/presentation/pages/wellbeing/detail/index',
+  // AI 校园画像（只读两页：画像首页 + 数据来源与开关；没有"列表/发布/详情"）
+  aiPortraitHome: '/presentation/pages/aiPortrait/index/index',
+  aiPortraitSources: '/presentation/pages/aiPortrait/sources/index',
   // 宿舍矛盾（匿名，凭追踪码查看）
   dormHarmonyHome: '/presentation/pages/dormHarmony/index/index',
   // 四个核心模块：身份 / 课表 / 校园卡 / 我的（隐私与数据）
@@ -122,6 +133,9 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   canteen: PAGE_PATHS.canteenList,
   faq: PAGE_PATHS.faqList,
   'takeout-guard': PAGE_PATHS.takeoutGuardList,
+  techpie: PAGE_PATHS.techpieList,
+  wellbeing: PAGE_PATHS.wellbeingList,
+  'ai-portrait': PAGE_PATHS.aiPortraitHome,
   'dorm-harmony': PAGE_PATHS.dormHarmonyHome,
   // 站内通知：就是 tabBar 上的「消息」页（用 switchTab 跳，navigateTo 会失败）
   notifications: PAGE_PATHS.messages,
@@ -180,6 +194,14 @@ export function faqDetailPath(id: string): string {
 
 export function takeoutGuardDetailPath(id: string): string {
   return detailPath(PAGE_PATHS.takeoutGuardDetail, id)
+}
+
+export function techpieDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.techpieDetail, id)
+}
+
+export function wellbeingDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.wellbeingDetail, id)
 }
 
 /** 宿舍矛盾：详情靠追踪码而不是 id 寻址 */

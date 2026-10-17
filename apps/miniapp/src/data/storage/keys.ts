@@ -77,6 +77,15 @@ export const StorageKeys = {
   faqHelpfulMarks: `${STORAGE_PREFIX}faq:helpful-marks`,
   /** 偷外卖列表缓存（仅"我的记录"） */
   takeoutGuardListCache: `${STORAGE_PREFIX}cache:takeout-guard:list`,
+  /** 校园技术服务目录列表缓存 */
+  techpieListCache: `${STORAGE_PREFIX}cache:techpie:list`,
+  /** 心理支持列表缓存（仅「我的预约」） */
+  wellbeingListCache: `${STORAGE_PREFIX}cache:wellbeing:list`,
+  /**
+   * AI 画像的**公开来源清单**离线缓存（非敏感：断网时"哪类数据用在哪、哪类被排除"仍说得出口）。
+   * 画像本体刻意**不缓存** —— 它是服务端结论，落盘会在换账号/换设备后被当成自己的数据读出来。
+   */
+  aiPortraitSourcesCache: `${STORAGE_PREFIX}cache:ai-portrait:sources`,
 } as const
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys]

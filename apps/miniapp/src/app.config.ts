@@ -49,6 +49,9 @@ const subPackages = [
   { root: 'presentation/pages/canteen', pages: ['list/index', 'create/index', 'detail/index'] },
   { root: 'presentation/pages/faq', pages: ['list/index', 'create/index', 'detail/index'] },
   { root: 'presentation/pages/takeoutGuard', pages: ['list/index', 'create/index', 'detail/index'] },
+  { root: 'presentation/pages/techpie', pages: ['list/index', 'create/index', 'detail/index'] },
+  { root: 'presentation/pages/wellbeing', pages: ['list/index', 'create/index', 'detail/index'] },
+  { root: 'presentation/pages/aiPortrait', pages: ['index/index', 'sources/index'] },
   { root: 'presentation/pages/dormHarmony', pages: ['index/index'] },
 ]
 

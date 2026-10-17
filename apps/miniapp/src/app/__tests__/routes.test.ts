@@ -1,8 +1,8 @@
-import { MINIAPP_PAGES } from '@kedaya/contracts'
+import { MINIAPP_PAGES, MODULES } from '@kedaya/contracts'
 import { describe, expect, it } from 'vitest'
 
 import appConfig from '../../app.config'
-import { PAGE_PATHS, TAB_BAR_PATHS, isTabBarPath } from '../routes'
+import { MODULE_ENTRY_PATHS, PAGE_PATHS, TAB_BAR_PATHS, isTabBarPath } from '../routes'
 
 /**
  * 路由表的一致性闸门（这一类 bug 的共同点是「不报错，只是没反应」）。
@@ -106,5 +106,26 @@ describe('页面路由表', () => {
     expect(PAGE_PATHS.campusCard).toBe('/presentation/pages/campusCard/index')
     expect(PAGE_PATHS.profileSettings).toBe('/presentation/pages/profile/settings/index')
     expect(PAGE_PATHS.agent).toBe('/presentation/pages/agent/index')
+  })
+
+  /**
+   * 宫格角标只看 `module.id in MODULE_ENTRY_PATHS`。
+   *
+   * 这张表的两种错法都不会报错，只会「没反应」：
+   *   1. 模块 id 打错（例如写成 `takeoutGuard`）→ 角标永远停在「开发中」，
+   *      而点进去其实是好的，排查时最容易怀疑错方向；
+   *   2. 路径打错（例如指向尚未登记的 PAGE_PATHS 键，或手写字符串）→ 点进去白屏。
+   * 因此把「模块 id」与「页面路径」两侧都锁到唯一真相上。
+   */
+  it('首页宫格入口映射只指向真实契约模块与真实页面路径', () => {
+    const moduleIds = new Set<string>(MODULES.map((module) => module.id))
+    const pagePaths = new Set<string>(Object.values(PAGE_PATHS))
+
+    for (const [moduleId, path] of Object.entries(MODULE_ENTRY_PATHS)) {
+      expect(moduleIds.has(moduleId), `MODULE_ENTRY_PATHS 的 ${moduleId} 不是契约里的模块 id`).toBe(
+        true,
+      )
+      expect(pagePaths.has(path), `${moduleId} → ${path} 不在 PAGE_PATHS 里`).toBe(true)
+    }
   })
 })

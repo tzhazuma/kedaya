@@ -32,6 +32,8 @@ import { createPrivacyUseCase } from '../application/privacy/privacyUseCases'
 import type { PrivacyUseCase } from '../application/privacy/privacyUseCases'
 import { createAgentUseCase } from '../application/agent/agentUseCases'
 import type { AgentUseCase } from '../application/agent/agentUseCases'
+import { createAiPortraitUseCases } from '../application/aiPortrait/aiPortraitUseCases'
+import type { AiPortraitUseCases } from '../application/aiPortrait/aiPortraitUseCases'
 import { createMediaUseCases } from '../application/media/mediaUseCases'
 import { createReportUseCases } from '../application/report/reportUseCases'
 import type { MediaUseCases } from '../application/media/mediaUseCases'
@@ -44,6 +46,10 @@ import { createWildlifeUseCases } from '../application/wildlife/wildlifeUseCases
 import type { WildlifeUseCases } from '../application/wildlife/wildlifeUseCases'
 import { createTakeoutGuardUseCases } from '../application/takeoutGuard/takeoutGuardUseCases'
 import type { TakeoutGuardUseCases } from '../application/takeoutGuard/takeoutGuardUseCases'
+import { createTechpieUseCases } from '../application/techpie/techpieUseCases'
+import type { TechpieUseCases } from '../application/techpie/techpieUseCases'
+import { createWellbeingUseCases } from '../application/wellbeing/wellbeingUseCases'
+import type { WellbeingUseCases } from '../application/wellbeing/wellbeingUseCases'
 import { createApiClient, createAuthRefresher, createTaroHttpPort, createTracePort } from '../data/api'
 import type { ApiClient } from '../data/api'
 import { createHttpGroupBuyRepository } from '../data/repositories/httpGroupBuyRepository'
@@ -84,6 +90,12 @@ import { createHttpWildlifeRepository } from '../data/repositories/httpWildlifeR
 import { createMockWildlifeRepository } from '../data/repositories/mockWildlifeRepository'
 import { createHttpTakeoutGuardRepository } from '../data/repositories/httpTakeoutGuardRepository'
 import { createMockTakeoutGuardRepository } from '../data/repositories/mockTakeoutGuardRepository'
+import { createHttpTechpieRepository } from '../data/repositories/httpTechpieRepository'
+import { createMockTechpieRepository } from '../data/repositories/mockTechpieRepository'
+import { createHttpWellbeingRepository } from '../data/repositories/httpWellbeingRepository'
+import { createMockWellbeingRepository } from '../data/repositories/mockWellbeingRepository'
+import { createHttpAiPortraitRepository } from '../data/repositories/httpAiPortraitRepository'
+import { createMockAiPortraitRepository } from '../data/repositories/mockAiPortraitRepository'
 import { createHttpTelemetryRepository } from '../data/repositories/httpTelemetryRepository'
 import { createConsoleTelemetryRepository } from '../data/repositories/consoleTelemetryRepository'
 import { mockNow } from '../data/mock/fixtures'
@@ -99,6 +111,7 @@ import { createSessionStore, createTokenStore } from '../data/storage/sessionSto
 import { StorageKeys } from '../data/storage/keys'
 import { createTaroStorage } from '../data/storage/taroStorage'
 import type { AuthRepository } from '../domain/ports/authRepository'
+import type { AiPortraitRepository } from '../domain/ports/aiPortraitRepository'
 import type { AvatarPickerPort, ImagePickerPort } from '../domain/ports/mediaPort'
 import type { MediaRepository } from '../domain/ports/mediaRepository'
 import type { ReportRepository } from '../domain/ports/reportRepository'
@@ -115,6 +128,8 @@ import type { CanteenRepository } from '../domain/ports/canteenRepository'
 import type { FaqRepository } from '../domain/ports/faqRepository'
 import type { WildlifeRepository } from '../domain/ports/wildlifeRepository'
 import type { TakeoutGuardRepository } from '../domain/ports/takeoutGuardRepository'
+import type { TechpieRepository } from '../domain/ports/techpieRepository'
+import type { WellbeingRepository } from '../domain/ports/wellbeingRepository'
 import type { GroupBuyRepository } from '../domain/ports/groupbuyRepository'
 import type { NotificationRepository } from '../domain/ports/notificationRepository'
 import type { AuthRefresherPort, SessionStorePort, TokenStorePort } from '../domain/ports/sessionPort'
@@ -192,6 +207,9 @@ export interface AppContainer {
   faqRepository: FaqRepository
   wildlifeRepository: WildlifeRepository
   takeoutGuardRepository: TakeoutGuardRepository
+  techpieRepository: TechpieRepository
+  wellbeingRepository: WellbeingRepository
+  aiPortraitRepository: AiPortraitRepository
   dormHarmonyRepository: DormHarmonyRepository
   identityRepository: IdentityRepository
   scheduleRepository: ScheduleRepository
@@ -218,6 +236,9 @@ export interface AppContainer {
     faq: FaqUseCases
     wildlife: WildlifeUseCases
     takeoutGuard: TakeoutGuardUseCases
+    techpie: TechpieUseCases
+    wellbeing: WellbeingUseCases
+    aiPortrait: AiPortraitUseCases
     dormHarmony: DormHarmonyUseCases
     campus: CampusUseCases
     privacy: PrivacyUseCase
@@ -471,6 +492,42 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     viewerId,
   })
 
+  const techpieRepository: TechpieRepository = env.useMock
+    ? createMockTechpieRepository({ cache, latencyMs: env.mockLatencyMs, now: clock.now })
+    : createHttpTechpieRepository(apiClient)
+  const techpie = createTechpieUseCases({
+    repository: techpieRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.techpieListCache,
+  })
+
+  // 心理支持是 **有归属** 的敏感模块：列表只有本人预约，因此和偷外卖一样注入 viewerId，
+  // 让用例在发请求之前就能挡住注定 401 的动作。危机出口不需要登录，走单独的 detail 用例。
+  const wellbeingRepository: WellbeingRepository = env.useMock
+    ? createMockWellbeingRepository({ viewerId, latencyMs: env.mockLatencyMs, now: clock.now })
+    : createHttpWellbeingRepository(apiClient)
+  const wellbeing = createWellbeingUseCases({
+    repository: wellbeingRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.wellbeingListCache,
+    viewerId,
+  })
+
+  // AI 画像是「本人的」，但没有列表/发布：只读 me + 公开来源清单。
+  // 只缓存来源清单（非敏感），画像本体不落盘 —— 见 `StorageKeys.aiPortraitSourcesCache` 注释。
+  const aiPortraitRepository: AiPortraitRepository = env.useMock
+    ? createMockAiPortraitRepository({ viewerId, latencyMs: env.mockLatencyMs, now: clock.now })
+    : createHttpAiPortraitRepository(apiClient)
+  const aiPortrait = createAiPortraitUseCases({
+    repository: aiPortraitRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.aiPortraitSourcesCache,
+    viewerId,
+  })
+
   // 宿舍矛盾是匿名模块：没有「我的」概念，也不用缓存列表
   const dormHarmonyRepository: DormHarmonyRepository = env.useMock
     ? createMockDormHarmonyRepository({ cache, latencyMs: env.mockLatencyMs, now: clock.now })
@@ -620,6 +677,9 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     faqRepository,
     wildlifeRepository,
     takeoutGuardRepository,
+    techpieRepository,
+    wellbeingRepository,
+    aiPortraitRepository,
     dormHarmonyRepository,
     identityRepository,
     scheduleRepository,
@@ -645,6 +705,9 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       faq,
       wildlife,
       takeoutGuard,
+      techpie,
+      wellbeing,
+      aiPortrait,
       dormHarmony,
       campus,
       privacy,

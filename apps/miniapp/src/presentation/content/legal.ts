@@ -16,7 +16,7 @@ export const PRIVACY_RULES: readonly { title: string; detail: string }[] = [
   {
     title: '敏感模块独立同意',
     detail:
-      '心理治疗 / 宿舍矛盾 / AI 画像首次进入必须显式二次同意，可随时撤回；登录与开卡本身即同意，不再叠门。',
+      '心理支持 / 宿舍矛盾 / AI 画像首次进入必须显式二次同意，可随时撤回；登录与开卡本身即同意，不再叠门。',
   },
   {
     title: '数据最小化',
