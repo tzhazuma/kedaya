@@ -1,0 +1,74 @@
+# ---- deps ----
+node_modules/
+.pnp/
+.pnp.js
+
+# ---- build output ----
+.turbo/
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# ---- 例外：design-tokens 的派生产物必须提交 ----
+# 三端都要在无构建步骤的情况下直接消费这些文件
+!packages/design-tokens/dist/
+!packages/design-tokens/dart/
+
+# ---- env ----
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ---- 微信小程序 / Taro ----
+apps/miniapp/dist/
+apps/miniapp/.temp/
+apps/miniapp/.rn_temp/
+project.private.config.json
+
+# ---- Flutter ----
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/build/
+apps/mobile/ios/Pods/
+apps/mobile/ios/.symlinks/
+apps/mobile/ios/Flutter/Flutter.framework
+apps/mobile/ios/Flutter/Flutter.podspec
+apps/mobile/ios/Flutter/Generated.xcconfig
+apps/mobile/ios/Flutter/flutter_export_environment.sh
+apps/mobile/android/.gradle/
+apps/mobile/android/local.properties
+apps/mobile/android/app/debug/
+apps/mobile/android/app/profile/
+apps/mobile/android/app/release/
+apps/mobile/macos/Pods/
+apps/mobile/linux/flutter/ephemeral/
+apps/mobile/windows/flutter/ephemeral/
+apps/mobile/ohos/**
+
+# ---- 编辑器 / 系统 ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# ---- 日志 ----
+*.log
+npm-debug.log*
+yarn-error.log*
+logs/
+
+# ---- 构建工具缓存（不要提交）----
+.swc/
+.taro-cache/
+.cache/
+*.swc/
+**/.swc/
+
+# ---- 临时脚手架脚本产物 ----
+apps/*/.turbo/

@@ -1,0 +1,106 @@
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
+
+/**
+ * ESLint 10 flat config（契约 §2 冻结 ESLint 10.12.0）。
+ *
+ * 与根仓库的关系：根目录当前**没有** ESLint 配置，本文件是小程序作用域内的唯一配置，
+ * 通过 `npm run lint -w @kedaya/miniapp` 运行。
+ * `typescript-eslint@8.71` 的 peerDependencies 已声明支持 `eslint@^10`。
+ */
+
+const nodeGlobals = {
+  process: 'readonly',
+  console: 'readonly',
+  module: 'writable',
+  exports: 'writable',
+  require: 'readonly',
+  __dirname: 'readonly',
+  Buffer: 'readonly',
+  setTimeout: 'readonly',
+  clearTimeout: 'readonly',
+  setInterval: 'readonly',
+  clearInterval: 'readonly',
+}
+
+/** 微信小程序宿主注入的全局对象（只在 weapp 编译产物里存在） */
+const weappGlobals = {
+  wx: 'readonly',
+  App: 'readonly',
+  Page: 'readonly',
+  Component: 'readonly',
+  Behavior: 'readonly',
+  getApp: 'readonly',
+  getCurrentPages: 'readonly',
+}
+
+export default tseslint.config(
+  {
+    ignores: ['dist/**', '.temp/**', '.swc/**', 'node_modules/**', '*.config.js'],
+  },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: { ...nodeGlobals, ...weappGlobals },
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      eqeqeq: ['error', 'smart'],
+      'prefer-const': 'error',
+      'no-var': 'error',
+      'no-console': 'off',
+      'no-empty': ['error', { allowEmptyCatch: true }],
+    },
+  },
+  {
+    // domain 与 application 层：严格禁止任何框架 import
+    files: ['src/domain/**/*.ts', 'src/application/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@tarojs/*', 'react', 'react-dom', '../../data/*', '../data/*', '**/data/**'],
+              message: 'domain / application 不得依赖框架或具体 adapter（契约 §7）。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // 契约 §7 硬规则：domain / application 层零框架依赖，且不得直接依赖 data adapter。
+    // 依赖倒置由 domain/ports 承载；presentation / data / platform 不受此限制。
+    files: ['src/domain/**/*.ts', 'src/application/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@tarojs/*', 'react', 'react-dom', '**/data/**', '../../data/*', '../data/*'],
+              message:
+                'domain / application 不得依赖框架或具体 adapter，请通过 domain/ports 做依赖倒置（契约 §7）。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      globals: nodeGlobals,
+    },
+    rules: {
+      'no-undef': 'error',
+    },
+  },
+)

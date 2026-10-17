@@ -1,0 +1,19 @@
+// 唯一设计令牌入口（契约 §6.2）。
+//
+// 真相来源：packages/design-tokens/tokens.json
+//
+// ⚠️ 这里刻意**没有**直接 `@import "@kedaya/design-tokens/dist/tokens.scss"`：
+//    该文件目前不是合法 SCSS —— 生成器把 fontFamily 的逗号列表原样塞进 `$kdy-tokens` map，
+//    顶层逗号在 map 里被当成新的键值对分隔符，dart-sass 直接报 `expected ":"`；
+//    同一份生成器还把 lineHeight / fontWeight / zIndex 这些无单位的量错误地加上了 px。
+//    详见 apps/miniapp/scripts/generate-tokens-scss.mjs 头部说明。
+//
+// 因此本端从**同一份 tokens.json** 重新派生类型正确的 SCSS 变量（仍然没有手写色值）：
+//   npm run tokens:scss -w @kedaya/miniapp   （dev / build 脚本会自动先执行）
+//
+// config/index.ts 通过 Taro 的 `sass.resource` 把本文件注入到**每一个** .scss 文件，
+// 所以项目内任何样式都能直接使用 `$kdy-color-*` / `$kdy-space-*`。
+//
+// 一旦上游生成器修好，把下面这行换回包内产物即可：
+//   @import '../../../../../packages/design-tokens/dist/tokens.scss';
+@import './tokens.generated.scss';

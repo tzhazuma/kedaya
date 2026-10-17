@@ -1,0 +1,67 @@
+import type { ListGroupBuysState } from '../application/groupbuy/listGroupBuys'
+import type { Session } from '../domain/models/session'
+import type { AppContainer } from './container'
+
+/**
+ * 启动时序（契约 §8）—— 三端一致：
+ *
+ * ```
+ * 1. 同步：从本地存储 hydrate 缓存（关键路径，禁止网络）
+ * 2. 立即渲染首屏（带缓存数据）
+ * 3. 后台并发：刷新 token → 拉取各模块数据 → 失败静默降级
+ * ```
+ *
+ * **禁止**：启动时阻塞等待网络。首屏必须是缓存或骨架屏。
+ * 因此这里刻意拆成两个函数：`bootstrapSync` 是纯同步的，
+ * `refreshInBackground` 永远不 await、永远不抛。
+ */
+
+export interface BootstrapSnapshot {
+  session: Session
+  list: ListGroupBuysState
+  durationMs: number
+}
+
+/**
+ * 第 1 步：同步 hydrate。
+ * 不做任何网络访问 —— 只读本地存储 + 内存快照。
+ */
+export function bootstrapSync(container: AppContainer): BootstrapSnapshot {
+  const startedAt = Date.now()
+
+  const session = container.useCases.session.hydrate()
+  const list = container.useCases.listGroupBuys.hydrate()
+
+  return { session, list, durationMs: Date.now() - startedAt }
+}
+
+/**
+ * 第 3 步：后台刷新。
+ *
+ * 返回 `void`（不是 Promise）是刻意的：调用方**不允许** await 它，
+ * 否则就把「后台刷新」变成了「阻塞启动」。
+ * 内部所有失败都被吞掉（静默降级），错误状态由各用例写入自己的 state。
+ */
+export function refreshInBackground(container: AppContainer): void {
+  void refreshSessionToken(container).then(() => container.useCases.listGroupBuys.load())
+}
+
+async function refreshSessionToken(container: AppContainer): Promise<void> {
+  const { session } = container.useCases
+  if (!session.needsRefresh()) return
+
+  const refreshToken = container.tokenStore.getRefreshToken()
+  if (refreshToken === null) return
+
+  try {
+    const result = await container.refresher.refresh(refreshToken)
+    if (result.ok) {
+      container.tokenStore.setTokens(result.value)
+    } else {
+      // 刷新失败：清掉登录态，但不打断启动（用户下次操作时会看到「请先登录」）
+      container.tokenStore.clear()
+    }
+  } catch {
+    // 静默降级（契约 §8）
+  }
+}

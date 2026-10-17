@@ -1,0 +1,31 @@
+{
+  "name": "@kedaya/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "可达鸭设计令牌 —— 三端共享的视觉唯一真相",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./css": "./dist/tokens.css",
+    "./scss": "./dist/tokens.scss",
+    "./js": "./dist/tokens.js",
+    "./tokens.json": "./tokens.json"
+  },
+  "files": [
+    "src",
+    "dist",
+    "dart",
+    "tokens.json"
+  ],
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "build": "node scripts/generate.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "clean": "rm -rf dist dart src/tokens.generated.ts"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

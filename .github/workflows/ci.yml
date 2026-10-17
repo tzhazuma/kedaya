@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  # ------------------------------------------------------------------
+  # 共享契约层：设计令牌生成 + 类型检查 + 测试
+  # 这是三端的地基，它红了后面都不用看
+  # ------------------------------------------------------------------
+  contracts:
+    name: 契约层（tokens / contracts / shared）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 生成设计令牌并确认产物是最新的
+        run: |
+          npm run tokens
+          if ! git diff --exit-code -- packages/design-tokens/src packages/design-tokens/dist packages/design-tokens/dart; then
+            echo "::error::设计令牌产物与 tokens.json 不一致。请在本地运行 'npm run tokens' 并提交生成结果。"
+            exit 1
+          fi
+
+      - name: 类型检查
+        run: |
+          npm run typecheck -w @kedaya/design-tokens
+          npm run typecheck -w @kedaya/contracts
+          npm run typecheck -w @kedaya/shared
+
+      - name: 测试
+        run: |
+          npm run test -w @kedaya/contracts
+          npm run test -w @kedaya/shared
+
+  # ------------------------------------------------------------------
+  # 各端
+  # ------------------------------------------------------------------
+  web:
+    name: Web（Next.js）
+    runs-on: ubuntu-latest
+    needs: contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run tokens
+      - name: 类型检查
+        run: npm run typecheck -w @kedaya/web
+      - name: 测试
+        run: npm run test -w @kedaya/web
+      - name: 构建
+        run: npm run build -w @kedaya/web
+
+  miniapp:
+    name: 微信小程序（Taro）
+    runs-on: ubuntu-latest
+    needs: contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run tokens
+      - name: 类型检查
+        run: npm run typecheck -w @kedaya/miniapp
+      - name: 测试
+        run: npm run test -w @kedaya/miniapp
+      - name: 构建 weapp
+        run: npm run build:weapp -w @kedaya/miniapp
+
+  api:
+    name: 后端（NestJS）
+    runs-on: ubuntu-latest
+    needs: contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run tokens
+      - name: 类型检查
+        run: npm run typecheck -w @kedaya/api
+      - name: 测试
+        run: npm run test -w @kedaya/api
+      - name: 构建
+        run: npm run build -w @kedaya/api
+
+  # ------------------------------------------------------------------
+  # Flutter 原生端
+  # 单独 job：需要 Flutter SDK，且与 Node 生态无关
+  # ------------------------------------------------------------------
+  mobile:
+    name: 原生端（Flutter）
+    runs-on: ubuntu-latest
+    needs: contracts
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.27.x'
+          cache: true
+
+      - name: 同步设计令牌到 Flutter
+        run: |
+          npm run tokens || true
+          ls -la packages/design-tokens/dart/
+
+      - name: 安装依赖
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: 静态分析
+        working-directory: apps/mobile
+        run: flutter analyze
+
+      - name: 测试
+        working-directory: apps/mobile
+        run: flutter test
+
+  # ------------------------------------------------------------------
+  # 仓库卫生
+  # ------------------------------------------------------------------
+  hygiene:
+    name: 仓库卫生
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 检查是否误提交了密钥/环境文件
+        run: |
+          bad=$(git ls-files | grep -E '(^|/)\.env$|(^|/)\.env\.local$' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::不应提交 .env 文件: $bad"
+            exit 1
+          fi
+      - name: 检查是否误提交了第三方角色素材
+        run: |
+          if git ls-files | grep -iE 'pokemon|psyduck|nintendo' ; then
+            echo "::error::不得提交第三方角色素材（见 docs/adr/0005-brand-and-ip.md）"
+            exit 1
+          fi
+          echo "OK: 未发现第三方角色素材"

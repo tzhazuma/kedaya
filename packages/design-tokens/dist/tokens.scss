@@ -1,0 +1,196 @@
+// 由 packages/design-tokens/scripts/generate.mjs 生成 —— 请勿手改。
+// 真相来源: packages/design-tokens/tokens.json
+
+// color
+$kdy-color-brand: #FFC53D;
+$kdy-color-brand-strong: #F08F2A;
+$kdy-color-brand-soft: #FFF3B8;
+$kdy-color-ink: #1B2436;
+$kdy-color-ink-soft: #33405A;
+$kdy-color-bg: #F7F8FA;
+$kdy-color-surface: #FFFFFF;
+$kdy-color-surface-alt: #F1F3F7;
+$kdy-color-text: #1F2733;
+$kdy-color-text-muted: #6B7A90;
+$kdy-color-text-inverse: #FFFFFF;
+$kdy-color-border: #E3E8EF;
+$kdy-color-success: #22A06B;
+$kdy-color-warning: #E8833A;
+$kdy-color-danger: #D64545;
+$kdy-color-info: #3B82F6;
+
+// space
+$kdy-space-0: 0px;
+$kdy-space-1: 4px;
+$kdy-space-2: 8px;
+$kdy-space-3: 12px;
+$kdy-space-4: 16px;
+$kdy-space-5: 20px;
+$kdy-space-6: 24px;
+$kdy-space-8: 32px;
+$kdy-space-10: 40px;
+$kdy-space-12: 48px;
+$kdy-space-16: 64px;
+
+// radius
+$kdy-radius-sm: 4px;
+$kdy-radius-md: 8px;
+$kdy-radius-lg: 12px;
+$kdy-radius-xl: 16px;
+$kdy-radius-pill: 999px;
+
+// fontSize
+$kdy-font-size-xs: 12px;
+$kdy-font-size-sm: 14px;
+$kdy-font-size-md: 16px;
+$kdy-font-size-lg: 18px;
+$kdy-font-size-xl: 20px;
+$kdy-font-size-xxl: 24px;
+$kdy-font-size-display: 32px;
+
+// lineHeight
+$kdy-line-height-tight: 1.25px;
+$kdy-line-height-normal: 1.5px;
+$kdy-line-height-loose: 1.75px;
+
+// fontWeight
+$kdy-font-weight-regular: 400px;
+$kdy-font-weight-medium: 500px;
+$kdy-font-weight-semibold: 600px;
+$kdy-font-weight-bold: 700px;
+
+// shadow
+$kdy-shadow-sm: 0 1px 2px rgba(27,36,54,0.06);
+$kdy-shadow-md: 0 4px 12px rgba(27,36,54,0.08);
+$kdy-shadow-lg: 0 12px 32px rgba(27,36,54,0.12);
+
+// fontFamily
+$kdy-font-family-sans: PingFang SC, Hiragino Sans GB, Microsoft YaHei, Noto Sans CJK SC, sans-serif;
+$kdy-font-family-mono: SFMono-Regular, Menlo, Consolas, monospace;
+
+// zIndex
+$kdy-z-index-base: 0px;
+$kdy-z-index-dropdown: 1000px;
+$kdy-z-index-sticky: 1100px;
+$kdy-z-index-overlay: 1200px;
+$kdy-z-index-modal: 1300px;
+$kdy-z-index-toast: 1400px;
+
+// 便捷 map，便于 SCSS 侧遍历
+$kdy-tokens: (
+  "color": (
+    "brand": #FFC53D,
+    "brand-strong": #F08F2A,
+    "brand-soft": #FFF3B8,
+    "ink": #1B2436,
+    "ink-soft": #33405A,
+    "bg": #F7F8FA,
+    "surface": #FFFFFF,
+    "surface-alt": #F1F3F7,
+    "text": #1F2733,
+    "text-muted": #6B7A90,
+    "text-inverse": #FFFFFF,
+    "border": #E3E8EF,
+    "success": #22A06B,
+    "warning": #E8833A,
+    "danger": #D64545,
+    "info": #3B82F6,
+  ),
+  "space": (
+    "0": 0px,
+    "1": 4px,
+    "2": 8px,
+    "3": 12px,
+    "4": 16px,
+    "5": 20px,
+    "6": 24px,
+    "8": 32px,
+    "10": 40px,
+    "12": 48px,
+    "16": 64px,
+  ),
+  "radius": (
+    "sm": 4px,
+    "md": 8px,
+    "lg": 12px,
+    "xl": 16px,
+    "pill": 999px,
+  ),
+  "font-size": (
+    "xs": 12px,
+    "sm": 14px,
+    "md": 16px,
+    "lg": 18px,
+    "xl": 20px,
+    "xxl": 24px,
+    "display": 32px,
+  ),
+  "line-height": (
+    "tight": 1.25px,
+    "normal": 1.5px,
+    "loose": 1.75px,
+  ),
+  "font-weight": (
+    "regular": 400px,
+    "medium": 500px,
+    "semibold": 600px,
+    "bold": 700px,
+  ),
+  "shadow": (
+    "sm": 0 1px 2px rgba(27,36,54,0.06),
+    "md": 0 4px 12px rgba(27,36,54,0.08),
+    "lg": 0 12px 32px rgba(27,36,54,0.12),
+  ),
+  "font-family": (
+    "sans": PingFang SC, Hiragino Sans GB, Microsoft YaHei, Noto Sans CJK SC, sans-serif,
+    "mono": SFMono-Regular, Menlo, Consolas, monospace,
+  ),
+  "z-index": (
+    "base": 0px,
+    "dropdown": 1000px,
+    "sticky": 1100px,
+    "overlay": 1200px,
+    "modal": 1300px,
+    "toast": 1400px,
+  ),
+);
+
+// colorDark —— color 的暗色覆盖值
+$kdy-color-dark: (
+  "brand": #FFD666,
+  "brand-strong": #FFC53D,
+  "brand-soft": #3A2F12,
+  "ink": #0B1220,
+  "ink-soft": #1B2436,
+  "bg": #0B1220,
+  "surface": #151C28,
+  "surface-alt": #1E2734,
+  "text": #E8EEF7,
+  "text-muted": #93A3B8,
+  "text-inverse": #0B1220,
+  "border": #2A3444,
+  "success": #3DD68C,
+  "warning": #F0A05A,
+  "danger": #F07171,
+  "info": #60A5FA,
+);
+
+// 小程序切换暗色时用这张表覆盖（小程序无 CSS 变量级联，需按类切换）
+@mixin kdy-theme-dark {
+  .kdy-color-brand { color: #FFD666; }
+  .kdy-color-brand-strong { color: #FFC53D; }
+  .kdy-color-brand-soft { color: #3A2F12; }
+  .kdy-color-ink { color: #0B1220; }
+  .kdy-color-ink-soft { color: #1B2436; }
+  .kdy-color-bg { color: #0B1220; }
+  .kdy-color-surface { color: #151C28; }
+  .kdy-color-surface-alt { color: #1E2734; }
+  .kdy-color-text { color: #E8EEF7; }
+  .kdy-color-text-muted { color: #93A3B8; }
+  .kdy-color-text-inverse { color: #0B1220; }
+  .kdy-color-border { color: #2A3444; }
+  .kdy-color-success { color: #3DD68C; }
+  .kdy-color-warning { color: #F0A05A; }
+  .kdy-color-danger { color: #F07171; }
+  .kdy-color-info { color: #60A5FA; }
+}

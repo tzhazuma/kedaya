@@ -1,0 +1,35 @@
+# 可达鸭 Flutter 端静态分析配置。
+#
+# 基线继承 flutter_lints，并按冻结契约 §7 追加严格性：
+#   - 三个 strict-* 开关全开（禁止隐式 dynamic 转换 / 推断失败 / 裸泛型）
+#   - domain 层零框架依赖由人工评审 + import 顺序规则共同保障
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - .dart_tool/**
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    # freezed / json_serializable 的标注位置由生成器决定
+    invalid_annotation_target: ignore
+
+formatter:
+  page_width: 100
+
+linter:
+  rules:
+    avoid_print: true
+    directives_ordering: true
+    discarded_futures: true
+    prefer_const_constructors: true
+    prefer_const_literals_to_create_immutables: true
+    prefer_single_quotes: true
+    require_trailing_commas: true
+    sort_pub_dependencies: true
+    unawaited_futures: true

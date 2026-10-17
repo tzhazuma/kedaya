@@ -1,0 +1,48 @@
+# 可达鸭后端 · 本地开发依赖
+#   docker compose up -d
+#   npx prisma migrate dev
+#   npm run prisma:seed
+#
+# 注意：本机（交付环境）没有 Postgres/Redis，所以迁移证据是用
+# `prisma migrate diff --from-empty` 离线生成的，见 prisma/migrations/0001_init/。
+name: kedaya-api-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kedaya-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kedaya
+      POSTGRES_PASSWORD: kedaya
+      POSTGRES_DB: kedaya
+      # 中文排序与大小写不敏感检索（论坛/失物招领搜索）
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C'
+    ports:
+      - '5432:5432'
+    volumes:
+      - kedaya-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U kedaya -d kedaya']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: kedaya-redis
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '6379:6379'
+    volumes:
+      - kedaya-redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  kedaya-pgdata:
+  kedaya-redisdata:

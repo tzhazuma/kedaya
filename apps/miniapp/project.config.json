@@ -1,0 +1,36 @@
+{
+  "miniprogramRoot": "dist/",
+  "projectname": "kedaya-miniapp",
+  "description": "可达鸭 · 上海科技大学统一校园服务平台（第三方非官方平台）",
+  "appid": "wx767f4b3f4bd0b57e",
+  "_appid_note": "小程序测试号（本地骨架/演示用）。正式开发请替换为可达鸭自己的小程序 appid；个人 appid 建议写入 project.private.config.json（仓库已 gitignore），避免污染公共配置。注意：`touristappid`（游客模式）在 DevTools 2.02 的 CLI 下会被判为「不存在此 AppID」，无法用 cli open 打开项目。",
+  "compileType": "miniprogram",
+  "libVersion": "3.5.5",
+  "srcMiniprogramRoot": "dist/",
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "setting": {
+    "urlCheck": false,
+    "es6": false,
+    "enhance": false,
+    "postcss": false,
+    "minified": false,
+    "newFeature": true,
+    "coverView": true,
+    "nodeModules": false,
+    "autoAudits": false,
+    "showShadowRootInWxmlPanel": true,
+    "scopeDataCheck": false,
+    "checkInvalidKey": true,
+    "checkSiteMap": true,
+    "uploadWithSourceMap": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "condition": {}
+}

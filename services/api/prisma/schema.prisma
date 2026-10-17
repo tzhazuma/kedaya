@@ -1,0 +1,658 @@
+// 可达鸭 · Prisma schema（PostgreSQL 16）
+// 冻结契约：docs/architecture/00-FROZEN-CONTRACT.md §5（两级身份）、§6.1（金额整数分）、§9（隐私合规）
+//
+// 全局约定
+//   · 主键统一 cuid()，便于分页游标直接复用主键
+//   · 金额字段一律 Int，单位 **分**（契约 §6.1：`amountFen: number`），禁止 Float/Decimal
+//   · 时间一律 DateTime（UTC），由 API 层序列化为 ISO-8601
+//   · 敏感表在模型上方用 `/// 访问域` 注释标明，Prisma 会把这些注释带进生成的客户端文档
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // 注意（Prisma 7 破坏性变更）：schema 里**不再允许**写 `url = env("DATABASE_URL")`。
+  // 连接串现在有两个来源：
+  //   · Migrate / introspect 等 CLI 命令 → prisma.config.ts 的 `datasource.url`
+  //   · 运行时 PrismaClient          → driver adapter（见 src/prisma/prisma.service.ts）
+}
+
+/* ================================================================== *
+ * 1. 身份域（契约 §5）—— 两级模型，物理分离
+ * ================================================================== */
+
+/// KedaYa 自有账户。**不**存放任何校园系统凭据。
+model User {
+  id           String  @id @default(cuid())
+  displayName  String
+  avatarUrl    String?
+  department   String?
+  /// 匿名身份与实名身份解耦：本账号是否被允许使用匿名handle（契约 §9）
+  anonEnabled  Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  identities     AuthIdentity[]
+  campusBindings CampusBinding[]
+  consents       Consent[]
+  auditLogs      AuditLog[]
+  profileSetting ProfileSetting?
+  schedule       ScheduleCourse[]
+  cardTxns       CampusCardTransaction[]
+  notifications  Notification[]
+  portrait       AiPortraitProfile?
+  appointments   WellbeingAppointment[]
+  mealRecords    MealRecord[]
+  target         NutritionTarget?
+
+  @@index([createdAt])
+}
+
+/// 第一级 · 身份层。上科大统一身份认证（CAS / Egate OAuth）的映射结果。
+///
+/// 访问域：identity
+/// 硬规则（契约 §5）：本表**只**回答"你是谁"。绝不包含任何校园系统的
+/// cookie / session / tgc —— 那些属于 CampusBinding（第二级）。
+model AuthIdentity {
+  id         String @id @default(cuid())
+  userId     String
+  /// 上游提供方：SHTU_CAS | SHTU_EGATE
+  provider   String
+  /// 上游唯一标识（CAS 的学号 / OAuth 的 sub）
+  externalId String
+  /// 上科大邮箱（*@shanghaitech.edu.cn）
+  email      String?
+  realName   String?
+  department String?
+  /// 第一级登录时间。注意：这不代表任何校园系统已绑定。
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, externalId])
+  @@index([userId])
+}
+
+/// 第二级 · 能力层。第三方校园系统绑定。
+///
+/// 访问域：campus-binding（加密字段，仅 CampusSessionPort 可解密）
+/// 硬规则（契约 §5）：
+///   1. 本表与身份层**物理分离**，任何校园 session 都不得上抛为身份；
+///   2. `encryptedSession` 为 AES-256-GCM 密文，密钥在环境变量里，绝不落库；
+///   3. 可以"已登录但未绑定" —— 此时 campus 能力返回 CAMPUS_BINDING_REQUIRED。
+model CampusBinding {
+  id         String @id @default(cuid())
+  userId     String
+  /// 目标校园系统：EGATE | CPDAILY | JWC | CARD
+  platform   String
+  /// AES-256-GCM 加密后的 session cookie 引用（密文，非明文）
+  encryptedSession String
+  /// session 的不可逆指纹，仅用于判断"是否需要重新绑定"，不含明文
+  sessionFingerprint String?
+  /// 该绑定被授权的能力范围
+  scopes     String[]
+  status     String   @default("active")
+  expiresAt  DateTime
+  lastUsedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@index([userId, status])
+  @@index([expiresAt])
+}
+
+/// 敏感模块二次同意（契约 §9）。可随时撤回，撤回后保留历史行（revokedAt 非空）。
+///
+/// 访问域：consent
+/// 注意：auth / campus-card 虽是 high 敏感但**不设同意门**，
+/// 判定规则来自 @kedaya/contracts 的 `requiresConsent`，不在本表硬编码。
+model Consent {
+  id        String    @id @default(cuid())
+  userId    String
+  /// 契约 §4 的模块 id：wellbeing | dorm-harmony | ai-portrait
+  module    String
+  /// 用户同意的协议版本，便于协议变更后重新征求
+  version   String    @default("v1")
+  grantedAt DateTime  @default(now())
+  /// 非空表示已撤回
+  revokedAt DateTime?
+  ip        String?
+  ua        String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, module])
+  @@index([userId, module, revokedAt])
+}
+
+/// 审计日志（契约 §9：敏感模块读写全部落审计）。
+///
+/// 访问域：audit（只写不删；仅合规角色可读）
+model AuditLog {
+  id         String   @id @default(cuid())
+  /// 操作者。匿名操作时为 null，用 actorType 区分
+  actorId    String?
+  /// user | anonymous | system | service
+  actorType  String   @default("user")
+  /// 领域动作，如 wellbeing.appointment.create
+  action     String
+  /// 资源类型，如 WellbeingAppointment
+  resource   String
+  resourceId String?
+  /// 契约 §4 模块 id
+  module     String?
+  ip         String?
+  ua         String?
+  at         DateTime @default(now())
+  metadata   Json?
+
+  user User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([module, at])
+  @@index([actorId, at])
+  @@index([resource, resourceId])
+}
+
+/* ================================================================== *
+ * 2. 业务模块表（契约 §4.1，14 个）
+ * ================================================================== */
+
+/// 拼单 · groupbuy（低敏感）
+model GroupbuyOrder {
+  id           String   @id @default(cuid())
+  ownerId      String
+  title        String
+  description  String?
+  category     String
+  /// 成团所需人数
+  targetCount  Int
+  /// 单价，**分**
+  unitPriceFen Int
+  status       String   @default("open")
+  deadline     DateTime
+  pickupSpot   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  members GroupbuyMember[]
+
+  @@index([status, deadline])
+  @@index([category])
+}
+
+/// 拼单参团记录
+model GroupbuyMember {
+  id       String   @id @default(cuid())
+  orderId  String
+  userId   String
+  quantity Int      @default(1)
+  /// 已付金额，**分**
+  paidFen  Int      @default(0)
+  role     String   @default("member")
+  joinedAt DateTime @default(now())
+
+  order GroupbuyOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, userId])
+  @@index([userId])
+}
+
+/// 偷外卖 · takeout-guard（中敏感，支持匿名）
+model TakeoutReport {
+  id          String   @id @default(cuid())
+  /// 实名举报者；匿名举报时为 null
+  reporterId  String?
+  /// 匿名 handle，与实名身份解耦存储（契约 §9）
+  anonHandle  String?
+  orderNo     String
+  place       String
+  happenedAt  DateTime
+  detail      String?
+  evidenceUrl String?
+  status      String   @default("reported")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, happenedAt])
+  @@index([anonHandle])
+}
+
+/// 跳蚤 · flea-market（低敏感）
+model FleaItem {
+  id          String   @id @default(cuid())
+  sellerId    String
+  title       String
+  description String?
+  /// 价格，**分**
+  priceFen    Int
+  category    String
+  /// new | like-new | good | fair
+  condition   String   @default("good")
+  campusSpot  String?
+  status      String   @default("on-sale")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, category])
+  @@index([priceFen])
+}
+
+/// 宿舍矛盾 · dorm-harmony（**高敏感**）
+///
+/// 访问域：dorm-harmony
+/// 契约 §9：匿名调解，禁止进入通用画像；ai-portrait 不得读取本表。
+model DormHarmonyCase {
+  id         String   @id @default(cuid())
+  /// 匿名 handle —— 与实名 User 无外键，刻意解耦
+  anonHandle String
+  building   String
+  topic      String
+  detail     String?
+  status     String   @default("submitted")
+  /// 调解员（宿管/辅导员），未介入时为 null
+  mediatorId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([status, building])
+  @@index([anonHandle])
+}
+
+/// 跑腿 · errand（低敏感）
+model ErrandTask {
+  id          String   @id @default(cuid())
+  requesterId String
+  /// 接单者，未接单为 null
+  runnerId    String?
+  title       String
+  detail      String?
+  /// 悬赏，**分**
+  rewardFen   Int
+  fromPlace   String
+  toPlace     String
+  deadline    DateTime
+  status      String   @default("open")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, deadline])
+  @@index([rewardFen])
+}
+
+/// 找搭子 · buddy（低敏感）
+model BuddyGroup {
+  id         String   @id @default(cuid())
+  ownerId    String
+  activity   String
+  title      String
+  campusSpot String
+  startsAt   DateTime
+  capacity   Int
+  status     String   @default("recruiting")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([status, startsAt])
+  @@index([activity])
+}
+
+/// 失物招领 · lost-found（低敏感）
+model LostFoundItem {
+  id          String   @id @default(cuid())
+  reporterId  String
+  /// lost | found
+  kind        String
+  title       String
+  description String?
+  place       String
+  happenedAt  DateTime
+  contactHint String?
+  status      String   @default("open")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([kind, status])
+  @@index([happenedAt])
+}
+
+/// 食堂营养 · canteen（低敏感）
+/// 食堂菜品（营养管家园的菜品库，ADR 0006）。
+///
+/// 营养字段口径：**每份（servingG 克）**，不是每 100g —— 这样「记录当餐」
+/// 直接按份数累加，客户端无需换算。`category` 为菜的种类（识别与推荐都依赖它），
+/// 取值集合由 `@kedaya/contracts` 侧与各端共享，见 domain 层校验。
+model CanteenDish {
+  id           String  @id @default(cuid())
+  canteen      String
+  name         String
+  /// 菜的种类：staple 主食 / meat 荤菜 / vegetable 素菜 / soup 汤 /
+  /// dessert 甜品 / drink 饮品 / fruit 水果 / other 其他
+  category     String  @default("other")
+  /// 每份克数（营养字段的计量口径）
+  servingG     Int     @default(100)
+  caloriesKcal Int
+  proteinG     Int
+  fatG         Int
+  carbG        Int
+  /// 膳食纤维，克
+  fiberG       Int     @default(0)
+  /// 钠，毫克
+  sodiumMg     Int     @default(0)
+  /// 价格，**分**
+  priceFen     Int
+  /// 营养数据**来源**（食堂公示 / 人工录入 / 供应商提供）。
+  /// 为什么必须有：营养值全是录入的，用户与评委有权知道「这个数字凭什么可信」（ADR 0006 C2）。
+  source        String?
+  /// 营养数据最后一次核对时间（对用户展示「来源 · 更新于 2026-10-12」）
+  lastVerifiedAt DateTime?
+  /// 过敏原 / 忌口标签（机器值：peanut / seafood / egg / milk / soy / gluten / beef / pork /
+  /// chili / cilantro / sesame / tree-nut）。空数组 = **未标注**（不等于「无过敏原」），界面须如实提示。
+  allergens     String[] @default([])
+  /// 软删除（下架）时间。菜品是营养记录的**历史依据**，
+  /// 硬删会让 MealItem.dishId 变成 NULL、历史无法回溯（ADR 0006 §3.1）。
+  deletedAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  mealItems MealItem[]
+
+  @@index([canteen])
+  @@index([caloriesKcal])
+  @@index([category])
+  @@index([deletedAt])
+}
+
+/* ================================================================== *
+ * 营养管家园（ADR 0006）—— 食堂营养模块的完整体
+ *   菜品库 → 当餐记录（营养快照）→ 个人每日需求 → 汇总 / 缺口 / 推荐
+ * ================================================================== */
+
+/// 当餐记录。一餐 = 若干 MealItem。
+/// 营养值在 item 上做**快照**：菜品资料日后修订不影响历史记录（ADR 0006 决策 2）。
+model MealRecord {
+  id     String @id @default(cuid())
+  userId String
+  /// breakfast 早餐 / lunch 午餐 / dinner 晚餐 / snack 加餐
+  mealType String   @default("lunch")
+  /// manual 菜名选择 / photo 拍照识别
+  source   String   @default("manual")
+  eatenAt  DateTime @default(now())
+  note     String?
+  /// 客户端生成的幂等键（弱网重试 / 双击提交只落一次库）
+  clientRequestId String?
+  createdAt DateTime @default(now())
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items MealItem[]
+
+  @@unique([userId, clientRequestId])
+  @@index([userId, eatenAt])
+}
+
+/// 当餐明细。营养字段为**记录时快照（每份）**，汇总时乘 `servings`。
+/// `dishId` 可空：拍照识别出的菜品可能尚未录入菜品库。
+model MealItem {
+  id            String @id @default(cuid())
+  mealId        String
+  dishId        String?
+  dishName      String
+  category      String @default("other")
+  /// 份数，支持 0.5（半份 / 一勺饭）；食堂场景整数不够用
+  servings      Float  @default(1)
+  caloriesKcal  Int
+  proteinG      Int
+  fatG          Int
+  carbG         Int
+  fiberG        Int    @default(0)
+  sodiumMg      Int    @default(0)
+
+  meal MealRecord  @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  dish CanteenDish? @relation(fields: [dishId], references: [id], onDelete: SetNull)
+
+  @@index([mealId])
+  @@index([dishId])
+}
+
+/// 个人每日营养需求（一人一份，`userId` 唯一）。
+///
+/// 需求由**使用者自行提出**（估算器只负责预填）：sodiumMg 语义为
+/// **上限**，其余字段为**目标值**。
+/// 同时保存估算器所需的**身体档案**（可空）：否则用户每次重估都要重填
+/// 性别 / 年龄 / 身高 / 体重，体重变化后也无法一键更新目标（ADR 0006 D4）。
+model NutritionTarget {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  caloriesKcal Int
+  proteinG     Int
+  fatG         Int
+  carbG        Int
+  fiberG       Int      @default(25)
+  sodiumMg     Int      @default(2000)
+  /// 身体档案（估算器输入，可空 = 用户没填过）
+  sex          String?
+  age          Int?
+  heightCm     Int?
+  weightKg     Int?
+  activity     String?
+  goal         String?
+  /// 忌口 / 过敏原（机器值，与 CanteenDish.allergens 同一套）。
+  /// 推荐阶段**硬过滤**：命中即整道菜不出现（过敏是安全问题，不能靠扣分）。
+  avoidAllergens String[] @default([])
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// 论坛 · forum（中敏感，支持匿名）
+model ForumPost {
+  id         String   @id @default(cuid())
+  board      String
+  authorId   String?
+  anonHandle String?
+  title      String
+  body       String
+  status     String   @default("published")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  replies ForumReply[]
+
+  @@index([board, status, createdAt])
+  @@index([anonHandle])
+}
+
+/// 论坛回复
+model ForumReply {
+  id         String   @id @default(cuid())
+  postId     String
+  authorId   String?
+  anonHandle String?
+  body       String
+  createdAt  DateTime @default(now())
+
+  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+}
+
+/// AI 校园画像 · ai-portrait（**高敏感**）
+///
+/// 访问域：ai-portrait
+/// 契约 §9 数据最小化：本表**不得**由 wellbeing / dorm-harmony 的数据派生。
+/// `explain` 存放可解释性字段，`enabled` 对应用户可关闭开关。
+model AiPortraitProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  /// 画像标签（可解释、可关闭）
+  traits    Json
+  /// 每个标签的推导来源，供用户查看"为什么给我推这个"
+  explain   Json
+  enabled   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// 心理治疗 · wellbeing（**最高敏感**）
+///
+/// 访问域：wellbeing
+/// 契约 §9：
+///   · 必须二次同意（Consent 表），否则 CONSENT_REQUIRED；
+///   · 读写全部落 AuditLog；
+///   · 必须提供危机干预热线出口，且不可被埋进二级菜单；
+///   · 数据不进入通用画像。
+model WellbeingAppointment {
+  id         String   @id @default(cuid())
+  userId     String
+  counselor  String
+  slotAt     DateTime
+  /// online | onsite
+  mode       String   @default("onsite")
+  status     String   @default("requested")
+  /// 最小化采集：仅存用户主动填写的诉求摘要
+  note       String?
+  /// 触发危机干预流程的标记
+  crisisFlag Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, slotAt])
+  @@index([status])
+}
+
+/// 常见问题 · faq（低敏感）
+model FaqEntry {
+  id           String   @id @default(cuid())
+  question     String
+  answer       String
+  category     String
+  tags         String[]
+  helpfulCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([category])
+}
+
+/// TechPie 整合 · techpie（中敏感）
+/// 模型名用 Link 而不是 Service，避免与生成的 TechpieService 类名冲突。
+model TechpieLink {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  category  String
+  url       String
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, status])
+}
+
+/// 猫鸟黑天鹅 · wildlife（低敏感）
+model WildlifeSpot {
+  id         String   @id @default(cuid())
+  species    String
+  place      String
+  lat        Float
+  lng        Float
+  note       String?
+  reportedBy String?
+  status     String   @default("active")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([species, status])
+}
+
+/* ================================================================== *
+ * 3. 基础模块表（契约 §4.2，5 个）
+ * ================================================================== */
+
+/// 课表 · schedule（中敏感）
+model ScheduleCourse {
+  id         String   @id @default(cuid())
+  userId     String
+  term       String
+  courseName String
+  teacher    String?
+  location   String?
+  /// 1=周一 … 7=周日
+  weekday    Int
+  /// 第几节开始 / 结束（1..12）
+  startSlot  Int
+  endSlot    Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, term])
+  @@index([term, weekday])
+}
+
+/// 校园卡 · campus-card（**高敏感**，需审计 + 最小采集，但**不设同意门**）
+///
+/// 访问域：campus-card
+/// 契约 §9：登录/开卡这个行为本身就是同意，不叠二次同意门。
+/// 真实流水必须经 CampusSessionPort（第二级）拉取，未绑定 → CAMPUS_BINDING_REQUIRED。
+model CampusCardTransaction {
+  id              String   @id @default(cuid())
+  userId          String
+  /// 金额，**分**。direction 决定正负语义
+  amountFen       Int
+  /// in | out
+  direction       String
+  merchant        String
+  happenedAt      DateTime
+  balanceAfterFen Int
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, happenedAt])
+}
+
+/// 我的 · profile（中敏感）—— 隐私开关集中存放
+model ProfileSetting {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  showRealName     Boolean  @default(false)
+  /// 契约 §9：画像必须"可关闭"
+  allowAiPortrait  Boolean  @default(false)
+  allowWellbeing   Boolean  @default(false)
+  allowDormHarmony Boolean  @default(false)
+  themeMode        String   @default("system")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// 通知 · notifications（低敏感）
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  /// inapp | wechat-subscribe | push
+  channel   String    @default("inapp")
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+}

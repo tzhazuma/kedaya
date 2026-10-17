@@ -1,0 +1,28 @@
+{
+  "name": "kedaya",
+  "version": "0.1.0",
+  "private": true,
+  "description": "可达鸭 · 上海科技大学统一校园服务平台（微信小程序 / Flutter 原生 / Web / NestJS）",
+  "packageManager": "npm@11.20.0",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "tokens": "node packages/design-tokens/scripts/generate.mjs && node scripts/sync-flutter-tokens.mjs",
+    "typecheck": "turbo run typecheck",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10",
+    "turbo": "2.11.8",
+    "typescript": "5.9.3"
+  }
+}

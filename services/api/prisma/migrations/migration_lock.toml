@@ -1,0 +1,3 @@
+﻿# Prisma schema 的锁文件：记录迁移由哪个 provider 生成
+provider = "postgresql"
+

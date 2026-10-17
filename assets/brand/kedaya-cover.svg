@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630"
+     role="img" aria-label="可达鸭 · 上海科技大学统一校园服务平台 封面">
+  <title>可达鸭 · 上海科技大学统一校园服务平台</title>
+  <desc>KedaYa cover art. Original mascot artwork.</desc>
+
+  <defs>
+    <linearGradient id="cvBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="0.55" stop-color="#1B2436"/>
+      <stop offset="1" stop-color="#0B1220"/>
+    </linearGradient>
+    <radialGradient id="cvGlow" cx="0.24" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFD84D" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#FFD84D" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cvBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE68A"/><stop offset="1" stop-color="#FFC53D"/>
+    </linearGradient>
+    <linearGradient id="cvHead" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF6C9"/><stop offset="1" stop-color="#FFD84D"/>
+    </linearGradient>
+    <linearGradient id="cvBill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFB84D"/><stop offset="1" stop-color="#F08F2A"/>
+    </linearGradient>
+    <linearGradient id="cvCap" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#33405A"/><stop offset="1" stop-color="#1B2436"/>
+    </linearGradient>
+    <linearGradient id="cvAccent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFD84D"/><stop offset="1" stop-color="#FF9E3D"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#cvBg)"/>
+  <circle cx="290" cy="315" r="330" fill="url(#cvGlow)"/>
+
+  <!-- ==== mascot (original artwork) ==== -->
+  <g transform="translate(52, 40)">
+    <g transform="rotate(-8 256 74)">
+      <path d="M256 20 L368 70 L256 120 L144 70 Z" fill="url(#cvCap)"/>
+      <path d="M188 90 L188 126 Q256 158 324 126 L324 90 L256 120 Z" fill="#41506E"/>
+      <path d="M360 78 L360 146" stroke="#F2C14E" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="360" cy="154" r="11" fill="#F2C14E"/>
+    </g>
+    <ellipse cx="256" cy="352" rx="120" ry="112" fill="url(#cvBody)"/>
+    <ellipse cx="146" cy="348" rx="25" ry="52" fill="#FFD84D" transform="rotate(-15 146 348)"/>
+    <ellipse cx="366" cy="348" rx="25" ry="52" fill="#FFD84D" transform="rotate(15 366 348)"/>
+    <circle cx="256" cy="212" r="106" fill="url(#cvHead)"/>
+    <g fill="#FFE07A">
+      <ellipse cx="160" cy="176" rx="31" ry="42" transform="rotate(-20 160 176)"/>
+      <ellipse cx="352" cy="176" rx="31" ry="42" transform="rotate(20 352 176)"/>
+    </g>
+    <g stroke="#F5C93A" stroke-width="4" stroke-linecap="round" opacity="0.85">
+      <path d="M148 162 L172 150"/><path d="M144 184 L172 176"/>
+      <path d="M364 162 L340 150"/><path d="M368 184 L340 176"/>
+    </g>
+    <path d="M256 232 C 300 232, 328 250, 328 266 C 328 284, 296 298, 256 298
+             C 216 298, 184 284, 184 266 C 184 250, 212 232, 256 232 Z" fill="url(#cvBill)"/>
+    <path d="M198 260 Q256 276 314 260" stroke="#D97C1E" stroke-width="5" fill="none"
+          stroke-linecap="round" opacity="0.7"/>
+    <circle cx="219" cy="192" r="13" fill="#22262E"/>
+    <circle cx="293" cy="192" r="13" fill="#22262E"/>
+    <circle cx="223.5" cy="187" r="4.6" fill="#FFFFFF"/>
+    <circle cx="297.5" cy="187" r="4.6" fill="#FFFFFF"/>
+    <ellipse cx="182" cy="228" rx="18" ry="10" fill="#FF9E8A" opacity="0.45"/>
+    <ellipse cx="330" cy="228" rx="18" ry="10" fill="#FF9E8A" opacity="0.45"/>
+    <path d="M202 450 q-30 8 -44 26 q22 10 44 2 q10 -12 0 -28 Z" fill="#F08F2A"/>
+    <path d="M310 450 q30 8 44 26 q-22 10 -44 2 q-10 -12 0 -28 Z" fill="#F08F2A"/>
+  </g>
+
+  <!-- ==== text block ==== -->
+  <g font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, Noto Sans CJK SC, Source Han Sans SC, sans-serif">
+    <text x="612" y="176" font-size="34" font-weight="600" fill="#8FA3BF" letter-spacing="6">
+      SHANGHAITECH UNIVERSITY
+    </text>
+
+    <text x="606" y="330" font-size="152" font-weight="800" fill="url(#cvAccent)" letter-spacing="8">
+      可达鸭
+    </text>
+
+    <text x="612" y="398" font-size="40" font-weight="600" fill="#E8EEF7" letter-spacing="2">
+      统一校园服务平台
+    </text>
+
+    <rect x="612" y="432" width="120" height="6" rx="3" fill="url(#cvAccent)"/>
+
+    <text x="612" y="492" font-size="30" font-weight="500" fill="#A9BAD2" letter-spacing="1">
+      上科大，什么需求都可以到达
+    </text>
+
+    <g font-size="22" font-weight="600" fill="#7C8FAA" letter-spacing="1.5">
+      <text x="612" y="556">微信小程序</text>
+      <text x="742" y="556">·</text>
+      <text x="768" y="556">iOS / Android / 鸿蒙</text>
+      <text x="1010" y="556">·</text>
+      <text x="1036" y="556">Web</text>
+    </g>
+  </g>
+</svg>

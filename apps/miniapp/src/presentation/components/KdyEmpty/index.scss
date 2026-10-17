@@ -1,0 +1,35 @@
+.kdy-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: $kdy-space-12 $kdy-space-6;
+  text-align: center;
+}
+
+.kdy-empty__glyph {
+  margin-bottom: $kdy-space-3;
+  font-size: $kdy-font-size-display;
+}
+
+.kdy-empty__title {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-md;
+  font-weight: 600;
+}
+
+.kdy-empty__description {
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-empty__action {
+  margin-top: $kdy-space-5;
+}
+
+.kdy-empty--error .kdy-empty__title {
+  color: $kdy-color-danger;
+}

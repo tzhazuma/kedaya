@@ -1,0 +1,233 @@
+.kdy-nu-history__bars {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+  padding: $kdy-space-2 0;
+}
+
+.kdy-nu-history__chart-wrap {
+  padding: $kdy-space-1 0;
+}
+
+.kdy-nu-history__chart {
+  display: block;
+  width: 100%;
+}
+
+.kdy-nu-history__demo {
+  display: flex;
+  gap: $kdy-space-2;
+  padding-top: $kdy-space-2;
+}
+
+/* 本季饮食形象 */
+.kdy-nu-history__persona {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-3;
+  padding: $kdy-space-2 $kdy-space-3;
+  margin-bottom: $kdy-space-2;
+  background: linear-gradient(135deg, $kdy-color-brand-soft, $kdy-color-surface);
+  border-radius: $kdy-radius-lg;
+}
+
+.kdy-nu-history__persona-emoji {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.kdy-nu-history__persona-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kdy-nu-history__persona-title {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-lg;
+  font-weight: 700;
+}
+
+.kdy-nu-history__persona-subtitle {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.5;
+}
+
+.kdy-nu-history__persona-evidence {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 0 $kdy-space-2;
+}
+
+.kdy-nu-history__persona-evidence-item {
+  color: $kdy-color-text-muted;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.kdy-nu-history__persona-advice {
+  display: block;
+  padding: $kdy-space-2;
+  margin-bottom: $kdy-space-2;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+}
+
+/* 一个人可以有多个形象：主形象高亮，其余并列 */
+.kdy-nu-history__persona-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-2;
+}
+
+.kdy-nu-history__persona-tag {
+  padding: 4px 10px;
+  background-color: $kdy-color-surface-alt;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-pill;
+}
+
+.kdy-nu-history__persona-tag--main {
+  background-color: $kdy-color-brand-soft;
+  border-color: $kdy-color-brand;
+}
+
+.kdy-nu-history__persona-tag-text {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-history__report {
+  display: flex;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-2;
+}
+
+.kdy-nu-history__report-item {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: $kdy-space-2 0;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-nu-history__report-value {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-lg;
+  font-weight: 700;
+}
+
+.kdy-nu-history__report-value--warn {
+  color: $kdy-color-danger;
+}
+
+.kdy-nu-history__report-label {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-history__bar-row {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-nu-history__bar-date {
+  width: 72px;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-history__bar-track {
+  flex: 1;
+}
+
+.kdy-nu-history__bar-value {
+  width: 72px;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+  text-align: right;
+}
+
+.kdy-nu-history__hint {
+  display: block;
+  padding: $kdy-space-2 0;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-nu-history__nav {
+  display: flex;
+  gap: $kdy-space-3;
+}
+
+.kdy-nu-history__nav-btn {
+  color: $kdy-color-brand;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-history__nav-btn--disabled {
+  color: $kdy-color-text-muted;
+}
+
+.kdy-nu-history__meals {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-3;
+}
+
+.kdy-nu-history__meal {
+  padding: $kdy-space-2 $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-nu-history__meal-head {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-1;
+}
+
+.kdy-nu-history__meal-time,
+.kdy-nu-history__meal-kcal {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-history__meal-kcal {
+  margin-left: auto;
+}
+
+.kdy-nu-history__meal-delete {
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-history__meal-items {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.5;
+}
+
+.kdy-nu-history__actions {
+  display: flex;
+  gap: $kdy-space-2;
+  padding: $kdy-space-3 $kdy-space-4 0;
+}
+
+/* WXSS 不支持通配选择器 `*`：按钮外层包一层带类名的 View */
+.kdy-nu-history__action {
+  flex: 1;
+}

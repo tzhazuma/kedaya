@@ -1,0 +1,111 @@
+.kdy-gb-detail__meta {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-gb-detail__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: $kdy-space-1;
+}
+
+.kdy-gb-detail__price {
+  color: $kdy-color-brand-strong;
+  font-size: $kdy-font-size-display;
+  font-weight: 700;
+}
+
+.kdy-gb-detail__price-unit {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-gb-detail__total {
+  margin-left: auto;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-gb-detail__bar {
+  height: 8px;
+  margin-top: $kdy-space-3;
+  overflow: hidden;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-pill;
+}
+
+.kdy-gb-detail__bar-inner {
+  height: 8px;
+  background-color: $kdy-color-brand;
+  border-radius: $kdy-radius-pill;
+}
+
+.kdy-gb-detail__progress-text {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-gb-detail__kv {
+  display: flex;
+  justify-content: space-between;
+  gap: $kdy-space-3;
+  padding: $kdy-space-2 0;
+  border-bottom: 1px solid $kdy-color-border;
+}
+
+.kdy-gb-detail__k {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-gb-detail__v {
+  flex: 1;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  text-align: right;
+}
+
+.kdy-gb-detail__description {
+  display: block;
+  margin-top: $kdy-space-3;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.7;
+}
+
+.kdy-gb-detail__empty-participants {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-gb-detail__participant {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $kdy-space-2 0;
+  border-bottom: 1px solid $kdy-color-border;
+}
+
+.kdy-gb-detail__participant-name {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-gb-detail__participant-qty {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-gb-detail__actions {
+  padding: $kdy-space-4;
+}
+
+.kdy-gb-detail__actions-row {
+  display: flex;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
+}

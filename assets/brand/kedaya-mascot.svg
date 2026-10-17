@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"
+     role="img" aria-label="可达鸭 原创吉祥物：一只双手抱头的黄色小鸭">
+  <title>可达鸭 · 原创吉祥物</title>
+  <desc>KedaYa original duck mascot. Original artwork — not derived from any third-party character design.</desc>
+
+  <defs>
+    <linearGradient id="kdyBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE68A"/>
+      <stop offset="1" stop-color="#FFC53D"/>
+    </linearGradient>
+    <linearGradient id="kdyHead" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF3B8"/>
+      <stop offset="1" stop-color="#FFD84D"/>
+    </linearGradient>
+    <linearGradient id="kdyBill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFB84D"/>
+      <stop offset="1" stop-color="#F08F2A"/>
+    </linearGradient>
+    <linearGradient id="kdyCap" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2F3B52"/>
+      <stop offset="1" stop-color="#1B2436"/>
+    </linearGradient>
+    <radialGradient id="kdyGlow" cx="0.5" cy="0.42" r="0.62">
+      <stop offset="0" stop-color="#FFD84D" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FFD84D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- backdrop glow -->
+  <circle cx="256" cy="268" r="238" fill="url(#kdyGlow)"/>
+
+  <!-- graduation cap (campus marker) -->
+  <g transform="rotate(-9 256 92)">
+    <path d="M256 40 L372 92 L256 144 L140 92 Z" fill="url(#kdyCap)"/>
+    <path d="M186 114 L186 152 Q256 186 326 152 L326 114 L256 146 Z" fill="#3C4A66"/>
+    <path d="M366 100 L366 168" stroke="#F2C14E" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="366" cy="176" r="12" fill="#F2C14E"/>
+  </g>
+
+  <!-- body -->
+  <ellipse cx="256" cy="342" rx="122" ry="116" fill="url(#kdyBody)"/>
+  <!-- wings -->
+  <ellipse cx="140" cy="336" rx="26" ry="54" fill="#FFD84D" transform="rotate(-16 140 336)"/>
+  <ellipse cx="372" cy="336" rx="26" ry="54" fill="#FFD84D" transform="rotate(16 372 336)"/>
+
+  <!-- head -->
+  <circle cx="256" cy="196" r="108" fill="url(#kdyHead)"/>
+
+  <!-- hands clasped on head (the "可达" pose) -->
+  <ellipse cx="196" cy="104" rx="34" ry="27" fill="#FFE07A" transform="rotate(-24 196 104)"/>
+  <ellipse cx="316" cy="104" rx="34" ry="27" fill="#FFE07A" transform="rotate(24 316 104)"/>
+
+  <!-- bill -->
+  <path d="M256 218
+           C 300 218, 328 236, 328 252
+           C 328 270, 296 284, 256 284
+           C 216 284, 184 270, 184 252
+           C 184 236, 212 218, 256 218 Z"
+        fill="url(#kdyBill)"/>
+  <path d="M198 246 Q256 262 314 246" stroke="#D97C1E" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.75"/>
+
+  <!-- eyes -->
+  <circle cx="219" cy="178" r="13" fill="#22262E"/>
+  <circle cx="293" cy="178" r="13" fill="#22262E"/>
+  <circle cx="223.5" cy="173" r="4.6" fill="#FFFFFF"/>
+  <circle cx="297.5" cy="173" r="4.6" fill="#FFFFFF"/>
+
+  <!-- cheeks -->
+  <ellipse cx="180" cy="214" rx="19" ry="11" fill="#FF9E8A" opacity="0.45"/>
+  <ellipse cx="332" cy="214" rx="19" ry="11" fill="#FF9E8A" opacity="0.45"/>
+
+  <!-- feet -->
+  <path d="M198 442 q-30 8 -44 26 q22 10 44 2 q10 -12 0 -28 Z" fill="#F08F2A"/>
+  <path d="M314 442 q30 8 44 26 q-22 10 -44 2 q-10 -12 0 -28 Z" fill="#F08F2A"/>
+</svg>

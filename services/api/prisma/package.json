@@ -1,0 +1,4 @@
+{
+  "//": "让 prisma/ 目录下的 .ts（seed.ts）按 ESM 解析，避免 node 直接运行时的 MODULE_TYPELESS_PACKAGE_JSON 警告；不影响 dist/ 的 CJS 产物。",
+  "type": "module"
+}
