@@ -479,7 +479,24 @@ npm run build:weapp
 ```bash
 grep -r "api.kedaya.example" apps/miniapp/dist | head    # 应该没有输出
 grep -r "TARO_APP_USE_MOCK" apps/miniapp/dist | head     # 应该没有输出
+
+# 主包体积（微信硬上限 2 MB，超了**整个包不能上传**）
+# 主包 = dist 总计 − 各子包目录；体积按**文件字节求和**（`du` 会因 4 KB 块对齐虚高约 45%）
+node -e '
+  const fs=require("fs"), path=require("path");
+  const app=JSON.parse(fs.readFileSync("apps/miniapp/dist/app.json","utf8"));
+  const size=(p)=>{let t=0;const walk=(d)=>{for(const e of fs.readdirSync(d,{withFileTypes:true})){const f=path.join(d,e.name);if(e.isDirectory())walk(f);else t+=fs.statSync(f).size;}return t};return walk(p)};
+  const sub=app.subPackages.reduce((n,s)=>n+size(path.join("apps/miniapp/dist",s.root)),0);
+  const total=size("apps/miniapp/dist");
+  const kb=(n)=>(n/1024).toFixed(0);
+  console.log("dist 总计 "+kb(total)+" KB / 子包 "+kb(sub)+" KB / 主包 "+kb(total-sub)+" KB（上限 2048 KB）");
+'
+# 期望：主包 ≈ 1010 KB，余量约 1 MB
 ```
+
+> 分包配置在 `apps/miniapp/src/app.config.ts`：六个生活模块 + 宿舍矛盾各成一个子包，
+> tabBar 页 / 登录页 / 可达鸭 / 我的 / 核心模块刻意留在主包（见该文件注释）。
+> 改页面归属后请重跑上面这条命令确认主包仍有余量。
 
 ### 10.2 微信后台配置
 

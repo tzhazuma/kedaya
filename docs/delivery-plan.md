@@ -328,7 +328,8 @@ npm run typecheck -w @kedaya/web && npm run test -w @kedaya/web && npm run lint 
 ### 验证方式
 
 - 门禁：api typecheck + 505 测试 + lint 全绿；miniapp typecheck + 442 测试 + lint 全绿；
-  `build:weapp` 成功（产物 1.7 MB，仍在上限内，**距 2 MB 只剩约 300 KB → 分包必须在 R6 做**）。
+  `build:weapp` 成功（当时按 `du -sh` 记为 1.7 MB —— **该数字是错的**，
+  见下方 R6 记录的「体积测量更正」；真实主包约 1180 KB，R6 已分包降到约 1010 KB）。
 - 媒体模块专项：`image-metadata.spec.ts` 13 项、`s3-signature.spec.ts` 7 项、
   `media.service.spec.ts` 15 项；小程序端新增 `domain/models/__tests__/media.test.ts`（16 项）、
   `application/media/__tests__/mediaUseCases.test.ts`（13 项）、`mockMediaRepository.test.ts`（4 项）。

@@ -25,9 +25,63 @@ describe('页面路由表', () => {
     }
   })
 
-  it('app.config.ts 的 pages 与 PAGE_PATHS 完全一致（少一条就是白屏页面）', () => {
-    const declared = appConfig.pages.map((page) => `/${page}`)
+  it('app.config.ts 的 pages + 子包页面与 PAGE_PATHS 完全一致（少一条就是白屏页面）', () => {
+    const declared = [
+      ...appConfig.pages,
+      ...appConfig.subPackages.flatMap((subPackage) =>
+        subPackage.pages.map((page) => `${subPackage.root}/${page}`),
+      ),
+    ].map((page) => `/${page}`)
+
     expect(new Set(declared)).toEqual(new Set(Object.values(PAGE_PATHS)))
+  })
+
+  it('tabBar 页必须在主包（微信硬性要求：分包里的页面不能是 tabBar）', () => {
+    const subPackageRoots = appConfig.subPackages.map((subPackage) => `${subPackage.root}/`)
+
+    for (const tabPath of TAB_BAR_PATHS) {
+      const relative = tabPath.replace(/^\//, '')
+      expect(
+        subPackageRoots.some((root) => relative.startsWith(root)),
+        `tabBar 页 ${tabPath} 被放进了子包`,
+      ).toBe(false)
+      expect(appConfig.pages).toContain(relative)
+    }
+  })
+
+  it('子包声明本身合法：root 不互相嵌套、页面不重复、每包都有页面', () => {
+    const roots = appConfig.subPackages.map((subPackage) => subPackage.root)
+
+    for (const subPackage of appConfig.subPackages) {
+      expect(subPackage.pages.length, `${subPackage.root} 是空包`).toBeGreaterThan(0)
+      // root 互相嵌套（例如 a 与 a/b）会让同一份代码被打进两个包
+      for (const other of roots) {
+        if (other === subPackage.root) continue
+        expect(other.startsWith(`${subPackage.root}/`), `${other} 嵌套在 ${subPackage.root} 里`).toBe(
+          false,
+        )
+      }
+    }
+
+    const all = [
+      ...appConfig.pages,
+      ...appConfig.subPackages.flatMap((subPackage) =>
+        subPackage.pages.map((page) => `${subPackage.root}/${page}`),
+      ),
+    ]
+    expect(new Set(all).size, '存在重复页面（重复会让 Taro 覆盖页面配置）').toBe(all.length)
+  })
+
+  it('预下载规则只指向真实存在的子包，且不在移动网络下白烧用户流量', () => {
+    const roots = new Set(appConfig.subPackages.map((subPackage) => subPackage.root))
+
+    for (const [page, rule] of Object.entries(appConfig.preloadRule)) {
+      expect(appConfig.pages, `preloadRule 的入口 ${page} 必须是主包页面`).toContain(page)
+      for (const target of rule.packages) {
+        expect(roots.has(target), `preloadRule 指向了不存在的子包 ${target}`).toBe(true)
+      }
+      expect(rule.network).toBe('wifi')
+    }
   })
 
   it('没有重复路径（重复会让 Taro 覆盖页面配置）', () => {
