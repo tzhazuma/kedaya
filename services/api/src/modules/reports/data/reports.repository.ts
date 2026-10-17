@@ -138,6 +138,14 @@ export class ReportPrismaRepository implements ReportRepository {
           ? null
           : { authorId: row.reportedBy, title: `${row.species} @ ${row.place}` };
       }
+      case 'techpie-link': {
+        const row = await this.prisma.techpieLink.findUnique({
+          where: { id: targetId },
+          select: { name: true, url: true },
+        });
+        // 共建服务目录没有作者字段：广告 / 钓鱼链接靠举报 + 人工复核，而不是追责到人
+        return row === null ? null : { authorId: null, title: `${row.name} · ${row.url}` };
+      }
     }
   }
 

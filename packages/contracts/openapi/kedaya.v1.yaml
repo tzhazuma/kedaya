@@ -99,7 +99,7 @@ tags:
   - name: ai-portrait
     description: AI 校园画像 —— 基于行为的画像与推荐，可解释、可关闭（需二次同意）
   - name: wellbeing
-    description: 心理治疗 —— 咨询预约、心理测评、危机干预入口（需二次同意）
+    description: 心理支持 —— 倾听与预约入口，危机出口在首屏（需二次同意；不做诊断与治疗）
   - name: faq
     description: 常见问题 —— 知识库与工单式自助答疑
   - name: techpie
@@ -447,17 +447,39 @@ paths:
         '403':
           $ref: '#/components/responses/ConsentRequired'
 
-  /wellbeing/crisis-resources:
+  /wellbeing/crisis-line:
     get:
       tags: [wellbeing]
-      summary: 危机干预资源（无需同意，永远可访问）
+      summary: 危机出口（无需登录、无需同意，永远可访问）
       description: |
-        危机干预热线出口。**故意不要求任何认证或同意** ——
-        处于危机中的用户不应该被任何门槛拦住。
+        危机出口。**故意不要求任何认证或同意** —— 处于危机中的用户不应该被任何门槛拦住。
+        `prominence: primary` 是对前端的硬性要求：必须**首屏**渲染，禁止折叠进二级菜单。
+        `hotlines` 是可拨打的号码；`channels` 是打不了电话时的下一步（辅导员 / 保卫处）。
+        号码可用 `WELLBEING_CRISIS_*` 环境变量覆盖，上线前必须逐个拨通核实。
       security: []
       responses:
         '200':
-          description: 危机资源
+          description: 危机出口（热线 + 可执行的下一步）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/CrisisLine' }
+
+  /wellbeing/consents:
+    get:
+      tags: [wellbeing]
+      summary: 我的同意记录（含已撤回历史）
+      description: |
+        与 `privacy` / `dorm-harmony` / `ai-portrait` 同一形状：每个模块一条记录。
+        返回当前用户的**全部**同意记录，客户端用它判断「哪些还没授权」，
+        并在本地留痕丢失（换设备）时与服务端重新对齐。
+      responses:
+        '200':
+          description: 同意记录
           content:
             application/json:
               schema:
@@ -467,30 +489,35 @@ paths:
                     properties:
                       data:
                         type: array
-                        items: { $ref: '#/components/schemas/CrisisResource' }
-
-  /wellbeing/consent:
+                        items: { $ref: '#/components/schemas/ConsentRecord' }
     post:
       tags: [wellbeing]
-      summary: 授予 / 撤回二次同意
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [module, granted]
-              properties:
-                module:
-                  type: string
-                  enum: [wellbeing, dorm-harmony, ai-portrait]
-                granted: { type: boolean }
+      summary: 授予二次同意（幂等）
       responses:
         '200':
-          description: 同意状态已更新
+          description: 同意已记录
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ApiSuccess' }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ConsentRecord' }
+    delete:
+      tags: [wellbeing]
+      summary: 撤回二次同意（幂等）
+      responses:
+        '200':
+          description: 同意已撤回（返回被撤回的记录）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ConsentRecord' }
 
   # ==================================================================
   # forum —— 完整资源示例（含治理）
@@ -1087,14 +1114,52 @@ components:
               type: array
               items: { $ref: '#/components/schemas/WellbeingAppointment' }
 
-    CrisisResource:
+    CrisisLine:
       type: object
-      required: [name, contact]
+      required: [module, title, message, hotlines, channels, prominence]
       properties:
-        name: { type: string }
-        contact: { type: string }
-        hours: { type: string }
-        description: { type: string }
+        module: { type: string, enum: [wellbeing] }
+        title: { type: string }
+        message: { type: string }
+        prominence:
+          type: string
+          enum: [primary]
+          description: 前端必须**首屏**渲染（禁止折叠进二级菜单）
+        requiresLogin: { type: boolean, const: false }
+        requiresConsent: { type: boolean, const: false }
+        hotlines:
+          type: array
+          description: 可直接拨打的号码（客户端调 `makePhoneCall`）
+          items:
+            type: object
+            required: [name, number]
+            properties:
+              name: { type: string }
+              number: { type: string }
+        channels:
+          type: array
+          description: 打不了电话时的可执行下一步（辅导员 / 保卫处），绝不只写「请寻求专业帮助」
+          items:
+            type: object
+            required: [name, instruction]
+            properties:
+              name: { type: string }
+              instruction: { type: string }
+
+    ConsentRecord:
+      type: object
+      required: [module, nameZh, gated, active]
+      description: 二次同意记录（privacy / dorm-harmony / ai-portrait / wellbeing 共用同一形状）
+      properties:
+        module: { type: string }
+        nameZh: { type: string }
+        summary: { type: string }
+        sensitivity: { type: string }
+        gated: { type: boolean, description: 契约里该模块是否需要二次同意 }
+        active: { type: boolean, description: 当前是否有效授权 }
+        version: { type: string, nullable: true }
+        grantedAt: { type: string, nullable: true }
+        revokedAt: { type: string, nullable: true }
 
     ForumPost:
       type: object

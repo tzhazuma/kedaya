@@ -34,15 +34,19 @@ export const REPORT_TARGET_TYPES = [
   'forum-post',
   'forum-reply',
   /**
-   * 同学共建型内容（食堂菜品 / 常见问题 / 动物观察点）也允许举报。
+   * 同学共建型内容（食堂菜品 / 常见问题 / 动物观察点 / 服务目录）也允许举报。
    *
-   * 这三类都是**用户自己写的**公开内容：别人可以往里塞虚假答案、广告甚至诈骗引导，
+   * 这四类都是**用户自己写的**公开内容：别人可以往里塞虚假答案、广告甚至诈骗引导，
    * 所以「能举报」是必要的。它们没有作者字段（共建匿名），`targetAuthorId` 记为 null
    * —— 于是「不能举报自己」这条规则对它们天然不生效（没有可比的作者）。
+   *
+   * `techpie-link` 尤其需要：一个共建的服务目录最容易被塞进广告 / 钓鱼链接，
+   * 而链接本身没有任何作者信息可用于追责，只能靠举报 + 人工复核。
    */
   'canteen-dish',
   'faq-entry',
   'wildlife-spot',
+  'techpie-link',
 ] as const;
 
 export type ReportTargetType = (typeof REPORT_TARGET_TYPES)[number];

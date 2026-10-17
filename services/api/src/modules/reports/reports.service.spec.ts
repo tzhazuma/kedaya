@@ -61,7 +61,7 @@ function makeService(repo: FakeRepo): ReportService {
 const VALID = { targetType: 'flea-item', targetId: 'item-1', reason: 'fraud' };
 
 describe('白名单（白名单本身就是安全边界）', () => {
-  it('覆盖九个可举报对象类型与七种原因', () => {
+  it('覆盖十个可举报对象类型与七种原因', () => {
     expect([...REPORT_TARGET_TYPES]).toEqual([
       'flea-item',
       'errand-task',
@@ -72,6 +72,7 @@ describe('白名单（白名单本身就是安全边界）', () => {
       'canteen-dish',
       'faq-entry',
       'wildlife-spot',
+      'techpie-link',
     ]);
     expect([...REPORT_REASONS]).toEqual([
       'illegal',

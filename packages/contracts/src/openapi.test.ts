@@ -106,8 +106,8 @@ describe('OpenAPI 契约文件', () => {
     }
   });
 
-  it('wellbeing 的危机资源端点无需认证（危机出口不可被门槛拦住）', () => {
-    const crisis = spec.paths['/wellbeing/crisis-resources'].get;
+  it('wellbeing 的危机出口端点无需认证（危机出口不可被门槛拦住）', () => {
+    const crisis = spec.paths['/wellbeing/crisis-line'].get;
     expect(crisis.security).toEqual([]);
   });
 

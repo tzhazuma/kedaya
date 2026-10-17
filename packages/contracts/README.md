@@ -96,7 +96,7 @@ npx @redocly/cli preview-docs packages/contracts/openapi/kedaya.v1.yaml
 - `CampusBindingSummary` **不得**含任何 `cookie` / `session` / `tgc` 字段（契约 §5）
 - 金额字段一律 `*Fen` 且必须是 `integer`（整数分）
 - 敏感模块端点必须标注 `CONSENT_REQUIRED`
-- `wellbeing/crisis-resources` 必须 `security: []`（危机出口不能被门槛拦住）
+- `wellbeing/crisis-line` 必须 `security: []`（危机出口不能被门槛拦住）
 
 ```bash
 npm run test -w @kedaya/contracts
