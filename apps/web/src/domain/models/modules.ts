@@ -16,7 +16,7 @@ import {
   type ModuleDecoration,
   type PortalModule,
 } from './module';
-import { isDelivered } from './delivery';
+import { deliveryOf, isDelivered, type ModuleDelivery } from './delivery';
 
 /**
  * UI 装饰表：key = 冻结模块 id。
@@ -70,3 +70,45 @@ export const PORTAL_MODULE_COUNT = PORTAL_MODULES.length;
 export const CONTRACT_MODULES = MODULES;
 export const CONTRACT_CORE_MODULES = CORE_MODULES;
 export const CONTRACT_BUSINESS_MODULES = BUSINESS_MODULES;
+
+/* ================================================================== *
+ * 按交付阶段分组（首页「哪些模块已经能用」的三个卡片）
+ *
+ * ⚠️ 这四个是**派生量**，唯一真相是 `delivery.ts` 的 `DELIVERY` 表。
+ * 合并同学分支时它们被丢过一次（`page.tsx` 与 `delivery.test.ts` 都 import 它们），
+ * 于是 web 端 typecheck 直接红。**不要**在别处另写一份判断 ——
+ * 那正是让「宫格角标」与「模块说明页」不一致的原因。
+ * ================================================================== */
+
+/** 一条「已交付」的记录：模块本身 + 它的交付信息 + 该去的链接 */
+export interface DeliveredModuleLink {
+  readonly id: string;
+  readonly nameZh: string;
+  readonly href: string;
+  /** 交付元数据（stage / webHref / note）—— 由 `delivery.ts` 提供，不另写一份 */
+  readonly delivery: ModuleDelivery;
+}
+
+/** 在浏览器里能直接用（有真实路由） */
+export const WEB_READY_MODULES: readonly DeliveredModuleLink[] = PORTAL_MODULES.flatMap((mod) => {
+  const delivery = deliveryOf(mod.id);
+  if (delivery.stage !== 'web' || delivery.webHref === undefined) return [];
+  return [{ id: mod.id, nameZh: mod.nameZh, href: delivery.webHref, delivery }];
+});
+
+/** 微信小程序端已上线（Web 还没有页面，所以 href 指向模块说明页） */
+export const MINIAPP_MODULES: readonly DeliveredModuleLink[] = PORTAL_MODULES.flatMap((mod) => {
+  const delivery = deliveryOf(mod.id);
+  if (delivery.stage !== 'miniapp') return [];
+  return [{ id: mod.id, nameZh: mod.nameZh, href: `/m/${mod.id}`, delivery }];
+});
+
+/** 任意一端已交付（= 不是 api-only） */
+export const DELIVERED_MODULES: readonly PortalModule[] = PORTAL_MODULES.filter((mod) =>
+  isDelivered(deliveryOf(mod.id)),
+);
+
+/** 只有后端接口、两端都还没有页面 */
+export const API_ONLY_MODULES: readonly PortalModule[] = PORTAL_MODULES.filter(
+  (mod) => deliveryOf(mod.id).stage === 'api-only',
+);
