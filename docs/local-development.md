@@ -115,7 +115,7 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 | `CAMPUS_CAS_MOCK_ALLOWED` | 本机不用配：开发环境下 Mock 校园登录本来就可用（`ticket` 传 `mock-<8 位学号>`）。它在**生产环境**是关闭的，要演示整条链路才临时打开 —— 理由见 `docs/deploy.md` §5.2 |
 | `CAMPUS_EGATE_DATA_URL` / `CAMPUS_JWC_DATA_URL` / `CAMPUS_CARD_DATA_URL` | 各校园系统上游地址，仅 `live` 模式使用；未配置则明确报错 |
 | `CAMPUS_UPSTREAM_TIMEOUT_MS` | 校园上游请求超时（毫秒，默认 6000） |
-| `AGENT_LLM_BASE_URL` / `AGENT_LLM_API_KEY` / `AGENT_LLM_MODEL` | 可达鸭的 OpenAI 兼容模型；**全部留空即走规则回答**，功能完整 |
+| `AGENT_LLM_BASE_URL` / `AGENT_LLM_API_KEY` / `AGENT_LLM_MODEL` | 可达鸭的 OpenAI 兼容模型；**全部留空即走规则回答**，功能完整。例：`https://api.modelverse.cn/v1` + `deepseek-v4.1-flash`（优云智算）或 `https://api.deepseek.com/v1` + `deepseek-chat` |
 | `AGENT_LLM_TIMEOUT_MS` | 模型调用超时（毫秒，默认 8000），超时即降级为规则回答 |
 
 `AUTH_DEV_EXPOSE_CODES` 只是为了真机联调方便；生产必须关闭，
@@ -219,9 +219,16 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 | 本周课表（含冲突与可切换学期） | `GET /schedule/week` |
 | 从教务系统整体同步 | `POST /schedule/sync` |
 | 手动加课（临时调课兜底） | `POST /schedule/items` |
-| 校园卡总览（余额 / 流水 / 低于阈值 / 异常扣款 / 还能撑几天） | `GET /campus-card/overview` |
-| 挂失指引（写审计；不谎称已挂失） | `GET /campus-card/lost-report` |
+| 校园卡绑定状态 / 开通 / 解绑（§11.21-B 形状） | `GET`/`POST /campus-card/account`（开通走 `account/activate`）、`DELETE /campus-card/account` |
+| 校园卡流水（游标分页） | `GET /campus-card/transactions` |
+| 付款码（上游未就绪时明确告知） | `GET /campus-card/payment-code` |
 | 隐私开关 / 同意管理 / 数据导出 | `GET`/`PATCH /profile/me`、`/profile/consents`、`/profile/export` |
+
+⚠️ 校园卡目前的余额是**从本地账单推导**的（最新一条流水的 `balanceAfterFen`，契约没有独立余额表），
+而 `CAMPUS_DATA_PORT.fetchCard`（mock / live 的校园卡快照）**还没有被接进任何写入路径** ——
+也就是说本机跑起来 `account` 会是没有流水的状态。接入（同步上游快照 → 落流水）是校园卡模块
+剩下的最后一块；在此之前**不要**用 `balanceFen: 0` 当成"卡里没钱"展示（客户端与 agent 都区分
+"没有账单记录"和"余额为 0"）。
 
 **可达鸭（内置助手）** 的端点是 `POST /agent/chat`、`GET /agent/suggestions`、
 `GET /agent/capabilities`。它**不配置模型也能用**：

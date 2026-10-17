@@ -192,8 +192,8 @@ curl -X POST "https://你的域名/api/v1/auth/login" \
 
 | 变量 | 默认 | 说明 |
 | --- | --- | --- |
-| `AGENT_LLM_BASE_URL` / `AGENT_LLM_API_KEY` / `AGENT_LLM_MODEL` | 空 | **全部留空也能用**：可达鸭走确定性规则回答（响应 `degraded: true`），功能完整。配置后走 OpenAI 兼容的 `/chat/completions` |
-| `AGENT_LLM_TIMEOUT_MS` | `8000` | 超时即降级为规则回答，不让用户干等 |
+| `AGENT_LLM_BASE_URL` / `AGENT_LLM_API_KEY` / `AGENT_LLM_MODEL` | 空 | **全部留空也能用**：可达鸭走确定性规则回答（响应 `degraded: true`），功能完整。三个都填上即走 OpenAI 兼容的 `/chat/completions`（例：优云智算 `https://api.modelverse.cn/v1` + `deepseek-v4.1-flash`；DeepSeek 官方 `https://api.deepseek.com/v1` + `deepseek-chat`） |
+| `AGENT_LLM_TIMEOUT_MS` | `8000` | 超时即降级为规则回答，不让用户干等；推理型模型建议 12000 以上 |
 | `WECHAT_MINIAPP_APPID` / `WECHAT_MINIAPP_SECRET` | 空 | 小程序快捷登录。留空时非生产环境接受 `dev:<设备标识>` 模拟凭证；**生产环境必须配置真实值** |
 | `CORS_ORIGINS` | 空（=允许所有来源） | 小程序不走 CORS，可留空；若将来有 Web 前端，务必收紧为白名单 |
 | `WELLBEING_CRISIS_HOTLINE` / `..._ALT` | 已内置 | 心理模块的危机干预热线（契约 §9：不可被埋进二级菜单） |

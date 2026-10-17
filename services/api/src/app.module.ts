@@ -36,6 +36,8 @@ import { TechpieModule } from './modules/techpie/techpie.module';
 import { WildlifeModule } from './modules/wildlife/wildlife.module';
 // 跨模块隐私基础设施（不是契约 §4 的用户可见模块）：U8 联系方式交换
 import { ContactExchangeModule } from './modules/contact-exchange/contact-exchange.module';
+// 内置助手「可达鸭」：不是契约 §4 的模块（没有首页宫格），而是横跨各模块的组织层
+import { AgentModule } from './modules/agent/agent.module';
 
 /**
  * 应用根模块 —— 契约 §4 的 **20 个模块全部装配**（v1.2 §11.10-C 新增 `facility`），
@@ -91,6 +93,8 @@ import { ContactExchangeModule } from './modules/contact-exchange/contact-exchan
     WildlifeModule,
     // 联系方式交换（U8）：跨模块隐私基础设施，路由 /contact-exchange
     ContactExchangeModule,
+    // 内置助手「可达鸭」：路由 /agent（契约 §4 之外，客户端 `agent` 页面的后端）
+    AgentModule,
   ],
   providers: [
     // TraceMiddleware 必须**显式提供**：虽然它由 `configure(consumer)` 挂载，
