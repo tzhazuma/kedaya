@@ -3,6 +3,7 @@ import { err, ok, type Result } from '@kedaya/shared'
 import type { GroupBuy } from '../../domain/models/groupbuy'
 import type { RepositoryError } from '../../domain/ports/errors'
 import type {
+  CreateGroupBuyInput,
   GroupBuyPage,
   GroupBuyRepository,
   JoinGroupBuyInput,
@@ -75,6 +76,26 @@ export function createMockGroupBuyRepository(
 
     join(id: string, input: JoinGroupBuyInput): Promise<Result<GroupBuy, RepositoryError>> {
       return guard(() => db.join(id, input, now()))
+    },
+
+    create(input: CreateGroupBuyInput): Promise<Result<GroupBuy, RepositoryError>> {
+      return guard(() => db.create(input, now()))
+    },
+
+    withdraw(id: string, userId: string): Promise<Result<GroupBuy, RepositoryError>> {
+      return guard(() => db.withdraw(id, userId, now()))
+    },
+
+    cancel(id: string, userId: string): Promise<Result<GroupBuy, RepositoryError>> {
+      return guard(() => db.cancel(id, userId, now()))
+    },
+
+    publishPickupNotice(id: string, userId: string, notice: string): Promise<Result<GroupBuy, RepositoryError>> {
+      return guard(() => db.publishPickupNotice(id, userId, notice))
+    },
+
+    markReceived(id: string, userId: string, memberId: string, received: boolean): Promise<Result<GroupBuy, RepositoryError>> {
+      return guard(() => db.markReceived(id, userId, memberId, received, now()))
     },
 
     reset(): void {

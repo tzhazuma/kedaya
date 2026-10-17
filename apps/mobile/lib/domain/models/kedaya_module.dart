@@ -2,6 +2,7 @@
 ///
 /// 真相来源：`packages/contracts/src/modules.ts`。导航、宫格、权限判定、路由前缀
 /// 全部由本表驱动 —— **禁止在 widget 里硬编码模块清单**。
+/// `kedayaModules` 保留全部技术能力；一级入口由 `topLevelModules` 筛出。
 /// 两边一致性由 `test/domain/module_registry_test.dart` 断言（19 个模块、id 唯一、
 /// route == id、同意门规则与 `modules.test.ts` 相同）。
 library;
@@ -55,6 +56,7 @@ final class KedayaModule {
     required this.sensitivity,
     required this.requiresConsent,
     required this.route,
+    this.parentId,
   });
 
   /// 冻结的模块 key，同时是 API 路由段。
@@ -72,6 +74,9 @@ final class KedayaModule {
   /// API 路由前缀（不含 `/api/v1`）。
   final String route;
 
+  /// 所属一级产品入口；子功能不单独显示在模块宫格。
+  final String? parentId;
+
   /// 生成 API 路径，例: `path(['items', '123']) -> 'groupbuy/items/123'`。
   String path([Iterable<Object> segments = const <Object>[]]) =>
       <String>[route, ...segments.map((Object segment) => '$segment')].join('/');
@@ -86,9 +91,9 @@ final class KedayaModule {
 const List<KedayaModule> businessModules = <KedayaModule>[
   KedayaModule(
     id: 'groupbuy',
-    nameZh: '拼单',
-    nameEn: 'Group Buy',
-    summary: '拼团凑单：发起、参团、成团、结算',
+    nameZh: '凑凑',
+    nameEn: 'CouCou',
+    summary: '校园凑局：拼单统计已上线，找搭子筹备中',
     category: ModuleCategory.business,
     sensitivity: ModuleSensitivity.low,
     requiresConsent: false,
@@ -143,6 +148,7 @@ const List<KedayaModule> businessModules = <KedayaModule>[
     sensitivity: ModuleSensitivity.low,
     requiresConsent: false,
     route: 'buddy',
+    parentId: 'groupbuy',
   ),
   KedayaModule(
     id: 'lost-found',
@@ -216,9 +222,9 @@ const List<KedayaModule> businessModules = <KedayaModule>[
   ),
   KedayaModule(
     id: 'wildlife',
-    nameZh: '猫鸟黑天鹅',
+    nameZh: '野生居民档案',
     nameEn: 'Campus Wildlife',
-    summary: '校园动物活动区域地图、投喂规范与上报',
+    summary: '校园动物偶遇地图、共享明信片与居民身份档案',
     category: ModuleCategory.business,
     sensitivity: ModuleSensitivity.low,
     requiresConsent: false,
@@ -291,6 +297,15 @@ const List<KedayaModule> kedayaModules = <KedayaModule>[
   ...coreModules,
   ...businessModules,
 ];
+
+/// 首页与模块页只显示一级入口；找搭子归入凑凑。
+final List<KedayaModule> topLevelModules = kedayaModules
+    .where((KedayaModule module) => module.parentId == null)
+    .toList(growable: false);
+
+final List<KedayaModule> topLevelBusinessModules = businessModules
+    .where((KedayaModule module) => module.parentId == null)
+    .toList(growable: false);
 
 final Map<String, KedayaModule> _byId = <String, KedayaModule>{
   for (final KedayaModule module in kedayaModules) module.id: module,

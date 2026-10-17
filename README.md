@@ -155,7 +155,7 @@ kedaya/
 ```bash
 git clone https://github.com/tzhazuma/kedaya.git
 cd kedaya
-npm install
+npm ci
 ```
 
 ### Web 门户
@@ -177,8 +177,15 @@ npm run dev:weapp -w @kedaya/miniapp
 docker compose -f services/api/docker-compose.yml up -d   # Postgres + Redis
 cp services/api/.env.example services/api/.env
 npm run prisma:migrate -w @kedaya/api
-npm run dev -w @kedaya/api          # http://localhost:3000/api/v1
+npm run dev -w @kedaya/api          # http://localhost:3001/api/v1
 ```
+
+API 的 `dev` 命令会先生成 Prisma Client 并编译，然后启动服务。修改后端源码后，
+可在另一个终端运行 `npm run dev:compile -w @kedaya/api`，服务会监视编译产物并重启。
+Web 拼单页默认使用当前浏览器的本地演示数据，可直接在 `/groupbuy` 发起、登记和汇总。
+小程序设置 `TARO_APP_USE_MOCK=false` 与 `TARO_APP_API_BASE_URL=http://localhost:3001`
+后会调用真实拼单 API；需要先启动数据库、执行迁移并登录获得 KedaYa Token。
+网页拼单演示数据不会与小程序或后端同步。
 
 ### 原生移动端
 
@@ -198,18 +205,17 @@ npm run tokens         # 重新生成设计令牌
 
 ---
 
-## 功能模块（19）
+## 产品入口（18；找搭子归入凑凑）
 
 **业务模块**（来自需求图）
 
 | 模块 | 说明 | 敏感级 |
 | --- | --- | --- |
-| 拼单 | 拼团凑单：发起、参团、成团、结算 | 低 |
+| 凑凑 | 校园拼单统计与找搭子 | 低 |
 | 偷外卖 | 外卖被拿错的举报、举证、协商、信用记录 | 中 |
 | 跳蚤 | 二手闲置发布、搜索、议价、面交 | 低 |
 | 宿舍矛盾 | 匿名调解申请、调解员介入、公约投票 | **高** |
 | 跑腿 | 代取快递、买饭、送件，悬赏与接单 | 低 |
-| 找搭子 | 运动、自习、吃饭、出行组队匹配 | 低 |
 | 失物招领 | 丢失登记、拾获登记、双向匹配 | 低 |
 | 食堂营养 | 菜品营养数据、热量估算、饮食建议 | 低 |
 | 论坛 | 版块、主题、回复、举报与治理 | 中 |
@@ -217,9 +223,11 @@ npm run tokens         # 重新生成设计令牌
 | 心理治疗 | 咨询预约、心理测评、危机干预入口 | **最高** |
 | 常见问题 | 知识库与工单式自助答疑 | 低 |
 | TechPie 整合 | 与 TechPie / GeekPie 体系互联互通 | 中 |
-| 猫鸟黑天鹅 | 校园动物活动区域地图、投喂规范、上报 | 低 |
+| 野生居民档案 | 校园动物偶遇地图、共享明信片、动物身份卡 | 低 |
 
 **基础模块**：身份 · 课表 · 校园卡 · 我的 · 通知
+
+「找搭子」现归入「凑凑」作为子功能，不再占用独立首页入口。已有找搭子 API 与数据模型暂时保留；发布与报名页面尚未上线。
 
 > 模块清单的**唯一真相**是 [`packages/contracts/src/modules.ts`](packages/contracts/src/modules.ts)。
 > 三端的导航、宫格、权限判定全部由它驱动，**不允许在各端硬编码**。

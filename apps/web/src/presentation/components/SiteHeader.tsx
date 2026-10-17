@@ -8,7 +8,8 @@ import { ThemeToggle } from '../theme/ThemeToggle';
 
 const NAV = [
   { href: '/', label: '首页' },
-  { href: '/groupbuy', label: '拼单' },
+  { href: '/groupbuy', label: '凑凑' },
+  { href: '/wildlife', label: '野生居民档案' },
   { href: '/admin', label: '管理后台' },
 ] as const;
 
@@ -17,8 +18,8 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-surface/95 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-6xl items-center gap-4 px-4 py-3">
-        <Link href="/" className="flex items-center gap-2">
+      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+        <Link href="/" className="flex shrink-0 items-center gap-2 whitespace-nowrap">
           {/* 品牌图来自 assets/brand（已复制到 public/brand）。
               用原生 <img> 而非 next/image：SVG 走优化器需开 dangerouslyAllowSVG，
               对本地可信静态资源没有必要（此处为 next/image 规则的显式豁免）。 */}
@@ -30,7 +31,7 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav aria-label="主导航" className="ml-2 flex items-center gap-1">
+        <nav aria-label="主导航" className="order-last flex w-full items-center gap-1 overflow-x-auto sm:order-none sm:ml-2 sm:w-auto">
           {NAV.map((item) => {
             const active =
               item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
@@ -40,7 +41,7 @@ export function SiteHeader() {
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'rounded-md px-3 py-1.5 text-sm transition-colors',
+                  'shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-colors',
                   active ? 'bg-brand-soft text-brand-strong' : 'text-muted hover:bg-surface-alt',
                 )}
               >

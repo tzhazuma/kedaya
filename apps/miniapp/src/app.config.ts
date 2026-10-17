@@ -21,6 +21,12 @@ export default {
     'presentation/pages/profile/index',
     'presentation/pages/groupbuy/list/index',
     'presentation/pages/groupbuy/detail/index',
+    'presentation/pages/groupbuy/create/index',
+    'presentation/pages/wildlife/map/index',
+    'presentation/pages/wildlife/encounter/index',
+    'presentation/pages/wildlife/archive/index',
+    'presentation/pages/wildlife/resident/index',
+    'presentation/pages/wildlife/identity/index',
   ],
   window: {
     backgroundTextStyle: 'light',
@@ -30,6 +36,8 @@ export default {
     backgroundColor: color.bg,
     enablePullDownRefresh: false,
   },
+  permission: { 'scope.userLocation': { desc: '用于显示你在校园地图的位置，并在你确认后记录动物偶遇地点。实时位置不会上传。' } },
+  requiredPrivateInfos: ['getLocation', 'chooseLocation', 'startLocationUpdate', 'onLocationChange'],
   tabBar: {
     color: color.textMuted,
     selectedColor: color.brandStrong,

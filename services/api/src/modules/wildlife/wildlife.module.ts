@@ -1,18 +1,16 @@
 /**
- * 猫鸟黑天鹅 · wildlife（契约 §4）
- *
- * 本文件由 scripts/scaffold.mjs 生成；要改形状请改脚本里的 SPEC 表，
- * 改完重跑 `npm run scaffold`，避免 15 个模块各写一套。
+ * 野生居民档案 · wildlife。已实现自定义地图观察/身份业务，勿用通用 CRUD 脚手架覆盖。
  */
 import { Module } from '@nestjs/common';
-import { WildlifeController } from './wildlife.controller';
+import { WildlifeArchiveController } from './archive.controller';
+import { WildlifeArchiveService } from './archive.service';
 import { WildlifeSpotService } from './wildlife.service';
 import { WildlifeSpotPrismaRepository } from './data/wildlife.repository';
 import { WILDLIFE_SPOT_REPOSITORY } from './domain/wildlife.domain';
 
 @Module({
-  controllers: [WildlifeController],
-  providers: [WildlifeSpotService, { provide: WILDLIFE_SPOT_REPOSITORY, useClass: WildlifeSpotPrismaRepository }],
+  controllers: [WildlifeArchiveController],
+  providers: [WildlifeArchiveService, WildlifeSpotService, { provide: WILDLIFE_SPOT_REPOSITORY, useClass: WildlifeSpotPrismaRepository }],
   exports: [WildlifeSpotService],
 })
 export class WildlifeModule {}

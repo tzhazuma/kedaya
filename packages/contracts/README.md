@@ -51,7 +51,7 @@ if (!r.ok) console.warn(r.error.code, r.traceId);
 
 ### 2. 模块注册表（`src/modules.ts`）
 
-19 个模块的**唯一清单**。三端的导航、宫格、权限判定全部由它驱动。
+19 个技术能力的**唯一清单**。三端的导航、宫格、权限判定全部由它驱动；宫格使用 `TOP_LEVEL_MODULES` 展示 18 个一级入口，「找搭子」归入「凑凑」。
 
 ```ts
 import { MODULES, BUSINESS_MODULES, CONSENT_MODULES, getModule, modulePath } from '@kedaya/contracts';

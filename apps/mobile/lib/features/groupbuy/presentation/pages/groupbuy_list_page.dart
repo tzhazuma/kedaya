@@ -12,7 +12,7 @@ import '../../../../presentation/theme/kedaya_tokens.dart';
 import '../../application/groupbuy_providers.dart';
 import '../components/groupbuy_order_card.dart';
 
-/// 拼单列表页（垂直切片的入口）。
+/// 凑凑入口：拼单列表与找搭子子功能。
 ///
 /// 三态：loading / error / empty 由 [AsyncStateView] 统一渲染；
 /// 数据来自 `GroupbuyPort`，默认装配的是内存 mock，因此**无后端也能跑通**。
@@ -27,51 +27,93 @@ class GroupbuyListPage extends ConsumerWidget {
       groupbuyListControllerProvider.notifier,
     );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('拼单'),
-        actions: <Widget>[
-          if (mockControls != null)
-            _MockStateMenu(
-              controls: mockControls,
-              onChanged: () => ref.invalidate(groupbuyListControllerProvider),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('凑凑'),
+          bottom: const TabBar(
+            tabs: <Tab>[Tab(text: '拼单'), Tab(text: '找搭子')],
+          ),
+          actions: <Widget>[
+            if (mockControls != null)
+              _MockStateMenu(
+                controls: mockControls,
+                onChanged: () => ref.invalidate(groupbuyListControllerProvider),
+              ),
+            IconButton(
+              tooltip: '刷新',
+              onPressed: () => controller.refresh(),
+              icon: const Icon(Icons.refresh),
             ),
-          IconButton(
-            tooltip: '刷新',
-            onPressed: () => controller.refresh(),
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: controller.refresh,
-        child: AsyncStateView<GroupbuyListState>(
-          value: value,
-          isEmpty: (GroupbuyListState state) => state.isEmpty,
-          emptyTitle: '还没有拼单',
-          emptyDescription: '换个筛选条件，或者下拉刷新试试。',
-          loadingMessage: '正在加载拼单…',
-          onRetry: controller.refresh,
-          builder: (BuildContext context, GroupbuyListState state) => ListView.separated(
-            padding: const EdgeInsets.all(KedaYaTokens.space4),
-            itemCount: state.orders.length + 1,
-            separatorBuilder: (BuildContext context, int index) =>
-                const SizedBox(height: KedaYaTokens.space3),
-            itemBuilder: (BuildContext context, int index) {
-              if (index == state.orders.length) {
-                return _ListFooter(state: state, controller: controller);
-              }
-              final GroupbuyOrder order = state.orders[index];
-              return GroupbuyOrderCard(
-                order: order,
-                onTap: () => context.push('/groupbuy/${order.id}'),
-              );
-            },
-          ),
+          ],
+        ),
+        body: TabBarView(
+          children: <Widget>[
+            RefreshIndicator(
+              onRefresh: controller.refresh,
+              child: AsyncStateView<GroupbuyListState>(
+                value: value,
+                isEmpty: (GroupbuyListState state) => state.isEmpty,
+                emptyTitle: '还没有拼单',
+                emptyDescription: '换个筛选条件，或者下拉刷新试试。',
+                loadingMessage: '正在加载拼单…',
+                onRetry: controller.refresh,
+                builder: (BuildContext context, GroupbuyListState state) =>
+                    ListView.separated(
+                      padding: const EdgeInsets.all(KedaYaTokens.space4),
+                      itemCount: state.orders.length + 1,
+                      separatorBuilder: (BuildContext context, int index) =>
+                          const SizedBox(height: KedaYaTokens.space3),
+                      itemBuilder: (BuildContext context, int index) {
+                        if (index == state.orders.length) {
+                          return _ListFooter(state: state, controller: controller);
+                        }
+                        final GroupbuyOrder order = state.orders[index];
+                        return GroupbuyOrderCard(
+                          order: order,
+                          onTap: () => context.push('/groupbuy/${order.id}'),
+                        );
+                      },
+                    ),
+              ),
+            ),
+            const _BuddyPreview(),
+          ],
         ),
       ),
     );
   }
+}
+
+class _BuddyPreview extends StatelessWidget {
+  const _BuddyPreview();
+
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(KedaYaTokens.space4),
+    children: const <Widget>[
+      Card(
+        child: Padding(
+          padding: EdgeInsets.all(KedaYaTokens.space4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                '找搭子',
+                style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXl,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: KedaYaTokens.space3),
+              Text('想约同学一起运动、自习、吃饭或出行？找搭子的发布与报名页面正在建设中。'),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
 }
 
 /// 列表底部：翻页入口 / 翻页错误 / 到底提示。

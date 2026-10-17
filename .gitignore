@@ -24,7 +24,12 @@ out/
 
 # ---- 微信小程序 / Taro ----
 apps/miniapp/dist/
+apps/miniapp/dist-prev/
 apps/miniapp/.temp/
+apps/miniapp/.weapp-stage/
+apps/miniapp/.weapp-next/
+apps/miniapp/.weapp-last-good/
+apps/miniapp/.weapp-build.lock
 apps/miniapp/.rn_temp/
 project.private.config.json
 
@@ -72,3 +77,4 @@ logs/
 
 # ---- 临时脚手架脚本产物 ----
 apps/*/.turbo/
+.tmp_probe/

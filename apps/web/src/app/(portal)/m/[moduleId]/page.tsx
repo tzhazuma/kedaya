@@ -1,6 +1,6 @@
 import { Construction, Lock, ShieldCheck } from 'lucide-react';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 import { findPortalModule } from '@/domain/models/module';
 import { PORTAL_MODULES } from '@/domain/models/modules';
@@ -15,13 +15,14 @@ interface ModulePageProps {
   params: Promise<{ moduleId: string }>;
 }
 
-/** 让所有 19 个模块都有可达页面（而非 404），并如实标注"尚未实现"。 */
+/** 为尚未上线的一级模块提供占位页。 */
 export function generateStaticParams() {
   return PORTAL_MODULES.map((mod) => ({ moduleId: mod.id }));
 }
 
 export async function generateMetadata({ params }: ModulePageProps): Promise<Metadata> {
   const { moduleId } = await params;
+  if (moduleId === 'groupbuy' || moduleId === 'buddy') return { title: '凑凑' };
   // 变量名不能叫 `module`（@next/next/no-assign-module-variable）
   const mod = findPortalModule(PORTAL_MODULES, moduleId);
   if (!mod) return { title: '模块不存在' };
@@ -33,6 +34,8 @@ export async function generateMetadata({ params }: ModulePageProps): Promise<Met
 
 export default async function ModulePlaceholderPage({ params }: ModulePageProps) {
   const { moduleId } = await params;
+  if (moduleId === 'groupbuy' || moduleId === 'buddy') redirect('/groupbuy');
+  if (moduleId === 'wildlife') redirect('/wildlife');
   const mod = findPortalModule(PORTAL_MODULES, moduleId);
   if (!mod) notFound();
 
@@ -115,7 +118,7 @@ export default async function ModulePlaceholderPage({ params }: ModulePageProps)
       ) : null}
 
       <div className="flex flex-wrap gap-3">
-        <KdyButton href="/groupbuy">查看已实现的拼单切片</KdyButton>
+        <KdyButton href="/groupbuy">进入凑凑</KdyButton>
         <KdyButton href="/" variant="secondary">
           返回首页
         </KdyButton>

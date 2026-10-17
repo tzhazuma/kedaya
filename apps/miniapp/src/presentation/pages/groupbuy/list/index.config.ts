@@ -1,5 +1,5 @@
 export default {
-  navigationBarTitleText: '拼单',
+  navigationBarTitleText: '凑凑',
   enablePullDownRefresh: true,
   backgroundTextStyle: 'dark',
 }

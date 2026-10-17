@@ -69,6 +69,7 @@ export function isAuditedSensitivity(sensitivity: Sensitivity): boolean {
 /** 已实现真实页面的模块；其余走 `/m/<id>` 建设中占位页 */
 const IMPLEMENTED_ROUTES: Readonly<Record<string, string>> = {
   groupbuy: '/groupbuy',
+  wildlife: '/wildlife',
 };
 
 export function moduleHref(id: string): string {

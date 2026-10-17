@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { GroupBuyDetailView } from '@/presentation/components/groupbuy/GroupBuyDetailView';
+import { CampusGroupBuyDetail } from '../CampusGroupBuy';
 
 export const metadata: Metadata = {
   title: '拼单详情',
@@ -13,5 +13,5 @@ export default async function GroupBuyDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <GroupBuyDetailView id={id} />;
+  return <CampusGroupBuyDetail id={id} />;
 }

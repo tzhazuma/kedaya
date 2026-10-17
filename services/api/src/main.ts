@@ -69,7 +69,7 @@ async function bootstrap(): Promise<void> {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup(`${API_BASE_PATH}/docs`, app, document);
 
-  const port = Number(config.get<string>('PORT') ?? 3000);
+  const port = Number(config.get<string>('PORT') ?? 3001);
   await app.listen(port);
 
   logger.log(`可达鸭 API 已启动 → http://localhost:${port}${API_BASE_PATH}`);

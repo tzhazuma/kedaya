@@ -59,13 +59,13 @@ export default function HomePage() {
           </h1>
           <p className="max-w-xl text-sm text-muted">
             上海科技大学统一校园服务平台：把散落在各处的校园服务入口聚合成一个门户 ——
-            拼单、偷外卖、跳蚤、宿舍矛盾、跑腿、找搭子、失物招领、食堂营养、论坛、心理治疗……
+            凑凑（拼单、找搭子）、野生居民档案、偷外卖、跳蚤、宿舍矛盾、跑腿、失物招领、食堂营养、论坛、心理治疗……
             共 {PORTAL_MODULES.length} 个模块（{PORTAL_MODULE_GROUPS.core.length} 基础 +{' '}
             {PORTAL_MODULE_GROUPS.business.length} 业务）。
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <KdyButton href="/groupbuy">
-              进入拼单垂直切片
+              进入凑凑
               <ArrowRight className="size-4" aria-hidden />
             </KdyButton>
             <KdyButton href="/admin" variant="secondary">
@@ -87,7 +87,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ---------------- 19 个模块宫格 ---------------- */}
+      {/* ---------------- 一级模块宫格 ---------------- */}
       <section className="flex flex-col gap-4" aria-labelledby="modules-heading">
         <header className="flex flex-wrap items-end justify-between gap-2">
           <div>

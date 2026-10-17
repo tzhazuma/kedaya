@@ -6,10 +6,10 @@ import '../domain/models/kedaya_module.dart';
 /// 它又镜像自 `packages/contracts/src/modules.ts`）。
 ///
 /// 页面**必须**从这里取模块，禁止在 widget 里写死清单。
-final moduleCatalogProvider = Provider<List<KedayaModule>>((ref) => kedayaModules);
+final moduleCatalogProvider = Provider<List<KedayaModule>>((ref) => topLevelModules);
 
 final businessModulesProvider = Provider<List<KedayaModule>>(
-  (ref) => businessModules,
+  (ref) => topLevelBusinessModules,
 );
 
 final coreModulesProvider = Provider<List<KedayaModule>>((ref) => coreModules);

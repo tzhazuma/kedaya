@@ -24,6 +24,7 @@ export function authenticateRequest(headers: Record<string, string | string[] | 
   const token = header.slice('Bearer '.length).trim();
   const secret = process.env.JWT_SECRET ?? '';
   const payload = verifyJwt(token, secret);
+  if (payload.typ !== 'access') throw new UnauthenticatedError('请使用访问令牌');
 
   patchContext({ userId: payload.sub, actorType: 'user' });
   return payload.sub;

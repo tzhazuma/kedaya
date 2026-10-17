@@ -7,7 +7,7 @@ import '../../domain/models/kedaya_module.dart';
 import '../components/module_card.dart';
 import '../theme/kedaya_tokens.dart';
 
-/// 全部模块页：注册表驱动的完整清单（19 个：14 业务 + 5 基础）。
+/// 全部模块页：注册表驱动的 18 个一级入口（13 业务 + 5 基础）。
 class ModulesPage extends ConsumerWidget {
   const ModulesPage({super.key});
 
@@ -32,7 +32,7 @@ class ModulesPage extends ConsumerWidget {
             const SizedBox(height: KedaYaTokens.space3),
           ],
           const SizedBox(height: KedaYaTokens.space3),
-          const _GroupHeader(title: '业务模块', subtitle: '来自需求图的 14 个模块'),
+          const _GroupHeader(title: '业务模块', subtitle: '13 个一级入口；找搭子归入凑凑'),
           for (final KedayaModule module in business) ...<Widget>[
             ModuleCard(
               module: module,

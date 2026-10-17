@@ -47,7 +47,7 @@ class HomePage extends ConsumerWidget {
             subtitle: '清单来自 packages/contracts/src/modules.ts，本端只镜像不新增',
           ),
           const SizedBox(height: KedaYaTokens.space3),
-          for (final KedayaModule module in businessModules)
+          for (final KedayaModule module in topLevelBusinessModules)
             Padding(
               padding: const EdgeInsets.only(bottom: KedaYaTokens.space3),
               child: ModuleCard(
@@ -59,7 +59,7 @@ class HomePage extends ConsumerWidget {
           Center(
             child: TextButton(
               onPressed: () => context.go('/modules'),
-              child: const Text('查看全部 19 个模块'),
+              child: Text('查看全部 ${topLevelModules.length} 个模块'),
             ),
           ),
         ],
@@ -187,7 +187,7 @@ class _GroupbuyEntryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      '拼单',
+                      '凑凑',
                       style: TextStyle(
                         fontSize: KedaYaTokens.fontSizeMd,
                         fontWeight: KedaYaTokens.fontWeightSemibold,
@@ -196,7 +196,7 @@ class _GroupbuyEntryCard extends StatelessWidget {
                     ),
                     SizedBox(height: KedaYaTokens.space1),
                     Text(
-                      '列表 + 详情 + 参团，三态齐全；默认走内存 mock，无需后端',
+                      '拼单已可使用，找搭子的发布与报名页面正在建设中',
                       style: TextStyle(
                         fontSize: KedaYaTokens.fontSizeSm,
                         color: KedaYaTokens.colorTextMuted,

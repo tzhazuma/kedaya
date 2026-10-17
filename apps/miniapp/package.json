@@ -5,8 +5,8 @@
   "description": "可达鸭 · 微信小程序（主端）—— Taro 4.3 + React 19 + TypeScript 5.9",
   "scripts": {
     "tokens:scss": "node scripts/generate-tokens-scss.mjs",
-    "dev:weapp": "npm run tokens:scss && taro build --type weapp --watch",
-    "build:weapp": "npm run tokens:scss && taro build --type weapp",
+    "dev:weapp": "node scripts/build-weapp.cjs --watch",
+    "build:weapp": "node scripts/build-weapp.cjs",
     "dev:h5": "npm run tokens:scss && taro build --type h5 --watch",
     "build:h5": "npm run tokens:scss && taro build --type h5",
     "build": "npm run build:weapp",

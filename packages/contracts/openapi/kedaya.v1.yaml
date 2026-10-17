@@ -105,7 +105,7 @@ tags:
   - name: techpie
     description: TechPie 整合 —— 与 TechPie / GeekPie 体系互联互通
   - name: wildlife
-    description: 猫鸟黑天鹅 —— 校园动物活动区域地图、投喂规范与上报
+    description: 野生居民档案 —— 校园动物偶遇地图、共享明信片与动物身份卡
 
 paths:
   # ==================================================================
@@ -883,7 +883,7 @@ paths:
   /wildlife/items:
     get:
       tags: [wildlife]
-      summary: 校园动物活动点列表
+      summary: 共享偶遇列表（兼容入口，等同 sightings）
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -891,14 +891,155 @@ paths:
         '200': { $ref: '#/components/responses/ModuleList' }
     post:
       tags: [wildlife]
-      summary: 上报动物目击 / 活动区域
+      summary: 发布偶遇（兼容入口，等同 sightings）
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/WildlifeSpotCreate' }
+            schema: { $ref: '#/components/schemas/WildlifeSightingCreate' }
       responses:
         '201': { $ref: '#/components/responses/ModuleCreated' }
+
+  /wildlife/categories:
+    get:
+      tags: [wildlife]
+      summary: 获取动物类别与地图标记元数据
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+  /wildlife/sightings:
+    get:
+      tags: [wildlife]
+      summary: 共享偶遇列表（按 observedAt 和 id 倒序游标分页）
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - { name: category, in: query, schema: { type: string } }
+        - { name: animalId, in: query, schema: { type: string } }
+        - { name: south, in: query, schema: { type: number, minimum: -90, maximum: 90 } }
+        - { name: north, in: query, schema: { type: number, minimum: -90, maximum: 90 } }
+        - { name: west, in: query, schema: { type: number, minimum: -180, maximum: 180 } }
+        - { name: east, in: query, schema: { type: number, minimum: -180, maximum: 180 } }
+        - { name: since, in: query, schema: { type: string, format: date-time } }
+        - { name: until, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [wildlife]
+      summary: 发布共享偶遇；createdBy 从访问令牌获取
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WildlifeSightingCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+  /wildlife/sightings/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [wildlife]
+      summary: 公开偶遇明信片详情
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+    patch:
+      tags: [wildlife]
+      summary: 编辑偶遇或补关联身份卡；限作者或配置的管理员
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WildlifeSightingUpdate' }
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+    delete:
+      tags: [wildlife]
+      summary: 删除偶遇；限作者或配置的管理员
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+  /wildlife/animals:
+    get:
+      tags: [wildlife]
+      summary: 居民档案馆；昵称、区域及外貌搜索，按创建时间倒序
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - { name: category, in: query, schema: { type: string } }
+        - { name: search, in: query, schema: { type: string, maxLength: 120 } }
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+    post:
+      tags: [wildlife]
+      summary: 建立共享动物身份卡，昵称允许重名
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WildlifeAnimalCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+  /wildlife/animals/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [wildlife]
+      summary: 居民身份详情（包含 sightingCount）
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+    patch:
+      tags: [wildlife]
+      summary: 编辑身份卡；限创建者或管理员；已有足迹不能改类别
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WildlifeAnimalUpdate' }
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+  /wildlife/animals/{id}/sightings:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [wildlife]
+      summary: 同一居民的共享历史足迹
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+  /wildlife/photos:
+    post:
+      tags: [wildlife]
+      summary: 图片上传（不超过 8MB；解码校验并移除 EXIF，返回 id/url）
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+  /wildlife/photos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [wildlife]
+      summary: 读取共享照片（二进制，不使用 JSON 信封）
+      responses:
+        '200':
+          description: JPEG image
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
 
 # ====================================================================
 components:
@@ -935,6 +1076,57 @@ components:
       schema: { type: string }
 
   schemas:
+    WildlifeSightingCreate:
+      type: object
+      additionalProperties: false
+      required: [category, description, place, latitude, longitude, locationBlurred, observedAt, animalId, photoIds, clientRequestId]
+      properties:
+        category: { type: string, maxLength: 50 }
+        description: { type: string, minLength: 1, maxLength: 1500 }
+        place: { type: string, minLength: 1, maxLength: 200 }
+        latitude: { type: number, minimum: -90, maximum: 90, description: GCJ-02 }
+        longitude: { type: number, minimum: -180, maximum: 180, description: GCJ-02 }
+        locationBlurred: { type: boolean, description: 模糊后只保存约百米精度，不保留原始精确位置 }
+        observedAt: { type: string, format: date-time }
+        animalId: { type: [string, 'null'] }
+        photoIds: { type: array, maxItems: 6, uniqueItems: true, items: { type: string } }
+        clientRequestId: { type: string, minLength: 8, maxLength: 100, description: 用户范围内幂等，同一编号不能提交不同内容 }
+    WildlifeSightingUpdate:
+      type: object
+      additionalProperties: false
+      description: 与创建字段相同，均可选；不接受 clientRequestId、createdBy 或其他作者字段
+      properties:
+        category: { type: string }
+        description: { type: string, minLength: 1, maxLength: 1500 }
+        place: { type: string, minLength: 1, maxLength: 200 }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        locationBlurred: { type: boolean }
+        observedAt: { type: string, format: date-time }
+        animalId: { type: [string, 'null'] }
+        photoIds: { type: array, maxItems: 6, uniqueItems: true, items: { type: string } }
+    WildlifeAnimalCreate:
+      type: object
+      additionalProperties: false
+      required: [name, category, avatarId, appearance, commonArea, description, clientRequestId]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        category: { type: string, maxLength: 50 }
+        avatarId: { type: [string, 'null'] }
+        appearance: { type: string, maxLength: 500 }
+        commonArea: { type: string, maxLength: 200 }
+        description: { type: string, maxLength: 1500 }
+        clientRequestId: { type: string, minLength: 8, maxLength: 100 }
+    WildlifeAnimalUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        category: { type: string, maxLength: 50 }
+        avatarId: { type: [string, 'null'] }
+        appearance: { type: string, maxLength: 500 }
+        commonArea: { type: string, maxLength: 200 }
+        description: { type: string, maxLength: 1500 }
     # ---------------- 信封 ----------------
     ApiErrorCode:
       type: string

@@ -12,7 +12,7 @@
 | 文件 | 内容 |
 | --- | --- |
 | `models/module.ts` | 门户模块模型 + 注册表自检 `validateModuleRegistry`（纯函数） |
-| `models/modules.ts` | **19 个模块注册表**（`PORTAL_MODULES`），首页宫格唯一数据源 |
+| `models/modules.ts` | **18 个一级入口**（`PORTAL_MODULES`），首页宫格唯一数据源；找搭子归入凑凑 |
 | `models/groupbuy.ts` | 拼单模型 + 状态机 + 名额/进度/折扣纯函数 |
 | `models/audit.ts` | 审计记录 + 模块开关模型 + 权限判定纯函数 |
 | `ports/groupbuy.ts` | `GroupBuyRepository`（list / detail / join） |

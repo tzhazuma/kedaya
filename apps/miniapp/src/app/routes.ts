@@ -13,6 +13,8 @@ export const PAGE_PATHS = {
   profile: '/presentation/pages/profile/index',
   groupBuyList: '/presentation/pages/groupbuy/list/index',
   groupBuyDetail: '/presentation/pages/groupbuy/detail/index',
+  groupBuyCreate: '/presentation/pages/groupbuy/create/index',
+  wildlife: '/presentation/pages/wildlife/map/index',
 } as const
 
 export type PagePath = (typeof PAGE_PATHS)[keyof typeof PAGE_PATHS]

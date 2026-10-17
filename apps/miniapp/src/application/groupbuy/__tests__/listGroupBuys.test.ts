@@ -64,6 +64,21 @@ function createFakeRepository(
     async join(_id: string, _input: JoinGroupBuyInput): Promise<Result<GroupBuy, RepositoryError>> {
       return { ok: false, error: { code: 'INTERNAL', message: '未实现' } }
     },
+    async create(): Promise<Result<GroupBuy, RepositoryError>> {
+      return { ok: false, error: { code: 'INTERNAL', message: '未实现' } }
+    },
+    async withdraw(): Promise<Result<GroupBuy, RepositoryError>> {
+      return { ok: false, error: { code: 'INTERNAL', message: '未实现' } }
+    },
+    async cancel(): Promise<Result<GroupBuy, RepositoryError>> {
+      return { ok: false, error: { code: 'INTERNAL', message: '未实现' } }
+    },
+    async publishPickupNotice(): Promise<Result<GroupBuy, RepositoryError>> {
+      return { ok: false, error: { code: 'INTERNAL', message: '未实现' } }
+    },
+    async markReceived(): Promise<Result<GroupBuy, RepositoryError>> {
+      return { ok: false, error: { code: 'INTERNAL', message: '未实现' } }
+    },
   }
 }
 

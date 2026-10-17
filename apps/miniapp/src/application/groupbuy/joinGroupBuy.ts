@@ -31,7 +31,7 @@ export interface JoinGroupBuyOutcome {
 }
 
 export interface JoinGroupBuyUseCase {
-  join(id: string, quantity?: number, anonymous?: boolean): Promise<Result<JoinGroupBuyOutcome, RepositoryError>>
+  join(id: string, quantity?: number, anonymous?: boolean, note?: string, selections?: Array<{ item: string; quantity: number }>): Promise<Result<JoinGroupBuyOutcome, RepositoryError>>
 }
 
 export function createJoinGroupBuyUseCase(deps: JoinGroupBuyDeps): JoinGroupBuyUseCase {
@@ -42,6 +42,8 @@ export function createJoinGroupBuyUseCase(deps: JoinGroupBuyDeps): JoinGroupBuyU
       id: string,
       quantity = 1,
       anonymous = false,
+      note = '',
+      selections,
     ): Promise<Result<JoinGroupBuyOutcome, RepositoryError>> {
       const profile = session.getSnapshot().profile
       if (profile === null) {
@@ -66,8 +68,10 @@ export function createJoinGroupBuyUseCase(deps: JoinGroupBuyDeps): JoinGroupBuyU
         displayName: profile.nickname,
         quantity,
         anonymous,
+        note,
+        selections,
         // 契约 §6.1：写操作带幂等键，防止弱网重试造成重复参团
-        idempotencyKey: `groupbuy:join:${id}:${profile.id}`,
+        idempotencyKey: `groupbuy:join:${id}:${profile.id}:${quantity}:${note}`,
       })
       if (!joined.ok) return joined
 

@@ -23,6 +23,9 @@ export interface GroupBuyParticipant {
   anonymous: boolean
   quantity: number
   joinedAt: string
+  note?: string
+  receivedAt?: string | null
+  selections?: Array<{ item: string; quantity: number }>
 }
 
 export interface GroupBuy {
@@ -43,6 +46,12 @@ export interface GroupBuy {
   status: GroupBuyStatus
   createdAt: string
   updatedAt: string
+  kind?: 'ordinary' | 'membership'
+  merchantName?: string
+  itemSpec?: string
+  itemOptions?: string[]
+  cancelReason?: 'TIMEOUT_24H' | 'CREATOR_CANCELLED'
+  pickupNotice?: string
 }
 
 /** 列表/卡片展示用的派生摘要 —— UI 只读这个，避免在组件里重复计算 */
@@ -65,6 +74,9 @@ export interface GroupBuySummary {
   status: GroupBuyStatus
   statusLabel: string
   joinable: boolean
+  kind: 'ordinary' | 'membership'
+  merchantName?: string
+  itemCount: number
 }
 
 export const GROUP_BUY_CATEGORIES: readonly GroupBuyCategory[] = [
@@ -143,7 +155,7 @@ export function isExpired(groupBuy: GroupBuy, now: Date): boolean {
 export function deriveStatus(groupBuy: GroupBuy, now: Date): GroupBuyStatus {
   if (groupBuy.status === 'cancelled') return 'cancelled'
   if (joinedQuantity(groupBuy) >= groupBuy.targetCount) return 'full'
-  if (isExpired(groupBuy, now)) return 'closed'
+  if (isExpired(groupBuy, now)) return 'cancelled'
   return 'open'
 }
 
@@ -162,7 +174,7 @@ export function canJoin(
 
   const status = deriveStatus(groupBuy, now)
   if (status === 'cancelled') {
-    return { allowed: false, reason: 'not-open', message: '该拼单已被发起人取消' }
+    return { allowed: false, reason: 'not-open', message: '该拼单已取消或超过 24 小时未成团' }
   }
   if (status === 'full') {
     return { allowed: false, reason: 'full', message: '已经成团，来晚了一步' }
@@ -170,11 +182,8 @@ export function canJoin(
   if (status === 'closed') {
     return { allowed: false, reason: 'expired', message: '已过截止时间' }
   }
-  if (userId !== null && groupBuy.participants.some((p) => p.id === userId)) {
-    return { allowed: false, reason: 'already-joined', message: '你已经参团了' }
-  }
-
-  const remaining = remainingSlots(groupBuy)
+  const previous = groupBuy.participants.find((p) => p.id === userId)?.quantity ?? 0
+  const remaining = remainingSlots(groupBuy) + previous
   if (quantity > remaining) {
     return { allowed: false, reason: 'full', message: `只剩 ${remaining} 份了` }
   }
@@ -204,5 +213,8 @@ export function summarize(groupBuy: GroupBuy, now: Date): GroupBuySummary {
     status,
     statusLabel: statusLabel(status),
     joinable: status === 'open',
+    kind: groupBuy.kind ?? 'ordinary',
+    merchantName: groupBuy.merchantName,
+    itemCount: groupBuy.itemOptions?.length || 1,
   }
 }

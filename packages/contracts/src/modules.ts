@@ -25,6 +25,8 @@ export interface KedayaModule {
   requiresConsent: boolean;
   /** API 路由前缀（不含 /api/v1） */
   route: string;
+  /** 所属产品入口；子功能保留独立 API 标识，但不占首页模块入口 */
+  parentId?: string;
 }
 
 /* ------------------------------------------------------------------ *
@@ -33,9 +35,9 @@ export interface KedayaModule {
 export const BUSINESS_MODULES: readonly KedayaModule[] = [
   {
     id: 'groupbuy',
-    nameZh: '拼单',
-    nameEn: 'Group Buy',
-    summary: '拼团凑单：发起、参团、成团、结算',
+    nameZh: '凑凑',
+    nameEn: 'CouCou',
+    summary: '校园凑局：拼单统计已上线，找搭子筹备中',
     category: 'business',
     sensitivity: 'low',
     requiresConsent: false,
@@ -90,6 +92,7 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
     sensitivity: 'low',
     requiresConsent: false,
     route: 'buddy',
+    parentId: 'groupbuy',
   },
   {
     id: 'lost-found',
@@ -163,9 +166,9 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
   },
   {
     id: 'wildlife',
-    nameZh: '猫鸟黑天鹅',
+    nameZh: '野生居民档案',
     nameEn: 'Campus Wildlife',
-    summary: '校园动物活动区域地图、投喂规范与上报',
+    summary: '校园动物偶遇地图、共享明信片与居民身份档案',
     category: 'business',
     sensitivity: 'low',
     requiresConsent: false,
@@ -234,6 +237,9 @@ export const CORE_MODULES: readonly KedayaModule[] = [
  * ------------------------------------------------------------------ */
 
 export const MODULES: readonly KedayaModule[] = [...CORE_MODULES, ...BUSINESS_MODULES];
+
+/** 一级产品入口；找搭子归入「凑凑」，不再单独出现在模块宫格。 */
+export const TOP_LEVEL_MODULES: readonly KedayaModule[] = MODULES.filter((m) => m.parentId === undefined);
 
 /** 需要二次同意的模块（契约 §9） */
 export const CONSENT_MODULES: readonly KedayaModule[] = MODULES.filter((m) => m.requiresConsent);

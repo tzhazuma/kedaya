@@ -7,3 +7,5 @@
 
 export * from './envelope';
 export * from './modules';
+export * from './wildlife';
+export * from './campus-map';

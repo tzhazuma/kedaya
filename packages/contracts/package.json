@@ -10,6 +10,8 @@
     ".": "./src/index.ts",
     "./envelope": "./src/envelope.ts",
     "./modules": "./src/modules.ts",
+    "./wildlife": "./src/wildlife.ts",
+    "./campus-map": "./src/campus-map.ts",
     "./openapi": "./openapi/kedaya.v1.yaml"
   },
   "files": [

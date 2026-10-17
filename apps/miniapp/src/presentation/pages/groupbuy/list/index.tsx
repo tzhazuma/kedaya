@@ -4,7 +4,7 @@ import { fenToYuan } from '@kedaya/shared'
 import { useState } from 'react'
 
 import { getContainer } from '../../../../app/container'
-import { groupBuyDetailPath } from '../../../../app/routes'
+import { PAGE_PATHS, groupBuyDetailPath } from '../../../../app/routes'
 import { GROUP_BUY_CATEGORIES, GROUP_BUY_CATEGORY_LABELS } from '../../../../domain/models/groupbuy'
 import type { GroupBuyCategoryFilter, GroupBuySummary } from '../../../../domain/models/groupbuy'
 import { navigateTo, toast } from '../../../../platform/navigation'
@@ -14,7 +14,7 @@ import { useStore } from '../../../hooks'
 import './index.scss'
 
 /**
- * 拼单列表页 —— 垂直切片的入口。
+ * 凑凑入口 —— 拼单列表与找搭子子功能。
  *
  * 三态齐全：
  * - `loading`：首次进入、无缓存
@@ -56,13 +56,16 @@ function GroupBuyCard({ item }: { item: GroupBuySummary }) {
 
         <View className='kdy-gb-card__meta'>
           <KdyTag tone='neutral'>{item.categoryLabel}</KdyTag>
+          <KdyTag tone={item.kind === 'membership' ? 'info' : 'neutral'}>
+            {item.kind === 'membership' ? '会员代购·发起人自述持卡' : '普通拼单'}
+          </KdyTag>
           <Text className='kdy-gb-card__place'>{item.pickupPlace}</Text>
         </View>
 
         <View className='kdy-gb-card__row'>
-          <Text className='kdy-gb-card__price'>¥{fenToYuan(item.priceFen)}</Text>
+          <Text className='kdy-gb-card__price'>{item.itemCount > 1 ? '多商品·线下核价' : item.priceFen > 0 ? `参考 ¥${fenToYuan(item.priceFen)}` : '线下商议价格'}</Text>
           <Text className='kdy-gb-card__progress'>
-            {item.joinedQuantity}/{item.targetCount} 份 · 还差 {item.remainingSlots} 份
+            {item.joinedQuantity}/{item.targetCount} 份 · {item.joinedCount} 人 · 还差 {item.remainingSlots} 份
           </Text>
         </View>
 
@@ -87,6 +90,7 @@ export default function GroupBuyListPage() {
   const list = container.useCases.listGroupBuys
   const state = useStore(list)
   const [category, setCategory] = useState<GroupBuyCategoryFilter>('all')
+  const [activeFeature, setActiveFeature] = useState<'groupbuy' | 'buddy'>('groupbuy')
 
   function reload(next: GroupBuyCategoryFilter): void {
     void list.load({ category: next, cursor: null })
@@ -99,11 +103,15 @@ export default function GroupBuyListPage() {
   })
 
   usePullDownRefresh(() => {
+    if (activeFeature === 'buddy') {
+      void Taro.stopPullDownRefresh()
+      return
+    }
     void list.load({ category, cursor: null }).then(() => Taro.stopPullDownRefresh())
   })
 
   useReachBottom(() => {
-    void list.loadMore({ category })
+    if (activeFeature === 'groupbuy') void list.loadMore({ category })
   })
 
   function handleSelectCategory(next: GroupBuyCategoryFilter): void {
@@ -138,6 +146,16 @@ export default function GroupBuyListPage() {
 
   return (
     <View className='kdy-page kdy-gb-list'>
+      <View className='kdy-gb-list__intro'>
+        <Text className='kdy-gb-list__title'>凑凑</Text>
+        <Text className='kdy-gb-list__subtitle'>在这里拼单，也可以找搭子。</Text>
+      </View>
+      <View className='kdy-gb-list__features'>
+        <KdyButton variant={activeFeature === 'groupbuy' ? 'primary' : 'ghost'} onClick={() => setActiveFeature('groupbuy')}>拼单</KdyButton>
+        <KdyButton variant={activeFeature === 'buddy' ? 'primary' : 'ghost'} onClick={() => setActiveFeature('buddy')}>找搭子</KdyButton>
+      </View>
+
+      {activeFeature === 'groupbuy' ? <>
       <View className='kdy-gb-list__filters'>
         {CATEGORY_FILTERS.map((filter) => (
           <View
@@ -150,6 +168,12 @@ export default function GroupBuyListPage() {
             </KdyTag>
           </View>
         ))}
+      </View>
+
+      <View className='kdy-gb-list__create'>
+        <KdyButton block variant='primary' onClick={() => { void navigateTo(PAGE_PATHS.groupBuyCreate) }}>
+          发起拼单
+        </KdyButton>
       </View>
 
       <View className='kdy-gb-list__demo'>
@@ -208,6 +232,9 @@ export default function GroupBuyListPage() {
           后台刷新失败：{state.error}（已继续展示缓存数据，契约 §8 静默降级）
         </Text>
       )}
+      </> : <KdyCard title='找搭子' elevated={false}>
+        <Text className='kdy-gb-list__buddy-hint'>想约同学一起运动、自习、吃饭或出行？找搭子的发布与报名页面正在建设中。</Text>
+      </KdyCard>}
 
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。

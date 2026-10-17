@@ -44,6 +44,9 @@ npm run lint      -w @kedaya/miniapp
 
 1. 先构建：`npm run build:weapp -w @kedaya/miniapp`
    → 产物落在 `apps/miniapp/dist/`（`miniprogramRoot` 已指向它）。
+   构建先写入 `.weapp-stage/`，校验页面和脚本后才发布到 `dist/`；
+   上一份完整产物保留在 `.weapp-last-good/`。开发监听使用同一流程。
+   请等命令行显示“完整包已发布”后再在开发者工具中编译。
 2. 打开「微信开发者工具」→ **导入项目**：
    - 目录：`<repo>/apps/miniapp`
    - AppID：**游客模式**即可（`project.config.json` 里是占位值 `touristappid`）

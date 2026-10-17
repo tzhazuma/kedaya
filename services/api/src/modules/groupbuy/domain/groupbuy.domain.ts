@@ -1,64 +1,91 @@
-/**
- * 拼单 · groupbuy（契约 §4）
- *
- * 本文件由 scripts/scaffold.mjs 生成；要改形状请改脚本里的 SPEC 表，
- * 改完重跑 `npm run scaffold`，避免 15 个模块各写一套。
- */
-import type { ResourceRepository } from '../../../common/crud/resource';
+import type { Page } from '@kedaya/contracts';
+import type { ListParams } from '../../../common/crud/resource';
 
-/** 领域模型：字段与 Prisma 行字段一一对应（domain 层不 import Prisma） */
+export interface GroupbuyListParams extends ListParams {
+  category?: string;
+  keyword?: string;
+  kind?: GroupbuyKind;
+}
+
+export type GroupbuyKind = 'ordinary' | 'membership';
+export type GroupbuyStatus = 'open' | 'grouped' | 'cancelled';
+
+export interface GroupbuyMemberModel {
+  id: string;
+  userId: string;
+  displayName: string;
+  quantity: number;
+  note: string | null;
+  joinedAt: Date;
+  receivedAt: Date | null;
+  selections: Array<{ item: string; quantity: number }>;
+}
+
 export interface GroupbuyOrderModel {
+  id: string;
   ownerId: string;
   title: string;
   description: string | null;
   category: string;
+  itemSpec: string | null;
+  itemOptions: string[];
   targetCount: number;
   unitPriceFen: number;
-  status: string;
+  status: GroupbuyStatus;
   deadline: Date;
   pickupSpot: string | null;
+  kind: GroupbuyKind;
+  merchantName: string | null;
+  membershipDeclaration: boolean;
+  cancelReason: string | null;
+  pickupNotice: string | null;
   createdAt: Date;
   updatedAt: Date;
+  members: GroupbuyMemberModel[];
+  joinedQuantity: number;
+  participantCount: number;
 }
 
-/** 创建输入。 * 归属字段 `ownerId` 在未登录时可由请求主体补全（见 service.create）。 */
 export interface CreateGroupbuyOrderInput {
-  ownerId: string;
   title: string;
   description?: string | null;
   category: string;
+  itemSpec?: string | null;
+  items?: string[];
   targetCount: number;
-  unitPriceFen: number;
-  status?: string;
-  deadline: Date;
-  pickupSpot?: string | null;
+  unitPriceFen?: number;
+  pickupSpot: string;
+  kind: GroupbuyKind;
+  merchantName?: string | null;
+  membershipDeclaration?: boolean;
 }
 
-/** 更新输入（全部可选） */
 export interface UpdateGroupbuyOrderInput {
-  ownerId?: string;
   title?: string;
   description?: string | null;
   category?: string;
   targetCount?: number;
   unitPriceFen?: number;
-  status?: string;
-  deadline?: Date;
-  pickupSpot?: string | null;
+  pickupSpot?: string;
 }
 
-/** 端口：service 只依赖本类型，实现见 data/groupbuy.repository.ts */
-export type GroupbuyOrderRepository = ResourceRepository<
-  GroupbuyOrderModel,
-  CreateGroupbuyOrderInput,
-  UpdateGroupbuyOrderInput
-> & {
-  join(
-    orderId: string,
-    userId: string,
-    quantity: number,
-  ): Promise<{ memberId: string; quantity: number }>;
-  memberCount(orderId: string): Promise<number>;
-};
+export interface MemberChange {
+  quantity: number;
+  displayName: string;
+  note?: string | null;
+  selections?: Array<{ item: string; quantity: number }>;
+}
+
+export interface GroupbuyOrderRepository {
+  list(params: GroupbuyListParams): Promise<Page<GroupbuyOrderModel>>;
+  create(input: CreateGroupbuyOrderInput & { ownerId: string; deadline: Date; clientKey?: string }): Promise<GroupbuyOrderModel>;
+  findById(id: string): Promise<GroupbuyOrderModel | null>;
+  updateOwned(id: string, ownerId: string, input: UpdateGroupbuyOrderInput): Promise<GroupbuyOrderModel>;
+  cancelOwned(id: string, ownerId: string): Promise<GroupbuyOrderModel>;
+  changeMember(id: string, userId: string, input: MemberChange): Promise<GroupbuyOrderModel>;
+  expireDue(now: Date): Promise<number>;
+  publishPickupNotice(id: string, ownerId: string, notice: string): Promise<GroupbuyOrderModel>;
+  markReceived(id: string, ownerId: string, userId: string, received: boolean): Promise<GroupbuyOrderModel>;
+}
 
 export const GROUPBUY_ORDER_REPOSITORY = Symbol('KEDAYA_GROUPBUY_ORDER_REPOSITORY');

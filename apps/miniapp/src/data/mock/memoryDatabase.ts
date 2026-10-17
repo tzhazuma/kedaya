@@ -5,6 +5,7 @@ import { canJoin, deriveStatus } from '../../domain/models/groupbuy'
 import type { GroupBuy, GroupBuyParticipant } from '../../domain/models/groupbuy'
 import type { RepositoryError } from '../../domain/ports/errors'
 import type {
+  CreateGroupBuyInput,
   GroupBuyPage,
   JoinGroupBuyInput,
   ListGroupBuysQuery,
@@ -21,6 +22,11 @@ export interface MemoryDatabase {
   list(query?: ListGroupBuysQuery): GroupBuyPage
   find(id: string): GroupBuy | null
   join(id: string, input: JoinGroupBuyInput, now: Date): Result<GroupBuy, RepositoryError>
+  create(input: CreateGroupBuyInput, now: Date): Result<GroupBuy, RepositoryError>
+  withdraw(id: string, userId: string, now: Date): Result<GroupBuy, RepositoryError>
+  cancel(id: string, userId: string, now: Date): Result<GroupBuy, RepositoryError>
+  publishPickupNotice(id: string, userId: string, notice: string): Result<GroupBuy, RepositoryError>
+  markReceived(id: string, userId: string, memberId: string, received: boolean, now: Date): Result<GroupBuy, RepositoryError>
   /** 清空全部数据（模拟「后端一条都没有」），`reset()` 仍可恢复种子 */
   clear(): void
   reset(): void
@@ -92,15 +98,24 @@ export function createMemoryDatabase(seed: readonly GroupBuy[] = []): MemoryData
         })
       }
 
+      const options = current.itemOptions?.length ? current.itemOptions : [current.itemSpec || current.title]
+      const selections = input.selections ?? [{ item: options[0]!, quantity: input.quantity }]
+      if (selections.reduce((sum, line) => sum + line.quantity, 0) !== input.quantity ||
+        selections.some((line) => !options.includes(line.item) || !Number.isInteger(line.quantity) || line.quantity < 1)) {
+        return err({ code: 'VALIDATION_FAILED', message: '请按商品填写正确的份数' })
+      }
+
       const participant: GroupBuyParticipant = {
         id: input.userId,
         displayName: input.anonymous === true ? '匿名同学' : input.displayName,
         anonymous: input.anonymous === true,
         quantity: input.quantity,
         joinedAt: now.toISOString(),
+        note: input.note,
+        selections,
       }
 
-      const participants = [...current.participants, participant]
+      const participants = [...current.participants.filter((p) => p.id !== input.userId), participant]
       const updated: GroupBuy = {
         ...current,
         participants,
@@ -109,6 +124,74 @@ export function createMemoryDatabase(seed: readonly GroupBuy[] = []): MemoryData
       }
 
       items = items.map((item) => (item.id === id ? updated : item))
+      return ok(clone(updated))
+    },
+
+    create(input, now): Result<GroupBuy, RepositoryError> {
+      if (!Number.isInteger(input.targetCount) || input.targetCount < 1 || !input.title.trim() || !input.pickupPlace.trim()) {
+        return err({ code: 'VALIDATION_FAILED', message: '请填写标题、目标份数和取货地点' })
+      }
+      if (input.kind === 'membership' && (!input.merchantName?.trim() || !input.membershipDeclaration)) {
+        return err({ code: 'VALIDATION_FAILED', message: '请填写商家并确认本人持有会员资格' })
+      }
+      const options = input.itemOptions?.length ? input.itemOptions : [input.itemSpec.trim()]
+      if (options.length === 0 || options.some((item) => !item.trim()) || new Set(options).size !== options.length) {
+        return err({ code: 'VALIDATION_FAILED', message: '请填写不重复的商品与规格' })
+      }
+      const created: GroupBuy = {
+        id: `gb-${now.getTime()}-${items.length + 1}`,
+        title: input.title.trim(), description: input.description.trim(),
+        category: input.category as GroupBuy['category'],
+        initiatorId: input.initiatorId, initiatorName: input.initiatorName,
+        priceFen: input.priceFen, targetCount: input.targetCount,
+        participants: [], deadline: new Date(now.getTime() + 86_400_000).toISOString(),
+        pickupPlace: input.pickupPlace.trim(), status: 'open',
+        kind: input.kind, merchantName: input.merchantName?.trim(), itemSpec: options.join('、'), itemOptions: options,
+        createdAt: now.toISOString(), updatedAt: now.toISOString(),
+      }
+      items = [created, ...items]
+      return ok(clone(created))
+    },
+
+    withdraw(id, userId, now): Result<GroupBuy, RepositoryError> {
+      const current = items.find((item) => item.id === id)
+      if (!current) return err({ code: 'NOT_FOUND', message: '拼单不存在' })
+      if (deriveStatus(current, now) !== 'open') return err({ code: 'CONFLICT', message: '拼单已结束，不能退出' })
+      if (!current.participants.some((p) => p.id === userId)) return err({ code: 'CONFLICT', message: '你尚未参团' })
+      const updated = { ...current, participants: current.participants.filter((p) => p.id !== userId), updatedAt: now.toISOString() }
+      items = items.map((item) => item.id === id ? updated : item)
+      return ok(clone(updated))
+    },
+
+    cancel(id, userId, now): Result<GroupBuy, RepositoryError> {
+      const current = items.find((item) => item.id === id)
+      if (!current) return err({ code: 'NOT_FOUND', message: '拼单不存在' })
+      if (current.initiatorId !== userId) return err({ code: 'FORBIDDEN', message: '只有发起人可以取消' })
+      if (deriveStatus(current, now) !== 'open') return err({ code: 'CONFLICT', message: '拼单已结束' })
+      const updated: GroupBuy = { ...current, status: 'cancelled', cancelReason: 'CREATOR_CANCELLED', updatedAt: now.toISOString() }
+      items = items.map((item) => item.id === id ? updated : item)
+      return ok(clone(updated))
+    },
+
+    publishPickupNotice(id, userId, notice): Result<GroupBuy, RepositoryError> {
+      const current = items.find((item) => item.id === id)
+      if (!current) return err({ code: 'NOT_FOUND', message: '拼单不存在' })
+      if (current.initiatorId !== userId) return err({ code: 'FORBIDDEN', message: '只有发起人可以发布取货通知' })
+      if (current.status !== 'full') return err({ code: 'CONFLICT', message: '成团后才能发布取货通知' })
+      if (!notice.trim()) return err({ code: 'VALIDATION_FAILED', message: '通知不能为空' })
+      const updated = { ...current, pickupNotice: notice.trim() }
+      items = items.map((item) => item.id === id ? updated : item)
+      return ok(clone(updated))
+    },
+
+    markReceived(id, userId, memberId, received, now): Result<GroupBuy, RepositoryError> {
+      const current = items.find((item) => item.id === id)
+      if (!current) return err({ code: 'NOT_FOUND', message: '拼单不存在' })
+      if (current.initiatorId !== userId) return err({ code: 'FORBIDDEN', message: '只有发起人可以标记领取' })
+      if (current.status !== 'full') return err({ code: 'CONFLICT', message: '成团后才能标记领取' })
+      if (!current.participants.some((member) => member.id === memberId)) return err({ code: 'NOT_FOUND', message: '参团成员不存在' })
+      const updated = { ...current, participants: current.participants.map((member) => member.id === memberId ? { ...member, receivedAt: received ? now.toISOString() : null } : member) }
+      items = items.map((item) => item.id === id ? updated : item)
       return ok(clone(updated))
     },
 

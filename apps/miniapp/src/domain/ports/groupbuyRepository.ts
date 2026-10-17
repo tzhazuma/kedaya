@@ -22,8 +22,27 @@ export interface JoinGroupBuyInput {
   displayName: string
   quantity: number
   anonymous?: boolean
+  note?: string
+  selections?: Array<{ item: string; quantity: number }>
   /** 契约 §6.1：写操作支持 Idempotency-Key */
   idempotencyKey?: string
+}
+
+export interface CreateGroupBuyInput {
+  idempotencyKey?: string
+  title: string
+  description: string
+  category: string
+  itemSpec: string
+  itemOptions?: string[]
+  targetCount: number
+  priceFen: number
+  pickupPlace: string
+  kind: 'ordinary' | 'membership'
+  merchantName?: string
+  membershipDeclaration: boolean
+  initiatorId: string
+  initiatorName: string
 }
 
 /**
@@ -36,4 +55,9 @@ export interface GroupBuyRepository {
   list(query?: ListGroupBuysQuery): Promise<Result<GroupBuyPage, RepositoryError>>
   detail(id: string): Promise<Result<GroupBuy, RepositoryError>>
   join(id: string, input: JoinGroupBuyInput): Promise<Result<GroupBuy, RepositoryError>>
+  create(input: CreateGroupBuyInput): Promise<Result<GroupBuy, RepositoryError>>
+  withdraw(id: string, userId: string): Promise<Result<GroupBuy, RepositoryError>>
+  cancel(id: string, userId: string): Promise<Result<GroupBuy, RepositoryError>>
+  publishPickupNotice(id: string, userId: string, notice: string): Promise<Result<GroupBuy, RepositoryError>>
+  markReceived(id: string, userId: string, memberId: string, received: boolean): Promise<Result<GroupBuy, RepositoryError>>
 }

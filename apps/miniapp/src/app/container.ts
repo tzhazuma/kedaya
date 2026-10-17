@@ -3,6 +3,7 @@ import type { ListGroupBuysUseCase } from '../application/groupbuy/listGroupBuys
 import { createGroupBuyDetailUseCase } from '../application/groupbuy/groupBuyDetail'
 import type { GroupBuyDetailUseCase } from '../application/groupbuy/groupBuyDetail'
 import { createJoinGroupBuyUseCase } from '../application/groupbuy/joinGroupBuy'
+import { createManageGroupBuyUseCase } from '../application/groupbuy/manageGroupBuy'
 import type { JoinGroupBuyUseCase } from '../application/groupbuy/joinGroupBuy'
 import { createSessionUseCase } from '../application/auth/session'
 import type { SessionUseCase } from '../application/auth/session'
@@ -42,14 +43,14 @@ export interface AppEnv {
 }
 
 export function readEnv(): AppEnv {
-  const env = typeof process !== 'undefined' ? process.env : {}
-  const latency = Number(env.TARO_APP_MOCK_LATENCY_MS ?? '220')
+  // Taro 在构建期替换完整的 process.env.TARO_APP_* 表达式，不能先给 process.env 起别名。
+  const latency = Number(process.env.TARO_APP_MOCK_LATENCY_MS ?? '220')
 
   return {
-    apiBaseUrl: env.TARO_APP_API_BASE_URL ?? DEFAULT_API_BASE_URL,
+    apiBaseUrl: process.env.TARO_APP_API_BASE_URL ?? DEFAULT_API_BASE_URL,
     // 默认 mock：骨架必须开箱可跑
-    useMock: env.TARO_APP_USE_MOCK !== 'false',
-    requestTimeoutMs: Number(env.TARO_APP_REQUEST_TIMEOUT_MS ?? '15000'),
+    useMock: process.env.TARO_APP_USE_MOCK !== 'false',
+    requestTimeoutMs: Number(process.env.TARO_APP_REQUEST_TIMEOUT_MS ?? '15000'),
     mockLatencyMs: Number.isFinite(latency) ? latency : 220,
   }
 }
@@ -71,6 +72,7 @@ export interface AppContainer {
     listGroupBuys: ListGroupBuysUseCase
     groupBuyDetail: GroupBuyDetailUseCase
     joinGroupBuy: JoinGroupBuyUseCase
+    manageGroupBuy: ReturnType<typeof createManageGroupBuyUseCase>
   }
 }
 
@@ -135,6 +137,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     session: sessionStore,
     clock,
   })
+  const manageGroupBuy = createManageGroupBuyUseCase(groupBuyRepository, sessionStore)
 
   return {
     env,
@@ -147,7 +150,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     apiClient,
     groupBuyRepository,
     mockControls: mockRepository,
-    useCases: { session, listGroupBuys, groupBuyDetail, joinGroupBuy },
+    useCases: { session, listGroupBuys, groupBuyDetail, joinGroupBuy, manageGroupBuy },
   }
 }
 

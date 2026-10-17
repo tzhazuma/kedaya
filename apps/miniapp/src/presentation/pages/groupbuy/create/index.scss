@@ -1,0 +1,23 @@
+.kdy-gb-create {
+  height: auto;
+  min-height: 100vh;
+  overflow: visible;
+  padding-bottom: $kdy-space-8;
+  font-size: $kdy-font-size-xl;
+  line-height: 1.6;
+
+  .kdy-card { padding: $kdy-space-5; }
+  .kdy-card__title { font-size: $kdy-font-size-xxl; }
+  .kdy-card__body { font-size: $kdy-font-size-xl; }
+  .kdy-tag { padding: $kdy-space-1 $kdy-space-3; font-size: $kdy-font-size-lg; }
+  .kdy-btn { height: 60px; padding: 0 $kdy-space-5; font-size: $kdy-font-size-xl; }
+}
+
+.kdy-gb-create__hint { display: block; color: $kdy-color-text-muted; font-size: $kdy-font-size-lg; line-height: 1.7; margin: $kdy-space-3 0; }
+.kdy-gb-create__choices { display: flex; flex-wrap: wrap; gap: $kdy-space-3; margin: $kdy-space-4 0; }
+.kdy-gb-create__label { display: block; margin-top: $kdy-space-4; margin-bottom: $kdy-space-2; color: $kdy-color-text; font-size: $kdy-font-size-xl; }
+.kdy-gb-create__input, .kdy-gb-create__textarea { width: 100%; box-sizing: border-box; padding: $kdy-space-3; border: 1px solid $kdy-color-border; border-radius: $kdy-radius-md; background: $kdy-color-surface; color: $kdy-color-text; font-size: $kdy-font-size-xl; }
+.kdy-gb-create__input { min-height: 60px; }
+.kdy-gb-create__textarea { min-height: 144px; }
+.kdy-gb-create__declare { margin-top: $kdy-space-4; padding: $kdy-space-3 0; color: $kdy-color-text; font-size: $kdy-font-size-xl; }
+.kdy-gb-create__submit { padding: $kdy-space-5; }

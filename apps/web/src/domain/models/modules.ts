@@ -1,12 +1,12 @@
 /**
  * 门户模块注册表 —— 首页宫格的**唯一数据源**。
  *
- * 契约 §4：19 个模块（5 基础 + 14 业务）由 `@kedaya/contracts` 的 `MODULES` 冻结。
+ * 契约登记 19 个能力，其中找搭子归入凑凑；首页展示 18 个一级入口。
  * 本文件只补 UI 装饰，**不复制、不改写**契约内容。
  *
  * 依赖方向：domain → @kedaya/contracts（纯类型/常量包，零框架）。
  */
-import { BUSINESS_MODULES, CORE_MODULES, MODULES } from '@kedaya/contracts';
+import { BUSINESS_MODULES, CORE_MODULES, TOP_LEVEL_MODULES } from '@kedaya/contracts';
 
 import {
   auditedModules,
@@ -35,7 +35,6 @@ const DECORATION: Readonly<Record<string, ModuleDecoration>> = {
   'flea-market': { icon: 'shopping-bag', accent: 'success' },
   'dorm-harmony': { icon: 'home', accent: 'danger' },
   errand: { icon: 'bike', accent: 'info' },
-  buddy: { icon: 'user-search', accent: 'success' },
   'lost-found': { icon: 'search', accent: 'info' },
   canteen: { icon: 'utensils', accent: 'success' },
   forum: { icon: 'messages-square', accent: 'info' },
@@ -46,8 +45,8 @@ const DECORATION: Readonly<Record<string, ModuleDecoration>> = {
   wildlife: { icon: 'bird', accent: 'success' },
 };
 
-/** 19 个模块，顺序 = 契约顺序（基础在前，业务在后） */
-export const PORTAL_MODULES: readonly PortalModule[] = MODULES.map((m) =>
+/** 18 个一级模块，顺序 = 契约顺序（基础在前，业务在后） */
+export const PORTAL_MODULES: readonly PortalModule[] = TOP_LEVEL_MODULES.map((m) =>
   decorateModule(m, DECORATION[m.id]),
 );
 
@@ -60,10 +59,10 @@ export const CONSENT_GATED_MODULES: readonly PortalModule[] = consentGatedModule
 /** 需要审计的模块（high + critical；注意 auth / campus-card 在列但**无同意门**） */
 export const AUDITED_MODULES: readonly PortalModule[] = auditedModules(PORTAL_MODULES);
 
-/** 模块总数 —— 与契约 §4 对齐（5 + 14 = 19） */
+/** 首页入口总数（5 基础 + 13 业务） */
 export const PORTAL_MODULE_COUNT = PORTAL_MODULES.length;
 
 /** 契约原始条目（测试用，避免测试自己再 import 一次） */
-export const CONTRACT_MODULES = MODULES;
+export const CONTRACT_MODULES = TOP_LEVEL_MODULES;
 export const CONTRACT_CORE_MODULES = CORE_MODULES;
 export const CONTRACT_BUSINESS_MODULES = BUSINESS_MODULES;

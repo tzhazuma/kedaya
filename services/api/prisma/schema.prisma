@@ -44,8 +44,86 @@ model User {
   notifications  Notification[]
   portrait       AiPortraitProfile?
   appointments   WellbeingAppointment[]
+  wildlifeAnimals WildlifeAnimal[]
+  wildlifeSightings WildlifeSighting[]
+  wildlifeImages WildlifeImage[]
 
   @@index([createdAt])
+}
+
+/// 公开动物身份；昵称允许重复，mergedIntoId 为后续合档预留。
+model WildlifeAnimal {
+  id String @id @default(cuid())
+  name String
+  category String
+  avatarId String?
+  appearance String @default("")
+  commonArea String @default("")
+  description String @default("")
+  createdBy String
+  clientRequestId String
+  requestHash String
+  moderationStatus String @default("public")
+  mergedIntoId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  creator User @relation(fields: [createdBy], references: [id])
+  avatar WildlifeImage? @relation(fields: [avatarId], references: [id])
+  sightings WildlifeSighting[]
+  @@unique([createdBy, clientRequestId])
+  @@index([category, createdAt, id])
+  @@index([name])
+}
+
+/// 每一次偶遇独立成记录；实时用户定位不进入本表。
+model WildlifeSighting {
+  id String @id @default(cuid())
+  category String
+  description String
+  place String
+  latitude Float
+  longitude Float
+  locationBlurred Boolean @default(false)
+  observedAt DateTime
+  animalId String?
+  createdBy String
+  clientRequestId String
+  requestHash String
+  moderationStatus String @default("public")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author User @relation(fields: [createdBy], references: [id])
+  animal WildlifeAnimal? @relation(fields: [animalId], references: [id], onDelete: SetNull)
+  photos WildlifeSightingPhoto[]
+  @@unique([createdBy, clientRequestId])
+  @@index([latitude, longitude])
+  @@index([category, observedAt, id])
+  @@index([animalId, observedAt, id])
+}
+
+/// 服务器图片索引；文件保存在上传目录，不将图片二进制写入数据库。
+model WildlifeImage {
+  id String @id @default(cuid())
+  filename String @unique
+  createdBy String
+  size Int
+  createdAt DateTime @default(now())
+  owner User @relation(fields: [createdBy], references: [id])
+  sightings WildlifeSightingPhoto[]
+  avatars WildlifeAnimal[]
+  @@index([createdBy, createdAt])
+}
+
+model WildlifeSightingPhoto {
+  id String @id @default(cuid())
+  sightingId String
+  imageId String
+  sortOrder Int
+  createdAt DateTime @default(now())
+  sighting WildlifeSighting @relation(fields: [sightingId], references: [id], onDelete: Cascade)
+  image WildlifeImage @relation(fields: [imageId], references: [id])
+  @@unique([sightingId, imageId])
+  @@index([sightingId, sortOrder])
 }
 
 /// 第一级 · 身份层。上科大统一身份认证（CAS / Egate OAuth）的映射结果。
@@ -171,13 +249,21 @@ model GroupbuyOrder {
   title        String
   description  String?
   category     String
-  /// 成团所需人数
+  /// 成团所需总份数（保留旧列名以兼容已有数据）
   targetCount  Int
   /// 单价，**分**
   unitPriceFen Int
   status       String   @default("open")
   deadline     DateTime
   pickupSpot   String?
+  kind         String   @default("ordinary")
+  merchantName String?
+  membershipDeclaration Boolean @default(false)
+  itemSpec     String?
+  itemOptions  String[] @default([])
+  cancelReason String?
+  clientKey    String?  @unique
+  pickupNotice String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -193,10 +279,14 @@ model GroupbuyMember {
   orderId  String
   userId   String
   quantity Int      @default(1)
-  /// 已付金额，**分**
+  /// 旧字段；拼单不处理支付，始终不读写此值
   paidFen  Int      @default(0)
   role     String   @default("member")
   joinedAt DateTime @default(now())
+  displayName String @default("同学")
+  note String?
+  receivedAt DateTime?
+  selectionsJson String @default("[]")
 
   order GroupbuyOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
 

@@ -2,9 +2,11 @@ import path from 'node:path'
 
 import { defineConfig, type UserConfigExport } from '@tarojs/cli'
 import type { IProjectConfig } from '@tarojs/taro/types/compile'
+import type WebpackChain from 'webpack-chain'
 
 import devConfig from './dev'
 import prodConfig from './prod'
+import { CoherentBuildPlugin } from './coherent-build'
 
 /**
  * 设计令牌 SCSS 入口。
@@ -17,6 +19,8 @@ import prodConfig from './prod'
  * `packages/design-tokens/dist/tokens.scss`。
  */
 const TOKENS_SCSS = path.resolve(__dirname, '..', 'src', 'presentation', 'theme', 'tokens.scss')
+const PACKAGES_ROOT = path.resolve(__dirname, '..', '..', '..', 'packages')
+const OUTPUT_ROOT = process.env.KEDAYA_WEAPP_STAGE === '1' ? '.weapp-stage' : 'dist'
 
 const baseConfig: UserConfigExport<'webpack5'> = {
   projectName: 'kedaya-miniapp',
@@ -24,10 +28,16 @@ const baseConfig: UserConfigExport<'webpack5'> = {
   designWidth: 750,
   deviceRatio: { 640: 2.34 / 2, 750: 1, 828: 1.81 / 2, 375: 2 },
   sourceRoot: 'src',
-  outputRoot: 'dist',
-  plugins: [],
-  defineConstants: {},
-  copy: { patterns: [], options: {} },
+  outputRoot: OUTPUT_ROOT,
+  plugins: [path.resolve(__dirname, '..', 'scripts/publish-weapp-plugin.cjs')],
+  // 微信运行时没有 Node 的 process；缺省的 TARO_APP_* 也必须在编译期替换。
+  defineConstants: {
+    'process.env.TARO_APP_API_BASE_URL': JSON.stringify(process.env.TARO_APP_API_BASE_URL ?? 'https://api.kedaya.example'),
+    'process.env.TARO_APP_USE_MOCK': JSON.stringify(process.env.TARO_APP_USE_MOCK ?? 'true'),
+    'process.env.TARO_APP_REQUEST_TIMEOUT_MS': JSON.stringify(process.env.TARO_APP_REQUEST_TIMEOUT_MS ?? '15000'),
+    'process.env.TARO_APP_MOCK_LATENCY_MS': JSON.stringify(process.env.TARO_APP_MOCK_LATENCY_MS ?? '220'),
+  },
+  copy: { patterns: [{ from: path.resolve(__dirname, '..', 'src/assets/wildlife'), to: path.resolve(__dirname, '..', OUTPUT_ROOT, 'assets/wildlife') }], options: {} },
   framework: 'react',
   /**
    * webpack5 是唯一编译器（契约 §2）。
@@ -48,11 +58,24 @@ const baseConfig: UserConfigExport<'webpack5'> = {
    * 它会 unshift 进 script rule 的 include 列表。
    */
   compile: {
-    include: [path.resolve(__dirname, '..', '..', '..', 'packages')],
+    include: [PACKAGES_ROOT],
   },
   cache: { enable: false },
   sass: { resource: [TOKENS_SCSS] },
   mini: {
+    webpackChain(chain: WebpackChain) {
+      chain.plugin('kedaya-coherent-build').use(CoherentBuildPlugin)
+      // Taro's script rule can miss TS reached through npm workspace junctions
+      // on Windows. Keep an explicit rule for the shared source packages.
+      chain.module
+        .rule('kedaya-workspace-ts')
+        .test(/\.[cm]?[jt]sx?$/)
+        .include.add(PACKAGES_ROOT)
+        .end()
+        .use('babel-loader')
+        .loader(require.resolve('babel-loader'))
+        .options({ configFile: path.resolve(__dirname, '..', 'babel.config.js') })
+    },
     postcss: {
       pxtransform: { enable: true, config: {} },
       cssModules: { enable: false },

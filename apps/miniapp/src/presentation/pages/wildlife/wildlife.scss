@@ -1,0 +1,55 @@
+.wa-page { box-sizing: border-box; min-height: 100vh; padding: 28px 24px 64px; background: #f6f5ed; color: #354b3c; font-size: 30px; line-height: 1.65; overflow: visible;
+  text { display: block; } .kdy-btn { min-height: 84px; height: auto; white-space: normal; padding: 16px 22px; font-size: 28px; line-height: 1.5; border-radius: 18px; }
+  .kdy-btn--primary { background: #536e4b; color: #fffdf6; } .kdy-btn--ghost { color: #49613f; background: #e8eddf; }
+}
+.wa-header { margin-bottom: 24px; padding: 26px; border: 1px solid #d9dfcc; border-radius: 24px; background: #fffdf5; }
+.wa-eyebrow { font-size: 21px; letter-spacing: 3px; color: #7b8665; margin-bottom: 12px; }
+.wa-heading { font-size: 46px; font-weight: 700; line-height: 1.4; margin: 12px 0 20px; }
+.wa-title { font-size: 34px; font-weight: 600; margin: 10px 0; }
+.wa-muted, .wa-meta { color: #76816d; font-size: 26px; line-height: 1.6; margin: 10px 0; }
+.wa-meta { font-size: 24px; }
+.wa-categories { display: flex; flex-wrap: wrap; gap: 12px; margin: 18px 0; }
+.wa-chip { padding: 12px 20px; border: 1px solid #d8decc; border-radius: 32px; background: #fffdf7; font-size: 27px; }
+.wa-chip.active { background: #526d4a; color: #fffdf6; border-color: #526d4a; }
+.wa-map-shell { overflow: hidden; border-radius: 24px; border: 2px solid #d7decc; background: #e7eddf; }
+.wa-map { width: 100%; height: 58vh; min-height: 620px; }
+.wa-map-caption { padding: 12px 22px; color: #66755c; font-size: 23px; }
+.wa-picker-map { width: 100%; height: 430px; border-radius: 18px; }
+.wa-actions { display: flex; flex-wrap: wrap; gap: 14px; margin: 24px 0; align-items: center; }
+.wa-error { background: #fff0e7; color: #9a4f36; padding: 22px; border-radius: 18px; margin: 18px 0; word-break: break-word; }
+.wa-empty { padding: 48px 28px; color: #7c876f; text-align: center; }
+.wa-panel, .wa-list-row, .wa-passport, .wa-id-card { margin: 22px 0; padding: 26px; border: 1px solid #d9dfcf; border-radius: 22px; background: #fffdf6; overflow: hidden; }
+.wa-list-row { border-left: 7px solid #c4d2af; }
+.wa-section-title { font-size: 37px; font-weight: 700; margin: 38px 0 16px; }
+.wa-label { font-size: 31px; font-weight: 600; margin: 30px 0 14px; }
+.wa-input { box-sizing: border-box; width: 100%; height: auto; min-height: 90px; padding: 22px; margin: 12px 0; background: #fffdf8; border: 1px solid #d4dbc9; border-radius: 16px; font-size: 29px; color: #354b3c; }
+.wa-textarea { box-sizing: border-box; width: 100%; min-height: 240px; padding: 22px; background: #fffdf8; border: 1px solid #d4dbc9; border-radius: 16px; font-size: 29px; }
+.wa-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.wa-switch-row { display: flex; align-items: center; gap: 18px; margin: 24px 0; font-size: 27px; }
+.wa-link { color: #57764b; font-size: 27px; margin: 14px 0; text-decoration: underline; }
+.wa-photos { display: flex; flex-wrap: wrap; gap: 16px; }.wa-thumb { width: 180px; height: 180px; border-radius: 18px; }
+.wa-overlay { position: fixed; inset: 0; z-index: 1000; padding: 42px 24px; background: rgba(28, 41, 29, .58); overflow-y: auto; box-sizing: border-box; }
+.wa-postcard { box-sizing: border-box; width: 100%; padding: 30px; border-radius: 24px; background: #fffdf4; box-shadow: 0 16px 60px rgba(25, 40, 24, .2); margin-bottom: 42px; }
+.wa-close { text-align: right; color: #738061; font-size: 28px; margin-bottom: 22px; }
+.wa-cover { width: 100%; height: 420px; margin-bottom: 16px; border-radius: 12px; }.wa-photo-strip { display: block; }
+.wa-story { white-space: pre-wrap; word-break: break-word; margin: 26px 0; line-height: 1.9; }
+.wa-no-photo { display: flex; align-items: center; justify-content: center; color: #899577; background: #e9eedf; min-height: 160px; padding: 20px; box-sizing: border-box; }
+.wa-residents { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.wa-avatar { width: 100%; height: 360px; border-radius: 14px; margin-bottom: 24px; }
+.wa-passport { border: 2px solid #cbd5bc; }.wa-passport-photo { width: 100%; height: 420px; border-radius: 18px; }
+.wa-timeline-item { margin: 24px 8px; border-left: 4px solid #bdcbaa; padding: 16px 28px; background: #fffdf6; }
+.wa-campus { border: 1px solid #d1dbc6; border-radius: 24px; overflow: hidden; background: #edf2e6; padding: 12px; }
+.wa-campus-tools { display: flex; flex-wrap: wrap; gap: 12px; padding: 16px 0; }
+.wa-campus-tools text { padding: 14px 18px; background: #fffdf4; border-radius: 14px; font-size: 28px; color: #425c35; }
+.wa-campus-scroll { height: 950px; width: 100%; border-radius: 14px; }
+.wa-campus-surface { position: relative; background: #edf2e6; overflow: hidden; }
+.wa-campus-image { position: absolute; top: 0; left: 0; pointer-events: none; }
+.wa-campus-label { position: absolute; white-space: nowrap; transform: translate(-50%, -50%); font-size: 24px; padding: 6px 10px; background: #fffdf3ed; color: #294331; border: 1px solid #b8c9ab; border-radius: 10px; z-index: 2; }
+.wa-campus-label.landmark { background: #8e5035; color: white; font-weight: bold; }
+.wa-campus-label.bridge { background: #eff9fe; color: #356379; }
+.wa-campus-animal, .wa-campus-position, .wa-campus-picked { position: absolute; transform: translate(-50%, -50%); z-index: 5; }
+.wa-campus-animal { min-width: 54px; height: 54px; padding: 4px; border: 4px solid white; border-radius: 50%; background: #65854e; color: white; text-align: center; font-size: 28px; }
+.wa-campus-position { width: 24px; height: 24px; background: #287ce0; border: 6px solid white; border-radius: 50%; box-shadow: 0 0 0 10px #287ce033; }
+.wa-campus-picked { font-size: 52px; }
+.wa-campus-caption { display: block; color: #6d8060; font-size: 24px; margin-top: 12px; line-height: 1.6; }
+.wa-campus-results text { display: block; padding: 18px; background: #fffdf4; border-bottom: 1px solid #d1dbc6; font-size: 28px; }

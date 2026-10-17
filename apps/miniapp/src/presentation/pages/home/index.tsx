@@ -1,5 +1,5 @@
 import { Text, View } from '@tarojs/components'
-import { MODULES } from '@kedaya/contracts'
+import { MODULES } from '@kedaya/contracts/modules'
 import type { KedayaModule } from '@kedaya/contracts'
 
 import { getContainer } from '../../../app/container'
@@ -13,7 +13,7 @@ import './index.scss'
 /**
  * 首页 —— 模块宫格。
  *
- * **模块清单完全由 `@kedaya/contracts` 的 `MODULES` 驱动**（契约 §4 硬规则：
+ * **一级入口完全由 `@kedaya/contracts/modules` 的模块注册表驱动**（契约 §4 硬规则：
  * 禁止在各端硬编码模块清单）。因此这里没有任何写死的模块数组，
  * 后端/契约新增模块时首页自动出现。
  *
@@ -21,7 +21,11 @@ import './index.scss'
  */
 
 /** 已实现垂直切片的模块（其余点击后明确提示「开发中」，不假装可用） */
-const IMPLEMENTED_MODULE_IDS: readonly string[] = ['groupbuy']
+const IMPLEMENTED_MODULE_IDS: readonly string[] = ['groupbuy', 'wildlife']
+
+// 从明确的模块入口读取原始注册表，避免新增 barrel 导出与旧公共包混用时
+// 首页拿到 undefined。一级入口仍由共享契约的父子关系决定。
+const HOME_MODULES = MODULES.filter((module) => module.parentId === undefined)
 
 function moduleTone(module: KedayaModule): KdyTagTone {
   if (module.requiresConsent) return 'danger'
@@ -30,6 +34,7 @@ function moduleTone(module: KedayaModule): KdyTagTone {
 }
 
 function moduleBadge(module: KedayaModule): string {
+  if (module.id === 'groupbuy') return '拼单可用'
   if (IMPLEMENTED_MODULE_IDS.includes(module.id)) return '已上线'
   if (module.requiresConsent) return '需二次同意'
   if (module.sensitivity === 'high' || module.sensitivity === 'critical') return '高敏感'
@@ -42,6 +47,10 @@ export default function HomePage() {
   const sessionState = useStore(session)
 
   function handleModuleTap(module: KedayaModule): void {
+    if (module.id === 'wildlife') {
+      void navigateTo(PAGE_PATHS.wildlife)
+      return
+    }
     if (module.id === 'groupbuy') {
       void navigateTo(PAGE_PATHS.groupBuyList)
       return
@@ -67,9 +76,9 @@ export default function HomePage() {
         </Text>
       </View>
 
-      <KdyCard title='全部模块' extra={<Text>{MODULES.length} 个</Text>} elevated={false}>
+      <KdyCard title='全部模块' extra={<Text>{HOME_MODULES.length} 个</Text>} elevated={false}>
         <View className='kdy-home__grid'>
-          {MODULES.map((module) => (
+          {HOME_MODULES.map((module) => (
             <View
               key={module.id}
               className='kdy-home__grid-item'

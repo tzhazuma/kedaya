@@ -1,71 +1,112 @@
-/**
- * 拼单 · groupbuy（契约 §4）
- *
- * 本文件由 scripts/scaffold.mjs 生成；要改形状请改脚本里的 SPEC 表，
- * 改完重跑 `npm run scaffold`，避免 15 个模块各写一套。
- */
-import { Inject, Injectable } from '@nestjs/common';
-import { CrudService } from '../../common/crud/crud.service';
-import { ValidationError } from '../../common/errors/app-error';
-import { ConflictError } from '../../common/errors/app-error';
+import { Inject, Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { ConflictError, NotFoundError, ValidationError } from '../../common/errors/app-error';
 import {
   GROUPBUY_ORDER_REPOSITORY,
   type CreateGroupbuyOrderInput,
-  type GroupbuyOrderModel,
   type GroupbuyOrderRepository,
+  type GroupbuyListParams,
+  type MemberChange,
   type UpdateGroupbuyOrderInput,
 } from './domain/groupbuy.domain';
 
-/**
- * 用例层（契约 §7）：只编排，不含 IO。
- * 依赖通过**显式 token** 注入（而非 design:paramtypes），
- * 这样在 vitest 等不做 emitDecoratorMetadata 的转译器下 DI 依然成立。
- */
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 @Injectable()
-export class GroupbuyOrderService extends CrudService<GroupbuyOrderModel, CreateGroupbuyOrderInput, UpdateGroupbuyOrderInput> {
-  constructor(
-    @Inject(GROUPBUY_ORDER_REPOSITORY) private readonly repo: GroupbuyOrderRepository,
-  ) {
-    super(repo, 'groupbuy', '拼单');
+export class GroupbuyOrderService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(GroupbuyOrderService.name);
+  private timer?: ReturnType<typeof setInterval>;
+
+  constructor(@Inject(GROUPBUY_ORDER_REPOSITORY) private readonly repo: GroupbuyOrderRepository) {}
+
+  onModuleInit(): void {
+    this.timer = setInterval(() => {
+      void this.repo.expireDue(new Date()).catch((error: unknown) => {
+        this.logger.warn(`拼单超时扫描失败：${String(error)}`);
+      });
+    }, 60_000);
+    this.timer.unref?.();
   }
 
-  /**
-   * 创建。ownerId 允许由请求主体补全（未登录时必须在 body 里显式给出）。
-   */
-  override async create(input: CreateGroupbuyOrderInput, actorId?: string): Promise<GroupbuyOrderModel> {
-    const owner = input.ownerId ?? actorId;
-    if (!owner) {
-      throw new ValidationError('未登录时必须显式提供 ownerId', { field: 'ownerId' });
-    }
-    return super.create({ ...input, ownerId: owner });
+  onModuleDestroy(): void {
+    if (this.timer) clearInterval(this.timer);
   }
-  /**
-   * 领域动作：参团（契约 §6.1 的 POST /items/:id/join）。
-   *
-   * 真实业务：写入 GroupbuyMember，并按参团人数把订单状态推进到 grouped。
-   * 这是 groupbuy 模块的核心用例，单元测试覆盖了它（见 groupbuy.service.spec.ts）。
-   */
-  async join(id: string, userId: string, quantity: number) {
-    const order = await this.detail(id);
 
-    if (order.status !== 'open') {
-      throw new ConflictError('该拼单已结束，无法参团', { status: order.status });
+  async list(params: GroupbuyListParams) {
+    await this.repo.expireDue(new Date());
+    return this.repo.list(params);
+  }
+
+  async detail(id: string) {
+    await this.repo.expireDue(new Date());
+    const order = await this.repo.findById(id);
+    if (!order) throw new NotFoundError('拼单不存在');
+    return order;
+  }
+
+  create(input: CreateGroupbuyOrderInput, actorId: string, clientKey?: string) {
+    if (clientKey !== undefined && (clientKey.length < 8 || clientKey.length > 120)) {
+      throw new ValidationError('幂等键长度须为 8 到 120 个字符');
     }
-
-    const member = await this.repo.join(id, userId, quantity);
-    const totalMembers = await this.repo.memberCount(id);
-    const status = totalMembers >= order.targetCount ? 'grouped' : 'open';
-
-    if (status !== order.status) {
-      await this.repo.update(id, { status });
+    if (input.kind === 'membership' && (!input.merchantName?.trim() || input.membershipDeclaration !== true)) {
+      throw new ValidationError('会员代购需填写商家并确认本人持有该商家会员资格');
     }
+    if (input.kind === 'ordinary' && input.membershipDeclaration) {
+      throw new ValidationError('普通拼单无需会员声明');
+    }
+    const items = input.items ?? (input.itemSpec?.trim() ? [input.itemSpec.trim()] : []);
+    if (items.length === 0 || new Set(items).size !== items.length) {
+      throw new ValidationError('请填写不重复的商品与规格');
+    }
+    const now = new Date();
+    return this.repo.create({
+      ...input,
+      ownerId: actorId,
+      deadline: new Date(now.getTime() + DAY_MS),
+      unitPriceFen: input.unitPriceFen ?? 0,
+      items,
+      itemSpec: input.itemSpec?.trim() || items.join('、'),
+      clientKey,
+    });
+  }
 
-    return {
-      orderId: id,
-      memberId: member.memberId,
-      quantity: member.quantity,
-      totalMembers,
-      targetCount: order.targetCount,
-      status,
-    };
-  }}
+  async update(id: string, actorId: string, input: UpdateGroupbuyOrderInput) {
+    if (Object.keys(input).length === 0) throw new ValidationError('没有可修改的内容');
+    await this.repo.expireDue(new Date());
+    const result = await this.repo.updateOwned(id, actorId, input);
+    if (result.status === 'cancelled') throw new ConflictError('该拼单已取消');
+    return result;
+  }
+
+  async cancel(id: string, actorId: string) {
+    await this.repo.expireDue(new Date());
+    const result = await this.repo.cancelOwned(id, actorId);
+    if (result.cancelReason === 'TIMEOUT_24H') throw new ConflictError('该拼单已超时取消');
+    return result;
+  }
+
+  async join(id: string, userId: string, input: MemberChange) {
+    if (!Number.isInteger(input.quantity) || input.quantity < 1) {
+      throw new ValidationError('登记份数必须是正整数');
+    }
+    if (input.selections && input.selections.reduce((sum, line) => sum + line.quantity, 0) !== input.quantity) {
+      throw new ValidationError('各商品份数之和必须等于登记总份数');
+    }
+    const order = await this.repo.changeMember(id, userId, input);
+    if (order.status === 'cancelled') throw new ConflictError('该拼单已取消', { reason: order.cancelReason });
+    return order;
+  }
+
+  async withdraw(id: string, userId: string) {
+    const order = await this.repo.changeMember(id, userId, { quantity: 0, displayName: '' });
+    if (order.status === 'cancelled') throw new ConflictError('该拼单已取消', { reason: order.cancelReason });
+    return order;
+  }
+
+  publishPickupNotice(id: string, actorId: string, notice: string) {
+    return this.repo.publishPickupNotice(id, actorId, notice);
+  }
+
+  markReceived(id: string, actorId: string, userId: string, received: boolean) {
+    return this.repo.markReceived(id, actorId, userId, received);
+  }
+}

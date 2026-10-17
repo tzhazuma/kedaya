@@ -2,7 +2,7 @@
   "miniprogramRoot": "dist/",
   "projectname": "kedaya-miniapp",
   "description": "可达鸭 · 上海科技大学统一校园服务平台（第三方非官方平台）",
-  "appid": "touristappid",
+  "appid": "wxb518e8a5dbf49b7e",
   "_appid_note": "占位 appid（微信游客模式 touristappid），仅用于本地骨架跑通。正式开发请在微信开发者工具里替换为可达鸭自己的小程序 appid；个人 appid 建议写入 project.private.config.json（仓库已 gitignore），避免污染公共配置。",
   "compileType": "miniprogram",
   "libVersion": "3.5.5",
@@ -12,6 +12,8 @@
     "include": []
   },
   "setting": {
+    "useApiHook": false,
+    "compileHotReLoad": false,
     "urlCheck": false,
     "es6": false,
     "enhance": false,
@@ -30,7 +32,19 @@
       "ignore": [],
       "disablePlugins": [],
       "outputPath": ""
-    }
+    },
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false
   },
-  "condition": {}
+  "condition": {},
+  "simulatorPluginLibVersion": {},
+  "editorSetting": {}
 }

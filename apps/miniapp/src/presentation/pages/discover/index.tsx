@@ -116,9 +116,9 @@ export default function DiscoverPage() {
         ))}
       </KdyCard>
 
-      <KdyCard title='拼单垂直切片' elevated={false}>
+      <KdyCard title='凑凑' elevated={false}>
         <Text className='kdy-discover__hint'>
-          当前唯一跑通的业务模块，含列表 / 详情 / 参团，默认走 mock 数据。
+          拼单已可使用，找搭子的发布与报名页面正在建设中。
         </Text>
         <View className='kdy-discover__actions'>
           <KdyButton
@@ -129,7 +129,7 @@ export default function DiscoverPage() {
               })
             }}
           >
-            进入拼单列表
+            进入凑凑
           </KdyButton>
         </View>
       </KdyCard>

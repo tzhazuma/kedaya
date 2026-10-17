@@ -31,7 +31,7 @@ export interface ModuleGridProps {
 }
 
 /**
- * 19 个模块的入口宫格 —— 数据驱动（`@/domain/models/modules`）。
+ * 一级模块入口宫格 —— 数据驱动（`@/domain/models/modules`）。
  * 组件本身对模块数量与内容零假设：传什么渲染什么。
  */
 export function ModuleGrid({ modules, showSummary = true, className }: ModuleGridProps) {

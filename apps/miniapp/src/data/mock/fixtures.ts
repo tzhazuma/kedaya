@@ -10,10 +10,10 @@ import type { GroupBuy, GroupBuyParticipant } from '../../domain/models/groupbuy
  */
 
 /** mock 世界的「现在」（= 北京时间 2026-10-16 20:00） */
-export const MOCK_NOW_ISO = '2026-10-16T12:00:00.000Z'
+export const MOCK_NOW_ISO = new Date().toISOString()
 
 export function mockNow(): Date {
-  return new Date(MOCK_NOW_ISO)
+  return new Date()
 }
 
 function shiftHours(baseIso: string, hours: number): string {
@@ -50,7 +50,7 @@ export const MOCK_GROUP_BUYS: readonly GroupBuy[] = [
       participant('u-0001', '张同学', 1, 2),
       participant('u-0002', '李同学', 2, 1),
     ],
-    deadline: shiftHours(MOCK_NOW_ISO, 8),
+    deadline: shiftHours(MOCK_NOW_ISO, 21),
     pickupPlace: '三号楼 1F 大厅',
     status: 'open',
     createdAt: shiftHours(MOCK_NOW_ISO, -3),
@@ -58,15 +58,19 @@ export const MOCK_GROUP_BUYS: readonly GroupBuy[] = [
   },
   {
     id: 'gb-1002',
-    title: '瑞幸生椰拿铁 · 拼单第二杯半价',
-    description: '第二杯半价，差 3 杯。备注好口味，我一起去取。',
-    category: 'drink',
+    title: '山姆会员店周末代购零食',
+    description: '发起人自述持有会员，周末统一采购，线下自行结算。',
+    category: 'supplies',
     initiatorId: 'u-0003',
     initiatorName: '王同学',
+    kind: 'membership',
+    merchantName: '山姆会员商店',
+    itemSpec: '零食组合 1 袋/份、纸巾 3 包/份',
+    itemOptions: ['零食组合 1 袋/份', '纸巾 3 包/份'],
     priceFen: 1290,
     targetCount: 4,
-    participants: [participant('u-0003', '王同学', 1, 1)],
-    deadline: shiftHours(MOCK_NOW_ISO, 30),
+    participants: [{ ...participant('u-0003', '王同学', 1, 1), selections: [{ item: '零食组合 1 袋/份', quantity: 1 }] }],
+    deadline: shiftHours(MOCK_NOW_ISO, 22),
     pickupPlace: '图书馆北门',
     status: 'open',
     createdAt: shiftHours(MOCK_NOW_ISO, -2),
@@ -86,7 +90,7 @@ export const MOCK_GROUP_BUYS: readonly GroupBuy[] = [
       participant('u-0005', '刘同学', 2, 4, true),
       participant('u-0006', '赵同学', 2, 3),
     ],
-    deadline: shiftHours(MOCK_NOW_ISO, 5),
+    deadline: shiftHours(MOCK_NOW_ISO, 18),
     pickupPlace: '5 号宿舍楼门口',
     status: 'open',
     createdAt: shiftHours(MOCK_NOW_ISO, -6),
@@ -105,7 +109,7 @@ export const MOCK_GROUP_BUYS: readonly GroupBuy[] = [
       participant('u-0007', '孙同学', 1, 20),
       participant('u-0008', '周同学', 1, 18),
     ],
-    deadline: shiftHours(MOCK_NOW_ISO, -3),
+    deadline: shiftHours(MOCK_NOW_ISO, 0),
     pickupPlace: '学生活动中心 2F',
     status: 'open',
     createdAt: shiftHours(MOCK_NOW_ISO, -24),
@@ -121,7 +125,7 @@ export const MOCK_GROUP_BUYS: readonly GroupBuy[] = [
     priceFen: 2000,
     targetCount: 3,
     participants: [],
-    deadline: shiftHours(MOCK_NOW_ISO, 50),
+    deadline: shiftHours(MOCK_NOW_ISO, 23),
     pickupPlace: '体育馆羽毛球馆',
     status: 'open',
     createdAt: shiftHours(MOCK_NOW_ISO, -1),
@@ -137,7 +141,7 @@ export const MOCK_GROUP_BUYS: readonly GroupBuy[] = [
     priceFen: 6000,
     targetCount: 4,
     participants: [participant('u-0010', '郑同学', 1, 10)],
-    deadline: shiftHours(MOCK_NOW_ISO, 40),
+    deadline: shiftHours(MOCK_NOW_ISO, 12),
     pickupPlace: '学校北门',
     status: 'cancelled',
     createdAt: shiftHours(MOCK_NOW_ISO, -12),

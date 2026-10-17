@@ -43,6 +43,10 @@ export function createAuthRefresher(options: AuthRefresherOptions): AuthRefreshe
 
         const result = toResult(parseEnvelope<unknown>(response.data, traceId))
         if (!result.ok) return err(result.error)
+        const data = result.value as { accessToken?: unknown; expiresIn?: unknown } | null
+        if (data && typeof data.accessToken === 'string' && typeof data.expiresIn === 'number' && data.expiresIn > 0) {
+          return ok({ accessToken: data.accessToken, refreshToken, expiresAt: new Date(Date.now() + data.expiresIn * 1000).toISOString() })
+        }
         if (!isAuthTokens(result.value)) {
           return err({ code: 'INTERNAL', message: '刷新接口返回的 token 形状不合法' })
         }

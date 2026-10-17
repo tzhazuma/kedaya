@@ -82,7 +82,7 @@ apps/web/
 | 请求头约定 | 同上 | `Authorization: Bearer`、`X-KedaYa-Trace`（自动生成 + 响应头兜底）、写操作 `Idempotency-Key` |
 | mock 适配器 | `data/mock/` | 内存数据集（6 条拼单 / 6 条审计 / 19 个开关），支持故障演练（`error` 模式）与 `reset()` |
 | 首页 | `app/page.tsx` | 品牌区（含 `UnofficialNotice`）+ 19 模块宫格（分组）+ 隐私/审计说明 + 平台能力 |
-| 模块占位页 | `app/(portal)/m/[moduleId]/page.tsx` | 19 个模块入口全部可达（非 404），展示路由前缀/敏感级/同意门要求 |
+| 模块占位页 | `app/(portal)/m/[moduleId]/page.tsx` | 未上线模块显示路由前缀/敏感级/同意门要求；旧找搭子链接跳转到凑凑 |
 | **拼单垂直切片** | `app/(portal)/groupbuy/**` | 列表（游标分页 + 状态/关键词筛选 + 四态）与详情（参与者/规则/**参团 mutation**） |
 | 管理后台占位 | `app/(admin)/admin/page.tsx` | 模块开关表（19 行，受权限约束）+ 审计日志表（§9 字段齐全）+ 合规概览 |
 | 5+ 复用组件 | `presentation/components/` | `KdyCard` `KdyButton` `KdyBadge` `KdyEmpty` `KdySkeleton` `KdyAlert` `ModuleGrid` `PageHeader` `SiteHeader` `SiteFooter` `UnofficialNotice` |
