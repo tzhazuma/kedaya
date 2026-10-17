@@ -76,11 +76,14 @@ export interface CampusLeafletMapProps {
 }
 
 const TONE_VAR: Record<NonNullable<CampusMapMarker['tone']>, string> = {
-  brand: 'var(--kdy-color-brand-500)',
-  danger: 'var(--kdy-color-danger-500)',
-  success: 'var(--kdy-color-success-500)',
-  warning: 'var(--kdy-color-warning-500)',
+  brand: 'var(--kdy-color-brand)',
+  danger: 'var(--kdy-color-danger)',
+  success: 'var(--kdy-color-success)',
+  warning: 'var(--kdy-color-warning)',
 };
+
+/** 点位描边色：跟随主题的表面色（浅色白 / 深色深蓝），不手写 hex */
+const SURFACE_VAR = 'var(--kdy-color-surface)';
 
 /**
  * 真实瓦片地图。
@@ -169,7 +172,7 @@ export function CampusLeafletMap({
         const isSelected = poi.id === selectedId;
         const circle = L.circleMarker([poi.lat, poi.lng], {
           radius: isSelected ? 9 : 5,
-          color: 'var(--kdy-color-surface-0, #fff)',
+          color: SURFACE_VAR,
           weight: 2,
           fillColor: TONE_VAR.brand,
           fillOpacity: isSelected ? 1 : 0.75,
@@ -193,7 +196,7 @@ export function CampusLeafletMap({
       for (const marker of markers) {
         L.circleMarker([marker.lat, marker.lng], {
           radius: 6,
-          color: '#fff',
+          color: SURFACE_VAR,
           weight: 2,
           fillColor: TONE_VAR[marker.tone ?? 'success'],
           fillOpacity: 0.9,

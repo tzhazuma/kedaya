@@ -7,13 +7,13 @@
  *
  * | 模式 | 底图 | 适合 |
  * | --- | --- | --- |
- * | `real`（默认） | Leaflet + OpenStreetMap 真实瓦片 | 看清校园在张江的位置、缩放拖拽、看校门与周边道路 |
- * | `offline` | 仓库内离线渲染的 SVG/GeoJSON | 校园尺度的小径与草坪细节、**断网也能用**、小程序 web-view |
+ * | `offline`（默认） | 仓库内离线渲染的 SVG/GeoJSON | 校园尺度的小径与草坪细节、**断网也能用**、小程序 web-view |
+ * | `real` | Leaflet + OpenStreetMap 真实瓦片（需网络） | 看清校园在张江的位置、缩放拖拽、看校门与周边道路 |
  *
  * 两者都用 **WGS84**、都不经过 GCJ-02 —— 少一次转换就少一类偏移 bug。
  *
- * 默认给 `real`：绝大多数用户第一次打开时想先知道"这是哪儿"，
- * 真实地图能回答这个问题；需要看细节时再切离线图。
+ * 默认给 `offline`：本模块的硬要求是"不依赖在线瓦片"（小程序 web-view 与离线场景
+ * 都必须能用），在线瓦片只是**可选增强**。断网/瓦片被墙时页面仍然完整可用。
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -64,7 +64,7 @@ export interface CampusBasemapToggleProps {
 }
 
 export function CampusBasemapToggle({ offlineView, className }: CampusBasemapToggleProps) {
-  const [mode, setMode] = useState<BasemapMode>('real');
+  const [mode, setMode] = useState<BasemapMode>('offline');
 
   const { data: pois = [], isLoading, isError, error } = useQuery({
     queryKey: ['campus-poi'],
@@ -93,21 +93,8 @@ export function CampusBasemapToggle({ offlineView, className }: CampusBasemapTog
         <div
           role="tablist"
           aria-label="底图选择"
-          className="inline-flex overflow-hidden rounded-lg border border-line"
+          className="inline-flex overflow-hidden rounded-lg border border-border"
         >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === 'real'}
-            onClick={() => setMode('real')}
-            className={
-              mode === 'real'
-                ? 'bg-brand-500 px-3 py-1.5 text-sm font-medium text-on-brand'
-                : 'px-3 py-1.5 text-sm text-muted hover:text-body'
-            }
-          >
-            真实地图
-          </button>
           <button
             type="button"
             role="tab"
@@ -115,23 +102,36 @@ export function CampusBasemapToggle({ offlineView, className }: CampusBasemapTog
             onClick={() => setMode('offline')}
             className={
               mode === 'offline'
-                ? 'bg-brand-500 px-3 py-1.5 text-sm font-medium text-on-brand'
+                ? 'bg-brand-soft px-3 py-1.5 text-sm font-medium text-brand-strong'
                 : 'px-3 py-1.5 text-sm text-muted hover:text-body'
             }
           >
-            离线底图
+            离线底图（默认）
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'real'}
+            onClick={() => setMode('real')}
+            className={
+              mode === 'real'
+                ? 'bg-brand-soft px-3 py-1.5 text-sm font-medium text-brand-strong'
+                : 'px-3 py-1.5 text-sm text-muted hover:text-body'
+            }
+          >
+            在线地图（需网络）
           </button>
         </div>
         <span className="text-xs text-muted">
           {mode === 'real'
-            ? '瓦片 © OpenStreetMap contributors（ODbL）。可缩放拖拽；按住 ⌘/Ctrl 滚动才缩放，避免误触。'
-            : '离线渲染，断网可用；校园尺度的小径与草坪比街道图更细。'}
+            ? '在线瓦片 © OpenStreetMap contributors（ODbL）；需要网络，可缩放拖拽。'
+            : '离线渲染（默认）：断网可用；校园尺度的小径与草坪比街道图更细，可叠加已模糊化的动物图层。'}
         </span>
       </div>
 
       {/* ---- 地图本体 ---- */}
       {mode === 'real' ? (
-        <div className="overflow-hidden rounded-xl border border-line">
+        <div className="overflow-hidden rounded-xl border border-border">
           {isLoading ? (
             <div className="flex h-[420px] items-center justify-center text-sm text-muted">
               正在加载校园地点…
