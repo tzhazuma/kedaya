@@ -20,6 +20,12 @@ export type {
 export { KdyCard } from './KdyCard'
 export type { KdyCardProps } from './KdyCard'
 
+export {
+  CAMPUS_CREDENTIAL_NOTICE_DEFAULT,
+  KdyCampusCredentialNotice,
+} from './KdyCampusCredentialNotice'
+export type { KdyCampusCredentialNoticeProps } from './KdyCampusCredentialNotice'
+
 export { KdyEmpty } from './KdyEmpty'
 export type { KdyEmptyMode, KdyEmptyProps } from './KdyEmpty'
 

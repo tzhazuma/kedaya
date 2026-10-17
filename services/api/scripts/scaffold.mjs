@@ -3,9 +3,9 @@
  * 可达鸭后端 · 模块脚手架
  *
  * 为什么存在这个脚本：
- *   契约 §4 的 20 个模块里，有 14 个是"同一套 CRUD 形状 + 各自的领域动作"
+ *   契约 §4 的 20 个模块里，有 12 个是"同一套 CRUD 形状 + 各自的领域动作"
  *   （契约 §6.1：list / create / detail / patch / delete / <action>）。
- *   手写这 14 × 5 个文件既冗长又容易漂移。本脚本把**形状**固化下来，
+ *   手写这 12 × 5 个文件既冗长又容易漂移。本脚本把**形状**固化下来，
  *   把**差异**（字段、领域动作）留在下面的 SPEC 表里，一次生成、可重复执行。
  *
  * 生成的分层（契约 §7）：
@@ -15,12 +15,17 @@
  *   <id>.controller.ts      路由 + Zod schema + Swagger
  *   <id>.module.ts          NestJS 装配
  *
- * 手写（**不在** SPEC 表里、本脚本不写盘）的 6 个模块：
+ * 手写（**不在** SPEC 表里、本脚本不写盘）的模块：
  *   auth（两级身份）、wellbeing（同意门 + 审计 + 危机热线）、
  *   dorm-harmony（匿名 + 同意门）、ai-portrait（同意门 + 禁读域）、
  *   forum（版块 + 状态机 + 匿名 HMAC + 举报阈值治理 + 回复子资源）、
  *   faq（检索 + 幂等「有用」+ 工单状态机 + 关键词建议）、
- *   wildlife（四层位置模糊化 + EXIF 剥离 + DBSCAN 热点/推断轨迹 + 受限精确坐标表）。
+ *   wildlife（四层位置模糊化 + EXIF 剥离 + DBSCAN 热点/推断轨迹 + 受限精确坐标表）、
+ *   buddy（找搭子：匹配算法 + 申请状态机 + 反馈衰减）、
+ *   **techpie**（TechPie 整合 Phase 0：校园平台绑定 + 一次性 WebView 票据 +
+ *     cookie 唯一出口 + 白名单 fail-closed —— 见 docs/features/techpie-integration.md §8.1）、
+ *   **campus-card**（校园卡：第二级绑定门 + 流水汇总，规格 §2.5 的 OPENID 通道）、
+ *   **schedule**（课表：校园能力，必须挂 CampusBindingGuard —— 不变式 I4）。
  *   判据：领域形状超出"一套 CRUD + 一个动作"能表达的范围。
  *
  * 用法：node scripts/scaffold.mjs
@@ -67,7 +72,7 @@ const tsType = (t) => `${TS_BASE[baseOf(t)]}${isNullable(t) ? ' | null' : ''}`;
 const tokenOf = (model) => `${model.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase()}_REPOSITORY`;
 
 /* ------------------------------------------------------------------ *
- * SPEC：14 个"形状统一"的模块
+ * SPEC：9 个"形状统一"的模块（原 12 个；techpie / campus-card / schedule 已移出）
  *
  *   readOnly    —— DB 管理的时间戳等，不进 create/update 输入
  *   optionalCreate —— Prisma 有 @default，创建时可省略
@@ -75,126 +80,6 @@ const tokenOf = (model) => `${model.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpp
  *   action      —— 契约 §6.1 的领域动作（update = 状态流转；custom = 手写片段）
  * ------------------------------------------------------------------ */
 const SPEC = [
-  {
-    id: 'schedule',
-    zh: '课表',
-    pascal: 'Schedule',
-    model: 'ScheduleCourse',
-    delegate: 'scheduleCourse',
-    ownerField: 'userId',
-    readOnly: ['createdAt', 'updatedAt'],
-    optionalCreate: [],
-    fields: [
-      ['userId', 'string'],
-      ['term', 'string'],
-      ['courseName', 'string'],
-      ['teacher', 'string?'],
-      ['location', 'string?'],
-      ['weekday', 'int'],
-      ['startSlot', 'int'],
-      ['endSlot', 'int'],
-      ['createdAt', 'date'],
-      ['updatedAt', 'date'],
-    ],
-    action: { kind: 'custom', name: 'upcoming', summary: '按学期 + 星期查询课表' },
-    customPort: `  listByWeekday(term: string, weekday: number): Promise<ScheduleCourseModel[]>;`,
-    customRepository: `
-  /** 领域查询：某学期某天的课表（真实查询，非空壳） */
-  async listByWeekday(term: string, weekday: number): Promise<ScheduleCourseModel[]> {
-    return this.prisma.scheduleCourse.findMany({
-      where: { term, weekday },
-      orderBy: [{ startSlot: 'asc' }, { id: 'asc' }],
-    });
-  }`,
-    customService: `
-  /** 领域查询：某学期某天的课表 */
-  listByWeekday(term: string, weekday: number): Promise<ScheduleCourseModel[]> {
-    return this.repo.listByWeekday(term, weekday);
-  }`,
-    customController: `
-  @Get('upcoming')
-  @ApiOperation({ summary: '按学期 + 星期查询课表' })
-  upcoming(@Query('term') term: string, @Query('weekday') weekday: string) {
-    const parsed = Number(weekday);
-    if (!term || !Number.isInteger(parsed) || parsed < 1 || parsed > 7) {
-      throw new ValidationError('term 必填，weekday 必须是 1..7 的整数', { term, weekday });
-    }
-    return this.service.listByWeekday(term, parsed);
-  }`,
-  },
-  {
-    id: 'campus-card',
-    zh: '校园卡',
-    pascal: 'CampusCard',
-    model: 'CampusCardTransaction',
-    delegate: 'campusCardTransaction',
-    ownerField: 'userId',
-    readOnly: ['createdAt'],
-    optionalCreate: [],
-    fields: [
-      ['userId', 'string'],
-      ['amountFen', 'int'],
-      ['direction', 'string'],
-      ['merchant', 'string'],
-      ['happenedAt', 'date'],
-      ['balanceAfterFen', 'int'],
-      ['createdAt', 'date'],
-    ],
-    // 契约 §9：campus-card 是 high 敏感，但**不设同意门**（登录/开卡即同意）
-    serviceImports: `import { CampusBindingRequiredError } from '../../common/errors/app-error';
-import { CAMPUS_SESSION_PORT, type CampusSessionPort } from '../auth/domain/auth.domain';`,
-    serviceCtorExtra: `    @Inject(CAMPUS_SESSION_PORT) private readonly campusSession: CampusSessionPort,`,
-    moduleImports: `import { AuthModule } from '../auth/auth.module';`,
-    moduleImportsList: `imports: [AuthModule],`,
-    action: { kind: 'custom', name: 'summary', summary: '余额/流水汇总（需第二级绑定）' },
-    customPort: `  summarize(
-    userId: string,
-  ): Promise<{ totalOutFen: number; totalInFen: number; count: number }>;`,
-    customRepository: `
-  /** 汇总总支出 / 总充值（整数分） */
-  async summarize(userId: string): Promise<{ totalOutFen: number; totalInFen: number; count: number }> {
-    const [out, incoming] = await Promise.all([
-      this.prisma.campusCardTransaction.aggregate({
-        where: { userId, direction: 'out' },
-        _sum: { amountFen: true },
-        _count: { _all: true },
-      }),
-      this.prisma.campusCardTransaction.aggregate({
-        where: { userId, direction: 'in' },
-        _sum: { amountFen: true },
-        _count: { _all: true },
-      }),
-    ]);
-    return {
-      totalOutFen: out._sum.amountFen ?? 0,
-      totalInFen: incoming._sum.amountFen ?? 0,
-      count: out._count._all + incoming._count._all,
-    };
-  }`,
-    customService: `
-  /**
-   * 契约 §5 硬规则 3 的第二个落点：
-   * 校园卡能力属于**第二级**，未绑定 → CAMPUS_BINDING_REQUIRED。
-   * 注意本模块虽是 high 敏感，但**不设同意门**（契约 §9）。
-   */
-  async balanceSummary(userId: string) {
-    const session = await this.campusSession.acquireSession(userId, 'CARD');
-    if (!session) {
-      throw new CampusBindingRequiredError('请先绑定校园卡系统（CARD）后再查看汇总', {
-        platform: 'CARD',
-      });
-    }
-    return this.repo.summarize(userId);
-  }`,
-    customController: `
-  @Get('summary')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '流水汇总（第二级能力：未绑定返回 CAMPUS_BINDING_REQUIRED）' })
-  summary(@CurrentUser() userId: string) {
-    return this.service.balanceSummary(userId);
-  }`,
-  },
   {
     id: 'profile',
     zh: '我的',
@@ -658,32 +543,26 @@ import { CAMPUS_SESSION_PORT, type CampusSessionPort } from '../auth/domain/auth
     return this.service.cancel(id, actorId);
   }`,
   },
-  {
-    id: 'techpie',
-    zh: 'TechPie 整合',
-    pascal: 'Techpie',
-    model: 'TechpieLink',
-    delegate: 'techpieLink',
-    ownerField: null,
-    readOnly: ['createdAt', 'updatedAt'],
-    optionalCreate: ['status'],
-    fields: [
-      ['key', 'string'],
-      ['name', 'string'],
-      ['category', 'string'],
-      ['url', 'string'],
-      ['status', 'string'],
-      ['createdAt', 'date'],
-      ['updatedAt', 'date'],
-    ],
-    action: { kind: 'update', name: 'sync', summary: '触发一次同步', data: "{ status: 'synced' }" },
-  },
   // ⚠️ `wildlife` **已移出 SPEC 表**（2026-10-17）：
   // 它的领域形状（四层位置模糊化 / EXIF 剥离 / DBSCAN 热点与推断轨迹 /
   // 受限精确坐标表 / 派生只读资源）远超"一套 CRUD + 一个动作"能表达的范围，
   // 因此与 auth / wellbeing / dorm-harmony / ai-portrait / forum / faq 一样
   // **改为手写**，本脚本不再写盘。详见
   // `src/modules/wildlife/` 与 `docs/features/wildlife-map.md`。
+  //
+  // ⚠️ `techpie` / `campus-card` / `schedule` **已移出 SPEC 表**（2026-10-17，
+  // TechPie 整合 Phase 0 —— 规格 `docs/features/techpie-integration.md` §8.1，
+  // 裁决 `00-FROZEN-CONTRACT.md` §11.18）：
+  //   · `techpie`    —— 脚手架占位形状（key/name/category/url）与"校园平台绑定"
+  //                     毫无关系。手写实现含：一次性 WebView 票据、cookie 的
+  //                     **唯一出口**（不变式 I3）、白名单 fail-closed（§11.18-B）、
+  //                     Phase 0 只有 `ecard` OPENID 一个写入者的会话保管库。
+  //   · `campus-card`—— 它已经是手写的（`balanceSummary` + 第二级绑定门），
+  //                     继续留在 SPEC 里意味着下一次 `npm run scaffold` 会覆盖它。
+  //   · `schedule`   —— 课表是**校园能力**，必须挂 `CampusBindingGuard`
+  //                     （不变式 I4：已登录但未绑定 → 409，不是 401）。
+  // 三者一旦被覆盖，Phase 0 的合规约束（不代持 CASTGC）与 I3/I4 会**静默失效** ——
+  // 这正是"必须移出 SPEC 表"的理由。
 ];
 
 /* ------------------------------------------------------------------ *
@@ -694,7 +573,10 @@ const HEADER = (zh, id) => `/**
  * ${zh} · ${id}（契约 §4）
  *
  * 本文件由 scripts/scaffold.mjs 生成；要改形状请改脚本里的 SPEC 表，
- * 改完重跑 \`npm run scaffold\`，避免 14 个模块各写一套。
+ * 改完重跑 \`npm run scaffold\`，避免各模块各写一套。
+ *
+ * （这里**刻意不写模块数**：以前写死了「14/15 个模块」，每次增删模块都会
+ *   让所有已生成文件的注释行变一遍，产生 45 个文件的无意义 diff。）
  */`;
 
 function domainFile(spec) {

@@ -5,14 +5,14 @@
  * 改完重跑 `npm run scaffold`，避免 15 个模块各写一套。
  */
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../auth/auth.module';
+import { TechpieModule } from '../techpie/techpie.module';
 import { CampusCardController } from './campus-card.controller';
 import { CampusCardTransactionService } from './campus-card.service';
 import { CampusCardTransactionPrismaRepository } from './data/campus-card.repository';
 import { CAMPUS_CARD_TRANSACTION_REPOSITORY } from './domain/campus-card.domain';
 
 @Module({
-  imports: [AuthModule],
+  imports: [TechpieModule],
   controllers: [CampusCardController],
   providers: [CampusCardTransactionService, { provide: CAMPUS_CARD_TRANSACTION_REPOSITORY, useClass: CampusCardTransactionPrismaRepository }],
   exports: [CampusCardTransactionService],

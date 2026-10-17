@@ -8,8 +8,10 @@ import { Controller, Delete, Get, Inject, Param, Patch, Post, Query, UseGuards }
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { modulePath } from '@kedaya/contracts';
 import { z } from 'zod';
-import { OptionalAuthGuard } from '../../common/auth/auth.guard';
-import { OptionalCurrentUser } from '../../common/auth/current-user';
+import { AuthGuard } from '../../common/auth/auth.guard';
+import { CurrentUser } from '../../common/auth/current-user';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { CampusBindingGuard, RequireCampusBinding } from '../techpie/data/campus-binding.guard';
 import { ValidationError } from '../../common/errors/app-error';
 import { normalizeLimit, readCursor } from '../../common/pagination/cursor';
 import { ZodBody } from '../../common/pipes/zod-validation.pipe';
@@ -43,20 +45,25 @@ export type UpdateSchemaMatchesDomain = AssertAssignable<UpdateScheduleCourseInp
  */
 @ApiTags('schedule · 课表')
 @Controller(modulePath('schedule'))
-@UseGuards(OptionalAuthGuard)
+// 契约 §5 硬规则 3 / 不变式 I4：课表是**校园能力**，需要第二级绑定。
+// 未登录 → 401 UNAUTHENTICATED；**已登录但未绑定 → 409 CAMPUS_BINDING_REQUIRED**（不是 401）。
+// 顺序不能反：AuthGuard 必须先解出身份，CampusBindingGuard 才有 userId 可用。
+@UseGuards(AuthGuard, CampusBindingGuard)
+@RequireCampusBinding('cpdaily')
+@ApiBearerAuth()
 export class ScheduleController {
   constructor(@Inject(ScheduleCourseService) private readonly service: ScheduleCourseService) {}
 
   @Get('items')
   @ApiOperation({ summary: '列表（游标分页，契约 §6.1 不用 offset）' })
-  list(@Query() query: Record<string, unknown>) {
+  list(@CurrentUser() _userId: string, @Query() query: Record<string, unknown>) {
     return this.service.list({ cursor: readCursor(query), limit: normalizeLimit(query.limit) });
   }
 
   @Post('items')
   @ApiOperation({ summary: '创建' })
   create(
-    @OptionalCurrentUser() actorId: string | undefined,
+    @CurrentUser() actorId: string,
     @ZodBody(createSchema) body: CreateScheduleCourseInput,
   ) {
     return this.service.create(body, actorId);

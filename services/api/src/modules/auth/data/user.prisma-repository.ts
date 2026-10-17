@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { User } from '@prisma/client';
+import type { AuthIdentity, User } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import type { CampusIdentity, UserRecord, UserRepository } from '../domain/auth.domain';
 
@@ -32,7 +32,7 @@ export class UserPrismaRepository implements UserRepository {
         },
         include: { user: true },
       });
-      return toUserRecord(refreshed.user);
+      return toUserRecord(refreshed.user, refreshed);
     }
 
     const created = await this.prisma.user.create({
@@ -52,23 +52,31 @@ export class UserPrismaRepository implements UserRepository {
         // 首次登录即建立默认隐私开关（全部默认关闭，契约 §9 数据最小化）
         profileSetting: { create: {} },
       },
+      include: { identities: true },
     });
 
-    return toUserRecord(created);
+    return toUserRecord(created, created.identities[0] ?? null);
   }
 
   async findById(id: string): Promise<UserRecord | null> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    return user ? toUserRecord(user) : null;
+    const user = await this.prisma.user.findUnique({ where: { id }, include: { identities: true } });
+    return user ? toUserRecord(user, user.identities[0] ?? null) : null;
   }
 }
 
-function toUserRecord(user: User): UserRecord {
+/**
+ * 行 → 领域模型。
+ *
+ * `studentId` 来自第一级身份映射（`AuthIdentity.externalId`），
+ * 是**身份**的一部分，不是凭证 —— 它不涉及任何校园系统 session。
+ */
+function toUserRecord(user: User, identity: AuthIdentity | null): UserRecord {
   return {
     id: user.id,
     displayName: user.displayName,
     avatarUrl: user.avatarUrl,
     department: user.department,
+    studentId: identity?.externalId ?? null,
     createdAt: user.createdAt,
   };
 }

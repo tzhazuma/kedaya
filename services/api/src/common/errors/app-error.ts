@@ -3,9 +3,15 @@ import type { ApiErrorCode } from '@kedaya/contracts';
 /**
  * 错误码 → HTTP 状态码（契约 §6.1 只冻结了错误码，状态码由本表统一决定）。
  *
- * 说明：`CAMPUS_BINDING_REQUIRED` / `CONSENT_REQUIRED` 用 403 而不是 428，
- * 因为它们对客户端而言就是"当前主体无权访问该资源，需要先完成一个前置动作"，
- * 403 的语义足够且兼容性最好。错误码本身才是机器可读的唯一依据。
+ * 说明：
+ *   · `CONSENT_REQUIRED` 用 403 而不是 428 —— 对客户端而言就是"当前主体无权访问
+ *     该资源，需要先完成一个前置动作"，403 的语义足够且兼容性最好。
+ *   · `CAMPUS_BINDING_REQUIRED` 用 **409**（**不是** 401，也**不是** 403）。
+ *     这是 ADR 0004 §5.4 与契约 §11.4 **I4** 的硬要求：
+ *     401 会触发客户端的"登出并跳登录"逻辑，而用户其实**已经登录了**；
+ *     「已登录但未绑定」是**合法状态**，客户端应当**跳绑定引导页**。
+ *     契约 `03-api-contract.md:141` 与本表一致（409）。
+ *     错误码本身才是机器可读的唯一依据。
  */
 export const ERROR_HTTP_STATUS: Record<ApiErrorCode, number> = {
   UNAUTHENTICATED: 401,
@@ -14,7 +20,7 @@ export const ERROR_HTTP_STATUS: Record<ApiErrorCode, number> = {
   VALIDATION_FAILED: 400,
   RATE_LIMITED: 429,
   CONFLICT: 409,
-  CAMPUS_BINDING_REQUIRED: 403,
+  CAMPUS_BINDING_REQUIRED: 409,
   CONSENT_REQUIRED: 403,
   UPSTREAM_UNAVAILABLE: 503,
   INTERNAL: 500,
@@ -39,9 +45,17 @@ export class AppError extends Error {
   }
 }
 
+/**
+ * 参数/输入不合法。
+ *
+ * `status` 可选覆盖：全站默认 400（契约 §6.1 的既有映射，多处测试钉死），
+ * 但个别端点按自己的规格要求 **422**（例如 `POST /techpie/webview-session` 的
+ * `targetUrl` 非 https —— 规格 §8.4 的校验表）。错误码仍是 `VALIDATION_FAILED`，
+ * 机器可读的依据没有分叉。
+ */
 export class ValidationError extends AppError {
-  constructor(message = '请求参数不合法', details?: unknown) {
-    super('VALIDATION_FAILED', message, details);
+  constructor(message = '请求参数不合法', details?: unknown, status?: number) {
+    super('VALIDATION_FAILED', message, details, status);
   }
 }
 
@@ -97,6 +111,19 @@ export class ConsentRequiredError extends AppError {
 export class UpstreamUnavailableError extends AppError {
   constructor(message = '上游服务暂时不可用', details?: unknown) {
     super('UPSTREAM_UNAVAILABLE', message, details);
+  }
+}
+
+/**
+ * 触发限流（契约 §6.1 的 `RATE_LIMITED`）。
+ *
+ * 用途：`POST /techpie/webview-session`（10 次/分钟/用户，规格 §8.4）、
+ * 以及 Phase 1+ 的绑定尝试限流（5 次/小时/用户，规格 §8.5 —— 防密码暴力破解）。
+ * `details` 里只放**限流参数**，绝不放被限流的请求内容（规格 §10.3）。
+ */
+export class RateLimitedError extends AppError {
+  constructor(message = '请求过于频繁，请稍后再试', details?: unknown) {
+    super('RATE_LIMITED', message, details);
   }
 }
 

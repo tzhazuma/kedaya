@@ -32,6 +32,14 @@ import { createJoinGroupBuyUseCase } from '../application/groupbuy/joinGroupBuy'
 import type { JoinGroupBuyUseCase } from '../application/groupbuy/joinGroupBuy'
 import { createSessionUseCase } from '../application/auth/session'
 import type { SessionUseCase } from '../application/auth/session'
+import { createBindCampusUseCase } from '../application/techpie/bindCampus'
+import type { BindCampusUseCase } from '../application/techpie/bindCampus'
+import { createCampusCardUseCase } from '../application/techpie/campusCard'
+import type { CampusCardUseCase } from '../application/techpie/campusCard'
+import { createCapabilitiesUseCase } from '../application/techpie/capabilities'
+import type { CapabilitiesUseCase } from '../application/techpie/capabilities'
+import { createListBindingsUseCase } from '../application/techpie/listBindings'
+import type { ListBindingsUseCase } from '../application/techpie/listBindings'
 import { createReportSightingUseCase } from '../application/wildlife/reportSighting'
 import type { ReportSightingUseCase } from '../application/wildlife/reportSighting'
 import { createWildlifeTracksUseCase } from '../application/wildlife/tracks'
@@ -45,6 +53,7 @@ import { createHttpBuddyRepository } from '../data/repositories/httpBuddyReposit
 import { createHttpFaqRepository } from '../data/repositories/httpFaqRepository'
 import { createHttpForumRepository } from '../data/repositories/httpForumRepository'
 import { createHttpGroupBuyRepository } from '../data/repositories/httpGroupBuyRepository'
+import { createHttpTechpieRepository } from '../data/repositories/httpTechpieRepository'
 import { createHttpWildlifeRepository } from '../data/repositories/httpWildlifeRepository'
 import { createMockBuddyRepository } from '../data/repositories/mockBuddyRepository'
 import type { MockBuddyRepository } from '../data/repositories/mockBuddyRepository'
@@ -54,19 +63,25 @@ import { createMockForumRepository } from '../data/repositories/mockForumReposit
 import type { MockForumRepository } from '../data/repositories/mockForumRepository'
 import { createMockGroupBuyRepository } from '../data/repositories/mockGroupBuyRepository'
 import type { MockGroupBuyRepository } from '../data/repositories/mockGroupBuyRepository'
+import { createMockTechpieRepository } from '../data/repositories/mockTechpieRepository'
+import type { MockTechpieRepository } from '../data/repositories/mockTechpieRepository'
 import { createMockWildlifeRepository } from '../data/repositories/mockWildlifeRepository'
 import type { MockWildlifeRepository } from '../data/repositories/mockWildlifeRepository'
 import { createMemoryStorage } from '../data/storage/memoryStorage'
 import { createSessionStore, createTokenStore } from '../data/storage/sessionStore'
 import { StorageKeys } from '../data/storage/keys'
 import { createTaroStorage } from '../data/storage/taroStorage'
+import { CAMPUS_CARD_PAYMENT_CODE_REGISTERED } from '../domain/models/campusCard'
+import { createLogPort } from '../platform/log'
 import type { CachePort } from '../domain/ports/cachePort'
 import type { ClockPort } from '../domain/ports/clockPort'
 import type { BuddyRepository } from '../domain/ports/buddyRepository'
 import type { FaqRepository } from '../domain/ports/faqRepository'
 import type { ForumRepository } from '../domain/ports/forumRepository'
 import type { GroupBuyRepository } from '../domain/ports/groupbuyRepository'
+import type { LogPort } from '../domain/ports/logPort'
 import type { AuthRefresherPort, SessionStorePort, TokenStorePort } from '../domain/ports/sessionPort'
+import type { TechpieRepository } from '../domain/ports/techpieRepository'
 import type { TracePort } from '../domain/ports/tracePort'
 import type { WildlifeRepository } from '../domain/ports/wildlifeRepository'
 
@@ -106,6 +121,8 @@ export function readEnv(): AppEnv {
 export interface AppContainer {
   env: AppEnv
   trace: TracePort
+  /** 日志端口（规格 §10.3：白名单外剔除 + 凭证清洗，凭证绝不到达 sink） */
+  log: LogPort
   cache: CachePort
   clock: ClockPort
   sessionStore: SessionStorePort
@@ -117,6 +134,7 @@ export interface AppContainer {
   faqRepository: FaqRepository
   wildlifeRepository: WildlifeRepository
   buddyRepository: BuddyRepository
+  techpieRepository: TechpieRepository
   /** 仅 mock 模式下非空 —— 页面用它演示「三态」 */
   mockControls: MockGroupBuyRepository | null
   /** 论坛的 mock 演示控制面（仅 mock 模式下非空） */
@@ -127,6 +145,8 @@ export interface AppContainer {
   mockWildlifeControls: MockWildlifeRepository | null
   /** 找搭子的 mock 演示控制面（仅 mock 模式下非空） */
   mockBuddyControls: MockBuddyRepository | null
+  /** TechPie / 校园能力的 mock 演示控制面（仅 mock 模式下非空） */
+  mockTechpieControls: MockTechpieRepository | null
   useCases: {
     session: SessionUseCase
     listGroupBuys: ListGroupBuysUseCase
@@ -148,6 +168,10 @@ export interface AppContainer {
     createBuddyPost: CreateBuddyPostUseCase
     buddyProfile: BuddyProfileUseCase
     buddyRecommendations: BuddyRecommendationUseCase
+    listBindings: ListBindingsUseCase
+    capabilities: CapabilitiesUseCase
+    bindCampus: BindCampusUseCase
+    campusCard: CampusCardUseCase
   }
 }
 
@@ -159,6 +183,8 @@ export interface ContainerOverrides {
   faqRepository?: FaqRepository
   wildlifeRepository?: WildlifeRepository
   buddyRepository?: BuddyRepository
+  techpieRepository?: TechpieRepository
+  log?: LogPort
   env?: Partial<AppEnv>
 }
 
@@ -173,6 +199,14 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
   const cache = overrides.cache ?? createTaroStorage()
   const clock = overrides.clock ?? systemClock()
   const trace = createTracePort()
+  /**
+   * 日志端口（规格 §10.3）。
+   *
+   * ⚠️ 它是**白名单制**的：未登记的事件整条丢弃，未登记的字段整条剔除，
+   * 字符串值再走一遍内联凭证清洗。因此「把 credential 传进日志」这件事
+   * 在结构上不可能生效 —— 见 `platform/log.ts`。
+   */
+  const log = overrides.log ?? createLogPort()
 
   const sessionStore = createSessionStore(cache)
   const tokenStore = createTokenStore(sessionStore)
@@ -211,6 +245,9 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
    * （与 `groupbuy` 不同 —— 那个模块的 `join` body 本身就要带 displayName）。
    * 身份是环境属性，不是参数。
    */
+  const mockTechpieRepository = env.useMock
+    ? createMockTechpieRepository({ latencyMs: env.mockLatencyMs, log })
+    : null
   const mockBuddyRepository = env.useMock
     ? createMockBuddyRepository({
         latencyMs: env.mockLatencyMs,
@@ -247,6 +284,15 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
 
   const buddyRepository: BuddyRepository =
     overrides.buddyRepository ?? mockBuddyRepository ?? createHttpBuddyRepository(apiClient)
+
+  /**
+   * TechPie / 校园能力仓储。
+   *
+   * ⚠️ 本端**没有** webview-session 的实现（契约 §11.10-F：小程序 `web-view`
+   * 无法注入 cookie，I3 在本端没有出口）。校园系统走 W4 —— 用户自己登录。
+   */
+  const techpieRepository: TechpieRepository =
+    overrides.techpieRepository ?? mockTechpieRepository ?? createHttpTechpieRepository(apiClient, { log })
 
   const session = createSessionUseCase(sessionStore)
   const listGroupBuys = createListGroupBuysUseCase({
@@ -375,9 +421,43 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     feedbackCacheKey: StorageKeys.buddyFeedback,
   })
 
+  /* ---------------- TechPie 整合 / 校园能力（Phase 0） ---------------- */
+
+  const listBindings = createListBindingsUseCase({
+    repository: techpieRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.techpieBindingListCache,
+    log,
+  })
+  const capabilities = createCapabilitiesUseCase({
+    repository: techpieRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.techpieCapabilityCache,
+    log,
+  })
+  const bindCampus = createBindCampusUseCase({
+    repository: techpieRepository,
+    session: sessionStore,
+    clock,
+    log,
+  })
+  const campusCard = createCampusCardUseCase({
+    repository: techpieRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.campusCardTransactionCache,
+    log,
+    session: sessionStore,
+    // 付款码端点尚未登记进冻结契约 —— 这个布尔值让 UI 能如实告知，而不是让用户猜
+    paymentCodeRegistered: CAMPUS_CARD_PAYMENT_CODE_REGISTERED,
+  })
+
   return {
     env,
     trace,
+    log,
     cache,
     clock,
     sessionStore,
@@ -389,11 +469,13 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     faqRepository,
     wildlifeRepository,
     buddyRepository,
+    techpieRepository,
     mockControls: mockRepository,
     mockForumControls: mockForumRepository,
     mockFaqControls: mockFaqRepository,
     mockWildlifeControls: mockWildlifeRepository,
     mockBuddyControls: mockBuddyRepository,
+    mockTechpieControls: mockTechpieRepository,
     useCases: {
       session,
       listGroupBuys,
@@ -415,6 +497,10 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       createBuddyPost,
       buddyProfile,
       buddyRecommendations,
+      listBindings,
+      capabilities,
+      bindCampus,
+      campusCard,
     },
   }
 }

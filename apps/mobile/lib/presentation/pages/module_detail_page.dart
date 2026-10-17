@@ -18,6 +18,8 @@ const Map<String, String> implementedModuleRoutes = <String, String>{
   'forum': '/forum',
   'faq': '/faq',
   'wildlife': '/wildlife',
+  'techpie': '/techpie',
+  'campus-card': '/campus-card',
 };
 
 /// 模块落地页 —— **注册表驱动**，不含任何伪造的业务数据。
@@ -146,6 +148,17 @@ class ModuleDetailPage extends ConsumerWidget {
                     'wildlife' => '本模块已实现：静态底图 + 叠加层（区域/聚合热点/推断轨迹）+ '
                         '观测列表与详情 + 区域与告示位 + 上报（选图/定位/分类建议/命名个体/'
                         '伦理确认）+ 推断轨迹页，走 WildlifePort。',
+                    'techpie' => '本模块已实现 **Phase 0**：绑定管理（列表 / 发起绑定 / 解绑 / '
+                        '手动续期，响应不含凭证）+ 能力清单（未绑定项显示 '
+                        'CAMPUS_BINDING_REQUIRED 引导，**不是**报错）+ 校园系统 WebView 直连'
+                        '（一次性票据；票据不缓存、不进日志），走 TechpiePort。'
+                        '**未实现**：Phase 1（结构化校园数据，阻塞于信息办书面回复）、'
+                        'Phase 2（场馆预约 / 会话注入）、Phase 3（自动续期）。'
+                        '**不做**：任何校园会话落库路径。',
+                    'campus-card' => '本模块已实现：余额 / 流水 / 付款码，走 CampusCardPort ——'
+                        '**独立 OPENID 通道**（规格 §2.5），与校园会话代持完全解耦，'
+                        '因此不产生任何 CASTGC。未开通时接口返回 409 '
+                        'CAMPUS_BINDING_REQUIRED（不是 401）。',
                     _ => '本模块尚未实现：只有冻结契约里的路由与权限信息，'
                         '没有页面、没有 mock 数据、没有假成功。',
                   },

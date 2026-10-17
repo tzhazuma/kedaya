@@ -5,6 +5,11 @@ import { InternalError } from '../../../common/errors/app-error';
  *
  * 契约 §5 硬规则 1：
  *   "AuthPort 只认第一级。它**不知道**任何校园系统的 cookie/session/tgc。"
+ *
+ * ⚠️ 第二级（能力层）的端口**不在本文件里** —— 它在
+ * `modules/techpie/domain/ports/campus-session.port.ts`。
+ * 这是不变式 **I2** 的结构性落地：身份层在**类型上**就拿不到校园会话端口，
+ * 而不是靠"记得不要 import"（ADR 0004 §2.2 的 L2/L3 教训）。
  * ================================================================== */
 
 export type CampusIdentityProvider = 'SHTU_CAS' | 'SHTU_EGATE';
@@ -33,57 +38,6 @@ export interface AuthPort {
 export const AUTH_PORT = Symbol('KEDAYA_AUTH_PORT');
 
 /* ================================================================== *
- * 第二级 · 能力层（Campus Session）
- *
- * 契约 §5 硬规则 2：
- *   "任何校园系统能力必须通过 CampusSessionPort 获取，不得从 AuthPort 读取。"
- * ================================================================== */
-
-export type CampusPlatform = 'EGATE' | 'CPDAILY' | 'JWC' | 'CARD';
-
-export const CAMPUS_PLATFORMS: readonly CampusPlatform[] = ['EGATE', 'CPDAILY', 'JWC', 'CARD'];
-
-/** 面向调用方的绑定视图 —— **刻意不包含** session 明文或密文 */
-export interface CampusBindingRecord {
-  id: string;
-  platform: CampusPlatform;
-  status: string;
-  scopes: string[];
-  expiresAt: Date;
-  lastUsedAt: Date | null;
-}
-
-/**
- * 能力层 session。
- *
- * `sessionRef` 只在 CampusSessionPort 内部流转，
- * **绝不**进入 AuthService 的返回值（契约 §5 硬规则 2）。
- */
-export interface CampusSession {
-  platform: CampusPlatform;
-  sessionRef: string;
-  expiresAt: Date;
-}
-
-export interface CampusBindCredentials {
-  /** 上游回调拿到的 session cookie（明文，仅在此层短暂存在） */
-  sessionCookie: string;
-  scopes?: string[];
-  /** 绑定有效期（秒），默认 7 天 */
-  ttlSeconds?: number;
-}
-
-export interface CampusSessionPort {
-  bind(userId: string, platform: CampusPlatform, credentials: CampusBindCredentials): Promise<CampusBindingRecord>;
-  listBindings(userId: string): Promise<CampusBindingRecord[]>;
-  /** 取能力层 session；未绑定/已过期返回 null（调用方据此抛 CAMPUS_BINDING_REQUIRED） */
-  acquireSession(userId: string, platform: CampusPlatform): Promise<CampusSession | null>;
-  unbind(userId: string, platform: CampusPlatform): Promise<void>;
-}
-
-export const CAMPUS_SESSION_PORT = Symbol('KEDAYA_CAMPUS_SESSION_PORT');
-
-/* ================================================================== *
  * KedaYa 自有账户
  * ================================================================== */
 
@@ -92,6 +46,11 @@ export interface UserRecord {
   displayName: string;
   avatarUrl: string | null;
   department: string | null;
+  /**
+   * 学号（来自 `AuthIdentity.externalId`）。**不是**凭证 ——
+   * 它是第一级身份的一部分，回答"你是谁"。
+   */
+  studentId: string | null;
   createdAt: Date;
 }
 
@@ -102,6 +61,95 @@ export interface UserRepository {
 }
 
 export const USER_REPOSITORY = Symbol('KEDAYA_USER_REPOSITORY');
+
+/* ================================================================== *
+ * 契约 §11.4 I1：身份层会话的序列化形状
+ * ================================================================== */
+
+/**
+ * 一级身份会话的**唯一**投影（契约 §11.4 I1 / 规格 §4.2）。
+ *
+ * ```ts
+ * export interface KedaYaIdentitySession {
+ *   userId: string;
+ *   studentId: string | null;
+ *   name: string | null;
+ *   department: string | null;
+ *   // 严禁出现：cookie / cookies / session / sessionToken / tgc / castgc / ticket / tenant
+ * }
+ * ```
+ *
+ * 强制手段（ADR §7 已规定，这里是具体实现）：
+ *   1. **类型上没有**那 8 个键；
+ *   2. `assertIdentitySessionHasNoCredentialKeys()` 运行时兜底；
+ *   3. `test/techpie-arch.spec.ts` 对**真实 HTTP 响应体**做递归键名扫描（I1）。
+ */
+export interface KedaYaIdentitySession {
+  userId: string;
+  studentId: string | null;
+  name: string | null;
+  department: string | null;
+}
+
+/** 契约 §11.4 I1 冻结的 8 个禁用键名 */
+export const IDENTITY_SESSION_FORBIDDEN_KEYS: readonly string[] = [
+  'cookie',
+  'cookies',
+  'session',
+  'sessionToken',
+  'tgc',
+  'castgc',
+  'ticket',
+  'tenant',
+];
+
+/**
+ * 运行时兜底：身份会话（及其嵌套结构）里一旦出现禁用键名就抛 `INTERNAL`。
+ *
+ * 键名比较**大小写不敏感**且忽略 `_` / `-`：`session_token` / `sessionToken` /
+ * `SESSION-TOKEN` 是同一个东西。**错误信息不回显任何值**（规格 §10.3）。
+ */
+export function assertIdentitySessionHasNoCredentialKeys(
+  value: unknown,
+  where = 'KedaYaIdentitySession',
+): void {
+  const normalize = (key: string): string => key.toLowerCase().replace(/[_-]/g, '');
+  const wanted = new Set(IDENTITY_SESSION_FORBIDDEN_KEYS.map(normalize));
+
+  const walk = (node: unknown, depth: number): void => {
+    if (depth > 8 || node === null || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item, depth + 1);
+      return;
+    }
+    for (const [key, child] of Object.entries(node as Record<string, unknown>)) {
+      if (wanted.has(normalize(key))) {
+        throw new InternalError(`${where} 违反契约 §11.4 I1：序列化里出现了被禁的凭据键名（键名已脱敏）`);
+      }
+      walk(child, depth + 1);
+    }
+  };
+
+  walk(value, 0);
+}
+
+/**
+ * 账户记录 → 一级身份会话。
+ *
+ * **逐字段挑选**（不是解构后删字段）：将来给 `UserRecord` 加字段时，
+ * 它**默认不会**出现在会话里 —— "不小心把校园凭据暴露进身份通道"这种事故
+ * 在结构上就不可能发生。
+ */
+export function toIdentitySession(user: UserRecord): KedaYaIdentitySession {
+  const session: KedaYaIdentitySession = {
+    userId: user.id,
+    studentId: user.studentId,
+    name: user.displayName,
+    department: user.department,
+  };
+  assertIdentitySessionHasNoCredentialKeys(session);
+  return session;
+}
 
 /* ================================================================== *
  * 契约 §5 的运行时护栏

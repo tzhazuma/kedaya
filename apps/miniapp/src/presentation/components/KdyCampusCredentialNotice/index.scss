@@ -1,0 +1,46 @@
+/* 校园系统登录告知（契约 §11.10-F 的 UI 呈现）。色值全部取自设计令牌（契约 §6.2）。 */
+
+.kdy-campus-notice {
+  margin: $kdy-space-3 $kdy-space-4 0;
+  padding: $kdy-space-3 $kdy-space-4;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-lg;
+  border-left: 3px solid $kdy-color-info;
+}
+
+.kdy-campus-notice--compact {
+  margin: $kdy-space-2 $kdy-space-4 0;
+  padding: $kdy-space-2 $kdy-space-3;
+}
+
+.kdy-campus-notice__head {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-campus-notice__glyph {
+  font-size: $kdy-font-size-md;
+}
+
+.kdy-campus-notice__title {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-campus-notice__body {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.6;
+}
+
+.kdy-campus-notice__detail {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}

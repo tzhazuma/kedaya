@@ -14,6 +14,11 @@ import '../features/forum/presentation/pages/forum_compose_page.dart';
 import '../features/forum/presentation/pages/forum_post_detail_page.dart';
 import '../features/groupbuy/presentation/pages/groupbuy_detail_page.dart';
 import '../features/groupbuy/presentation/pages/groupbuy_list_page.dart';
+import '../features/techpie/presentation/pages/campus_card_page.dart';
+import '../features/techpie/presentation/pages/techpie_bindings_page.dart';
+import '../features/techpie/presentation/pages/techpie_capabilities_page.dart';
+import '../features/techpie/presentation/pages/techpie_home_page.dart';
+import '../features/techpie/presentation/pages/techpie_webview_page.dart';
 import '../features/wildlife/presentation/pages/wildlife_map_page.dart';
 import '../features/wildlife/presentation/pages/wildlife_report_page.dart';
 import '../features/wildlife/presentation/pages/wildlife_sighting_detail_page.dart';
@@ -45,6 +50,10 @@ final GlobalKey<NavigatorState> kedaYaRootNavigatorKey = GlobalKey<NavigatorStat
 ///   - `/faq`、`/faq/tickets`：常见问题（分类+搜索+手风琴 / 我的工单）
 ///   - `/wildlife`（地图）、`/wildlife/report`（上报）、`/wildlife/sightings[/:id]`、
 ///     `/wildlife/zones[/:id]`、`/wildlife/tracks[/:id]`：校园动物切片
+///   - `/techpie`（入口）、`/techpie/bindings`（绑定管理）、
+///     `/techpie/capabilities`（能力清单）、`/techpie/webview`（校园系统直连）：
+///     TechPie 整合 Phase 0
+///   - `/campus-card`：校园卡（**独立 OPENID 通道**，与校园会话代持解耦）
 ///   - `/module/:moduleId`：**注册表驱动**的模块落地页（未实现的模块在此如实说明）
 GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
   navigatorKey: kedaYaRootNavigatorKey,
@@ -224,6 +233,37 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
           ],
         ),
       ],
+    ),
+    GoRoute(
+      path: '/techpie',
+      name: 'techpie',
+      builder: (BuildContext context, GoRouterState state) => const TechpieHomePage(),
+      routes: <RouteBase>[
+        // 三个静态子段；本模块没有 `:id` 路由，因此不存在"静态段被 :id 吃掉"的问题。
+        GoRoute(
+          path: 'bindings',
+          name: 'techpie-bindings',
+          builder: (BuildContext context, GoRouterState state) =>
+              const TechpieBindingsPage(),
+        ),
+        GoRoute(
+          path: 'capabilities',
+          name: 'techpie-capabilities',
+          builder: (BuildContext context, GoRouterState state) =>
+              const TechpieCapabilitiesPage(),
+        ),
+        GoRoute(
+          path: 'webview',
+          name: 'techpie-webview',
+          builder: (BuildContext context, GoRouterState state) =>
+              const TechpieWebViewPage(),
+        ),
+      ],
+    ),
+    GoRoute(
+      path: '/campus-card',
+      name: 'campus-card',
+      builder: (BuildContext context, GoRouterState state) => const CampusCardPage(),
     ),
     GoRoute(
       path: '/module/:moduleId',

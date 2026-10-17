@@ -1,0 +1,84 @@
+/* 校园能力清单页。色值全部取自设计令牌（契约 §6.2，禁止手写色值）。 */
+
+.kdy-techpie-caps {
+  padding-bottom: $kdy-space-6;
+}
+
+/* 引导条 —— 刻意不用 danger 色：未绑定是合法状态，不是错误（契约 I4） */
+.kdy-techpie-caps__guide {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-3;
+  margin: $kdy-space-3 $kdy-space-4 0;
+  padding: $kdy-space-3 $kdy-space-4;
+  background-color: $kdy-color-brand-soft;
+  border-radius: $kdy-radius-lg;
+}
+
+.kdy-techpie-caps__guide-text {
+  flex: 1;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-techpie-caps__nav,
+.kdy-techpie-caps__demo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  padding: $kdy-space-3 $kdy-space-4 0;
+}
+
+.kdy-techpie-caps__hint,
+.kdy-techpie-caps__soft-error {
+  display: block;
+  padding: $kdy-space-2 $kdy-space-4;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-techpie-caps__soft-error {
+  color: $kdy-color-warning;
+}
+
+.kdy-techpie-caps__item {
+  display: flex;
+  flex-direction: column;
+}
+
+.kdy-techpie-caps__title {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-medium;
+}
+
+.kdy-techpie-caps__detail {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-techpie-caps__provider {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-techpie-caps__actions {
+  display: flex;
+  gap: $kdy-space-2;
+  padding-top: $kdy-space-3;
+}
+
+.kdy-techpie-caps__blocked {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  font-style: italic;
+}

@@ -27,6 +27,11 @@ export const PAGE_PATHS = {
   buddyCreate: '/presentation/pages/buddy/create/index',
   buddyProfile: '/presentation/pages/buddy/profile/index',
   buddyRecommendations: '/presentation/pages/buddy/recommendations/index',
+  /* ---------------- TechPie 整合 / 校园能力（Phase 0） ---------------- */
+  techpieLinks: '/presentation/pages/techpie/links/index',
+  techpieCapabilities: '/presentation/pages/techpie/capabilities/index',
+  techpieWebview: '/presentation/pages/techpie/webview/index',
+  campusCard: '/presentation/pages/campus-card/index/index',
 } as const
 
 export type PagePath = (typeof PAGE_PATHS)[keyof typeof PAGE_PATHS]
@@ -46,6 +51,11 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   wildlife: PAGE_PATHS.wildlifeMap,
   // `buddy` 的入口是**三板块列表**（模块主界面），发布 / 资料 / 推荐从列表页进入
   buddy: PAGE_PATHS.buddyList,
+  // `techpie` 的入口是**绑定管理页**（用户来这里的第一个问题是"我绑了什么"），
+  // 能力清单与 WebView 直连从绑定页进入
+  techpie: PAGE_PATHS.techpieLinks,
+  // `campus-card` 的入口是**校园卡页**（余额 / 流水 / 付款码），走独立 OPENID 通道
+  'campus-card': PAGE_PATHS.campusCard,
 }
 
 export function moduleEntryPath(moduleId: string): string | null {
@@ -156,4 +166,32 @@ export function buddyRecommendationsPath(section?: string | null): string {
   return section == null || section === ''
     ? PAGE_PATHS.buddyRecommendations
     : `${PAGE_PATHS.buddyRecommendations}?section=${encodeURIComponent(section)}`
+}
+
+/* ------------------------------------------------------------------ *
+ * techpie（TechPie 整合 / 校园能力）
+ * ------------------------------------------------------------------ */
+
+/**
+ * WebView 直连页 —— 打开**校园系统**页面。
+ *
+ * ⚠️ 只传 `target`（校园系统的**标识**），**不传 URL**：
+ * URL 由 `domain/models/techpie.ts` 的 `CAMPUS_WEBVIEW_TARGETS` 决定。
+ * 让 URL 从页面参数进来会打开一个「用户可构造任意地址的 WebView」，
+ * 那是一个开放重定向面（契约 §11.18-B 对服务端 `targetUrl` 的要求同理）。
+ */
+export function techpieWebviewPath(targetId: string): string {
+  return `${PAGE_PATHS.techpieWebview}?target=${encodeURIComponent(targetId)}`
+}
+
+export function techpieLinksPath(): string {
+  return PAGE_PATHS.techpieLinks
+}
+
+export function techpieCapabilitiesPath(): string {
+  return PAGE_PATHS.techpieCapabilities
+}
+
+export function campusCardPath(): string {
+  return PAGE_PATHS.campusCard
 }

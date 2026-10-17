@@ -18,6 +18,26 @@
 type Row = Record<string, any>;
 type Where = Record<string, any>;
 
+const QUERY_OPERATORS = new Set([
+  'in',
+  'notIn',
+  'not',
+  'equals',
+  'gte',
+  'lte',
+  'lt',
+  'gt',
+  'contains',
+  'startsWith',
+  'endsWith',
+  'mode',
+]);
+
+/** 这个嵌套对象是"查询算子"，还是 Prisma 的复合唯一键？ */
+function hasQueryOperator(cond: Record<string, unknown>): boolean {
+  return Object.keys(cond).some((key) => QUERY_OPERATORS.has(key));
+}
+
 function isPlainObject(value: unknown): value is Record<string, any> {
   return typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof Date);
 }
@@ -45,6 +65,7 @@ function matchesCondition(value: unknown, cond: unknown): boolean {
     if ('lte' in cond && !((value as number) <= (cond.lte as number))) return false;
     if ('lt' in cond && !((value as number) < (cond.lt as number))) return false;
     if ('gt' in cond && !((value as number) > (cond.gt as number))) return false;
+
     return true;
   }
   if (value instanceof Date && typeof cond === 'string') return value.toISOString() === cond;
@@ -64,6 +85,22 @@ export function matchesWhere(row: Row, where: Where | undefined): boolean {
     }
     if (key === 'NOT') {
       if (matchesWhere(row, cond as Where)) return false;
+      continue;
+    }
+    // Prisma 的**复合唯一键**写法：`{ userId_provider: { userId, provider } }`。
+    // 行里没有 `userId_provider` 这个字段，所以要把它摊平成若干等值条件。
+    // （不加这一条的话，未知的嵌套对象会被 `matchesCondition` 一律视为匹配，
+    //  于是 `findUnique({where:{userId_provider:{...}}})` 会**返回第一行** ——
+    //  那是最糟的假阳性：越权读在测试里"通过"了。）
+    if (isPlainObject(cond) && row[key] === undefined && !hasQueryOperator(cond)) {
+      let matched = true;
+      for (const [subKey, subCond] of Object.entries(cond as Where)) {
+        if (!matchesCondition(row[subKey], subCond)) {
+          matched = false;
+          break;
+        }
+      }
+      if (!matched) return false;
       continue;
     }
     if (!matchesCondition(row[key], cond)) return false;

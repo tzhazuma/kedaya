@@ -7,6 +7,7 @@ import '../data/mock/dev_unified_identity.dart';
 import '../data/mock/in_memory_stores.dart';
 import '../data/mock/mock_auth_repository.dart';
 import '../data/mock/mock_buddy_repository.dart';
+import '../data/mock/mock_campus_card_repository.dart';
 import '../data/mock/mock_campus_session_repository.dart';
 import '../data/mock/mock_consent_store.dart';
 import '../data/mock/mock_controls.dart';
@@ -17,10 +18,13 @@ import '../data/mock/mock_groupbuy_repository.dart';
 import '../data/mock/mock_location_port.dart';
 import '../data/mock/mock_lost_found_repository.dart';
 import '../data/mock/mock_media_picker.dart';
+import '../data/mock/mock_techpie_repository.dart';
+import '../data/mock/mock_webview_port.dart';
 import '../data/mock/mock_wellbeing_repository.dart';
 import '../data/mock/mock_wildlife_repository.dart';
 import '../data/repositories/remote_auth_repository.dart';
 import '../data/repositories/remote_buddy_repository.dart';
+import '../data/repositories/remote_campus_card_repository.dart';
 import '../data/repositories/remote_campus_session_repository.dart';
 import '../data/repositories/remote_consent_repository.dart';
 import '../data/repositories/remote_errand_repository.dart';
@@ -28,6 +32,7 @@ import '../data/repositories/remote_faq_repository.dart';
 import '../data/repositories/remote_forum_repository.dart';
 import '../data/repositories/remote_groupbuy_repository.dart';
 import '../data/repositories/remote_lost_found_repository.dart';
+import '../data/repositories/remote_techpie_repository.dart';
 import '../data/repositories/remote_wellbeing_repository.dart';
 import '../data/repositories/remote_wildlife_repository.dart';
 import '../data/storage/cache_theme_mode_store.dart';
@@ -35,6 +40,7 @@ import '../data/storage/preferences_cache_store.dart';
 import '../data/storage/secure_credential_store.dart';
 import '../domain/ports/auth_port.dart';
 import '../domain/ports/buddy_port.dart';
+import '../domain/ports/campus_card_port.dart';
 import '../domain/ports/campus_session_port.dart';
 import '../domain/ports/consent_port.dart';
 import '../domain/ports/credential_store_port.dart';
@@ -48,7 +54,9 @@ import '../domain/ports/location_port.dart';
 import '../domain/ports/lost_found_port.dart';
 import '../domain/ports/media_picker_port.dart';
 import '../domain/ports/platform_ports.dart';
+import '../domain/ports/techpie_port.dart';
 import '../domain/ports/theme_mode_port.dart';
+import '../domain/ports/webview_port.dart';
 import '../domain/ports/wellbeing_port.dart';
 import '../domain/ports/wildlife_port.dart';
 import '../platform/clipboard_share_port.dart';
@@ -56,6 +64,7 @@ import '../platform/image_picker_media_picker.dart';
 import '../platform/local_notification_port.dart';
 import '../platform/method_channel_location.dart';
 import '../platform/method_channel_unified_identity.dart';
+import '../platform/method_channel_webview.dart';
 import 'app_environment.dart';
 
 /// 手工装配的运行时容器（不用 DI 框架，参考 TechPie 的 runtime factory 思路）。
@@ -79,6 +88,9 @@ final class AppRuntime {
     required this.lostFound,
     required this.wellbeing,
     required this.wildlife,
+    required this.techpie,
+    required this.campusCard,
+    required this.webView,
     required this.mediaPicker,
     required this.location,
     required this.credentials,
@@ -128,6 +140,21 @@ final class AppRuntime {
   /// 因此这里**不经过** [consent]，也**不会**返回 `CONSENT_REQUIRED`。
   final WildlifePort wildlife;
 
+  /// TechPie 整合（契约 §4.1 `techpie`，敏感级中、**无同意门**）。
+  ///
+  /// **第二级**（能力层）：绑定元数据 / 能力清单 / 一次性 WebView 票据。
+  /// 它**没有**一级身份的任何字段 —— 身份走 [auth]（契约 §5 硬规则 1）。
+  final TechpiePort techpie;
+
+  /// 校园卡（契约 §4.2 `campus-card`）—— **独立 OPENID 通道**（规格 §2.5）。
+  ///
+  /// 与 [campusSessions] 分开：校园卡不依赖校园会话代持，因此它的开通流程、
+  /// 可用性判定与合规风险都与"eGate 绑定"完全独立。
+  final CampusCardPort campusCard;
+
+  /// WebView 宿主（契约 §7 的 `platform/` 适配）。只接受一次性中转 URL。
+  final WebViewPort webView;
+
   /// 选图（相册 / 相机）。mock 运行时是内存实现，不弹相册。
   final MediaPickerPort mediaPicker;
 
@@ -175,6 +202,9 @@ final class AppRuntime {
       lostFound: MockLostFoundRepository(),
       wellbeing: MockWellbeingRepository(),
       wildlife: MockWildlifeRepository(controls: controls),
+      techpie: MockTechpieRepository(controls: controls),
+      campusCard: MockCampusCardRepository(controls: controls),
+      webView: InMemoryWebViewPort(),
       mediaPicker: InMemoryMediaPicker(),
       location: InMemoryLocationPort(),
       credentials: InMemoryCredentialStore(),
@@ -254,6 +284,9 @@ final class AppRuntime {
       lostFound: RemoteLostFoundRepository(api),
       wellbeing: wellbeing,
       wildlife: RemoteWildlifeRepository(api),
+      techpie: RemoteTechpieRepository(api),
+      campusCard: RemoteCampusCardRepository(api),
+      webView: const MethodChannelWebView(),
       mediaPicker: ImagePickerMediaPicker(),
       location: const MethodChannelLocation(),
       credentials: credentials,

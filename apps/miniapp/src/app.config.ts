@@ -36,6 +36,12 @@ export default {
     'presentation/pages/buddy/create/index',
     'presentation/pages/buddy/profile/index',
     'presentation/pages/buddy/recommendations/index',
+    // TechPie 整合 / 校园能力（Phase 0）—— 绑定管理 / 能力清单 / WebView 直连 / 校园卡
+    // ⚠️ tabBar **未改动**（任务硬性要求）：这四页从首页宫格进入
+    'presentation/pages/techpie/links/index',
+    'presentation/pages/techpie/capabilities/index',
+    'presentation/pages/techpie/webview/index',
+    'presentation/pages/campus-card/index/index',
   ],
   window: {
     backgroundTextStyle: 'light',

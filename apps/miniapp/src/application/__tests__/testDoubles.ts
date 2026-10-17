@@ -44,6 +44,15 @@ import type {
   ReportForumContentInput,
 } from '../../domain/ports/forumRepository'
 import type { SessionStorePort } from '../../domain/ports/sessionPort'
+import type { CampusCardPaymentCode, CampusCardTransaction } from '../../domain/models/campusCard'
+import type { CampusBindingSummary, CampusCapability } from '../../domain/models/techpie'
+import type {
+  CampusBindingPage,
+  CampusCardTransactionPage,
+  CreateCampusBindingInput,
+  ListBindingsQuery,
+  TechpieRepository,
+} from '../../domain/ports/techpieRepository'
 import type {
   ListWildlifeQuery,
   UploadMediaInput,
@@ -107,9 +116,25 @@ export const TEST_PROFILE: UserProfile = {
   campusBound: false,
 }
 
-/** 最小可用的 `SessionStorePort` 替身（只实现用例层真正用到的部分） */
-export function createFakeSessionStore(profile: UserProfile | null = TEST_PROFILE): SessionStorePort {
-  let snapshot: Session = { tokens: null, profile }
+/** 未过期的测试用 token（`isAuthenticated` 要求 tokens 与 profile **同时**非空） */
+export const TEST_TOKENS: AuthTokens = {
+  accessToken: 'access-test-token',
+  refreshToken: 'refresh-test-token',
+  expiresAt: '2026-12-01T00:00:00.000Z',
+}
+
+/**
+ * 最小可用的 `SessionStorePort` 替身（只实现用例层真正用到的部分）。
+ *
+ * ⚠️ 第二个参数是刻意的：契约 §5 的「已登录」要求 **tokens 与 profile 同时存在**
+ * （`isAuthenticated`）。只给 profile 的替身代表的是「**未**登录」——
+ * 这正是「未登录 vs 未绑定」区分测试需要的那条边界。
+ */
+export function createFakeSessionStore(
+  profile: UserProfile | null = TEST_PROFILE,
+  tokens: AuthTokens | null = null,
+): SessionStorePort {
+  let snapshot: Session = { tokens, profile }
   const listeners = new Set<() => void>()
 
   function commit(next: Session): Session {
@@ -859,6 +884,162 @@ export function createFakeBuddyRepository(
     async deleteProfile() {
       this.deleteProfileCalls += 1
       return this.deleteProfileResult
+    },
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * techpie / campus-card（TechPie 整合 · Phase 0）仓储替身
+ * ------------------------------------------------------------------ */
+
+export function campusBinding(
+  id: string,
+  overrides: Partial<CampusBindingSummary> = {},
+): CampusBindingSummary {
+  return {
+    id,
+    provider: 'ecard',
+    status: 'ACTIVE',
+    displayName: null,
+    boundAt: '2026-10-17T01:30:00.000Z',
+    expiresAt: null,
+    lastSyncAt: '2026-10-17T01:30:00.000Z',
+    phase: 'phase0',
+    ...overrides,
+  }
+}
+
+export function campusCapability(
+  key: string,
+  overrides: Partial<CampusCapability> = {},
+): CampusCapability {
+  return {
+    key,
+    nameZh: `能力 ${key}`,
+    available: true,
+    requiredProvider: null,
+    phase: 'phase0',
+    blockedReason: null,
+    ...overrides,
+  }
+}
+
+export function cardTransaction(
+  id: string,
+  overrides: Partial<CampusCardTransaction> = {},
+): CampusCardTransaction {
+  return {
+    id,
+    amountFen: -1250,
+    balanceFen: 58_750,
+    merchant: '一食堂',
+    occurredAt: '2026-10-17T03:12:00.000Z',
+    ...overrides,
+  }
+}
+
+export function cardPaymentCode(
+  overrides: Partial<CampusCardPaymentCode> = {},
+): CampusCardPaymentCode {
+  return {
+    code: 'MOCK0000000001',
+    issuedAt: '2026-10-17T03:00:00.000Z',
+    expiresAt: '2026-10-17T03:01:00.000Z',
+    ...overrides,
+  }
+}
+
+export interface FakeTechpieRepository extends TechpieRepository {
+  bindingsQueue: Array<Result<CampusBindingPage, RepositoryError>>
+  bindingDetailResult: Result<CampusBindingSummary, RepositoryError>
+  createResult: Result<CampusBindingSummary, RepositoryError>
+  unbindResult: Result<true, RepositoryError>
+  renewResult: Result<CampusBindingSummary, RepositoryError>
+  capabilitiesQueue: Array<Result<CampusCapability[], RepositoryError>>
+  transactionsQueue: Array<Result<CampusCardTransactionPage, RepositoryError>>
+  paymentCodeResult: Result<CampusCardPaymentCode, RepositoryError>
+  /** 断言用：记录全部调用参数 */
+  listQueries: ListBindingsQuery[]
+  created: Array<{ input: CreateCampusBindingInput; idempotencyKey: string | undefined }>
+  unbinds: Array<{ id: string; idempotencyKey: string | undefined }>
+  renews: Array<{ id: string; idempotencyKey: string | undefined }>
+  transactionQueries: ListBindingsQuery[]
+  paymentCodeCalls: Array<string | undefined>
+  /** 总调用次数 —— 用来断言「Phase 1 的绑定请求根本没有发出去」 */
+  totalCalls: number
+}
+
+export interface FakeTechpieRepositoryOptions {
+  bindings?: Array<Result<CampusBindingPage, RepositoryError>>
+  bindingDetail?: Result<CampusBindingSummary, RepositoryError>
+  create?: Result<CampusBindingSummary, RepositoryError>
+  unbind?: Result<true, RepositoryError>
+  renew?: Result<CampusBindingSummary, RepositoryError>
+  capabilities?: Array<Result<CampusCapability[], RepositoryError>>
+  transactions?: Array<Result<CampusCardTransactionPage, RepositoryError>>
+  paymentCode?: Result<CampusCardPaymentCode, RepositoryError>
+}
+
+export function createFakeTechpieRepository(
+  options: FakeTechpieRepositoryOptions = {},
+): FakeTechpieRepository {
+  return {
+    bindingsQueue: [...(options.bindings ?? [])],
+    bindingDetailResult: options.bindingDetail ?? ok(campusBinding('tpl-1')),
+    createResult: options.create ?? ok(campusBinding('tpl-new')),
+    unbindResult: options.unbind ?? ok(true),
+    renewResult: options.renew ?? ok(campusBinding('tpl-1')),
+    capabilitiesQueue: [...(options.capabilities ?? [])],
+    transactionsQueue: [...(options.transactions ?? [])],
+    paymentCodeResult: options.paymentCode ?? ok(cardPaymentCode()),
+    listQueries: [],
+    created: [],
+    unbinds: [],
+    renews: [],
+    transactionQueries: [],
+    paymentCodeCalls: [],
+    totalCalls: 0,
+
+    async listBindings(query: ListBindingsQuery = {}) {
+      this.totalCalls += 1
+      this.listQueries.push(query)
+      const next = this.bindingsQueue.shift()
+      return next ?? ok({ items: [], nextCursor: null, total: 0 })
+    },
+    async bindingDetail() {
+      this.totalCalls += 1
+      return this.bindingDetailResult
+    },
+    async createBinding(input: CreateCampusBindingInput, idempotencyKey?: string) {
+      this.totalCalls += 1
+      this.created.push({ input, idempotencyKey })
+      return this.createResult
+    },
+    async unbind(id: string, idempotencyKey?: string) {
+      this.totalCalls += 1
+      this.unbinds.push({ id, idempotencyKey })
+      return this.unbindResult
+    },
+    async renew(id: string, idempotencyKey?: string) {
+      this.totalCalls += 1
+      this.renews.push({ id, idempotencyKey })
+      return this.renewResult
+    },
+    async capabilities() {
+      this.totalCalls += 1
+      const next = this.capabilitiesQueue.shift()
+      return next ?? ok([])
+    },
+    async cardTransactions(query: ListBindingsQuery = {}) {
+      this.totalCalls += 1
+      this.transactionQueries.push(query)
+      const next = this.transactionsQueue.shift()
+      return next ?? ok({ items: [], nextCursor: null, total: 0 })
+    },
+    async paymentCode(idempotencyKey?: string) {
+      this.totalCalls += 1
+      this.paymentCodeCalls.push(idempotencyKey)
+      return this.paymentCodeResult
     },
   }
 }

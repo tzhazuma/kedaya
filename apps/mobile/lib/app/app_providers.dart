@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../data/mock/mock_controls.dart';
 import '../domain/ports/auth_port.dart';
 import '../domain/ports/buddy_port.dart';
+import '../domain/ports/campus_card_port.dart';
 import '../domain/ports/campus_session_port.dart';
 import '../domain/ports/consent_port.dart';
 import '../domain/ports/errand_port.dart';
@@ -16,7 +17,9 @@ import '../domain/ports/location_port.dart';
 import '../domain/ports/lost_found_port.dart';
 import '../domain/ports/media_picker_port.dart';
 import '../domain/ports/platform_ports.dart';
+import '../domain/ports/techpie_port.dart';
 import '../domain/ports/theme_mode_port.dart';
+import '../domain/ports/webview_port.dart';
 import '../domain/ports/wellbeing_port.dart';
 import '../domain/ports/wildlife_port.dart';
 import '../presentation/theme/kedaya_theme.dart';
@@ -89,6 +92,31 @@ final buddyRepositoryProvider = Provider<BuddyPort>(
 /// 校园动物（契约 §4.1 `wildlife`；敏感级低、**无同意门**）。
 final wildlifeRepositoryProvider = Provider<WildlifePort>(
   (ref) => ref.watch(appRuntimeProvider).wildlife,
+);
+
+/// TechPie 整合（契约 §4.1 `techpie`；敏感级中、**无同意门**）。
+///
+/// ⚠️ 这是**第二级**（能力层）的端口：它只有绑定元数据、能力清单与一次性票据，
+/// **没有**一级身份的任何东西（JWT / 学号 / 姓名）—— 那些走 [authProvider]。
+/// 两者是**两个类型**，因此 presentation 层拿到的永远是两个独立对象。
+final techpieRepositoryProvider = Provider<TechpiePort>(
+  (ref) => ref.watch(appRuntimeProvider).techpie,
+);
+
+/// 校园卡（契约 §4.2 `campus-card`）—— **独立 OPENID 通道**（规格 §2.5）。
+///
+/// 与 [campusSessionProvider]（校园会话代持链路）刻意分开：校园卡不依赖 CASTGC，
+/// 因此它的可用性、开通流程与合规风险都与"eGate 绑定"完全独立。
+final campusCardRepositoryProvider = Provider<CampusCardPort>(
+  (ref) => ref.watch(appRuntimeProvider).campusCard,
+);
+
+/// WebView 宿主（契约 §7 的 `platform/` 适配）。
+///
+/// 端口**只接受一个 URL**：类型上就无法接收 cookie / 请求头 / 会话串
+/// （ADR §4-D 否决的路径在这里写不出来）。
+final webViewProvider = Provider<WebViewPort>(
+  (ref) => ref.watch(appRuntimeProvider).webView,
 );
 
 /// 选图端口（mock 运行时是内存实现，不弹相册）。

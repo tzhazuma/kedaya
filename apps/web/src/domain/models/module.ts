@@ -71,6 +71,10 @@ export function isAuditedSensitivity(sensitivity: Sensitivity): boolean {
 /** 已实现真实页面的模块；其余走 `/m/<id>` 建设中占位页 */
 const IMPLEMENTED_ROUTES: Readonly<Record<string, string>> = {
   groupbuy: '/groupbuy',
+  // TechPie 整合 Phase 0（`apps/web/src/app/(portal)/techpie/**`）
+  techpie: '/techpie',
+  // 校园卡走独立 OPENID 通道，是 Phase 0 的一部分
+  'campus-card': '/campus-card',
 };
 
 export function moduleHref(id: string): string {

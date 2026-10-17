@@ -5,6 +5,8 @@ import type { ListGroupBuysState } from '../application/groupbuy/listGroupBuys'
 import type { WildlifeTracksState } from '../application/wildlife/tracks'
 import type { WildlifeMapState } from '../application/wildlife/wildlifeMap'
 import type { Session } from '../domain/models/session'
+import type { BindingsState } from '../application/techpie/listBindings'
+import type { CapabilitiesState } from '../application/techpie/capabilities'
 import type { AppContainer } from './container'
 
 /**
@@ -29,6 +31,10 @@ export interface BootstrapSnapshot {
   faq: BrowseFaqState
   wildlifeMap: WildlifeMapState
   wildlifeTracks: WildlifeTracksState
+  /** 校园绑定列表（`techpie`）—— 契约 §11.4 I1：形状里没有凭证 */
+  bindings: BindingsState
+  /** 校园能力清单（`techpie`）—— 未绑定项由页面渲染成**引导**（契约 I4） */
+  capabilities: CapabilitiesState
   durationMs: number
 }
 
@@ -49,6 +55,9 @@ export function bootstrapSync(container: AppContainer): BootstrapSnapshot {
   const faq = container.useCases.browseFaq.hydrate()
   const wildlifeMap = container.useCases.wildlifeMap.hydrate()
   const wildlifeTracks = container.useCases.wildlifeTracks.hydrate()
+  // TechPie 整合（Phase 0）：绑定列表与能力清单都可能首屏进入（首页宫格直达）
+  const bindings = container.useCases.listBindings.hydrate()
+  const capabilities = container.useCases.capabilities.hydrate()
 
   return {
     session,
@@ -58,6 +67,8 @@ export function bootstrapSync(container: AppContainer): BootstrapSnapshot {
     faq,
     wildlifeMap,
     wildlifeTracks,
+    bindings,
+    capabilities,
     durationMs: Date.now() - startedAt,
   }
 }
@@ -78,6 +89,9 @@ export function refreshInBackground(container: AppContainer): void {
         container.useCases.listForumPosts.load(),
         container.useCases.browseFaq.load(),
         container.useCases.wildlifeMap.load(),
+        // techpie：绑定列表 + 能力清单。失败同样静默降级（契约 §8）
+        container.useCases.listBindings.load(),
+        container.useCases.capabilities.load(),
       ]),
     )
     // 静默降级：单个模块的意外异常不能让启动流程变成 unhandled rejection

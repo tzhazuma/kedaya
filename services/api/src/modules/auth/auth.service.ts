@@ -1,21 +1,21 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  CampusBindingRequiredError,
-  InternalError,
-  UnauthenticatedError,
-} from '../../common/errors/app-error';
+import { InternalError, UnauthenticatedError } from '../../common/errors/app-error';
 import { signJwt, verifyJwt } from '../../common/auth/jwt';
 import {
-  AUTH_PORT,
   CAMPUS_SESSION_PORT,
-  USER_REPOSITORY,
-  assertIdentityOnly,
-  type AuthPort,
-  type CampusBindCredentials,
-  type CampusBindingRecord,
+  translateCampusSessionError,
+  type CampusBindingSummary,
   type CampusPlatform,
   type CampusSessionPort,
+} from '../techpie/domain/ports/campus-session.port';
+import {
+  AUTH_PORT,
+  USER_REPOSITORY,
+  assertIdentityOnly,
+  toIdentitySession,
+  type AuthPort,
+  type KedaYaIdentitySession,
   type UserRecord,
   type UserRepository,
 } from './domain/auth.domain';
@@ -34,7 +34,7 @@ export interface LoginResult {
 
 export interface MeResult {
   user: UserRecord;
-  campusBindings: CampusBindingRecord[];
+  campusBindings: CampusBindingSummary[];
   /** 已登录但未绑定时为 false —— 这是合法状态，不是错误 */
   campusBound: boolean;
 }
@@ -47,10 +47,27 @@ export interface RefreshResult {
 /**
  * 身份用例（第一级）。
  *
- * 本服务**只**依赖 `AuthPort`（身份）与 `UserRepository`（自有账户）。
- * 第二级的 `CampusSessionPort` 虽然也注入了，但仅用于 `me()` 里把绑定状态
- * 作为**独立字段**返回、以及 campus 能力模块的入口 —— 它绝不参与签发 JWT，
- * 也不会把自己的 session 混进 login 的返回值。
+ * ## 这个服务与第二级的关系（契约 §5 硬规则 1/2）
+ *
+ * 它**只**依赖 `AuthPort`（身份）与 `UserRepository`（自有账户）来**签发身份**。
+ * 第二级的 `CampusSessionPort` 也注入了，但用途被严格限制为：
+ *   · `me()` 把绑定状态作为**独立字段**返回；
+ *   · `/auth/campus-bindings` 这组**已在冻结 OpenAPI 里登记**的兼容端点。
+ *
+ * 它**绝不**参与签发 JWT，也**绝不**把 session 混进 login 的返回值。
+ *
+ * ## ⚠️ 端口为什么来自 `techpie/` 而不是本模块的 domain
+ *
+ * 不变式 **I2**（`modules/auth/data/**` 不得 import `campus-session.port`）的
+ * 意图是"两级身份在**实现层**也不耦合"。把端口定义留在身份模块，
+ * 那条扫描就只能靠"没写 import"通过。端口与实现都搬到能力层之后，
+ * I2 是**结构性**成立的。
+ *
+ * ## ⚠️ I5：`session()` 必须是**纯本地读取**
+ *
+ * 它只读 `UserRepository.findById`（本地账户表），
+ * **不得**触发任何上游调用 —— 否则首帧会被网络阻塞（契约 §8）。
+ * 由 `test/techpie-http.spec.ts` 在"mock 上游全超时"环境下断言 < 50ms。
  */
 @Injectable()
 export class AuthService {
@@ -111,6 +128,20 @@ export class AuthService {
     };
   }
 
+  /**
+   * `GET /auth/session` —— **契约 §11.4 I1** 的落点。
+   *
+   * 返回 `KedaYaIdentitySession`（只有 `userId` / `studentId` / `name` / `department`）。
+   * 那 8 个禁用键名在**类型上**就不存在，返回前再跑一次运行时断言。
+   *
+   * **纯本地读取**（不变式 I5）：只查本地账户表，不触发任何上游调用。
+   */
+  async session(userId: string): Promise<KedaYaIdentitySession> {
+    const user = await this.users.findById(userId);
+    if (!user) throw new UnauthenticatedError('账户不存在，请重新登录');
+    return toIdentitySession(user);
+  }
+
   async me(userId: string): Promise<MeResult> {
     const user = await this.users.findById(userId);
     if (!user) throw new UnauthenticatedError('账户不存在，请重新登录');
@@ -120,52 +151,51 @@ export class AuthService {
     return {
       user,
       campusBindings,
-      campusBound: campusBindings.some((binding) => binding.status === 'active'),
+      campusBound: campusBindings.some((binding) => binding.status === 'LINKED'),
     };
   }
 
-  /* ---------------- 第二级：校园系统绑定 ---------------- */
+  /* ---------------- 第二级：校园系统绑定（兼容端点，见冻结 OpenAPI） ---------------- */
 
-  bindCampus(
+  /**
+   * 兼容端点用的薄封装。
+   *
+   * ⚠️ 它**不**返回任何凭证：`CampusBindingSummary` 里只有状态。
+   * 校园 cookie 的唯一出口在 `modules/techpie/data/webview-session/`（不变式 I3）。
+   */
+  async bindCampus(
     userId: string,
     platform: CampusPlatform,
-    credentials: CampusBindCredentials,
-  ): Promise<CampusBindingRecord> {
-    return this.campusSession.bind(userId, platform, credentials);
+    credential: unknown,
+  ): Promise<CampusBindingSummary> {
+    try {
+      return await this.campusSession.bind(userId, platform, credential as never);
+    } catch (error) {
+      // 与 `TechpieService.createLink` 用**同一份**翻译：
+      // 不翻译的话 `PHASE_BLOCKED` 会变成 500（客户端会以为服务坏了，
+      // 而真实语义是"这条路本轮不开放"）。
+      throw translateCampusSessionError(error);
+    }
   }
 
-  listCampusBindings(userId: string): Promise<CampusBindingRecord[]> {
+  listCampusBindings(userId: string): Promise<CampusBindingSummary[]> {
     return this.campusSession.listBindings(userId);
   }
 
-  unbindCampus(userId: string, platform: CampusPlatform): Promise<void> {
-    return this.campusSession.unbind(userId, platform);
+  async unbindCampus(userId: string, platform: CampusPlatform): Promise<void> {
+    try {
+      await this.campusSession.unbind(userId, platform);
+    } catch (error) {
+      throw translateCampusSessionError(error);
+    }
   }
 
   /**
    * 校园系统能力可用性（供 UI 判断是否要显示"去绑定"）。
-   * 只返回布尔值，**绝不**把 session 本身返回给调用方。
+   * 只返回布尔值，**绝不**把会话本身返回给调用方。
    */
   async campusCapability(userId: string, platform: CampusPlatform): Promise<{ available: boolean }> {
-    const session = await this.campusSession.acquireSession(userId, platform);
-    return { available: session !== null };
-  }
-
-  /**
-   * 需要第二级能力的用例入口（例如 campus-card 读余额）。
-   * 未绑定/已过期 → `CAMPUS_BINDING_REQUIRED`（契约 §5 硬规则 3）。
-   *
-   * 注意：返回的 `CampusSession` 含 `sessionRef`，**仅供服务端内部使用**，
-   * 任何控制器都不得把它直接序列化进响应。
-   */
-  async requireCampusSession(userId: string, platform: CampusPlatform) {
-    const session = await this.campusSession.acquireSession(userId, platform);
-    if (!session) {
-      throw new CampusBindingRequiredError(
-        `请先绑定校园系统（${platform}）后再使用该功能`,
-        { platform },
-      );
-    }
-    return session;
+    const binding = await this.campusSession.getBinding(userId, platform);
+    return { available: binding?.status === 'LINKED' };
   }
 }

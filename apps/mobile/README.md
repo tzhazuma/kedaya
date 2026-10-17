@@ -226,10 +226,11 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | **校园动物切片**：静态底图（方案 B）+ `CustomPaint` 叠加层（区域/聚合热点/推断轨迹）+ 观测与区域与轨迹页 + 上报（选图/上传/定位/地图点选/分类建议/命名个体/伦理确认）+ **仿射标定**（纯 Dart，像素↔经纬度往返 < 1 px） | `lib/features/wildlife/`（见其 README） |
 | **找搭子切片**：三板块分栏列表（游标分页 + 下拉刷新 + 触底加载）+ 详情 + 申请/撤回/审批/关闭 + 发布（**封闭标签选择器**）+ 我的匹配资料（**可用时段编辑器含跨零点**）+ **可解释推荐（展示匹配理由）** + like/dislike/skip 反馈 + 隐私说明；**不含 dating**（契约 §11.10-G） | `lib/features/buddy/`（见其 README） |
 | **匹配算法 Dart 侧镜像**（`ruleScoreFor` 系数 / `explainMatch` 理由 / `overlapsAvailability` 含跨零点 / 反馈衰减；与规格 §3.3 逐字一致，有守门测试） | `lib/domain/models/buddy_matching.dart` |
+| **TechPie 整合 Phase 0**：绑定管理（列表 / 发起绑定 / 解绑 / **手动**续期，响应不含凭证）+ 能力清单（**未绑定项显示 `CAMPUS_BINDING_REQUIRED` 引导，不是报错**；未登录项显示 `UNAUTHENTICATED` 引导；Phase 1–3 一律标注未实现并写明阻塞方）+ 校园系统 WebView 直连（**一次性票据** 30 秒、用后即焚、不进状态不进日志）+ 校园卡（余额 / 流水 / 付款码，**独立 OPENID 通道**，与校园会话代持完全解耦）；三个新端口 `TechpiePort` / `CampusCardPort` / `WebViewPort`，一级身份与二级绑定是**两个独立 port** | `lib/features/techpie/`（见其 README） |
 | **匿名身份与实名身份在模型层解耦**（契约 §9）：`ForumAuthor` sealed 类型 + `AnonymousIdentity` | `lib/domain/models/{forum,anonymous_identity}.dart` |
 | 底部导航 + 每个模块的路由段 | `lib/app/app_router.dart`、`lib/presentation/pages/module_detail_page.dart` |
 | 二次同意门（`wellbeing`/`dorm-harmony`/`ai-portrait`） | `lib/application/consent_controller.dart` |
-| 42 个测试文件 | `test/`（见第 5 节） |
+| 53 个测试文件 | `test/`（见第 5 节） |
 | 静态自检脚本（本机替代验证） | `tool/selfcheck.py`（见第 6.5 节） |
 
 ### ❌ 未实现（如实列出，没有用 TODO 占位函数冒充）
@@ -242,7 +243,7 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | 发帖/回复频率限制、敏感词拦截 | ❌ 未实现（属于服务端限流与内容审核；客户端只做长度校验） |
 | FAQ 工单追问 / 关闭 | `FaqTicketStatus.canFollowUp` 已在模型里就绪，但没有 UI |
 | Markdown 渲染 | 论坛正文与 FAQ 答案按**纯文本**展示（契约里的 "Markdown 子集" 未渲染） |
-| 校园系统绑定的 UI | `CampusSessionPort` 与 `CampusBindingsController` 已实现并可用（profile 页展示状态），但没有"输入凭据绑定"的对话框页面 |
+| 校园系统绑定的 UI | `CampusSessionPort` 与 `CampusBindingsController` 已实现并可用（profile 页展示状态）；`techpie` 模块新增了绑定管理页（列表 / 解绑 / **手动**续期 / 发起绑定面板），但**刻意没有**"输入明文口令"的输入框 —— Phase 0 只提供免口令通道，明文口令绑定阻塞于信息办对 U12 的书面回复（契约 §11.18-D） |
 | 统一身份认证的原生侧 | `MethodChannelUnifiedIdentity` 已定义 channel 契约（`kedaya/unified_identity`），**原生侧实现未写**；mock 运行时用 `DevUnifiedIdentity` |
 | 本地化（i18n） | 未接 `flutter_localizations`（会与 `intl` 版本绑定冲突）；UI 文案直接写中文 |
 | 推送 | `LocalNotificationPort` 是内存实现；未接厂商推送 / `flutter_local_notifications` |
@@ -260,7 +261,7 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 
 ---
 
-## 5. 测试（42 个文件；其中 `wildlife` 新增 13 个文件 / 184 个用例，`buddy` 新增 10 个文件 / 199 个用例）
+## 5. 测试（53 个文件；其中 `wildlife` 新增 13 个文件 / 184 个用例，`buddy` 新增 10 个文件 / 199 个用例，`techpie` 新增 11 个文件）
 
 > ⚠️ **全部用例都没有在本机执行过**（没有 Flutter SDK）。下面是"每个文件测什么"的清单，
 > 不是"测试通过"的证据。
@@ -413,6 +414,19 @@ cd apps/mobile
 14. 常见问题 → 🎫「我的工单」→ 3 条（待回复 / 已回复 / 已关闭）；点 ➕ 提交工单：
     联系方式填 `13800138000` 应被拒绝并提示不要填手机号，改成邮箱后可提交。
 15. 暗色主题下重复 7–14 步：所有卡片/标签/chip/输入框都应是暗色系（无白底黑字残留）。
+16. 首页 → 「校园整合」→ 顶部显示「一级 · 未登录」（mock 运行时默认未登录）。
+    在「我的」里登录后回来：应显示「一级 · 已登录」+「二级 · 2 项…」—— 这两块来自**两个独立 provider**，
+    页面上没有任何一个对象同时持有它们。
+17. 「绑定管理」→ 2 条（CpDaily 已绑定 / eGate 已过期）。点「解绑」列表少一条且**不影响登录态**；
+    对已过期项点「手动续期」应把它救回来（mock 支持续期；把 `renewSupported` 设为 false 可验证 F3 的诚实文案）。
+18. 「能力清单」→ 未登录时每项显示「去登录」；登录后校园卡三项变成「去绑定」+ 引导文案
+    （**不是**错误页）；课表 / 考试 / DDL / 场馆 / 会话注入 / 自动续期应显示「未实现」并写明阻塞在谁身上。
+19. 「校园系统直连」→ 顶部有白名单占位提示；未绑定平台显示「去绑定」；CpDaily 已绑定 → 点「打开」
+    应显示"已交给系统 WebView 打开"（mock 宿主记录了一次性中转 URL）；把宿主设为不可用
+    （`InMemoryWebViewPort(available: false)`）应显示"本机暂不支持内嵌打开"。
+20. 「校园卡」→ 未登录显示「去登录」；登录后显示 OPENID 开通引导；mock 运行时点
+    「（mock）模拟 eCard 授权回调并开通」→ 出现余额 / 付款码 / 4 条流水；付款码离开页面再回来
+    应**重新取码**（`autoDispose`）。
 
 ---
 
@@ -553,3 +567,41 @@ cd apps/mobile
     第 136 行用了 `MockForumRepository(seed: ...)`，而该构造函数没有 `seed` 参数
     （`MockGroupbuyRepository` 才有）→ 已改为 `posts:`。这是与 `buddy` 无关的
     既有缺陷，会让**整套** `flutter test` 编译失败，因此一并修掉。
+
+### 8.5 `techpie` / `campus-card` 新增的风险点（需要 `flutter analyze` 复核）
+
+37. **`CampusPlatform` 与既有 `CampusSystem` 是两套枚举**：本模块按契约 §11.10-B 的裁决
+    新建 `CampusPlatform`（`cas|egate|cpdaily|ecard|techpie`），**没有**改动被
+    `CampusSessionPort` 使用的 `CampusSystem`（`egate|cpdaily|academic|ecard`）。
+    两套枚举的合并需要 Lead 裁决（登记在 `lib/features/techpie/README.md` §7.6）。
+38. **已按 `services/api` 的实现对齐了一轮**（只读核对，未改后端）：
+    平台枚举、能力清单的 **13 条 id** 与并集键名、`phase0` 小写写法、
+    `EXPIRED` / `PHASE_BLOCKED` 别名、票据兑换改 **POST**、票据不指定平台即
+    **不要求绑定**（W4）、兑换响应 `expiresAt: null` 的兜底、`credential.kind=openid`、
+    以及 `direction: 'out'|'in'` 这类取值差异的容错解析。
+    **仍未收敛的是校园卡本身**：`services/api` 的 `campus-card` 目前是
+    `scaffold.mjs` 生成的通用 CRUD（`items` + `summary`=汇总，不是余额；
+    没有开通/解绑/付款码路由），而本端需要的是"开通 / 余额 / 流水 / 付款码"。
+    逐条列在 `lib/features/techpie/README.md` §9.4–9.6，**需要后端/Lead 收敛**。
+39. **`campusTargetUrlProblem` 只允许 443 端口**，因此规格 §8.4 的示例地址
+    `https://ecourse.shanghaitech.edu.cn:8080/` 会被客户端**直接拒绝** ——
+    这是刻意的（契约 §11.18-B 第 3 条晚于规格，`services/api` 的
+    `checkCampusTargetUrl` 同样拒绝）。若实测该校园系统确实跑在 8080，
+    需要 Lead 重新裁决；落点是**一处判断**。
+40. **`unawaited(...)` 的用法**：`analysis_options.yaml` 打开了 `discarded_futures` /
+    `unawaited_futures`，本模块的页面把所有 Future 回调都包了 `unawaited(...)`；
+    但 `onRetry: controller.refresh` / `onRefresh: controller.refresh`
+    （`techpie_bindings_page.dart`，2 处）仍沿用既有模块的 **tear-off** 写法。
+    若 `flutter analyze` 报 `discarded_futures`，改成 `() => unawaited(controller.refresh())` 即可。
+41. **两个测试文件会读源码**（`test/domain/techpie_source_invariants_test.dart`、
+    `test/domain/techpie_two_tier_boundary_test.dart`，相对路径 = 包根）：
+    与既有 `buddy` / `wildlife` 的边界测试同一策略 —— 若 CI 换了工作目录，
+    它们会先失败（这是刻意的自检）。
+42. **`campusDomainAllowlist` 与 `phase0CampusWebEntries` 是占位**（U11 未关闭）：
+    两者各有一个**机器可见**的占位标记（`campusDomainAllowlistIsPlaceholder` /
+    `phase0CampusWebEntriesArePlaceholder`），替换真实域名时必须同时改成 `false`。
+43. **能力目录的阶段标注是客户端侧数据**（`lib/data/mock/techpie_fixtures.dart`）：
+    真实运行时目录来自服务端，客户端只负责"不把 Phase 1+ 显示成可用"这条规则。
+44. **原生侧 WebView / eCard 授权流程未实现**：`MethodChannelWebView` 已定义 channel
+    契约（`kedaya/webview`），原生侧缺失时返回 `false`，页面走"本机暂不支持内嵌打开"的降级；
+    真实 OPENID 与校园系统授权码都必须来自原生授权流程，本端**不伪造**。

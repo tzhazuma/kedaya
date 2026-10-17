@@ -11,6 +11,7 @@ import type { BuddyRepository } from '@/domain/ports/buddy';
 import type { FaqRepository } from '@/domain/ports/faq';
 import type { ForumRepository } from '@/domain/ports/forum';
 import type { GroupBuyRepository } from '@/domain/ports/groupbuy';
+import type { CampusCardRepository, TechpieRepository } from '@/domain/ports/techpie';
 import type { WildlifeRepository } from '@/domain/ports/wildlife';
 
 import { createApiClient, type ApiClient } from '../api/client';
@@ -29,11 +30,16 @@ import {
   createMockWildlifeRepository,
   type MockWildlifeRepository,
 } from '../mock/wildlife.repository';
+import {
+  createMockTechpieRepository,
+  type MockTechpieRepository,
+} from '../mock/techpie.repository';
 import { createAuditLogHttpRepository, createModuleSwitchHttpRepository } from './admin.http';
 import { createBuddyHttpRepository } from './buddy.http';
 import { createFaqHttpRepository } from './faq.http';
 import { createForumHttpRepository } from './forum.http';
 import { createGroupBuyHttpRepository } from './groupbuy.http';
+import { createCampusCardHttpRepository, createTechpieHttpRepository } from './techpie.http';
 import { createWildlifeHttpRepository } from './wildlife.http';
 
 export type RepositoryMode = 'mock' | 'http';
@@ -45,6 +51,10 @@ export interface RepositoryBundle {
   faq: FaqRepository;
   wildlife: WildlifeRepository;
   buddy: BuddyRepository;
+  /** TechPie 整合（Phase 0）：绑定 / 能力清单 / WebView 一次性票据 */
+  techpie: TechpieRepository;
+  /** 校园卡（走独立 OPENID 通道，与 CASTGC 解耦） */
+  campusCard: CampusCardRepository;
   auditLog: AuditLogRepository;
   moduleSwitches: ModuleSwitchRepository;
 }
@@ -67,12 +77,17 @@ export function createRepositories(mode: RepositoryMode = repositoryMode()): Rep
       faq: createFaqHttpRepository(client),
       wildlife: createWildlifeHttpRepository(client),
       buddy: createBuddyHttpRepository(client),
+      techpie: createTechpieHttpRepository(client),
+      campusCard: createCampusCardHttpRepository(client),
       auditLog: createAuditLogHttpRepository(client),
       moduleSwitches: createModuleSwitchHttpRepository(client),
     };
   }
 
   const admin: MockAdminRepositories = createMockAdminRepositories();
+  // 同一个实例同时扮演 techpie 与 campus-card 两个端口：
+  // 校园卡能不能读取决于 techpie 的绑定状态，拆成两个实例状态会不一致
+  const techpie = createMockTechpieRepository();
   return {
     mode,
     groupbuy: createMockGroupBuyRepository(),
@@ -82,6 +97,8 @@ export function createRepositories(mode: RepositoryMode = repositoryMode()): Rep
     // mock 需要知道「我」是谁（真实 API 从 Bearer token 取）；
     // 默认取 fixture 的 DEMO_BUDDY_USER_ID，与 application 的演示会话由单测锁死一致
     buddy: createMockBuddyRepository(),
+    techpie,
+    campusCard: techpie,
     auditLog: admin.auditLog,
     moduleSwitches: admin.moduleSwitches,
   };
@@ -126,6 +143,17 @@ export function getMockWildlifeRepository(): MockWildlifeRepository | undefined 
 export function getMockBuddyRepository(): MockBuddyRepository | undefined {
   const current = getRepositories();
   return current.mode === 'mock' ? (current.buddy as MockBuddyRepository) : undefined;
+}
+
+/**
+ * 拿到 mock TechPie 仓储（故障演练 / 模拟完成 OPENID 授权 / 测试）。
+ *
+ * ⚠️ 它同时是 `campusCard` 端口的实现（同一个实例）——校园卡能不能读
+ * 取决于这里的绑定状态。
+ */
+export function getMockTechpieRepository(): MockTechpieRepository | undefined {
+  const current = getRepositories();
+  return current.mode === 'mock' ? (current.techpie as MockTechpieRepository) : undefined;
 }
 
 /** 测试/热重载用：丢弃单例 */

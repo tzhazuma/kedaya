@@ -1,0 +1,60 @@
+/* WebView 直连页（W4：用户在校园系统页面自己登录）。色值全部取自设计令牌（契约 §6.2）。 */
+
+.kdy-techpie-webview {
+  padding-bottom: $kdy-space-6;
+}
+
+.kdy-techpie-webview__summary {
+  display: block;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-techpie-webview__url {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  word-break: break-all;
+}
+
+.kdy-techpie-webview__placeholder {
+  display: block;
+  margin-top: $kdy-space-2;
+  padding: $kdy-space-2;
+  background-color: $kdy-color-brand-soft;
+  border-radius: $kdy-radius-sm;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-techpie-webview__step {
+  display: block;
+  padding: $kdy-space-1 0;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-techpie-webview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  padding: $kdy-space-4 $kdy-space-4 0;
+}
+
+.kdy-techpie-webview__all {
+  display: block;
+  padding: $kdy-space-4 $kdy-space-4 $kdy-space-2;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-medium;
+}
+
+.kdy-techpie-webview__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  padding: 0 $kdy-space-4;
+}

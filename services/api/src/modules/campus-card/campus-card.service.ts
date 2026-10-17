@@ -8,7 +8,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CrudService } from '../../common/crud/crud.service';
 import { ValidationError } from '../../common/errors/app-error';
 import { CampusBindingRequiredError } from '../../common/errors/app-error';
-import { CAMPUS_SESSION_PORT, type CampusSessionPort } from '../auth/domain/auth.domain';
+import { CAMPUS_SESSION_PORT, type CampusSessionPort } from '../techpie/domain/ports/campus-session.port';
 import {
   CAMPUS_CARD_TRANSACTION_REPOSITORY,
   type CreateCampusCardTransactionInput,
@@ -47,10 +47,13 @@ export class CampusCardTransactionService extends CrudService<CampusCardTransact
    * 注意本模块虽是 high 敏感，但**不设同意门**（契约 §9）。
    */
   async balanceSummary(userId: string) {
-    const session = await this.campusSession.acquireSession(userId, 'CARD');
-    if (!session) {
-      throw new CampusBindingRequiredError('请先绑定校园卡系统（CARD）后再查看汇总', {
-        platform: 'CARD',
+    // 校园卡走**独立的 OPENID 通道**（规格 §2.5），与 CASTGC 完全解耦 ——
+    // 因此这里只需要"绑定是否 LINKED"，**不需要**任何校园会话本身。
+    const binding = await this.campusSession.getBinding(userId, 'ecard');
+    if (!binding || binding.status !== 'LINKED') {
+      throw new CampusBindingRequiredError('请先绑定校园卡（ecard · OPENID 通道）后再查看汇总', {
+        platform: 'ecard',
+        status: binding?.status ?? 'UNLINKED',
       });
     }
     return this.repo.summarize(userId);

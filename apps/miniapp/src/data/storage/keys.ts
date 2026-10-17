@@ -59,6 +59,23 @@ export const StorageKeys = {
    * 真正的反馈数据在服务端（`@@unique([userId, targetPostId, section])`）。
    */
   buddyFeedback: `${STORAGE_PREFIX}buddy:feedback`,
+  /* ---------------- TechPie 整合 / 校园能力（`techpie` / `campus-card`） ---------------- */
+  /**
+   * 绑定列表缓存（`GET /techpie/links` 的结果）。
+   *
+   * ⚠️ 缓存里存的是 `CampusBindingSummary[]` —— 形状上**没有任何凭证字段**
+   * （契约 §11.4 I1）。写入前会再做一次禁用键扫描，见
+   * `application/techpie/listBindings.ts` 的 `writeCache`。
+   */
+  techpieBindingListCache: `${STORAGE_PREFIX}cache:techpie:links`,
+  /** 校园能力清单缓存（`GET /techpie/capabilities`） */
+  techpieCapabilityCache: `${STORAGE_PREFIX}cache:techpie:capabilities`,
+  /**
+   * 校园卡流水缓存（`GET /campus-card/items`）。
+   *
+   * 余额由**最新一笔流水**的 `balanceFen` 推导，因此余额不需要单独的缓存键。
+   */
+  campusCardTransactionCache: `${STORAGE_PREFIX}cache:campus-card:transactions`,
   /** 敏感模块二次同意记录（契约 §9） */
   consent: `${STORAGE_PREFIX}consent`,
 } as const

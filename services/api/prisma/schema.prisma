@@ -36,6 +36,10 @@ model User {
 
   identities     AuthIdentity[]
   campusBindings CampusBinding[]
+  /// TechPie 整合（规格 §5.1）：校园平台绑定元数据。**不含凭证**。
+  techpieLinks   TechpieLink[]
+  /// TechPie 整合（规格 §5.3）：校园会话密文的唯一落点。业务层永不直接读。
+  campusSessions CampusSession[]
   consents       Consent[]
   auditLogs      AuditLog[]
   profileSetting ProfileSetting?
@@ -780,19 +784,105 @@ model FacilityBooking {
   @@index([status, startsAt])
 }
 
-/// TechPie 整合 · techpie（中敏感）
-/// 模型名用 Link 而不是 Service，避免与生成的 TechpieService 类名冲突。
+/// TechPie 整合 · 校园平台绑定（契约 §2.9 + 规格 §5.1）。
+///
+/// 访问域：campus-binding（**只有状态，没有凭证**）
+/// 硬规则：
+///   1. 本表**不含任何凭证** —— 凭证只在 `CampusSession.sessionCipher` 里；
+///   2. `provider` 按契约 §11.10-B 冻结为校园平台语义
+///      （`cas | egate | cpdaily | ecard | techpie`），与 `CampusBinding.platform` 同一套；
+///   3. **Phase 0 只写 `ecard`**（校园卡走独立 OPENID 通道，与 CASTGC 完全解耦 —— 规格 §2.5）。
+///      其余平台属 Phase 1+，阻塞于信息办书面回复（U7 / U12），**不实现**。
 model TechpieLink {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  name      String
-  category  String
-  url       String
-  status    String   @default("active")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(cuid())
+  userId         String
+  /// 校园平台：cas | egate | cpdaily | ecard | techpie（契约 §11.10-B）
+  provider       String
+  /// UNLINKED | LINKING | LINKED | EXPIRED | REVOKED（契约 §2.9 冻结）
+  status         String    @default("UNLINKED")
+  /// 对端标识（校园卡的 OPENID / 学号）。**不是**凭证。
+  externalUserId String?
+  /// 对端 token（加密）。⚠️ Phase 0 **没有任何写入者** ——
+  /// Gradescope / Hydro 的第三方 token 属 U13「建议 M4 再评估」。
+  /// 保留该列是为了对齐契约 §2.9 的冻结字段，**不代表已实现该能力**。
+  tokenCipher    String?
+  expiresAt      DateTime?
+  lastSyncAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  /// 解绑用软删（`DELETE /links/:id`）；但**凭证副本是硬删**（见 CampusSession）。
+  deletedAt      DateTime?
 
-  @@index([category, status])
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs TechpieSyncJob[]
+
+  @@unique([userId, provider])
+  @@index([status, expiresAt])
+  @@map("TechpieLink")
+}
+
+/// TechPie 整合 · 同步任务（契约 §2.9 + 规格 §5.2）。
+///
+/// 访问域：campus-binding
+/// `lastError` **必须脱敏**（规格 §10.3）：不得含 cookie / token / 密码。
+model TechpieSyncJob {
+  id          String    @id @default(cuid())
+  linkId      String
+  /// pull_schedule | pull_deadline | push_post
+  kind        String
+  /// QUEUED | RUNNING | SUCCEEDED | FAILED | SKIPPED
+  status      String    @default("QUEUED")
+  /// 指数退避，最多 5 次（契约 §2.9）
+  attempts    Int       @default(0)
+  lastError   String?
+  nextRetryAt DateTime?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  link TechpieLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextRetryAt])
+  @@index([linkId, createdAt])
+  @@map("TechpieSyncJob")
+}
+
+/// TechPie 整合 · 校园会话密文（规格 §5.3）—— **整个模块最敏感的表**。
+///
+/// 访问域：campus-session（凭证的唯一落点）
+/// 硬规则：
+///   1. 它**不属于身份层**（契约 §5 硬规则 1），业务代码永远不直接读它；
+///   2. 解密只允许在 `modules/techpie/data/campus-session.service.ts` 内部；
+///   3. 解绑即**硬删**整行（对齐 `05-security-privacy.md:458`）；
+///   4. ⚠️ **Phase 0 只有 `ecard`（OPENID 通道）一个写入者。**
+///      `egate` / `cpdaily` 等需要 CASTGC 的平台在信息办书面回复（U7）前
+///      **没有任何写入路径** —— 不是"先做着等批准"，而是根本不做：
+///      一旦落库就有了未经授权的凭证副本，事后清理无法消除已发生的风险。
+model CampusSession {
+  id             String    @id @default(cuid())
+  userId         String
+  /// 校园平台：cas | egate | cpdaily | ecard | techpie（契约 §11.10-B）
+  platform       String
+  /// ACTIVE | EXPIRED | REVOKED
+  status         String    @default("ACTIVE")
+  /// AES-256-GCM 密文（含 cookie / 会话）。**永不出现在任何响应里**。
+  sessionCipher  String
+  /// 密钥版本，支持轮换
+  cipherKeyId    String
+  externalUserId String?
+  expiresAt      DateTime?
+  lastRenewedAt  DateTime?
+  /// ≥3 时转 EXPIRED 并要求用户重绑（规格 §5.3）
+  renewFailCount Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@index([status, expiresAt])
+  @@map("CampusSession")
 }
 
 /* ================================================================== *

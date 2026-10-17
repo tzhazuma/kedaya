@@ -118,4 +118,29 @@ export const queryKeys = {
       ['buddy', 'recommendations', filters.section, filters.userId] as const,
     profile: (userId: string) => ['buddy', 'profile', userId] as const,
   },
+  /**
+   * TechPie 整合（Phase 0）。
+   *
+   * ⚠️ **这里刻意没有任何"票据"或"付款码"的 key。**
+   *
+   * 一次性 WebView 票据（规格 §8.4）与校园卡付款码（`02-domain-model.md:1040`）
+   * 都是**凭证**，绝不能进 TanStack Query 的缓存 —— 缓存会被 devtools 展示、
+   * 会被序列化进内存快照、会跨页面存活。它们由
+   * `application/techpie/webviewTicket.ts` 的 `OneTimeTicketHolder` /
+   * `PaymentCodeHolder` 在**内存里持有一次**，用完即弃。
+   *
+   * `query-keys.test.ts` 有一条断言守着这件事（key 里出现 ticket/paymentCode 即失败）。
+   */
+  techpie: {
+    root: ['techpie'] as const,
+    links: (cursor?: string) => ['techpie', 'links', cursor ?? 'first'] as const,
+    link: (id: string) => ['techpie', 'link', id] as const,
+    capabilities: ['techpie', 'capabilities'] as const,
+  },
+  campusCard: {
+    root: ['campus-card'] as const,
+    card: ['campus-card', 'card'] as const,
+    transactions: (cursor?: string) =>
+      ['campus-card', 'transactions', cursor ?? 'first'] as const,
+  },
 } as const;
