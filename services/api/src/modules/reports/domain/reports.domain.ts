@@ -25,7 +25,7 @@
 
 import { truncateByCodePoint } from '../../../common/text/truncate';
 
-/** 可被举报的对象类型（白名单；新增类型必须同时改客户端 `reportTargetTypes`） */
+/** 可被举报的对象类型（白名单；新增类型必须同时改客户端 `ReportTargetType`） */
 export const REPORT_TARGET_TYPES = [
   'flea-item',
   'errand-task',
@@ -33,6 +33,16 @@ export const REPORT_TARGET_TYPES = [
   'lost-found-item',
   'forum-post',
   'forum-reply',
+  /**
+   * 同学共建型内容（食堂菜品 / 常见问题 / 动物观察点）也允许举报。
+   *
+   * 这三类都是**用户自己写的**公开内容：别人可以往里塞虚假答案、广告甚至诈骗引导，
+   * 所以「能举报」是必要的。它们没有作者字段（共建匿名），`targetAuthorId` 记为 null
+   * —— 于是「不能举报自己」这条规则对它们天然不生效（没有可比的作者）。
+   */
+  'canteen-dish',
+  'faq-entry',
+  'wildlife-spot',
 ] as const;
 
 export type ReportTargetType = (typeof REPORT_TARGET_TYPES)[number];

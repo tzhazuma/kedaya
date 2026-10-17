@@ -8,6 +8,13 @@ import type { ResourceRepository } from '../../../common/crud/resource';
 
 /** 领域模型：字段与 Prisma 行字段一一对应（domain 层不 import Prisma） */
 export interface FaqEntryModel {
+  /**
+   * 游标分页与详情路由都要用到主键。
+   *
+   * 脚手架漏了它 —— 但 Prisma 行**总是**带 id，领域模型少写一个字段的后果
+   * 是「列表拿不到 id、点不进详情」这类跑起来才发现的错，所以这里补齐。
+   */
+  id: string;
   question: string;
   answer: string;
   category: string;

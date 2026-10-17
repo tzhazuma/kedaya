@@ -114,6 +114,30 @@ export class ReportPrismaRepository implements ReportRepository {
         // 回复没有标题：用正文前若干字做快照，复核时才知道举报的是哪一条
         return { authorId: row.authorId, title: [...row.body].slice(0, 40).join('') };
       }
+      case 'canteen-dish': {
+        const row = await this.prisma.canteenDish.findUnique({
+          where: { id: targetId },
+          select: { name: true, canteen: true },
+        });
+        // 共建条目没有作者字段：无从"不能举报自己"，也不需要
+        return row === null ? null : { authorId: null, title: `${row.canteen} · ${row.name}` };
+      }
+      case 'faq-entry': {
+        const row = await this.prisma.faqEntry.findUnique({
+          where: { id: targetId },
+          select: { question: true },
+        });
+        return row === null ? null : { authorId: null, title: row.question };
+      }
+      case 'wildlife-spot': {
+        const row = await this.prisma.wildlifeSpot.findUnique({
+          where: { id: targetId },
+          select: { species: true, place: true, reportedBy: true },
+        });
+        return row === null
+          ? null
+          : { authorId: row.reportedBy, title: `${row.species} @ ${row.place}` };
+      }
     }
   }
 

@@ -11,22 +11,49 @@ import { z } from 'zod';
 import { OptionalAuthGuard } from '../../common/auth/auth.guard';
 import { OptionalCurrentUser } from '../../common/auth/current-user';
 import { ValidationError } from '../../common/errors/app-error';
-import { normalizeLimit, readCursor } from '../../common/pagination/cursor';
-import { ZodBody } from '../../common/pipes/zod-validation.pipe';
+import { normalizeLimit } from '../../common/pagination/cursor';
+import { ZodBody, ZodQuery } from '../../common/pipes/zod-validation.pipe';
 import { CanteenDishService } from './canteen.service';
-import type { CreateCanteenDishInput, UpdateCanteenDishInput } from './domain/canteen.domain';
+import type {
+  CanteenDishListFilters,
+  CreateCanteenDishInput,
+  UpdateCanteenDishInput,
+} from './domain/canteen.domain';
 
+/**
+ * 边界与小程序端 `apps/miniapp/src/domain/models/canteen.ts` 的常量**同值**。
+ *
+ * 两端不一致的后果很隐蔽：客户端校验通过、服务端照单全收，于是「热量 -500」
+ * 「名称 500 字的广告」这类垃圾会静默进库（客户端拦住的正规用户毫无察觉）。
+ */
 const createSchema = z.object({
-  canteen: z.string().min(1).max(500),
-  name: z.string().min(1).max(500),
-  caloriesKcal: z.number().int(),
-  proteinG: z.number().int(),
-  fatG: z.number().int(),
-  carbG: z.number().int(),
-  priceFen: z.number().int(),
+  canteen: z.string().min(1).max(40),
+  name: z.string().min(1).max(60),
+  caloriesKcal: z.number().int().min(0).max(5000),
+  proteinG: z.number().int().min(0).max(1000),
+  fatG: z.number().int().min(0).max(1000),
+  carbG: z.number().int().min(0).max(1000),
+  priceFen: z.number().int().min(0).max(100_000),
 });
 
 const updateSchema = createSchema.partial();
+
+/**
+ * 列表查询参数（Zod 白名单）。
+ *
+ * 与 `@Query()` 直接吞任意键不同，这里只放行已知的两个筛选维度：
+ *   · `canteen` —— 食堂名，**精确**匹配（列表页 chip 只产出白名单值）；
+ *   · `q` —— 菜名关键词，**模糊**匹配（`contains` + `mode: 'insensitive'`）。
+ * 其余字段一律被 `z.object` 剥掉，不会流到 data 层。
+ */
+const listQuerySchema = z.object({
+  cursor: z.string().min(1).max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  canteen: z.string().trim().min(1).max(60).optional(),
+  q: z.string().trim().min(1).max(60).optional(),
+});
+
+type ListQuery = z.infer<typeof listQuerySchema>;
 
 /**
  * 编译期防漂移断言：Zod 推导出的类型必须兼容 domain 声明的输入类型。
@@ -47,9 +74,22 @@ export class CanteenController {
   constructor(@Inject(CanteenDishService) private readonly service: CanteenDishService) {}
 
   @Get('items')
-  @ApiOperation({ summary: '列表（游标分页，契约 §6.1 不用 offset）' })
-  list(@Query() query: Record<string, unknown>) {
-    return this.service.list({ cursor: readCursor(query), limit: normalizeLimit(query.limit) });
+  @ApiOperation({
+    summary: '列表（游标分页 + 食堂精确 / 菜名模糊筛选，契约 §6.1 不用 offset）',
+    description: '公开可读。筛选与排序都在数据库完成，最新在前。',
+  })
+  list(@ZodQuery(listQuerySchema) query: ListQuery) {
+    // 只把白名单内的键放进 filters；data 层再用同样的字段名翻成 Prisma `where`
+    const filters: CanteenDishListFilters = {
+      ...(query.canteen === undefined ? {} : { canteen: query.canteen }),
+      ...(query.q === undefined ? {} : { q: query.q }),
+    };
+
+    return this.service.list({
+      limit: normalizeLimit(query.limit),
+      ...(query.cursor === undefined ? {} : { cursor: query.cursor }),
+      ...(Object.keys(filters).length === 0 ? {} : { filters }),
+    });
   }
 
   @Post('items')

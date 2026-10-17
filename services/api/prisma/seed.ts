@@ -840,14 +840,14 @@ async function seedFaq(prisma: Db): Promise<void> {
     { q: '校园卡余额怎么看？', a: '打开「校园卡」页即可看到余额与最近流水。余额低于 20 元会显示低余额提醒。充值可在自助机、线上渠道或学生中心服务台办理。', c: 'campus-card', tags: ['校园卡', '余额', '充值'] },
     { q: '课表怎么导入？', a: '在「课表」页点击同步，系统会经教务系统拉取本学期课表。如果你是手动加课，也可以在课表页自行添加，冲突会被标出来。', c: 'schedule', tags: ['课表', '同步'] },
     { q: '上课时间是几点到几点？', a: '第 1 节 08:15–09:05，第 2 节 09:15–10:05，第 3 节 10:25–11:15，后续节次依次顺延。课表里展示的就是每节课的开始与结束时刻。', c: 'schedule', tags: ['课表', '时间'] },
-    { q: '怎么绑定校园系统？', a: '进入「身份」页，选择要绑定的系统（教务、校园卡等）后按提示授权。绑定凭据由服务端加密保存，可达鸭不会把它当作你的登录身份。', c: 'identity', tags: ['身份', '绑定'] },
+    { q: '怎么绑定校园系统？', a: '进入「身份」页，选择要绑定的系统（教务、校园卡等）后按提示授权。绑定凭据由服务端加密保存，可达鸭不会把它当作你的登录身份。', c: 'auth', tags: ['身份', '绑定'] },
     { q: '为什么有些功能提示需要先登录？', a: '涉及个人数据的操作（课表、校园卡、发布内容）都必须登录后进行，这样才能把数据归属到你的账号。游客可以浏览公开内容。', c: 'auth', tags: ['登录', '权限'] },
     { q: '实名信息会展示给别人看吗？', a: '默认不会。实名信息在服务端脱敏后才返回，只有你主动开启展示，或在特定场景下二次确认后才会显示明文，且每次查看都会写审计记录。', c: 'privacy', tags: ['隐私', '实名'] },
     { q: '怎么撤回某个模块的授权同意？', a: '在「我的 - 隐私与数据」里可以逐项撤回同意。撤回后该模块立即不可用，历史授权记录会保留但标记为已撤回。', c: 'privacy', tags: ['隐私', '同意', '撤回'] },
     { q: '怎么导出我的数据？', a: '在「我的 - 隐私与数据」点击导出，系统会生成一份包含你的资料、同意记录与内容数据的文件。导出内容包含已撤回的同意记录，便于核对。', c: 'privacy', tags: ['隐私', '导出'] },
-    { q: '拼单怎么发起？', a: '在「拼单」页右上角点击发起，填写商品、目标人数、单价与截止时间即可。成团后系统会给参与的同学发通知。', c: 'groupbuy', tags: ['拼单', '发起'] },
-    { q: '跑腿的悬赏怎么结算？', a: '目前悬赏金额只作为双方约定的展示信息，线下自行结算。线上支付能力在接入微信支付后开放。', c: 'errand', tags: ['跑腿', '悬赏'] },
-    { q: '发布的内容可以匿名吗？', a: '论坛与宿舍矛盾支持匿名。匿名内容使用与你实名身份解耦的匿名标识，服务端不会把两者关联起来。', c: 'content', tags: ['匿名', '论坛', '宿舍矛盾'] },
+    { q: '拼单怎么发起？', a: '在「拼单」页右上角点击发起，填写商品、目标人数、单价与截止时间即可。成团后系统会给参与的同学发通知。', c: 'life', tags: ['拼单', '发起'] },
+    { q: '跑腿的悬赏怎么结算？', a: '目前悬赏金额只作为双方约定的展示信息，线下自行结算。线上支付能力在接入微信支付后开放。', c: 'life', tags: ['跑腿', '悬赏'] },
+    { q: '发布的内容可以匿名吗？', a: '论坛与宿舍矛盾支持匿名。匿名内容使用与你实名身份解耦的匿名标识，服务端不会把两者关联起来。', c: 'life', tags: ['匿名', '论坛', '宿舍矛盾'] },
   ] as const;
 
   for (const [index, entry] of entries.entries()) {
@@ -871,11 +871,16 @@ function contentHelpfulCount(index: number): number {
 }
 
 async function seedTakeoutReports(prisma: Db, now: Date): Promise<void> {
+  /**
+   * 状态必须落在后端白名单 `pending | escalated | resolved` 内，
+   * 且**都要挂在实名账号上** —— 列表按登录主体过滤（"只看自己的报备"），
+   * 匿名行的 reporterId 为 null，登录后谁也看不到，等于演示数据不存在。
+   */
   const reports = [
-    { reporter: 'chen', anon: null, orderNo: 'KD2026101201', place: '生活区 5 号楼一层外卖架', hoursAgo: 30, status: 'reported', detail: '取餐时发现袋子被拆开，主食不见了。' },
-    { reporter: null, anon: '树洞同学 3311', orderNo: 'KD2026101202', place: '西门快递站旁外卖柜', hoursAgo: 48, status: 'reported', detail: '放在柜子外侧的奶茶被拿走，监控拍到了但看不清。' },
-    { reporter: 'liu', anon: null, orderNo: 'KD2026101203', place: '生活区 7 号楼外卖架', hoursAgo: 72, status: 'resolved', detail: '误拿，已归还，撤回报备。' },
-    { reporter: null, anon: '树洞同学 7788', orderNo: 'KD2026101204', place: '教学楼 2 号楼前台', hoursAgo: 96, status: 'reported', detail: '同一时段连续两次被拿走，疑似惯犯。' },
+    { reporter: 'demo', orderNo: 'KD2026101201', place: '生活区 5 号楼一层外卖架', hoursAgo: 30, status: 'pending', detail: '取餐时发现袋子被拆开，主食不见了。' },
+    { reporter: 'demo', orderNo: 'KD2026101202', place: '西门快递站旁外卖柜', hoursAgo: 48, status: 'escalated', detail: '放在柜子外侧的奶茶被拿走，监控拍到了但看不清。' },
+    { reporter: 'demo', orderNo: 'KD2026101203', place: '生活区 7 号楼外卖架', hoursAgo: 72, status: 'resolved', detail: '误拿，已归还，撤回报备。' },
+    { reporter: 'chen', orderNo: 'KD2026101204', place: '教学楼 2 号楼前台', hoursAgo: 96, status: 'pending', detail: '同一时段连续两次被拿走，想请平台帮忙沟通。' },
   ] as const;
 
   for (const [index, report] of reports.entries()) {
@@ -883,8 +888,8 @@ async function seedTakeoutReports(prisma: Db, now: Date): Promise<void> {
     await prisma.takeoutReport.create({
       data: {
         id: id(`tr_${String(index + 1).padStart(2, '0')}`),
-        reporterId: report.reporter === null ? null : userId(report.reporter),
-        anonHandle: report.anon,
+        reporterId: userId(report.reporter),
+        anonHandle: null,
         orderNo: report.orderNo,
         place: report.place,
         happenedAt: createdAt,

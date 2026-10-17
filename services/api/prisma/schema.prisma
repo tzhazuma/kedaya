@@ -303,7 +303,7 @@ model TakeoutReport {
   happenedAt  DateTime
   detail      String?
   evidenceUrl String?
-  status      String   @default("reported")
+  status      String   @default("pending")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -770,6 +770,7 @@ model ClientEvent {
 model ContentReport {
   id             String   @id @default(cuid())
   /// flea-item | errand-task | buddy-group | lost-found-item | forum-post | forum-reply
+  /// | canteen-dish | faq-entry | wildlife-spot
   targetType     String
   targetId       String
   targetTitle    String
