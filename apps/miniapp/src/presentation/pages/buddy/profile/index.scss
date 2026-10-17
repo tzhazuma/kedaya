@@ -31,18 +31,9 @@
   font-weight: $kdy-font-weight-semibold;
 }
 
-.kdy-buddy-profile__input,
-.kdy-buddy-profile__picker {
-  box-sizing: border-box;
-  padding: $kdy-space-2 $kdy-space-3;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
-  color: $kdy-color-text;
-  font-size: $kdy-font-size-sm;
-}
-
-.kdy-buddy-profile__input {
-  width: 100%;
+.kdy-buddy-profile__slot-picker {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .kdy-buddy-profile__group {

@@ -257,10 +257,16 @@ describe('静态扫描 · 小程序端没有 cookie 注入（契约 §11.10-F）
     expect(keysFile).toBeDefined()
     const code = keysFile?.code ?? ''
 
-    // 与 techpie / campus-card 相关的键必须**只有**这三个缓存键
+    // 与 techpie / campus-card 相关的键必须**只有**这些缓存键
+    // （`campusCardCache` 是校园卡首屏视图的缓存，见 `application/campus/campusUseCases.ts`）
     const techpieKeys = code.match(/techpie\w+|campusCard\w+/g) ?? []
     expect(techpieKeys.sort()).toEqual(
-      ['campusCardTransactionCache', 'techpieBindingListCache', 'techpieCapabilityCache'].sort(),
+      [
+        'campusCardCache',
+        'campusCardTransactionCache',
+        'techpieBindingListCache',
+        'techpieCapabilityCache',
+      ].sort(),
     )
     // 这三个键名里不得出现任何凭证语义
     for (const key of techpieKeys) {

@@ -2,7 +2,7 @@
 
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, RefreshCw, QrCode, XCircle } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   PaymentCodeHolder,
@@ -47,9 +47,11 @@ export function CampusCardPanel() {
   const mockRepository = getMockTechpieRepository();
   const queryClient = useQueryClient();
 
-  const holderRef = useRef<PaymentCodeHolder | null>(null);
-  if (holderRef.current === null) holderRef.current = new PaymentCodeHolder();
-  const holder = holderRef.current;
+  // 付款码持有者：**只在内存**里活着的可变盒子（码值不进 Query 缓存 / URL / storage）。
+  // 用 `useState` 的惰性初始化拿到**跨渲染稳定**的实例：
+  // 在渲染期间读写 `useRef().current` 会被 React 编译器的 `react-hooks/refs`
+  // 判为非法（refs 不参与渲染），而这里确实只需要"一个稳定的对象"。
+  const [holder] = useState(() => new PaymentCodeHolder());
 
   const [codeActive, setCodeActive] = useState(false);
   const [remainingSec, setRemainingSec] = useState<number | null>(null);
@@ -152,7 +154,7 @@ export function CampusCardPanel() {
     );
   };
 
-  const useMockBinding = async (): Promise<void> => {
+  const runMockBinding = async (): Promise<void> => {
     if (!mockRepository) return;
     mockRepository.linkEcardForDemo();
     setFeedback({ tone: 'success', text: '（mock）已模拟完成校园卡 OPENID 绑定。' });
@@ -223,7 +225,7 @@ export function CampusCardPanel() {
           </p>
           {mockRepository ? (
             <div className="mt-2">
-              <KdyButton size="sm" variant="secondary" onClick={() => void useMockBinding()}>
+              <KdyButton size="sm" variant="secondary" onClick={() => void runMockBinding()}>
                 （mock）模拟完成 OPENID 绑定
               </KdyButton>
             </div>

@@ -1,0 +1,35 @@
+/** KdyPicker —— 弹出式单选取值控件（样式全部来自设计令牌）。 */
+
+.kdy-picker {
+  width: 100%;
+}
+
+.kdy-picker__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+  min-height: 44px;
+}
+
+.kdy-picker__trigger--disabled {
+  opacity: 0.5;
+}
+
+.kdy-picker__value {
+  flex: 1;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-picker__placeholder {
+  flex: 1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-picker__arrow {
+  flex: none;
+  color: $kdy-color-text-muted;
+  font-size: 24px;
+}

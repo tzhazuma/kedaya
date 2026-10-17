@@ -105,6 +105,18 @@ import { WildlifeModule } from './modules/wildlife/wildlife.module';
     { provide: APP_PIPE, useValue: new ZodValidationPipe() },
     { provide: APP_INTERCEPTOR, useClass: EnvelopeInterceptor },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
+
+    /*
+     * trace 中间件**必须**是提供者，即使它不用 `MiddlewareConsumer.forRoutes`
+     * 注册（见类头注释：Express 5 不接受裸 `*`，改在 main.ts 用 `app.use()`）。
+     *
+     * 原因：`main.ts` 与 `test/app-assembly.spec.ts` 都走 `app.get(TraceMiddleware)`
+     * 取实例 —— 而 `app.get()` 只查**容器里的提供者**。
+     * 只 import 不 provide 会让真实服务启动时就抛
+     *   `Nest could not find TraceMiddleware element`
+     * （即装配合法但服务起不来），这个缺陷由 `test/app-assembly.spec.ts` 抓出来。
+     */
+    TraceMiddleware,
   ],
 })
 export class AppModule {}

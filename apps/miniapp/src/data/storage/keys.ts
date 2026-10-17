@@ -82,8 +82,6 @@ export const StorageKeys = {
   fleaMarketListCache: `${STORAGE_PREFIX}cache:flea-market:list`,
   /** 跑腿列表缓存 */
   errandListCache: `${STORAGE_PREFIX}cache:errand:list`,
-  /** 找搭子列表缓存 */
-  buddyListCache: `${STORAGE_PREFIX}cache:buddy:list`,
   /** 失物招领列表缓存 */
   lostFoundListCache: `${STORAGE_PREFIX}cache:lost-found:list`,
   /** 论坛帖子列表缓存 */
@@ -139,8 +137,6 @@ export const StorageKeys = {
   faqHelpfulMarks: `${STORAGE_PREFIX}faq:helpful-marks`,
   /** 偷外卖列表缓存（仅"我的记录"） */
   takeoutGuardListCache: `${STORAGE_PREFIX}cache:takeout-guard:list`,
-  /** 校园技术服务目录列表缓存 */
-  techpieListCache: `${STORAGE_PREFIX}cache:techpie:list`,
   /** 心理支持列表缓存（仅「我的预约」） */
   wellbeingListCache: `${STORAGE_PREFIX}cache:wellbeing:list`,
   /**

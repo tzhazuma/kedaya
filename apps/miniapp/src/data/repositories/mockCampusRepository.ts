@@ -199,6 +199,10 @@ export function createMockCampusRepositories(options: MockCampusOptions): MockCa
     },
 
     async bind(platform: CampusPlatform): Promise<Result<{ platform: CampusPlatform }, never>> {
+      // 演示数据源：四个平台都能"绑上"。真实通道（`httpIdentityRepository`）
+      // 只有 `ecard` 能绑（OPENID + 一次性 authCode），其余平台会被服务端
+      // 403 `PHASE_BLOCKED` 拒绝（U7）—— 这个差异是**真实约束**，
+      // 页面用 `dataMode === 'mock'` 的提示如实标出，不假装两边一样。
       await delay()
       const bound = new Set(readBound())
       bound.add(platform)

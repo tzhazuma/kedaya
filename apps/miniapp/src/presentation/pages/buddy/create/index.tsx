@@ -1,4 +1,4 @@
-import { Input, Picker, Text, Textarea, View } from '@tarojs/components'
+import { Text, View } from '@tarojs/components'
 import { useDidShow, useRouter } from '@tarojs/taro'
 import { useState } from 'react'
 
@@ -26,7 +26,7 @@ import {
 } from '../../../../domain/models/buddy'
 import type { BuddyActivity, BuddySection, BuddySkillLevel, BuddyTagGroup } from '../../../../domain/models/buddy'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyBuddyPrivacyNotice, KdyButton, KdyCard, KdyEmpty, KdyField, KdyTag } from '../../../components'
+import { KdyBuddyPrivacyNotice, KdyButton, KdyCard, KdyEmpty, KdyField, KdyPicker, KdyTag } from '../../../components'
 import { useStore } from '../../../hooks'
 import './index.scss'
 
@@ -145,140 +145,120 @@ export default function BuddyCreatePage() {
 
       {/* ---------------- 基本信息 ---------------- */}
       <KdyCard title='基本信息'>
-        <KdyField label='标题' required hint={`${[...draft.title].length}/${BUDDY_TITLE_MAX}`}>
-          <Input
-            className='kdy-buddy-create__input'
-            value={draft.title}
-            maxlength={BUDDY_TITLE_MAX}
-            placeholder='例如：周六下午羽毛球，缺 2 人'
-            onInput={(event) => create.setTitle(event.detail.value)}
-          />
-        </KdyField>
+        <KdyField
+          label='标题'
+          required
+          hint={`${[...draft.title].length}/${BUDDY_TITLE_MAX}`}
+          value={draft.title}
+          maxLength={BUDDY_TITLE_MAX}
+          placeholder='例如：周六下午羽毛球，缺 2 人'
+          onChange={create.setTitle}
+        />
 
         <KdyField
           label='说明'
           hint={`${[...draft.description].length}/${BUDDY_DESCRIPTION_MAX}`}
           error={contact ?? undefined}
-        >
-          <Textarea
-            className='kdy-buddy-create__textarea'
-            value={draft.description}
-            maxlength={BUDDY_DESCRIPTION_MAX}
-            placeholder='时间、集合点、强度……注意不要写联系方式'
-            onInput={(event) => create.setDescription(event.detail.value)}
-          />
-        </KdyField>
+          multiline
+          value={draft.description}
+          maxLength={BUDDY_DESCRIPTION_MAX}
+          placeholder='时间、集合点、强度……注意不要写联系方式'
+          onChange={create.setDescription}
+        />
 
         <KdyField label='地点' required hint='取自校园地点清单'>
-          <Picker
-            mode='selector'
-            // Taro 的 `range` 要求可变数组，而白名单是 `readonly` —— 展开一份
-            range={[...CAMPUS_AREAS]}
-            onChange={(event) => {
-              const index = Number(event.detail.value)
+          <KdyPicker
+            range={CAMPUS_AREAS}
+            title='选择地点'
+            placeholder='请选择地点'
+            value={CAMPUS_AREAS.indexOf(draft.location)}
+            onChange={(index) => {
               const area = CAMPUS_AREAS[index]
               if (area !== undefined) create.setLocation(area)
             }}
-          >
-            <Text className='kdy-buddy-create__picker'>
-              {draft.location === '' ? '请选择地点' : draft.location}
-            </Text>
-          </Picker>
+          />
         </KdyField>
       </KdyCard>
 
       {/* ---------------- 时间 / 人数 ---------------- */}
       <KdyCard title='时间与人数'>
         <KdyField label='日期' required>
-          <Picker
+          <KdyPicker
             mode='date'
-            start={todayShanghai()}
-            value={draft.startsAtLocal.slice(0, 10) || todayShanghai()}
-            onChange={(event) => create.setStartDate(String(event.detail.value))}
-          >
-            <Text className='kdy-buddy-create__picker'>
-              {draft.startsAtLocal.slice(0, 10) || '请选择日期'}
-            </Text>
-          </Picker>
+            min={todayShanghai()}
+            placeholder='请选择日期'
+            value={draft.startsAtLocal.slice(0, 10)}
+            onChange={create.setStartDate}
+          />
         </KdyField>
 
         <KdyField label='开始时间' required>
-          <Picker
+          <KdyPicker
             mode='time'
-            value={draft.startsAtLocal.slice(11) || '19:00'}
-            onChange={(event) => create.setStartTime(String(event.detail.value))}
-          >
-            <Text className='kdy-buddy-create__picker'>
-              {draft.startsAtLocal.slice(11) || '请选择时间'}
-            </Text>
-          </Picker>
+            placeholder='请选择时间'
+            value={draft.startsAtLocal.slice(11)}
+            onChange={create.setStartTime}
+          />
         </KdyField>
 
         <KdyField label='时长' hint={`${BUDDY_DURATION_RANGE.min}–${BUDDY_DURATION_RANGE.max} 分钟`}>
-          <Picker
-            mode='selector'
+          <KdyPicker
             range={DURATION_OPTIONS.map((m) => `${m} 分钟`)}
-            onChange={(event) => {
-              const value = DURATION_OPTIONS[Number(event.detail.value)]
+            title='选择时长'
+            value={DURATION_OPTIONS.indexOf(draft.durationMin)}
+            onChange={(index) => {
+              const value = DURATION_OPTIONS[index]
               if (value !== undefined) create.setDuration(value)
             }}
-          >
-            <Text className='kdy-buddy-create__picker'>{draft.durationMin} 分钟</Text>
-          </Picker>
+          />
         </KdyField>
 
         <KdyField
           label='人数'
           hint={`${BUDDY_CAPACITY_RANGE.min}–${BUDDY_CAPACITY_RANGE.max} 人（含你自己）`}
         >
-          <Picker
-            mode='selector'
+          <KdyPicker
             range={CAPACITY_OPTIONS.map((n) => `${n} 人`)}
-            onChange={(event) => {
-              const value = CAPACITY_OPTIONS[Number(event.detail.value)]
+            title='选择人数'
+            value={CAPACITY_OPTIONS.indexOf(draft.capacity)}
+            onChange={(index) => {
+              const value = CAPACITY_OPTIONS[index]
               if (value !== undefined) create.setCapacity(value)
             }}
-          >
-            <Text className='kdy-buddy-create__picker'>{draft.capacity} 人</Text>
-          </Picker>
+          />
         </KdyField>
       </KdyCard>
 
       {/* ---------------- 性别准入 + 运动水平 ---------------- */}
       <KdyCard title='准入条件'>
         <KdyField label='性别偏好' hint='契约已冻结的准入约束，不参与匹配打分'>
-          <Picker
-            mode='selector'
+          <KdyPicker
             range={BUDDY_GENDER_PREFERENCES.map((p) => BUDDY_GENDER_PREFERENCE_LABELS[p])}
-            onChange={(event) => {
-              const value = BUDDY_GENDER_PREFERENCES[Number(event.detail.value)]
+            title='选择性别偏好'
+            value={BUDDY_GENDER_PREFERENCES.indexOf(draft.genderPreference)}
+            onChange={(index) => {
+              const value = BUDDY_GENDER_PREFERENCES[index]
               if (value !== undefined) create.setGenderPreference(value)
             }}
-          >
-            <Text className='kdy-buddy-create__picker'>
-              {BUDDY_GENDER_PREFERENCE_LABELS[draft.genderPreference]}
-            </Text>
-          </Picker>
+          />
         </KdyField>
 
         {activeSection === 'sport' && (
           <KdyField label='最低运动水平' hint='仅运动板块；作为硬过滤，不是打分'>
-            <Picker
-              mode='selector'
+            <KdyPicker
               range={['不限', ...BUDDY_SKILL_LEVELS.map((l) => BUDDY_SKILL_LEVEL_LABELS[l])]}
-              onChange={(event) => {
-                const index = Number(event.detail.value)
+              title='选择最低运动水平'
+              value={
+                draft.minSkillLevel === null
+                  ? 0
+                  : BUDDY_SKILL_LEVELS.indexOf(draft.minSkillLevel) + 1
+              }
+              onChange={(index) => {
                 create.setMinSkillLevel(
                   index === 0 ? null : (BUDDY_SKILL_LEVELS[index - 1] as BuddySkillLevel),
                 )
               }}
-            >
-              <Text className='kdy-buddy-create__picker'>
-                {draft.minSkillLevel === null
-                  ? '不限'
-                  : BUDDY_SKILL_LEVEL_LABELS[draft.minSkillLevel]}
-              </Text>
-            </Picker>
+            />
           </KdyField>
         )}
       </KdyCard>

@@ -1,3 +1,11 @@
+/**
+ * KdyField 样式 —— 全部取自设计令牌（`$kdy-*`），无手写色值。
+ *
+ * 布局固定为「标签 + 说明」一行、控件框一行、错误一行：
+ * 值模式（内置 Taroify `Input` / `Textarea`）与容器模式（自备控件）
+ * 共用同一套外观，页面之间不会长得不一样。
+ */
+
 .kdy-field {
   display: flex;
   flex-direction: column;
@@ -9,17 +17,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: $kdy-space-2;
 }
 
 .kdy-field__label {
+  flex: none;
   color: $kdy-color-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 500;
 }
 
 .kdy-field__hint {
+  flex: 1;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
+  line-height: 1.5;
+  text-align: right;
 }
 
 .kdy-field__control {
@@ -37,4 +50,15 @@
 .kdy-field__error {
   color: $kdy-color-danger;
   font-size: $kdy-font-size-xs;
+}
+
+.kdy-field__input {
+  box-sizing: border-box;
+  width: 100%;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-field__textarea {
+  min-height: 160px;
 }

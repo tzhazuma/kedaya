@@ -112,6 +112,39 @@ describe('架构不变式 I1–I3（契约 §11.4）', () => {
       ).toThrow();
     });
 
+    it('`/auth/campus-bindings` 的 wire 类型 `CampusBindingSummary` 与 8 个禁用键不相交', () => {
+      const summaryFile = join(API_DIR, 'src/modules/auth/campus-binding-summary.ts');
+      const declared = declaredKeys(readFileSync(summaryFile, 'utf8'), 'CampusBindingSummary');
+
+      // `lastRenewedAt`（冻结 OpenAPI 里的**可选**字段）本轮刻意不下发：
+      // Phase 0 的上游没有续期能力（`CampusSessionPort.renew` 直接抛
+      // `RENEW_NOT_SUPPORTED`），编一个时间等于谎称"已续期"。
+      // 可空字段为空时省略键（§11.22-D）。
+      expect(declared.sort()).toEqual(['bound', 'expiresAt', 'platform']);
+
+      for (const forbidden of FORBIDDEN_KEYS) {
+        expect(declared.map((key) => key.toLowerCase())).not.toContain(forbidden.toLowerCase());
+      }
+    });
+
+    it('port 类型 `CampusBindingState` 的键名集合也与 8 个禁用键不相交（P0-8 的静态侧）', () => {
+      const portFile = join(API_DIR, 'src/modules/techpie/domain/ports/campus-session.port.ts');
+      const declared = declaredKeys(readFileSync(portFile, 'utf8'), 'CampusBindingState');
+
+      expect(declared.sort()).toEqual([
+        'expiresAt',
+        'externalUserId',
+        'id',
+        'lastSyncAt',
+        'phase',
+        'provider',
+        'status',
+      ]);
+      for (const forbidden of FORBIDDEN_KEYS) {
+        expect(declared.map((key) => key.toLowerCase())).not.toContain(forbidden.toLowerCase());
+      }
+    });
+
     it('`GET /auth/session` 的投影只有 4 个字段，且是**显式逐字段**组装', () => {
       const controller = readFileSync(join(API_DIR, 'src/modules/auth/auth.controller.ts'), 'utf8');
       const start = controller.indexOf("@Get('session')");

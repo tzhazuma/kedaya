@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ComplianceModule } from '../../common/compliance/compliance.module';
+import { TechpieModule } from '../techpie/techpie.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { CampusIdentityController } from './campus-identity.controller';
@@ -59,8 +60,13 @@ import { WECHAT_SESSION_PORT } from './domain/wechat.domain';
    * **AppModule 装配之后**成立）。身份模块自己就依赖审计（`CampusIdentityService`
    * 在 reveal 明文时要落审计），显式声明后，任何"只装配 AuthModule + PrismaModule"
    * 的场景（例如打真库的集成测试）也能起来，不会再出现"少了 AuditService"。
+   *
+   * ⚠️ 同时 import `TechpieModule`：`/auth/campus-bindings` 的**唯一**实现是
+   * techpie 的 `CAMPUS_SESSION_PORT`（§11.20 的收敛裁决）——
+   * auth 自己那套大写平台 + `CampusBinding` 表**不再是**这条链路的 owner。
+   * 两者之间**没有**模块环：TechpieModule 只 import IdempotencyModule。
    */
-  imports: [ComplianceModule],
+  imports: [ComplianceModule, TechpieModule],
   controllers: [AuthController, LocalAuthController, WechatAuthController, CampusIdentityController],
   providers: [
     AuthService,

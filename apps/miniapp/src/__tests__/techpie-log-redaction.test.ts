@@ -192,7 +192,8 @@ describe('端到端 · 装配接线（静态断言，因为 node 下无法构造
 
   it('容器把 log 传给了 techpie 的仓储与四个用例', () => {
     expect(containerSource).toContain('createHttpTechpieRepository(apiClient, { log })')
-    expect(containerSource).toContain('createMockTechpieRepository({ latencyMs: env.mockLatencyMs, log })')
+    // mock 仓储同样必须拿到 log（格式不限，但 `log` 必须在参数里）
+    expect(containerSource).toMatch(/createMockTechpieRepository\(\{[^}]*\blog\b[^}]*\}\)/)
     for (const useCase of ['listBindings', 'capabilities', 'bindCampus', 'campusCard']) {
       expect(containerSource).toContain(`const ${useCase} = create`)
     }

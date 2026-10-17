@@ -277,6 +277,50 @@ export default function DiscoverPage() {
         </View>
       </KdyCard>
 
+      <KdyDemoTools>
+        <KdyCard title='当前运行端' elevated={false}>
+          <View className='kdy-discover__platform'>
+            <KdyTag tone='brand'>{currentPlatform()}</KdyTag>
+            <Text className='kdy-discover__hint'>
+              weapp = 微信小程序（主端）；h5 = 次要编译目标
+            </Text>
+          </View>
+        </KdyCard>
+
+        <KdyCard title='平台能力试跑' elevated={false}>
+          <View className='kdy-discover__actions'>
+            <KdyButton size='sm' variant='ghost' onClick={() => void handleScan()}>
+              扫码
+            </KdyButton>
+            <KdyButton size='sm' variant='ghost' onClick={() => void handleSubscribe()}>
+              订阅消息
+            </KdyButton>
+            <KdyButton size='sm' variant='ghost' onClick={() => void handleShare()}>
+              分享
+            </KdyButton>
+            <KdyButton size='sm' variant='ghost' onClick={() => void handleMap()}>
+              地图
+            </KdyButton>
+          </View>
+          <Text className='kdy-discover__result'>{lastResult}</Text>
+        </KdyCard>
+
+        <KdyCard title='能力差异矩阵' elevated={false}>
+          {CAPABILITIES.map((capability) => (
+            <View key={capability.id} className='kdy-discover__cap'>
+              <View className='kdy-discover__cap-head'>
+                <Text className='kdy-discover__cap-name'>{capability.nameZh}</Text>
+                <KdyTag tone={capability.weappOnly ? 'danger' : 'info'}>
+                  {capability.weappOnly ? '微信特有' : '两端均有'}
+                </KdyTag>
+              </View>
+              <Text className='kdy-discover__cap-line'>小程序：{capability.weapp}</Text>
+              <Text className='kdy-discover__cap-line'>H5 降级：{capability.h5}</Text>
+            </View>
+          ))}
+        </KdyCard>
+      </KdyDemoTools>
+
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
       </Text>

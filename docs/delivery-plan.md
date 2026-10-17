@@ -642,7 +642,8 @@ R5 是「好看 + 丝滑」。按「**用户能感觉到**」这条线选了四�
 3. **数据与代码漂移**（两个模块的种子数据落在新白名单外）：
    - `TakeoutReport.status` 默认值仍是 `'reported'`，种子也写 `'reported'` —— 这些行
      能出现在「全部」里但**按任何状态都筛不出来**。改成 `'pending'` 默认值，
-     并写了一条**数据迁移**（`20261017091543_takeout_report_status_pending`）把存量
+     并写了一条**数据迁移**（现为合并后的 `20261017070000_merged_schema_alignment`，
+     原独立迁移 `20261017091543_takeout_report_status_pending` 已并入该对齐迁移）把存量
      `reported → pending`；种子状态改为 `pending/escalated/resolved` 并**挂到实名账号**上
      （列表按登录主体过滤，匿名行登录后谁也看不到，等于演示数据不存在）。
    - FAQ 种子用了 `identity / groupbuy / errand / content` 等白名单外的分类。

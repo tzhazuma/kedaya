@@ -1,4 +1,4 @@
-import { Input, Text, Textarea, View } from '@tarojs/components'
+import { Text, View } from '@tarojs/components'
 import { useDidShow, useRouter } from '@tarojs/taro'
 import { useState } from 'react'
 
@@ -144,43 +144,32 @@ export default function ForumCreatePage() {
           required
           hint={`${[...title].length}/${FORUM_TITLE_MAX_LENGTH}`}
           error={errorFor(errors, 'title')}
-        >
-          <Input
-            className='kdy-forum-create__input'
-            value={title}
-            placeholder='一句话说清你想聊什么'
-            maxlength={FORUM_TITLE_MAX_LENGTH}
-            onInput={(event) => setTitle(event.detail.value)}
-          />
-        </KdyField>
+          value={title}
+          placeholder='一句话说清你想聊什么'
+          maxLength={FORUM_TITLE_MAX_LENGTH}
+          onChange={setTitle}
+        />
 
         <KdyField
           label='正文'
           required
           hint={`${[...body].length}/${FORUM_BODY_MAX_LENGTH}`}
           error={errorFor(errors, 'body')}
-        >
-          <Textarea
-            className='kdy-forum-create__textarea'
-            value={body}
-            placeholder='补充细节，方便同学理解和回复'
-            maxlength={FORUM_BODY_MAX_LENGTH}
-            onInput={(event) => setBody(event.detail.value)}
-          />
-        </KdyField>
+          multiline
+          value={body}
+          placeholder='补充细节，方便同学理解和回复'
+          maxLength={FORUM_BODY_MAX_LENGTH}
+          onChange={setBody}
+        />
 
         <KdyField
           label='标签'
           hint={`最多 ${FORUM_MAX_TAGS} 个，每个 ≤${FORUM_TAG_MAX_LENGTH} 字，用空格或逗号分隔`}
           error={errorFor(errors, 'tags')}
-        >
-          <Input
-            className='kdy-forum-create__input'
-            value={tagInput}
-            placeholder='例如：食堂 图书馆'
-            onInput={(event) => setTagInput(event.detail.value)}
-          />
-        </KdyField>
+          value={tagInput}
+          placeholder='例如：食堂 图书馆'
+          onChange={setTagInput}
+        />
 
         {tags.length > 0 && (
           <View className='kdy-forum-create__tags'>

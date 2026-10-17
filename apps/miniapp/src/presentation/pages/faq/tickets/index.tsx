@@ -1,4 +1,4 @@
-import { Input, Text, Textarea, View } from '@tarojs/components'
+import { Text, View } from '@tarojs/components'
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import { useState } from 'react'
 
@@ -86,29 +86,22 @@ export default function FaqTicketsPage() {
           required
           hint='邮箱或微信号，请勿填写手机号'
           error={errorFor(errors, 'contact')}
-        >
-          <Input
-            className='kdy-faq-tickets__input'
-            value={contact}
-            placeholder='例如 student@shanghaitech.edu.cn 或 wechat: 你的微信号'
-            onInput={(event) => setContact(event.detail.value)}
-          />
-        </KdyField>
+          value={contact}
+          placeholder='例如 student@shanghaitech.edu.cn 或 wechat: 你的微信号'
+          onChange={setContact}
+        />
 
         <KdyField
           label='问题描述'
           required
           hint={`${[...question].length}/${FAQ_TICKET_QUESTION_MAX_LENGTH}`}
           error={errorFor(errors, 'question')}
-        >
-          <Textarea
-            className='kdy-faq-tickets__textarea'
-            value={question}
-            placeholder='请描述你遇到的问题，附上出错时间会更快定位'
-            maxlength={FAQ_TICKET_QUESTION_MAX_LENGTH}
-            onInput={(event) => setQuestion(event.detail.value)}
-          />
-        </KdyField>
+          multiline
+          value={question}
+          placeholder='请描述你遇到的问题，附上出错时间会更快定位'
+          maxLength={FAQ_TICKET_QUESTION_MAX_LENGTH}
+          onChange={setQuestion}
+        />
 
         <KdyButton
           block

@@ -26,7 +26,7 @@
  *    `prisma migrate dev` 的影子库流程 —— 迁移用 `db.exec` 直接执行 SQL 文件。
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { vector } from '@electric-sql/pglite/vector';
@@ -34,18 +34,35 @@ import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
-/** 迁移目录（按顺序执行）。顺序不能改 —— 后面依赖前面建的 `User` 表。 */
-const MIGRATION_DIRS = [
-  '20261017030000_init',
-  '20261017040000_wildlife',
-  '20261017050000_buddy',
-  // TechPie 整合 Phase 0（规格 §5 / §9.1）：重塑 TechpieLink + 新增
-  // TechpieSyncJob / CampusSession。**建表，不产生任何凭证副本**。
-  '20261017060000_techpie',
-  // 校园卡（契约 §11.21-B / §11.19-A）：happenedAt → occurredAt、
-  // TechpieLink.status 默认值 UNLINKED → PENDING。
-  '20261017070000_campus_card',
-];
+/**
+ * 迁移目录（**自动发现**，按文件名顺序执行）。
+ *
+ * 顺序不能改 —— 后面依赖前面建的 `User` 表。历史（`prisma/migrations/`）：
+ *   1. `20261017030000_init` —— 业务侧基线（forum/faq/facility 等）；
+ *   2. `20261017040000_wildlife` / `20261017050000_buddy` —— 含手写的
+ *      `vector(768)` 列（Prisma 不能为 `Unsupported` 类型生成迁移）；
+ *   3. `20261017060000_techpie` —— 重塑 TechpieLink + CampusSession；
+ *   4. `20261017070000_merged_schema_alignment` —— **合并对齐**：两个分支各有
+ *      一份互不兼容的基线，这里保留业务侧四份、把校园侧的全部差异收敛成一份
+ *      （校园卡列改名、`TechpieLink.status` 默认值、邮箱密码账号 / 验证码 /
+ *      刷新会话 / 内容报告 / 埋点等校园侧独有的表）。
+ *
+ * 目录名**不再硬编码**：曾经硬编码的清单在"新增迁移忘了同步"时会静默失效，
+ * 而这里漏掉一份迁移的后果是"测试跑在一个不完整的库上"。
+ */
+function discoverMigrationDirs(root: string): string[] {
+  return readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && /^\d/.test(entry.name))
+    .map((entry) => entry.name)
+    .sort();
+}
+
+let cachedDirs: string[] | null = null;
+
+function migrationDirs(): string[] {
+  if (cachedDirs === null) cachedDirs = discoverMigrationDirs(migrationsRoot());
+  return cachedDirs;
+}
 
 /** 定位 `services/api/prisma/migrations`（从仓库根或从 services/api 调用都能找到） */
 function migrationsRoot(): string {
@@ -54,7 +71,9 @@ function migrationsRoot(): string {
     join(process.cwd(), 'services', 'api', 'prisma', 'migrations'),
   ];
   for (const candidate of candidates) {
-    if (existsSync(join(candidate, MIGRATION_DIRS[0] as string))) return candidate;
+    if (existsSync(join(candidate, 'migration_lock.toml')) || discoverMigrationDirs(candidate).length > 0) {
+      return candidate;
+    }
   }
   throw new Error(`找不到 prisma/migrations（cwd=${process.cwd()}）`);
 }
@@ -137,7 +156,7 @@ export async function createPglitePrisma(): Promise<PglitePrisma> {
   const db = new PGlite({ extensions: { vector } });
   const root = migrationsRoot();
 
-  for (const dir of MIGRATION_DIRS) {
+  for (const dir of migrationDirs()) {
     await db.exec(readFileSync(join(root, dir, 'migration.sql'), 'utf8'));
   }
 

@@ -1,4 +1,4 @@
-import { Image, Input, Map, Picker, Switch, Text, Textarea, View } from '@tarojs/components'
+import { Image, Map, Text, View } from '@tarojs/components'
 import { useDidShow } from '@tarojs/taro'
 import { useMemo, useState } from 'react'
 
@@ -22,7 +22,9 @@ import {
   KdyEmpty,
   KdyEthicsNotice,
   KdyField,
+  KdyPicker,
   KdyPrivacyNotice,
+  KdySwitch,
   KdyTag,
 } from '../../../components'
 import { useStore } from '../../../hooks'
@@ -280,14 +282,13 @@ export default function WildlifeReportPage() {
                   </View>
                 ))}
             </View>
-            <KdyField label={`新建个体名字（≤${WILDLIFE_INDIVIDUAL_NAME_MAX_LENGTH} 字）`}>
-              <Input
-                className='kdy-wildlife-report__input'
-                value={state.draft.newIndividualName ?? ''}
-                placeholder='例如：大橘'
-                onInput={(event) => report.setNewIndividualName(event.detail.value)}
-              />
-            </KdyField>
+            <KdyField
+              label={`新建个体名字（≤${WILDLIFE_INDIVIDUAL_NAME_MAX_LENGTH} 字）`}
+              value={state.draft.newIndividualName ?? ''}
+              maxLength={WILDLIFE_INDIVIDUAL_NAME_MAX_LENGTH}
+              placeholder='例如：大橘'
+              onChange={report.setNewIndividualName}
+            />
             <Text className='kdy-wildlife-report__tip'>
               新个体需要审核后才会公开（防止恶搞命名）。不填也可以正常上报。
             </Text>
@@ -314,28 +315,28 @@ export default function WildlifeReportPage() {
             </View>
 
             <View className='kdy-wildlife-report__pickers'>
-              <Picker
-                mode='date'
-                value={date}
-                onChange={(event) => {
-                  const value = String(event.detail.value)
-                  setDate(value)
-                  report.setObservedAt(toIsoFromLocal(value, time))
-                }}
-              >
-                <KdyTag tone='neutral'>选择日期</KdyTag>
-              </Picker>
-              <Picker
-                mode='time'
-                value={time}
-                onChange={(event) => {
-                  const value = String(event.detail.value)
-                  setTime(value)
-                  report.setObservedAt(toIsoFromLocal(date, value))
-                }}
-              >
-                <KdyTag tone='neutral'>选择时间</KdyTag>
-              </Picker>
+              <View className='kdy-wildlife-report__picker'>
+                <KdyPicker
+                  mode='date'
+                  placeholder='选择日期'
+                  value={date}
+                  onChange={(value) => {
+                    setDate(value)
+                    report.setObservedAt(toIsoFromLocal(value, time))
+                  }}
+                />
+              </View>
+              <View className='kdy-wildlife-report__picker'>
+                <KdyPicker
+                  mode='time'
+                  placeholder='选择时间'
+                  value={time}
+                  onChange={(value) => {
+                    setTime(value)
+                    report.setObservedAt(toIsoFromLocal(date, value))
+                  }}
+                />
+              </View>
             </View>
 
             <Text className='kdy-wildlife-report__tip'>
@@ -420,37 +421,28 @@ export default function WildlifeReportPage() {
 
           {/* ⑥ 备注 / 健康异常 / 匿名 */}
           <KdyCard title='补充信息' elevated={false}>
-            <KdyField label={`备注（≤${WILDLIFE_NOTE_MAX_LENGTH} 字）`}>
-              <Textarea
-                className='kdy-wildlife-report__textarea'
-                value={state.draft.note}
-                placeholder='例如：两只，在草坪东侧'
-                maxlength={WILDLIFE_NOTE_MAX_LENGTH}
-                onInput={(event) => report.setNote(event.detail.value)}
-              />
-            </KdyField>
+            <KdyField
+              label={`备注（≤${WILDLIFE_NOTE_MAX_LENGTH} 字）`}
+              multiline
+              value={state.draft.note}
+              maxLength={WILDLIFE_NOTE_MAX_LENGTH}
+              placeholder='例如：两只，在草坪东侧'
+              onChange={report.setNote}
+            />
 
-            <View className='kdy-wildlife-report__switch-row'>
-              <Text className='kdy-wildlife-report__switch-label'>疑似受伤 / 异常</Text>
-              <Switch
-                checked={state.draft.healthConcern}
-                onChange={(event) => report.setHealthConcern(event.detail.value)}
-              />
-            </View>
-            <Text className='kdy-wildlife-report__tip'>
-              标记后**不等审核**就会通知校园动物社团。请勿自行处理受伤动物。
-            </Text>
+            <KdySwitch
+              checked={state.draft.healthConcern}
+              label='疑似受伤 / 异常'
+              description='标记后不等审核就会通知校园动物社团；请勿自行处理受伤动物'
+              onChange={report.setHealthConcern}
+            />
 
-            <View className='kdy-wildlife-report__switch-row'>
-              <Text className='kdy-wildlife-report__switch-label'>匿名上报</Text>
-              <Switch
-                checked={state.draft.anonymous}
-                onChange={(event) => report.setAnonymous(event.detail.value)}
-              />
-            </View>
-            <Text className='kdy-wildlife-report__tip'>
-              匿名后其他同学看到的是「匿名同学」，你的身份不会出现在公开信息里。
-            </Text>
+            <KdySwitch
+              checked={state.draft.anonymous}
+              label='匿名上报'
+              description='匿名后其他同学看到的是「匿名同学」，你的身份不会出现在公开信息里'
+              onChange={report.setAnonymous}
+            />
           </KdyCard>
 
           {/* ⑦ 伦理与隐私（硬要求） */}

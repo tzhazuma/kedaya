@@ -15,49 +15,118 @@ export const PAGE_PATHS = {
   groupBuyList: '/presentation/pages/groupbuy/list/index',
   groupBuyCreate: '/presentation/pages/groupbuy/create/index',
   groupBuyDetail: '/presentation/pages/groupbuy/detail/index',
+  // 账号（自建账号体系：注册 / 登录 / 找回密码 / 修改密码）
+  authLogin: '/presentation/pages/auth/login/index',
+  authRegister: '/presentation/pages/auth/register/index',
+  authForgot: '/presentation/pages/auth/forgot/index',
+  authChangePassword: '/presentation/pages/auth/change-password/index',
+  authBindEmail: '/presentation/pages/auth/bind-email/index',
+  // 资料（昵称 / 头像：微信一键注册后会直接引到这里）
+  profileEdit: '/presentation/pages/profile/edit/index',
+  profileSettings: '/presentation/pages/profile/settings/index',
+  /** 「我的资产」：我的拼单（发起/参与）+ 各模块入口 */
+  profileAssets: '/presentation/pages/profile/assets/index',
+  // 跳蚤市场
+  fleaList: '/presentation/pages/fleaMarket/list/index',
+  fleaCreate: '/presentation/pages/fleaMarket/create/index',
+  fleaDetail: '/presentation/pages/fleaMarket/detail/index',
+  // 跑腿
+  errandList: '/presentation/pages/errand/list/index',
+  errandCreate: '/presentation/pages/errand/create/index',
+  errandDetail: '/presentation/pages/errand/detail/index',
+  // 找搭子
+  buddyList: '/presentation/pages/buddy/list/index',
+  buddyCreate: '/presentation/pages/buddy/create/index',
+  buddyDetail: '/presentation/pages/buddy/detail/index',
+  buddyProfile: '/presentation/pages/buddy/profile/index',
+  buddyRecommendations: '/presentation/pages/buddy/recommendations/index',
+  // 失物招领
+  lostFoundList: '/presentation/pages/lostFound/list/index',
+  lostFoundCreate: '/presentation/pages/lostFound/create/index',
+  lostFoundDetail: '/presentation/pages/lostFound/detail/index',
+  // 论坛
   forumList: '/presentation/pages/forum/list/index',
-  forumDetail: '/presentation/pages/forum/detail/index',
   forumCreate: '/presentation/pages/forum/create/index',
+  forumDetail: '/presentation/pages/forum/detail/index',
   forumReport: '/presentation/pages/forum/report/index',
-  faq: '/presentation/pages/faq/index/index',
-  faqTickets: '/presentation/pages/faq/tickets/index',
+  // 猫鸟黑天鹅（校园动物观察点）：地图（主界面）/ 上报 / 轨迹
   wildlifeMap: '/presentation/pages/wildlife/map/index',
   wildlifeReport: '/presentation/pages/wildlife/report/index',
   wildlifeTracks: '/presentation/pages/wildlife/tracks/index',
-  buddyList: '/presentation/pages/buddy/list/index',
-  buddyDetail: '/presentation/pages/buddy/detail/index',
-  buddyCreate: '/presentation/pages/buddy/create/index',
-  buddyProfile: '/presentation/pages/buddy/profile/index',
-  buddyRecommendations: '/presentation/pages/buddy/recommendations/index',
-  /* ---------------- TechPie 整合 / 校园能力（Phase 0） ---------------- */
+  // 食堂营养（同学共建菜品库）
+  canteenList: '/presentation/pages/canteen/list/index',
+  canteenCreate: '/presentation/pages/canteen/create/index',
+  canteenDetail: '/presentation/pages/canteen/detail/index',
+  // 常见问题（问答库）：折叠首页 + 我的工单
+  faq: '/presentation/pages/faq/index/index',
+  faqTickets: '/presentation/pages/faq/tickets/index',
+  // 偷外卖（本人可见的报备记录，不是公开举报墙）
+  takeoutGuardList: '/presentation/pages/takeoutGuard/list/index',
+  takeoutGuardCreate: '/presentation/pages/takeoutGuard/create/index',
+  takeoutGuardDetail: '/presentation/pages/takeoutGuard/detail/index',
+  // 校园技术服务目录（同学共建）+ TechPie 整合（绑定 / 能力 / WebView 直连）
   techpieLinks: '/presentation/pages/techpie/links/index',
   techpieCapabilities: '/presentation/pages/techpie/capabilities/index',
   techpieWebview: '/presentation/pages/techpie/webview/index',
-  campusCard: '/presentation/pages/campus-card/index/index',
+  // 心理支持（倾听与预约入口；危机出口在首屏，来自 /wellbeing/crisis-line）
+  wellbeingList: '/presentation/pages/wellbeing/list/index',
+  wellbeingCreate: '/presentation/pages/wellbeing/create/index',
+  wellbeingDetail: '/presentation/pages/wellbeing/detail/index',
+  // AI 校园画像（只读两页：画像首页 + 数据来源与开关；没有"列表/发布/详情"）
+  aiPortraitHome: '/presentation/pages/aiPortrait/index/index',
+  aiPortraitSources: '/presentation/pages/aiPortrait/sources/index',
+  // 宿舍矛盾（匿名，凭追踪码查看）
+  dormHarmonyHome: '/presentation/pages/dormHarmony/index/index',
+  // 四个核心模块：身份 / 课表 / 校园卡 / 我的（隐私与数据）
+  identity: '/presentation/pages/identity/index',
+  schedule: '/presentation/pages/schedule/index',
+  campusCard: '/presentation/pages/campusCard/index',
+  // 内置全局助手「可达鸭」
+  agent: '/presentation/pages/agent/index',
+  // 法务页（微信审核必备；内容与 PRIVACY_RULES 同源，避免两处漂移）
+  legalTerms: '/presentation/pages/legal/terms/index',
+  legalPrivacy: '/presentation/pages/legal/privacy/index',
 } as const
 
 export type PagePath = (typeof PAGE_PATHS)[keyof typeof PAGE_PATHS]
 
 /**
- * 模块 id（契约 §4）→ 已实现页面的映射。
+ * 已实现垂直切片的模块 → 入口页。
  *
- * 首页宫格完全由 `@kedaya/contracts` 的 `MODULES` 驱动，**不允许**硬编码模块清单；
- * 这里只声明「哪些模块在端上已经有真实页面」，其余模块点击后如实提示「未实现」。
- * 新增垂直切片时只改这一张表，首页不用动。
+ * 这里只做「契约模块 id → 页面路径」的映射，模块清单本身仍然来自
+ * `@kedaya/contracts`（契约 §4 硬规则：禁止各端硬编码模块清单）。
+ * 未登记的模块点击后明确提示「开发中」，不假装可用。
+ *
+ * 放在 `app/routes.ts` 而不是页面里：首页宫格与「发现」页都要用它，
+ * 各写一份必然漂移（新增页面时只改了一处，另一处静默点不进去）。
+ *
+ * ⚠️ 有多个真实页面时，入口取**模块主界面**：
+ *   · `wildlife` → 地图页（模块主界面），上报 / 轨迹 / 列表从地图页进入；
+ *   · `techpie` → 绑定管理页（用户来这里第一个问题是"我绑了什么"）；
+ *   · `faq` → 折叠首页（问答库主界面），检索列表从首页进入。
  */
 export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   groupbuy: PAGE_PATHS.groupBuyList,
-  forum: PAGE_PATHS.forumList,
-  faq: PAGE_PATHS.faq,
-  // `wildlife` 的入口是**地图页**（模块主界面），上报与轨迹从地图页进入
-  wildlife: PAGE_PATHS.wildlifeMap,
-  // `buddy` 的入口是**三板块列表**（模块主界面），发布 / 资料 / 推荐从列表页进入
+  'flea-market': PAGE_PATHS.fleaList,
+  errand: PAGE_PATHS.errandList,
   buddy: PAGE_PATHS.buddyList,
-  // `techpie` 的入口是**绑定管理页**（用户来这里的第一个问题是"我绑了什么"），
-  // 能力清单与 WebView 直连从绑定页进入
+  'lost-found': PAGE_PATHS.lostFoundList,
+  forum: PAGE_PATHS.forumList,
+  wildlife: PAGE_PATHS.wildlifeMap,
+  canteen: PAGE_PATHS.canteenList,
+  faq: PAGE_PATHS.faq,
+  'takeout-guard': PAGE_PATHS.takeoutGuardList,
   techpie: PAGE_PATHS.techpieLinks,
-  // `campus-card` 的入口是**校园卡页**（余额 / 流水 / 付款码），走独立 OPENID 通道
+  wellbeing: PAGE_PATHS.wellbeingList,
+  'ai-portrait': PAGE_PATHS.aiPortraitHome,
+  'dorm-harmony': PAGE_PATHS.dormHarmonyHome,
+  // 站内通知：就是 tabBar 上的「消息」页（用 switchTab 跳，navigateTo 会失败）
+  notifications: PAGE_PATHS.messages,
+  // 四个核心模块（身份 / 课表 / 校园卡 / 我的）
+  auth: PAGE_PATHS.identity,
+  schedule: PAGE_PATHS.schedule,
   'campus-card': PAGE_PATHS.campusCard,
+  profile: PAGE_PATHS.profile,
 }
 
 export function moduleEntryPath(moduleId: string): string | null {
@@ -88,43 +157,59 @@ export function tabBarIndex(path: string): number {
   return base === undefined ? -1 : TAB_BAR_PATHS.indexOf(base)
 }
 
-/**
- * 已实现垂直切片的模块 → 入口页。
- *
- * 这里只做「契约模块 id → 页面路径」的映射，模块清单本身仍然来自
- * `@kedaya/contracts`（契约 §4 硬规则：禁止各端硬编码模块清单）。
- * 未登记的模块点击后明确提示「开发中」，不假装可用。
- *
- * 放在 `app/routes.ts` 而不是页面里：首页宫格与「发现」页都要用它，
- * 各写一份必然漂移（新增页面时只改了一处，另一处静默点不进去）。
- */
-export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
-  groupbuy: PAGE_PATHS.groupBuyList,
-  'flea-market': PAGE_PATHS.fleaList,
-  errand: PAGE_PATHS.errandList,
-  buddy: PAGE_PATHS.buddyList,
-  'lost-found': PAGE_PATHS.lostFoundList,
-  forum: PAGE_PATHS.forumList,
-  wildlife: PAGE_PATHS.wildlifeList,
-  canteen: PAGE_PATHS.canteenList,
-  faq: PAGE_PATHS.faqList,
-  'takeout-guard': PAGE_PATHS.takeoutGuardList,
-  techpie: PAGE_PATHS.techpieList,
-  wellbeing: PAGE_PATHS.wellbeingList,
-  'ai-portrait': PAGE_PATHS.aiPortraitHome,
-  'dorm-harmony': PAGE_PATHS.dormHarmonyHome,
-  // 站内通知：就是 tabBar 上的「消息」页（用 switchTab 跳，navigateTo 会失败）
-  notifications: PAGE_PATHS.messages,
-  // 四个核心模块（身份 / 课表 / 校园卡 / 我的）
-  auth: PAGE_PATHS.identity,
-  schedule: PAGE_PATHS.schedule,
-  'campus-card': PAGE_PATHS.campusCard,
-  profile: PAGE_PATHS.profile,
+/** 从页面参数里安全取 id（`useRouter().params.id` 可能是 string | undefined） */
+export function readIdParam(params: Record<string, string | undefined>): string | null {
+  const id = params.id
+  return id === undefined || id === '' ? null : id
+}
+
+/* ------------------------------------------------------------------ *
+ * 详情页路径（统一 `?id=`）
+ * ------------------------------------------------------------------ */
+
+function detailPath(base: string, id: string): string {
+  return `${base}?id=${encodeURIComponent(id)}`
+}
+
+export function groupBuyDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.groupBuyDetail, id)
+}
+
+export function fleaDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.fleaDetail, id)
+}
+
+export function errandDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.errandDetail, id)
+}
+
+export function buddyDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.buddyDetail, id)
+}
+
+export function lostFoundDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.lostFoundDetail, id)
 }
 
 export function forumDetailPath(id: string): string {
-  return `${PAGE_PATHS.forumDetail}?id=${encodeURIComponent(id)}`
+  return detailPath(PAGE_PATHS.forumDetail, id)
 }
+
+export function canteenDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.canteenDetail, id)
+}
+
+export function takeoutGuardDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.takeoutGuardDetail, id)
+}
+
+export function wellbeingDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.wellbeingDetail, id)
+}
+
+/* ------------------------------------------------------------------ *
+ * 发布页（可选带上分类 / 板块，进入后默认选中）
+ * ------------------------------------------------------------------ */
 
 /** 发帖页；可选带上当前版块，进入后默认选中 */
 export function forumCreatePath(boardId?: string | null): string {
@@ -132,6 +217,17 @@ export function forumCreatePath(boardId?: string | null): string {
     ? PAGE_PATHS.forumCreate
     : `${PAGE_PATHS.forumCreate}?boardId=${encodeURIComponent(boardId)}`
 }
+
+/** 找搭子发布页；可选带上板块，进入后默认选中该板块的活动类型 */
+export function buddyCreatePath(section?: string | null): string {
+  return section == null || section === ''
+    ? PAGE_PATHS.buddyCreate
+    : `${PAGE_PATHS.buddyCreate}?section=${encodeURIComponent(section)}`
+}
+
+/* ------------------------------------------------------------------ *
+ * 举报
+ * ------------------------------------------------------------------ */
 
 export interface ForumReportParams {
   targetType: 'POST' | 'REPLY'
@@ -144,10 +240,13 @@ export function forumReportPath(params: ForumReportParams): string {
   )}&targetId=${encodeURIComponent(params.targetId)}`
 }
 
-/** 从页面参数里安全取 id（`useRouter().params.id` 可能是 string | undefined） */
-export function readIdParam(params: Record<string, string | undefined>): string | null {
-  const id = params.id
-  return id === undefined || id === '' ? null : id
+/* ------------------------------------------------------------------ *
+ * 宿舍矛盾（匿名，凭追踪码寻址）
+ * ------------------------------------------------------------------ */
+
+/** 宿舍矛盾：详情靠追踪码而不是 id 寻址 */
+export function dormHarmonyDetailPath(trackCode: string): string {
+  return `${PAGE_PATHS.dormHarmonyHome}?trackCode=${encodeURIComponent(trackCode)}`
 }
 
 /* ------------------------------------------------------------------ *
@@ -188,17 +287,6 @@ export function wildlifeMapPath(): string {
 /* ------------------------------------------------------------------ *
  * buddy（找搭子）
  * ------------------------------------------------------------------ */
-
-export function buddyDetailPath(id: string): string {
-  return `${PAGE_PATHS.buddyDetail}?id=${encodeURIComponent(id)}`
-}
-
-/** 发布页；可选带上板块，进入后默认选中该板块的活动类型 */
-export function buddyCreatePath(section?: string | null): string {
-  return section == null || section === ''
-    ? PAGE_PATHS.buddyCreate
-    : `${PAGE_PATHS.buddyCreate}?section=${encodeURIComponent(section)}`
-}
 
 export function buddyProfilePath(): string {
   return PAGE_PATHS.buddyProfile
