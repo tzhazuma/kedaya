@@ -44,7 +44,12 @@ export type UpdateSchemaMatchesDomain = AssertAssignable<UpdateScheduleCourseInp
  */
 @ApiTags('schedule · 课表')
 @Controller(modulePath('schedule'))
-@UseGuards(OptionalAuthGuard)
+// ⚠️ 契约 §11.4 **I4**：课表属校园系统数据，必须「已登录 **且** 已绑定 cpdaily」。
+// 顺序不能反 —— AuthGuard 先解出身份，CampusBindingGuard 才能判断绑定。
+// 曾用 `OptionalAuthGuard`（未登录也放行）：那会让「未登录」与「未绑定」
+// 两种状态**无法区分**，而它们对用户的出路完全不同（去登录 / 去绑定）。
+@UseGuards(AuthGuard, CampusBindingGuard)
+@RequireCampusBinding('cpdaily')
 export class ScheduleController {
   constructor(@Inject(ScheduleCourseService) private readonly service: ScheduleCourseService) {}
 
