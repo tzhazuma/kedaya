@@ -45,6 +45,6 @@ Web 的模块交付状态以 `apps/web/src/domain/models/delivery.ts` 为**唯�
 ```bash
 npm run typecheck -w @kedaya/api && npm run test -w @kedaya/api && npm run lint -w @kedaya/api
 npm run typecheck -w @kedaya/miniapp && npm run test -w @kedaya/miniapp && npm run lint -w @kedaya/miniapp
-npm run build:weapp
+npm run build:weapp && npm run verify:weapp -w @kedaya/miniapp
 npm run typecheck -w @kedaya/web && npm run test -w @kedaya/web && npm run lint -w @kedaya/web
 ```

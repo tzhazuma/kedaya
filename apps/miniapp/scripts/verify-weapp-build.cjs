@@ -62,12 +62,20 @@ for (const [id, { ast, outer }] of modules) {
     },
   });
 }
-for (const category of ['cat', 'bird', 'swan', 'hedgehog', 'squirrel', 'insect', 'other'])
-  assert.ok(fs.existsSync(path.join(root, `assets/wildlife/${category}.png`)), `Missing marker icon: ${category}`);
+for (const marker of ['spot', 'sighting', 'sensitive', 'track'])
+  assert.ok(fs.existsSync(path.join(root, `assets/wildlife/marker-${marker}.png`)), `Missing marker icon: ${marker}`);
 const app = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
-assert.ok(app.pages.includes('presentation/pages/wildlife/map/index'));
+// 页面路由既可能在主包（`app.pages`），也可能在分包（`app.subPackages[].pages`）。
+// wildlife 三页都在分包里 —— 只看 `app.pages` 会漏判，这里合并后再断言。
+const subpackages = app.subPackages ?? [];
+const subpackageRoots = subpackages.map(entry => `${entry.root}/`);
+const allPages = [
+  ...app.pages,
+  ...subpackages.flatMap(entry => entry.pages.map(page => `${entry.root}/${page}`)),
+];
+assert.ok(allPages.includes('presentation/pages/wildlife/map/index'));
 assert.ok(app.permission['scope.userLocation']);
-for (const page of app.pages) {
+for (const page of allPages) {
   assert.ok(!page.endsWith('.html'), `Invalid WeChat page route: ${page}`);
   // wxss is optional: Taro extracts shared page styling into common.wxss.
   for (const extension of ['.js', '.json', '.wxml'])
@@ -77,9 +85,14 @@ for (const tab of app.tabBar.list) assert.ok(app.pages.includes(tab.pagePath), `
 const project = JSON.parse(fs.readFileSync(path.join(root, 'project.config.json'), 'utf8'));
 assert.equal(project.setting.compileHotReLoad, false);
 assert.equal(project.setting.useApiHook, false);
-assert.ok(fs.existsSync(path.join(root, 'assets/wildlife/campus.jpg')));
-const bytes = fs.readdirSync(root, { recursive: true }).reduce((sum, name) => {
-  const stat = fs.statSync(path.join(root, name)); return sum + (stat.isFile() ? stat.size : 0);
-}, 0);
+// 微信**主包**上限 2 MiB：只统计主包（排除分包根目录下的文件）。
+// 早先的实现把整份 dist 当主包统计，分包一多必然误报（分包天然属于"总包 20 MiB"那一档）。
+const bytes = fs
+  .readdirSync(root, { recursive: true })
+  .map(name => String(name).split(path.sep).join('/'))
+  .filter(name => !subpackageRoots.some(prefix => name.startsWith(prefix)))
+  .reduce((sum, name) => {
+    const stat = fs.statSync(path.join(root, name)); return sum + (stat.isFile() ? stat.size : 0);
+  }, 0);
 assert.ok(bytes < 2 * 1024 * 1024, `Main package exceeds 2 MiB: ${bytes}`);
-console.log(`WeChat build verified: ${Object.keys(factories).length} module factories, ${componentImports} JSX imports, coherent chunks, no temporary diagnostics, campus assets and package ${(bytes / 1024 / 1024).toFixed(2)} MiB.`);
+console.log(`WeChat build verified: ${Object.keys(factories).length} module factories, ${componentImports} JSX imports, coherent chunks, no temporary diagnostics, main package ${(bytes / 1024 / 1024).toFixed(2)} MiB (excludes ${subpackageRoots.length} subpackages).`);

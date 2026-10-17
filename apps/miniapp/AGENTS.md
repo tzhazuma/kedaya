@@ -15,6 +15,7 @@
 - 表单只用 `KdyField`，筛选与单选只用 `KdyChip`；业务模块统一「列表 → 发布 → 详情」三页结构，悬浮操作区必须叠加 `env(safe-area-inset-bottom)`。
 - 样式里禁止 WXSS 不支持的选择器：`.a > :first-child` / `>` + `*` / 裸 `*`（会让 `common.wxss` 编译失败、全部页面白屏）。图标字体已在 `src/presentation/theme/icon-font.scss` 里 base64 内联，入口由 `config/index.ts` 的 alias 接管，不要改回 `//at.alicdn.com` 网络字体。`src/presentation/theme/__tests__/wxss-safety.test.ts` 会守住这些约束。
 - 新增页面必须同步 `src/app/routes.ts`、`src/app.config.ts` 与首页的模块入口映射。
-- 修改后执行 `npm run typecheck -w @kedaya/miniapp`、`npm run test -w @kedaya/miniapp`、`npm run build:weapp`；涉及视觉需在微信开发者工具检查，H5 预览不能替代真机验证。
+- 修改后执行 `npm run typecheck -w @kedaya/miniapp`、`npm run test -w @kedaya/miniapp`、`npm run build:weapp`、`npm run verify:weapp -w @kedaya/miniapp`；涉及视觉需在微信开发者工具检查，H5 预览不能替代真机验证。
+- `src/assets/` **只放被代码引用的资源**：`assets/tabs/*.png` 是 tabBar 图标（必须在主包），`assets/wildlife/marker-{spot,sighting,sensitive,track}.png` 由 `presentation/theme/mapColors.ts` 的 `MAP_MARKER_ICONS` 引用。**不要提交没人引用的图片** —— 微信**主包上限 2 MiB**，一份 1 MB 的底图就能把主包顶穿、导致无法上传。`verify:weapp` 会守住主包体积、全部分包页面齐全、构建指纹（`// kedaya-build:<hash>`，由 `config/coherent-build.ts` 注入）一致。
 
 详细设计规范见仓库 `docs/miniapp-ui.md`。

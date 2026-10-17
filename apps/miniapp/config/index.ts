@@ -6,6 +6,7 @@ import type { IProjectConfig } from '@tarojs/taro/types/compile'
 
 import devConfig from './dev'
 import prodConfig from './prod'
+import { CoherentBuildPlugin } from './coherent-build'
 
 /**
  * 设计令牌 SCSS 入口。
@@ -121,6 +122,18 @@ const baseConfig: UserConfigExport<'webpack5'> = {
         .prepend(path.resolve(__dirname, '..', 'node_modules'))
         // 保留默认的「逐级向上找 node_modules」语义（`react` 之类被提升到仓库根）。
         .add('node_modules')
+
+      /**
+       * 构建指纹（`// kedaya-build:<hash>`，见 `config/coherent-build.ts`）。
+       *
+       * `scripts/verify-weapp-build.cjs` 与 `scripts/publish-weapp.cjs` 靠它判断
+       * 「这份 dist 是同一次完整构建的产物」：所有分包 chunk 的指纹必须一致，
+       * 否则微信会复用旧的文件缓存、出现「页面已更新但代码没更新」。
+       *
+       * ⚠️ 这个插件**必须**挂上，否则 `npm run verify:weapp` 会在
+       * `missing build fingerprint` 上直接失败 —— 插件文件本身不生效。
+       */
+      chain.plugin('kedaya-coherent-build').use(CoherentBuildPlugin)
     },
     postcss: {
       pxtransform: { enable: true, config: {} },
