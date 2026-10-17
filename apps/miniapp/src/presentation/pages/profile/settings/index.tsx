@@ -215,11 +215,11 @@ export default function PrivacySettingsPage() {
             )}
 
             <View className='kdy-privacy__export-block'>
-              <Text className='kdy-privacy__export-title'>已授权的模块（{exported.consents.length}）</Text>
+              <Text className='kdy-privacy__export-title'>同意记录（{exported.consents.length}）</Text>
               {exported.consents.length === 0 && <Text className='kdy-privacy__export-line'>无</Text>}
               {exported.consents.map((consent) => (
                 <Text key={consent.module} className='kdy-privacy__export-line'>
-                  {consent.nameZh} · v{consent.version}
+                  {consent.nameZh} · v{consent.version} · {consent.revokedAt === null ? '有效' : '已撤回'}
                 </Text>
               ))}
             </View>

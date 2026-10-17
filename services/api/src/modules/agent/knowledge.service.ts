@@ -82,7 +82,7 @@ export class KnowledgeService {
     options: { module?: string; limit?: number } = {},
   ): Promise<RetrievedDoc[]> {
     const limit = options.limit ?? 3;
-    const terms = tokenize(query);
+    const terms = expandQuery(tokenize(query), query);
     if (terms.length === 0) return [];
 
     const docs = await this.all();
@@ -106,7 +106,15 @@ export class KnowledgeService {
 
       if (score === 0) continue;
       if (options.module !== undefined && doc.module === options.module) score += MODULE_BOOST;
-      score *= KIND_WEIGHT[doc.kind];
+
+      /**
+       * 长度归一：二元组打分对**长文档**天然有利 —— 文档越长，越容易"撞上"
+       * 某个二元组（尤其"还有""多少"这类高频词）。不做归一的话，
+       * 用户问"卡里还有多少钱"会被一条很长的课表说明抢走补充位置。
+       * 用 `sqrt(len/100)` 这种温和的惩罚：短文档几乎不受影响，长文档明显降权。
+       */
+      const lengthPenalty = Math.sqrt(Math.max(1, body.length / 100));
+      score = (score * KIND_WEIGHT[doc.kind]) / lengthPenalty;
 
       scored.push({ doc, score: Math.round(score * 100) / 100, matched: [...new Set(matched)] });
     }
@@ -116,6 +124,44 @@ export class KnowledgeService {
       .slice(0, limit);
   }
 }
+
+/**
+ * 查询扩展：口语说法 → 规范词。
+ *
+ * 用户说的是「我卡里还有多少钱」，白名单文档里写的是「余额」「消费」——
+ * 二元组检索**永远**匹配不上这种改写（两者没有公共二元组）。
+ * 在这类"用户口语 ≠ 文档用词"的场景里，加一层极小的同义映射，
+ * 比引入 embedding 便宜得多，也仍然可解释、可回归。
+ *
+ * 规则刻意写得**保守**：只在问题里出现明确线索时才补词，
+ * 不做泛化联想（否则会把无关文档拉上来，比匹配不到更糟）。
+ */
+export function expandQuery(terms: string[], query: string): string[] {
+  const extended = new Set(terms);
+  for (const rule of QUERY_EXPANSIONS) {
+    if (!rule.test.test(query)) continue;
+    for (const term of rule.terms) extended.add(term);
+  }
+  return [...extended];
+}
+
+/** 口语 → 规范词（`test` 命中时才生效） */
+const QUERY_EXPANSIONS: readonly { test: RegExp; terms: string[] }[] = [
+  // 校园卡：卡里 / 饭卡 / 还剩多少 / 花了多少 → 余额、消费
+  { test: /(卡里|饭卡|余额|还剩|还剩多少|多少钱|花了|消费|充值)/, terms: ['余额', '消费'] },
+  // 挂失：丢了 / 找不到 / 不见了 → 挂失
+  { test: /(丢了|掉了|不见了|找不到|挂失)/, terms: ['挂失', '校园卡'] },
+  // 隐私：授权 / 撤回 / 画像 → 同意、隐私
+  { test: /(授权|同意|撤回|隐私|画像)/, terms: ['同意', '隐私'] },
+  // 课表：上什么课 / 在哪上 / 几点上 → 课表、教室
+  { test: /(上什么课|有哪些课|在哪上|几点上|下节课|下一节)/, terms: ['课表', '节'] },
+  // 同步 / 更新 → 同步
+  { test: /(同步|更新课表|拉取)/, terms: ['同步'] },
+  // 实名 / 打码 → 实名
+  { test: /(实名|打码|学号|真实姓名)/, terms: ['实名'] },
+  // 登录方式
+  { test: /(登录|注册|密码|微信)/, terms: ['登录'] },
+];
 
 /**
  * 中文（无分词器）的轻量切分：
@@ -148,8 +194,20 @@ export function tokenize(query: string): string[] {
 /** 高频虚词单字（单独出现时不作为检索词） */
 const STOP_CHARS = new Set(['的', '了', '吗', '呢', '啊', '我', '你', '他', '在', '是', '有', '和', '就', '都', '也']);
 
-/** 高频虚词二元组 */
-const STOP_BIGRAMS = new Set(['怎么', '如何', '什么', '可以', '能不能', '为什', '我一', '我的', '这个', '那个']);
+/** 高频虚词二元组（疑问/指代，命中它们不算"这条文档在讲这个"） */
+const STOP_BIGRAMS = new Set([
+  '怎么',
+  '如何',
+  '什么',
+  '哪些',
+  '可以',
+  '能不能',
+  '为什',
+  '我一',
+  '我的',
+  '这个',
+  '那个',
+]);
 
 /**
  * 白名单护栏：任何不属于允许来源的文档都会让 load 失败。

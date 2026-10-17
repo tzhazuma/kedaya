@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { KnowledgeService, assertAllowListed, tokenize } from './knowledge.service';
+import { KnowledgeService, assertAllowListed, expandQuery, tokenize } from './knowledge.service';
 import type { KnowledgeDoc, KnowledgePort } from './domain/agent.domain';
 
 /**
@@ -73,6 +73,66 @@ describe('KnowledgeService.retrieve', () => {
   it('空语料也能工作（空库部署时 agent 不应崩）', async () => {
     const service = serviceOf([]);
     await expect(service.retrieve('课表')).resolves.toEqual([]);
+  });
+});
+
+/**
+ * 相关性回归。
+ *
+ * 这几条对应的是**真实观测到的**答非所问：用户问「我卡里还有多少钱」，
+ * 白名单文档里写的是「余额」「消费」，二元组检索一个都匹配不上，
+ * 结果补充内容被一条很长的课表说明（撞上了虚词「还有」）抢走，
+ * 于是余额回答后面跟了一句「补充：课表页会…」。
+ *
+ * 修法不是引入 embedding（那是给 agent 增加一个外部依赖），
+ * 而是两层确定性补偿：**口语 → 规范词的查询扩展** + **长度归一**。
+ */
+describe('检索相关性（口语 ≠ 文档用词）', () => {
+  const corpus = [
+    doc({
+      id: 'guide:card-balance',
+      title: '校园卡余额与消费提示',
+      body: '校园卡页显示余额与最近消费，余额偏低会提醒；还能按日均消费推算还能撑几天。',
+      module: 'campus-card',
+    }),
+    doc({
+      // 故意做得又长又"话多"：不做长度归一时，它靠虚词就能抢到高分
+      id: 'guide:schedule-features',
+      title: '课表里那些有用的提示',
+      body:
+        '课表页还会告诉你下一节几点上课还有多久，冲突会明确标出来。还有一点：如果上游系统暂时不可用，' +
+        '页面会显示上一次成功同步的结果，不会清空。还有一点：可以在课表页手动加课。',
+      module: 'schedule',
+    }),
+    doc({
+      id: 'guide:privacy-consent',
+      title: '隐私开关、同意与数据导出',
+      body: '敏感模块需要单独同意，随时可以撤回；你的数据可以导出带走。',
+      module: 'profile',
+    }),
+    doc({
+      id: 'guide:module-overview',
+      title: '小程序里都有哪些模块',
+      body: '身份、课表、校园卡、我的，以及跳蚤市场、论坛等业务模块。',
+      module: null,
+    }),
+  ];
+
+  it('「我卡里还有多少钱」命中余额文档，而不是被长文档里的虚词抢走', async () => {
+    const service = serviceOf(corpus);
+    const hits = await service.retrieve('我卡里还有多少钱？');
+    expect(hits[0]?.doc.id).toBe('guide:card-balance');
+  });
+
+  it('「我授权了哪些敏感模块」命中隐私文档（「哪些」这种疑问词不算命中信号）', async () => {
+    const service = serviceOf(corpus);
+    const hits = await service.retrieve('我授权了哪些敏感模块？');
+    expect(hits[0]?.doc.id).toBe('guide:privacy-consent');
+  });
+
+  it('查询扩展只在有明确线索时才补词（保守，不做泛化联想）', () => {
+    expect(expandQuery(tokenize('今天天气不错'), '今天天气不错')).toEqual(tokenize('今天天气不错'));
+    expect(expandQuery(tokenize('卡里还剩多少'), '卡里还剩多少')).toContain('余额');
   });
 });
 

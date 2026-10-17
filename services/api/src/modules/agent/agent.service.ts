@@ -223,17 +223,29 @@ export function composeDeterministic(
   notices: readonly string[],
 ): string {
   const lines: string[] = [];
-
-  if (facts.length > 0) {
-    for (const fact of facts) {
-      lines.push(`【${fact.label}】${fact.value}${fact.simulated === true ? '（演示数据）' : ''}`);
-    }
-  }
-
-  // 有事实时只补一条最相关的说明；没有事实时用检索结果作答
   const topDoc = docs.find((item) => item.score > 0);
-  if (topDoc !== undefined) {
-    lines.push(facts.length > 0 ? `补充：${topDoc.doc.body}` : topDoc.doc.body);
+
+  const factLines = facts.map(
+    (fact) => `【${fact.label}】${fact.value}${fact.simulated === true ? '（演示数据）' : ''}`,
+  );
+
+  /**
+   * 「需要登录」不是回答，而是**门槛说明**。
+   *
+   * 用户问「校园卡丢了怎么办」时命中了知识条目，同时也命中了校园卡工具的关键词；
+   * 匿名状态下如果先输出「要查校园卡需要先登录」，用户会以为可达鸭答非所问。
+   * 所以：命中知识条目 + 出现登录门槛时，**先给做法，再补门槛与登录入口**。
+   */
+  const loginGated = facts.some((fact) => fact.tool === 'auth.required');
+
+  if (loginGated && topDoc !== undefined) {
+    lines.push(topDoc.doc.body);
+    lines.push(...factLines);
+  } else {
+    lines.push(...factLines);
+    if (topDoc !== undefined) {
+      lines.push(facts.length > 0 ? `补充：${topDoc.doc.body}` : topDoc.doc.body);
+    }
   }
 
   for (const notice of notices) lines.push(notice);

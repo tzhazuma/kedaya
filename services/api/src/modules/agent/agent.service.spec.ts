@@ -153,4 +153,23 @@ describe('composeDeterministic', () => {
     expect(composeDeterministic([{ tool: 't', label: '余额', value: '¥23.50' }], [], [])).toContain('¥23.50');
     expect(composeDeterministic([], [doc('guide:x', '课表同步', '整体覆盖本地课表')], [])).toBe('整体覆盖本地课表');
   });
+
+  it('匿名问"怎么做"时先给做法再给登录门槛（不要答非所问）', () => {
+    const answer = composeDeterministic(
+      [{ tool: 'auth.required', label: '需要先登录', value: '要查校园卡需要先登录' }],
+      [doc('guide:lost', '校园卡丢了怎么办', '到自助终端办理挂失')],
+      [],
+    );
+    expect(answer.startsWith('到自助终端办理挂失')).toBe(true);
+    expect(answer).toContain('需要先登录');
+  });
+
+  it('其余情况下"需要登录"仍作为首条事实（没有知识条目可答时它就是回答本身）', () => {
+    const answer = composeDeterministic(
+      [{ tool: 'auth.required', label: '需要先登录', value: '要查课表需要先登录' }],
+      [],
+      [],
+    );
+    expect(answer.startsWith('【需要先登录】')).toBe(true);
+  });
 });

@@ -261,8 +261,22 @@ export function createMockAgentRepository(options: MockAgentOptions): AgentRepos
         actions.push(navigate('打开相关页面', knowledge.path))
       }
 
-      const lines: string[] = facts.map((fact) => `【${fact.label}】${fact.value}${fact.simulated === true ? '（演示数据）' : ''}`)
-      if (knowledge !== undefined) lines.push(facts.length > 0 ? `补充：${knowledge.answer}` : knowledge.answer)
+      // 与服务端 `composeDeterministic` 同一条规则：匿名问"怎么做"时，
+      // 先给做法（知识条目），再补登录门槛 —— 否则用户会以为可达鸭答非所问
+      const factLines = facts.map(
+        (fact) => `【${fact.label}】${fact.value}${fact.simulated === true ? '（演示数据）' : ''}`,
+      )
+      const loginGated = facts.some((fact) => fact.tool === 'auth.required')
+      const lines: string[] = []
+      if (loginGated && knowledge !== undefined) {
+        lines.push(knowledge.answer)
+        lines.push(...factLines)
+      } else {
+        lines.push(...factLines)
+        if (knowledge !== undefined) {
+          lines.push(facts.length > 0 ? `补充：${knowledge.answer}` : knowledge.answer)
+        }
+      }
       lines.push(...notices)
       if (lines.length === 0) {
         lines.push('这个问题我还不太会答。可以试着问我：今天有哪些课、校园卡还剩多少钱、怎么绑定校园系统、我授权了哪些模块 —— 或者换个说法再问我一次。')
