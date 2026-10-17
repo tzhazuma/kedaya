@@ -1301,22 +1301,167 @@ paths:
       responses:
         '201': { $ref: '#/components/responses/ModuleCreated' }
 
-  /techpie/items:
+  # ==================================================================
+  # techpie —— 与校园系统 / GeekPie 体系互联（规格 docs/features/techpie-integration.md §8.1）
+  # ⚠️ 本轮只实现 **Phase 0**（零合规风险入口）。Phase 1–3 阻塞于信息办 / GeekPie 书面回复。
+  # ==================================================================
+  /techpie/links:
     get:
       tags: [techpie]
-      summary: TechPie 互联条目
+      summary: 列出我的全部绑定（**不含任何凭证**）
+      description: |
+        返回 `CampusBindingSummary[]`。**响应绝不包含凭证**（cookie / token / CASTGC / 密码）。
+        契约不变式 I1 要求一级身份的序列化不含 8 个禁用键 —— 本条端点同样适用。
       responses:
         '200': { $ref: '#/components/responses/ModuleList' }
     post:
       tags: [techpie]
-      summary: 建立 TechPie 互联
+      summary: 发起绑定
+      description: |
+        ⚠️ **Phase 0 只允许 OPENID 通道（校园卡）**。
+        需要 CASTGC 的绑定（eGate / CpDaily / 教务）属 **Phase 1，尚未实现** ——
+        它阻塞于信息办对「学校是否允许第三方代持校园会话」的**书面回复**（U7）。
+        在拿到回复前**不实现该路径**：一旦落库就有了未经授权的凭证副本，
+        事后清理无法消除已发生的风险。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/TechPieLinkCreate' }
+            schema: { $ref: '#/components/schemas/TechpieLinkCreate' }
       responses:
         '201': { $ref: '#/components/responses/ModuleCreated' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /techpie/links/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [techpie]
+      summary: 绑定详情（**不含凭证**）
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [techpie]
+      summary: 解绑
+      description: |
+        解绑必须**真正删除** `CampusSession` 里的凭证副本，而不只是把 link 标记为失效 ——
+        否则"解绑"只是让用户以为凭证没了。
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+
+  /techpie/links/{id}/renew:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [techpie]
+      summary: 手动续期（契约 §11.2 冻结 action：`renew`）
+      description: |
+        Phase 0 下这是**手动**续期。Phase 3 的自动续期依赖 GeekPie 是否开放
+        `/api/auth/renew`（U8，未决）。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+
+  /techpie/capabilities:
+    get:
+      tags: [techpie]
+      summary: 当前用户可用的校园能力清单
+      description: |
+        **未绑定项不是错误** —— 它们返回能力条目 + `CAMPUS_BINDING_REQUIRED` 提示，
+        客户端据此**引导用户去绑定**，而不是显示报错。
+        契约不变式 I4：已登录但未绑定 → `409 CAMPUS_BINDING_REQUIRED`（**不是 401**）——
+        401 会误导客户端去重新登录，而用户其实已经登录了。
+      responses:
+        '200':
+          description: 能力清单
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          capabilities:
+                            type: array
+                            items: { $ref: '#/components/schemas/CampusCapability' }
+                          unboundCount: { type: integer }
+
+  /techpie/sync-jobs:
+    get:
+      tags: [techpie]
+      summary: 我的同步任务状态（游标分页）
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200': { $ref: '#/components/responses/ModuleList' }
+
+  /techpie/webview-session:
+    post:
+      tags: [techpie]
+      summary: 换取**一次性** WebView 注入票据（契约不变式 I3 的唯一出口）
+      description: |
+        ⚠️ **这是全仓唯一可以产出 cookie header 的出口。**
+        契约不变式 I3 要求 `cookieHeaderFor(` 的**全部调用点**都在 `webview-session/` 目录内，
+        由架构测试（静态扫描）钉死 —— 因为 cookie 只能有一个出口，否则无法审计。
+
+        ## 为什么它是这个形状（契约 §6.1 的例外）
+        它**不是**对已有资源施加的领域动作，而是**创建一个一次性票据资源**
+        （与 `groupbuy` 的创建同类）。契约 §6.1 的 `POST /<mod>/items/:id/<action>`
+        形状是给"对已有资源施加领域动作"用的，票据不属于任何 link。
+        契约 §11.18-A 已裁决接受该形状。
+
+        ## `targetUrl` 的硬约束（契约 §11.18-B，fail-closed）
+        - 不在白名单 → `403 FORBIDDEN`
+        - **只允许 `https`**；禁止 `http`、禁止 IP 字面量、禁止非 443 端口、
+          禁止 `@` userinfo（`https://shanghaitech.edu.cn@evil.com` 是经典绕过）
+        - **不得**通配整个 `shanghaitech.edu.cn`（等于没有白名单，还会放行被攻陷的子域）
+        - 校验必须在**服务端**做 —— 客户端传入的 `targetUrl` 一律不可信
+        - ⚠️ 白名单内容目前是**占位**（契约未决问题 U11）
+
+        ## 小程序端的现实（契约 §11.10-F）
+        微信小程序的 `web-view` **无法注入 cookie**，所以 **I3 在小程序端没有出口**。
+        小程序必须走「用户在校园系统页面自己登录、我们不接触 cookie」的路径。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [linkId, targetUrl]
+              properties:
+                linkId: { type: string }
+                targetUrl:
+                  type: string
+                  format: uri
+                  description: 必须是服务端白名单内的 https URL
+      responses:
+        '201':
+          description: 一次性票据（**用完即失效；客户端不得缓存、不得记入日志/埋点**）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          ticket: { type: string }
+                          targetUrl: { type: string, format: uri }
+                          expiresAt: { type: string, format: date-time }
+                          singleUse: { type: boolean, const: true }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /facility/items:
     get:
@@ -2320,14 +2465,66 @@ components:
           enum: [sso, schedule, assignment, campus-card]
         linked: { type: boolean }
         linkedAt: { type: string, format: date-time }
-    TechPieLinkCreate:
+    TechpieLinkCreate:
       type: object
-      required: [kind]
+      required: [provider]
       properties:
-        kind:
+        provider:
           type: string
-          enum: [sso, schedule, assignment, campus-card]
-        token: { type: string }
+          enum: [cas, egate, cpdaily, ecard, techpie]
+          description: |
+            校园平台标识（契约 §11.10-B 裁决）。
+            ⚠️ **Phase 0 只接受 `ecard`**（校园卡走独立 OPENID 通道，与 CASTGC 完全解耦）。
+            其余值属 Phase 1，在信息办书面回复前**不实现**（U7）。
+        openid:
+          type: string
+          description: 校园卡 OPENID 通道的标识（**不是** CASTGC）
+
+    TechpieLink:
+      type: object
+      description: 一条绑定。**不含任何凭证字段** —— 凭证只在 `CampusSession` 里，且永不出现在响应中。
+      required: [id, provider, status]
+      properties:
+        id: { type: string }
+        provider:
+          type: string
+          enum: [cas, egate, cpdaily, ecard, techpie]
+        status:
+          type: string
+          enum: [PENDING, ACTIVE, EXPIRED, REVOKED, FAILED]
+        displayName: { type: string }
+        boundAt: { type: [string, 'null'], format: date-time }
+        expiresAt: { type: [string, 'null'], format: date-time }
+        lastSyncAt: { type: [string, 'null'], format: date-time }
+        phase:
+          type: string
+          enum: [phase0, phase1]
+          description: 该绑定属于哪个接入阶段；`phase1` 在信息办回复前不可用
+
+    CampusCapability:
+      type: object
+      required: [key, nameZh, available]
+      properties:
+        key:
+          type: string
+          description: 能力标识（对应规格 §3.1 的 19 个冻结模块 ID 之一）
+        nameZh: { type: string }
+        available:
+          type: boolean
+          description: |
+            当前用户是否可用。**`false` 不是错误** —— 客户端应据此**引导绑定**，
+            而不是显示报错（契约不变式 I4：未绑定返回 409 而非 401）。
+        requiredProvider:
+          type: [string, 'null']
+          enum: [cas, egate, cpdaily, ecard, techpie, null]
+        phase:
+          type: string
+          enum: [phase0, phase1, phase2, phase3]
+        blockedReason:
+          type: [string, 'null']
+          description: |
+            不可用的人可读原因。**必须诚实**：例如 Phase 1 的能力要写明
+            "等待学校信息办确认"，而不是含糊的"暂不可用"。
 
     FacilityBooking:
       type: object
