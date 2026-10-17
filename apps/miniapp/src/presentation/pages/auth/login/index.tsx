@@ -51,7 +51,7 @@ export default function LoginPage() {
     <View className='kdy-page kdy-auth'>
       <KdyHeading
         title='欢迎回来'
-        subtitle='登录后即可发布、接单、发帖，和同学一起过日子。'
+        subtitle='登录后即可发布、接单、发帖。'
       />
 
       <KdyCard title='微信一键登录' elevated={false}>
@@ -123,7 +123,7 @@ export default function LoginPage() {
       </KdyCard>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
       </Text>
     </View>
   )

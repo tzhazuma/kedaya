@@ -69,7 +69,6 @@ export default function HomePage() {
             编辑
           </Text>
         }
-        elevated={false}
       >
         <View className='kdy-home__grid'>
           {entries.map((entry) => (
@@ -108,7 +107,7 @@ export default function HomePage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
       </Text>
 
       <KdyAgentFab module='home' page={PAGE_PATHS.home} />

@@ -312,7 +312,7 @@ export default function WildlifeTracksPage() {
       )}
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
         轨迹为推断结果，不可用于任何科研或管理决策依据。
       </Text>
     </View>

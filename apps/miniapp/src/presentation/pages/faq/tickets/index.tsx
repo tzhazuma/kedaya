@@ -187,7 +187,7 @@ export default function FaqTicketsPage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台。工单由志愿者处理，不承诺响应时限。
+        第三方非官方平台。工单由志愿者处理，不承诺响应时限。
       </Text>
     </View>
   )

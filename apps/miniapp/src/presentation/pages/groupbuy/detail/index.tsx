@@ -150,7 +150,7 @@ export default function GroupBuyDetailPage() {
     <View className='kdy-page kdy-gb-detail'>
       <KdyHeading
         title='好物一起，快乐加倍'
-        subtitle='确认拼单信息，再和同学一起出发。'
+        subtitle='确认拼单信息后再出发。'
       />
       <KdyCard
         title={summary.title}
@@ -270,7 +270,7 @@ export default function GroupBuyDetailPage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台。拼单为同学间自发组织，平台不代收货款。
+        第三方非官方平台。拼单为同学间自发组织，平台不代收货款。
       </Text>
     </View>
   )

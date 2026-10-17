@@ -171,7 +171,7 @@ export default function ErrandListPage() {
     <View className='kdy-page kdy-errand'>
       <KdyHeading
         title='跑腿互助'
-        subtitle='代取、代买、代送 —— 校园里的小事，顺手帮一把。'
+        subtitle='代取、代买、代送；悬赏由同学间自行结算。'
       />
 
       <View className='kdy-errand__toolbar'>
@@ -364,7 +364,7 @@ export default function ErrandListPage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。悬赏属同学间自愿互助，平台不参与资金结算。
+        第三方非官方平台 · 与上海科技大学官方系统无关。悬赏属同学间自愿互助，平台不参与资金结算。
       </Text>
     </View>
   )

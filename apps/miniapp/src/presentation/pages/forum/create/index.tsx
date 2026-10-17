@@ -230,7 +230,7 @@ export default function ForumCreatePage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台。请遵守社区规范，不要发布违法违规内容。
+        第三方非官方平台。请遵守社区规范，不要发布违法违规内容。
       </Text>
     </View>
   )

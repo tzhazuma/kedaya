@@ -51,7 +51,7 @@ export const AI_PORTRAIT_SENSITIVITY_LABEL = '高敏感'
 
 /** 第三方非官方声明（与其它页面同源） */
 export const AI_PORTRAIT_DISCLAIMER =
-  '可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。画像只基于你自己在可达鸭里的使用记录，不代表任何校方评价。'
+  '第三方非官方平台 · 与上海科技大学官方系统无关。画像只基于你自己在可达鸭里的使用记录，不代表任何校方评价。'
 
 /** 「心理支持与宿舍矛盾不参与画像」—— 这条是信任基础，不是可选文案 */
 export const AI_PORTRAIT_EXCLUSION_TEXT = '心理支持与宿舍矛盾的数据不参与画像。'

@@ -219,7 +219,7 @@ export default function GroupBuyListPage() {
     <View className='kdy-page kdy-gb-list'>
       <KdyHeading
         title='一起拼单，好物共享'
-        subtitle='和身边的同学，凑一份刚刚好的快乐。'
+        subtitle='同学间自发拼单，平台不参与资金往来。'
       />
 
       <View className='kdy-gb-list__chips'>
@@ -335,7 +335,7 @@ export default function GroupBuyListPage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。拼单为同学间自愿拼团，平台不参与资金往来。
+        第三方非官方平台 · 与上海科技大学官方系统无关。拼单为同学间自愿拼团，平台不参与资金往来。
       </Text>
     </View>
   )

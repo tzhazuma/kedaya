@@ -119,10 +119,7 @@ export default function MessagesPage() {
 
   return (
     <View className='kdy-page kdy-messages'>
-      <KdyHeading
-        title='消息'
-        subtitle='不错过每一份期待，也给生活留一点安静。'
-      />
+      <KdyHeading title='消息' />
 
       <View className='kdy-messages__toolbar'>
         <View className='kdy-messages__scopes'>
@@ -233,7 +230,7 @@ export default function MessagesPage() {
       </KdyCard>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
       </Text>
 
       <KdyAgentFab module='notifications' page={PAGE_PATHS.messages} />

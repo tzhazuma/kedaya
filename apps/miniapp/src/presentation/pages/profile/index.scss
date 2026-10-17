@@ -1,8 +1,77 @@
 .kdy-profile__hint {
   display: block;
+  margin-top: $kdy-space-2;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
-  line-height: 1.7;
+  line-height: 1.6;
+}
+
+/* 身份卡：头像 + 昵称 + 一行状态，整卡可点（未登录 → 登录，已登录 → 编辑资料） */
+.kdy-profile__identity {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-4;
+  margin: $kdy-space-3 $kdy-space-5 $kdy-space-4;
+  padding: $kdy-space-4 $kdy-space-5;
+  border-radius: $kdy-radius-xl;
+}
+
+.kdy-profile__identity-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.kdy-profile__name {
+  display: block;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-lg;
+  font-weight: 600;
+}
+
+.kdy-profile__identity-action {
+  flex-shrink: 0;
+  color: $kdy-color-brand-strong;
+  font-size: $kdy-font-size-sm;
+  font-weight: 500;
+}
+
+/* 常用功能：4 列宫格，与首页宫格同一套图标尺寸（`.kdy-module-icon` 是全局样式） */
+.kdy-profile__grid {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: $kdy-space-4;
+}
+
+.kdy-profile__grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  width: 25%;
+  gap: $kdy-space-2;
+  min-width: 0;
+}
+
+.kdy-profile__grid-name {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.kdy-profile__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
+}
+
+/* 绑定状态：一行小标签 + 一行邮箱，替代原来三行「键值对」 */
+.kdy-profile__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
 }
 
 .kdy-profile__row {
@@ -10,11 +79,12 @@
   align-items: center;
   justify-content: space-between;
   gap: $kdy-space-3;
-  padding: $kdy-space-2 0;
+  min-height: 36px;
   border-bottom: 1px solid $kdy-color-border;
 }
 
 .kdy-profile__k {
+  flex-shrink: 0;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
 }
@@ -27,73 +97,20 @@
   word-break: break-all;
 }
 
-.kdy-profile__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $kdy-space-2;
-  margin-top: $kdy-space-4;
-}
-
-.kdy-profile__rule {
-  padding: $kdy-space-2 0;
-  border-bottom: 1px solid $kdy-color-border;
-}
-
-.kdy-profile__rule-title {
-  display: block;
-  color: $kdy-color-ink;
-  font-size: $kdy-font-size-sm;
-  font-weight: 600;
-}
-
-.kdy-profile__rule-detail {
-  display: block;
-  margin-top: $kdy-space-1;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-  line-height: 1.7;
-}
-.kdy-profile__identity {
-  display: flex;
-  align-items: center;
-  gap: $kdy-space-4;
-  margin: $kdy-space-3 $kdy-space-5 $kdy-space-5;
-  padding: $kdy-space-5;
-  border-radius: $kdy-radius-xl;
-}
-
-.kdy-profile__identity-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.kdy-profile__name {
-  display: block;
-  margin-bottom: $kdy-space-1;
-  font-size: $kdy-font-size-lg;
-  font-weight: 600;
-}
-
-.kdy-profile__link {
-  color: $kdy-color-brand-strong;
-  font-size: $kdy-font-size-sm;
-}
-
 .kdy-profile__error {
   display: block;
-  margin-top: $kdy-space-3;
   color: $kdy-color-danger;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
 
-/* 「校园服务」入口：一列可点击的导航行（箭头用 @taroify/icons，不用 emoji） */
+/* 「关于」里的文档入口：一列可点击的导航行（箭头用 @taroify/icons，不用 emoji） */
 .kdy-profile__nav {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: $kdy-space-3 0;
+  min-height: 44px;
   border-bottom: 1px solid $kdy-color-border;
 
   &:last-child {
@@ -101,23 +118,8 @@
   }
 }
 
-.kdy-profile__nav-body {
-  flex: 1;
-  min-width: 0;
-  padding-right: $kdy-space-3;
-}
-
 .kdy-profile__nav-title {
   display: block;
   color: $kdy-color-text;
   font-size: $kdy-font-size-md;
-  font-weight: 500;
-}
-
-.kdy-profile__nav-detail {
-  display: block;
-  margin-top: 2px;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-  line-height: $kdy-line-height-normal;
 }

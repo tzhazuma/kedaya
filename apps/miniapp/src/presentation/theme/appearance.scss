@@ -31,7 +31,7 @@ page,
 }
 
 .kdy-page-heading {
-  padding: $kdy-space-6 $kdy-space-5 $kdy-space-3;
+  padding: $kdy-space-5 $kdy-space-5 $kdy-space-2;
 }
 
 /*
@@ -40,17 +40,31 @@ page,
  * 放在全局样式里而不是某个页面的 scss：首页、服务大厅、发现页都用它，
  * 挂在页面样式下会变成"谁先加载谁说了算"——首页改了图标尺寸，
  * 发现页跟着变，但没人能从文件名看出这层耦合。
+ *
+ * 三个容易踩的点（都会表现成"图标丑 / 错位"）：
+ *   1. 图标是**字体字形**：不锁 `line-height` 就会继承 page 的 1.5，
+ *      字形框被撑高、视觉重心上移，和旁边 1 倍行高的图标对不齐 → 锁 1；
+ *   2. `flex-shrink: 0`：窄屏或长标签下不能被压扁成椭圆；
+ *   3. `box-sizing: border-box`：加了描边之后外边距不能变。
  */
 .kdy-module-icon {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: $kdy-radius-lg;
-  background: $kdy-color-brand-soft;
+  box-sizing: border-box;
+  width: 48px;
+  height: 48px;
+  border-radius: $kdy-radius-xl;
+  background: linear-gradient(
+    150deg,
+    color.mix($kdy-color-surface, $kdy-color-brand-soft, 42%),
+    $kdy-color-brand-soft
+  );
+  border: 1px solid rgba($kdy-color-brand, 0.3);
   color: $kdy-color-ink;
-  font-size: 24px;
+  font-size: 26px;
+  line-height: 1;
 }
 
 /* 导航格（「全部服务」这类），描边弱化，避免被误当成一个服务模块 */
@@ -65,7 +79,8 @@ page,
   color: $kdy-color-ink;
   font-size: $kdy-font-size-xxl;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.25;
+  letter-spacing: 0.5px;
 }
 
 .kdy-page-subtitle {
@@ -73,5 +88,5 @@ page,
   margin-top: $kdy-space-2;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-sm;
-  line-height: 1.7;
+  line-height: 1.6;
 }

@@ -154,7 +154,7 @@ export default function LostFoundListPage() {
     <View className='kdy-page kdy-lost'>
       <KdyHeading
         title='失物招领'
-        subtitle='丢了东西或被同学捡到，都可以在这里登记，让物品回到主人手里。'
+        subtitle='丢了或被捡到，都可以在这里登记。'
       />
 
       <View className='kdy-lost__toolbar'>
@@ -331,7 +331,7 @@ export default function LostFoundListPage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。证件类物品请交到保卫处或失物招领柜，不要只发在线上。
+        第三方非官方平台 · 与上海科技大学官方系统无关。证件类物品请交到保卫处或失物招领柜，不要只发在线上。
       </Text>
     </View>
   )

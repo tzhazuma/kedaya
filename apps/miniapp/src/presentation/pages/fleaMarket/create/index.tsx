@@ -108,7 +108,7 @@ export default function FleaMarketCreatePage() {
     <View className='kdy-page kdy-flea-create'>
       <KdyHeading
         title='发布闲置'
-        subtitle='如实描述成色与瑕疵，成交率会高很多。'
+        subtitle='如实描述成色与瑕疵。'
       />
 
       <KdyCard title='商品信息' elevated={false}>

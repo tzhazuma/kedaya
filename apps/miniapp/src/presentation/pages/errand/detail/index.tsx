@@ -450,7 +450,7 @@ export default function ErrandDetailPage() {
       />
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。悬赏由同学间自行结算，平台不参与资金往来。
+        第三方非官方平台 · 与上海科技大学官方系统无关。悬赏由同学间自行结算，平台不参与资金往来。
       </Text>
     </View>
   )

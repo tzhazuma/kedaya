@@ -21,7 +21,7 @@ import './index.scss'
 export default function CouPage() {
   return (
     <View className='kdy-page kdy-cou'>
-      <KdyHeading title='凑凑' subtitle='一个人凑不齐，凑一凑就够了。' />
+      <KdyHeading title='凑凑' />
 
       <View className='kdy-cou__row' onClick={() => void navigateTo(PAGE_PATHS.groupBuyList)}>
         <KdyModuleIcon id='cou' />
@@ -64,7 +64,7 @@ export default function CouPage() {
       </Text>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
       </Text>
 
       <KdyAgentFab module='groupbuy' page={PAGE_PATHS.cou} />

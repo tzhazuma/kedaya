@@ -72,7 +72,7 @@ export default function CampusCardPage() {
     <View className='kdy-page kdy-card-page'>
       <KdyHeading
         title='校园卡'
-        subtitle='余额、消费与挂失指引 —— 先说清"这数据是什么时候的"'
+        subtitle='余额与账单，都标着数据时间。'
       />
 
       {/* 缓存/上游不可用：必须显眼，且说清时间 */}

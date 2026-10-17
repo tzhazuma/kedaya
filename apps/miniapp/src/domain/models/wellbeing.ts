@@ -104,7 +104,7 @@ export const WELLBEING_CRISIS_NOTICE =
 export const WELLBEING_NOTE_HINT = '不需要填写姓名、学号，也请不要写他人的隐私信息。'
 
 export const WELLBEING_PLATFORM_DISCLAIMER =
-  '可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。心理支持模块只提供倾听与预约入口。'
+  '第三方非官方平台 · 与上海科技大学官方系统无关。心理支持模块只提供倾听与预约入口。'
 
 /**
  * 同意文案版本：改文案就改版本号，旧同意自动失效并重新征求（契约 §9）。

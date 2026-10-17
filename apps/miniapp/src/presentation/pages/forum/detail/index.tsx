@@ -313,7 +313,7 @@ export default function ForumDetailPage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台。论坛内容由同学发布，平台不保证其真实性。
+        第三方非官方平台。论坛内容由同学发布，平台不保证其真实性。
       </Text>
     </View>
   )

@@ -17,8 +17,8 @@ import './index.scss'
  *      页面只渲染 `answer / facts / sources`，把 `actions` 变成可点的跳转；
  *   2. **不静默**：请求失败也要落一条 agent 消息（带重试），
  *      绝不让用户的问题孤零零悬在那里 —— 那是死路；
- *   3. **不冒充**：`simulated`（演示数据）与 `degraded` / `usedModel`（规则还是模型）
- *      都如实显示，用户始终知道答案是怎么来的。
+ *   3. **不冒充**：`simulated`（演示数据）如实标注；模型不可用时退化成
+ *      `usedModel: null` 的规则回答，页面只淡淡标一个「基础回答」，不暴露模型名。
  *
  * 上下文：从悬浮球进来时带着 `module` / `page` 参数，
  * 首屏据此拉"这个页面能问什么"的建议问题，用户不用自己想怎么问。
@@ -109,10 +109,7 @@ function MessageBubble({
         {reply !== null && (
           <View className='kdy-agent__meta'>
             {reply.simulated && <Text className='kdy-agent__badge'>含演示数据</Text>}
-            <Text className='kdy-agent__badge'>
-              {reply.usedModel === null ? '规则回答' : `模型 · ${reply.usedModel}`}
-            </Text>
-            {reply.degraded && reply.usedModel !== null && <Text className='kdy-agent__badge'>已降级</Text>}
+            {reply.usedModel === null && <Text className='kdy-agent__badge'>基础回答</Text>}
           </View>
         )}
 
@@ -161,16 +158,16 @@ export default function AgentPage() {
   }
 
   const capabilities = state.capabilities
-  const modeLabel =
-    capabilities === null ? null : capabilities.mode === 'model' ? '模型回答' : '规则回答（未启用大模型也一样能用）'
+  /** 只有走规则回答时才需要说明（用户看得出来回答短一些），正常情况不必解释 */
+  const modeLabel = capabilities !== null && capabilities.mode === 'rules' ? '基础回答' : null
 
   return (
     <View className='kdy-page kdy-agent'>
       <View className='kdy-agent__header'>
         <View className='kdy-agent__header-main'>
-          <Text className='kdy-agent__title'>🦆 可达鸭</Text>
+          <Text className='kdy-agent__title'>可达鸭</Text>
           <Text className='kdy-agent__subtitle'>
-            {modeLabel ?? '校园生活助手'} · 涉及你的数据时会先把事实查清楚再回答
+            {modeLabel === null ? '课表、校园卡、绑定流程，问我就行' : `${modeLabel} · 问我就行`}
           </Text>
         </View>
         {state.messages.length > 0 && (
@@ -193,9 +190,11 @@ export default function AgentPage() {
           {capabilities !== null && (
             <View className='kdy-agent__caps'>
               <Text className='kdy-agent__caps-title'>我不会做的事</Text>
-              <Text className='kdy-agent__caps-line'>不索引：{capabilities.notIndexed.join('、')}</Text>
               <Text className='kdy-agent__caps-line'>
-                需要的个人信息一律按你的权限实时查；查不到就说查不到，不会编一个数字。
+                不把个人数据放进检索：{capabilities.notIndexed.join('、')}。
+              </Text>
+              <Text className='kdy-agent__caps-line'>
+                个人信息按你的权限实时查；查不到就说查不到，不编数字。
               </Text>
             </View>
           )}

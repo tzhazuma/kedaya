@@ -124,7 +124,7 @@ export default function TakeoutGuardCreatePage() {
     <View className='kdy-page kdy-tg-create'>
       <KdyHeading
         title='记录一次'
-        subtitle='写清楚取餐点、时间和经过；只有你自己能看到这条记录。'
+        subtitle='写清取餐点、时间与经过。'
       />
 
       <Text className='kdy-tg-create__notice'>{TAKEOUT_GUARD_NOTICE}</Text>

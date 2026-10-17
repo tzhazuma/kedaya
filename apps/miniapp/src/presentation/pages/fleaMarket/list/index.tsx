@@ -142,7 +142,7 @@ export default function FleaMarketListPage() {
     <View className='kdy-page kdy-flea'>
       <KdyHeading
         title='跳蚤市场'
-        subtitle='闲置物品找到下一位主人，当面交易、不掺资金。'
+        subtitle='当面交易，平台不参与资金往来。'
       />
 
       <View className='kdy-flea__toolbar'>
@@ -296,7 +296,7 @@ export default function FleaMarketListPage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。面交请优先选择人多明亮的公共场所。
+        第三方非官方平台 · 与上海科技大学官方系统无关。面交请优先选择人多明亮的公共场所。
       </Text>
     </View>
   )

@@ -507,7 +507,7 @@ export default function WildlifeReportPage() {
       )}
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
         投喂规范与告示文案为项目草案，未经校方或动物社团审核；识别结果仅供参考。
       </Text>
     </View>

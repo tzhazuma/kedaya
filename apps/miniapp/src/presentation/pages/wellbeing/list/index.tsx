@@ -218,7 +218,7 @@ export default function WellbeingListPage() {
     <View className='kdy-page kdy-wb'>
       <KdyHeading
         title='心理支持'
-        subtitle='一个可以慢慢说的地方；需要时也能帮你约到中心的老师。'
+        subtitle='可以慢慢说，也可以预约中心老师。'
       />
 
       {/* 1. 危机出口 —— 永远在第一屏 */}
