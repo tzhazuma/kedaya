@@ -350,9 +350,13 @@ delete from "ClientEvent" where "createdAt" < now() - interval '30 days';
 提供举报入口并处理举报。代码已就位，**运维侧还需要有人定期看队列**。
 
 举报 → 落 `ContentReport` 表 → 打一条 `WARN` 日志（前缀 `[moderation]`）。
-六个可举报对象：`flea-item` / `errand-task` / `buddy-group` / `lost-found-item` /
-`forum-post` / `forum-reply`；七个原因：诈骗 / 违法违规 / 色情低俗 / 侮辱谩骂 /
-泄露隐私 / 垃圾广告 / 其它。
+九个可举报对象：`flea-item` / `errand-task` / `buddy-group` / `lost-found-item` /
+`forum-post` / `forum-reply` / `canteen-dish` / `faq-entry` / `wildlife-spot`
+（后三个是同学共建的内容：食堂菜品、常见问题、动物观察点 —— 公开 UGC 可能被塞广告或诈骗引导）；
+七个原因：诈骗 / 违法违规 / 色情低俗 / 侮辱谩骂 / 泄露隐私 / 垃圾广告 / 其它。
+共建内容没有作者字段，`targetAuthorId` 记为 null。
+注意 `takeout-guard`（偷外卖）**不在可举报范围内**：它是本人可见的报备记录，
+列表按登录主体过滤，本来就看不到别人的记录。
 
 设计上**刻意不自动下架**：自动下架等于给任何人一个「凑三个人就能删掉你的帖子」的按钮，
 而本仓库还没有申诉流程。所以阈值（3 个**不同的人**）只做两件事：
