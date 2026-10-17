@@ -934,8 +934,12 @@ explainMatch  = evaluateRules(...).filter(hit).map(→ { code, label, weight: sc
    而且会放行任意子域，包括被攻陷的子域）。
 2. 名单内容标注为**占位**（与 `CAMPUS_ORIGIN`、`CAMPUS_LOCATIONS` 同一处理），
    在代码常量、响应字段、文档里**机器可见**。
-3. **只允许 `https`**；禁止 `http`、禁止 IP 字面量、禁止非 443 端口、
+3. **只允许 `https`**；禁止 `http`、禁止 IP 字面量、
    禁止 `@` 形式的 userinfo（`https://shanghaitech.edu.cn@evil.com` 是经典绕过）。
+   > ⚠️ **本条第 3 项原写"禁止非 443 端口"，该表述已由 §11.21-A 修正为
+   > "白名单按完整 origin 精确匹配"。** 原规则既漏又误：它放行了
+   > `https://evil.com`（只要端口是 443），却挡掉了合法的
+   > `https://ecourse.shanghaitech.edu.cn:8080`。**以 §11.21-A 为准。**
 4. 校验必须在**服务端**做 —— 客户端传入的 `targetUrl` 一律不可信。
 
 **C. U1 —— 校园网能力：未发现，不编造**
@@ -1134,3 +1138,96 @@ openid 需要服务端用 AppSecret 走 `code2session` 换取。客户端能拿�
   而不是"某个平台"；用 `platform` 会让"用户有两条同平台绑定"变成歧义）
 - 出参：`{ticket, targetUrl, expiresAt, singleUse: true}`
 - 规格的 `expiresInSec: 30` 作废（绝对时间 `expiresAt` 比相对秒数更适合分布式校验）
+
+
+### 11.21 TechPie 客户端实现期裁决（v1.3.9 · 2026-10-17）
+
+#### A. **修正 §11.18-B 的端口规则** —— 我原来那条是错的
+
+§11.18-B 我写了"禁止非 443 端口"。**这条规则是错的**，Flutter 端在实现时发现它与
+规格 §8.4 的示例地址 `https://ecourse.shanghaitech.edu.cn:8080/` 直接冲突 ——
+而真实校园系统**确实可能跑在非 443 端口上**（校内自建服务很常见）。
+
+**"禁止非 443 端口"是一刀切，它既不能防住真正的风险，又会挡掉合法场景。**
+
+真正的风险不是"端口是多少"，而是**"这个 origin 是不是我们批准的那个"**。
+所以正确做法是**按完整 origin 精确匹配**：
+
+**修正后的规则（取代 §11.18-B 第 3 条）**：
+1. 白名单条目是**完整 origin**（`scheme://host[:port]`），例如
+   `https://ecourse.shanghaitech.edu.cn:8080`
+2. 校验必须是**精确 origin 匹配**（scheme + host + port 三者全等），
+   **不是** host 匹配后再看端口
+3. 仍然**禁止**：`http`、IP 字面量、`@` userinfo
+   （`https://shanghaitech.edu.cn@evil.com` 是经典绕过）、
+   通配子域（`*.shanghaitech.edu.cn` —— 会放行被攻陷的子域）
+4. 校验在**服务端**做
+
+> **精确 origin 匹配比"host + 端口白名单"更强**：它连"同一个 host 的另一个端口"都挡住了，
+> 而那条一刀切规则反而放行了 `https://evil.com`（只要端口是 443）。
+> 换句话说，**原来那条规则既漏又误**。
+
+#### B. 校园卡是**真实缺口**，必须定契约（不能靠客户端猜）
+
+Flutter 端发现：`services/api` 的 `campus-card` 目前是 `scaffold.mjs` 生成的**通用 CRUD**
+（`items` + `summary`，而 `summary` 是**汇总**不是余额；`direction: 'out'|'in'`；
+字段 `happenedAt`），**没有** 开通 / 余额 / 流水 / 付款码 的路由。
+而三端都需要这四件事。
+
+**裁决：校园卡按以下形状定契约**（登记为 `campus-card` 模块的正式端点）：
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `GET` | `/campus-card/account` | 账户：`{activated, balanceFen, updatedAt}`。**金额一律整数分** |
+| `POST` | `/campus-card/account/activate` | 开通（**OPENID 通道**，与 CASTGC 完全解耦） |
+| `DELETE` | `/campus-card/account` | 解绑/注销 |
+| `GET` | `/campus-card/transactions` | 流水（游标分页），字段 `{id, amountFen, direction: DEBIT\|CREDIT, balanceAfterFen, occurredAt, merchant}` |
+| `GET` | `/campus-card/payment-code` | 付款码 `{code, expiresAt}`（**短时效，禁止缓存/禁止进日志**） |
+
+字段名裁决（**取代** scaffold 生成的通用形状）：
+- `direction` 用 **`DEBIT` / `CREDIT`**（大写），**不是** `out` / `in` ——
+  与全仓其它枚举一致（`PENDING`/`PUBLISHED`/`DEBIT`），且 `out`/`in` 有方向歧义
+  （"out" 是从谁的角度？）
+- 时间字段用 **`occurredAt`**（**不是** `happenedAt`）—— 与全仓 `observedAt`/`startsAt`/`createdAt`
+  的命名习惯一致（**交易发生时刻** vs **入库时刻**，契约 §11.10-A 已确立这个区分）
+- 余额用 **`balanceFen`**（**不是** `summary`）—— `summary` 是"汇总"，
+  而这里是"余额"，两个概念
+
+**付款码的登记状态**：契约里**没有**付款码端点，而小程序端已用
+`CAMPUS_CARD_PAYMENT_CODE_REGISTERED = false` **机器可见**地标出这一点。
+**裁决：现在登记该端点，并把常量置为 `true`** —— 因为形状已由本条确定。
+但**在真实校园卡通道打通前，服务端返回 `UPSTREAM_UNAVAILABLE` 而不是假数据**。
+
+#### C. 规格 §8.4 的两处文档错误（以裁决为准）
+
+| 规格写的 | 实际/裁决 | 理由 |
+| --- | --- | --- |
+| 票据兑换是 `GET` | **`POST /techpie/webview-session`** | 它**创建**一个一次性票据资源（非幂等），`GET` 语义错误（`GET` 不应有副作用） |
+| 示例地址含 `:8080` 且与"禁非 443"冲突 | 见本条 A | 规则已修正为精确 origin 匹配；`:8080` 现在**可以**在白名单里 |
+
+#### D. W4 直连**不要求绑定** —— 这是刻意的
+
+Flutter 端发现 `services/api` 的 `resolvePlatform()` 在未指定平台时**不校验绑定**，
+并据此把 `createWebViewSession(platform:)` 改为可空。
+
+**裁决：正确，保持。** 理由：W4 的定义就是"**用户在校园系统页面自己登录，我们不接触 cookie**"——
+我们**不需要**用户的凭证就能把他送到那个页面。要求先绑定才能直连，
+等于**给一个不需要权限的功能加了权限门**。
+
+但要注意：**直连不需要绑定 ≠ 直连不需要登录** —— 它仍需一级身份（`UNAUTHENTICATED` 仍适用）。
+
+#### E. 两套平台枚举合并 —— §11.20-C 已处理
+
+Flutter 端发现 `campus_binding.dart` 的 `CampusSystem`（`egate|cpdaily|academic|ecard`）
+与契约 §11.10-B 的 `cas|egate|cpdaily|ecard|techpie` 并存。
+**§11.20-C 已裁决统一为 `cas|egate|cpdaily|jwc|ecard|techpie`。**
+`CampusSystem` 应改为该枚举的别名（或直接删除），**不得保留第二套拼法**。
+
+#### F. 能力清单的键名并集必须收敛
+
+Flutter 端为容错，客户端**同时接受** `title`/`nameZh`、`description`/`summary`、
+`state`/`status`、`reason`/`blockedReason`。
+
+**裁决：收敛为单一键名**（与 §11.20-D 同一推理 —— 一个概念只有一个 owner）：
+`key` / `nameZh` / `phase` / `available` / `requiredProvider` / `blockedReason`。
+客户端的并集容错**应在本轮之后删除**，而不是长期保留。
