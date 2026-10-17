@@ -1,6 +1,12 @@
 import { Text, View } from '@tarojs/components'
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
-import { MEAL_TYPES, MEAL_TYPE_LABELS, SERVING_LIMITS, type MealType } from '@kedaya/shared'
+import {
+  CANTEEN_NAMES,
+  MEAL_TYPES,
+  MEAL_TYPE_LABELS,
+  SERVING_LIMITS,
+  type MealType,
+} from '@kedaya/shared'
 import { useState } from 'react'
 
 import { getContainer } from '../../../app/container'
@@ -143,6 +149,18 @@ export default function NutritionHomePage() {
   function resetDemo(): void {
     container.mockNutritionControls?.reset()
     reload()
+  }
+
+  /**
+   * 打开菜品库（可带上食堂分类）——「按食堂看菜品」是营养管家的一个正经入口，
+   * 不是隐藏的调试页：用户想知道「第二食堂有什么」，从这里一步到位。
+   */
+  function openDishes(canteen: string | null): void {
+    const url =
+      canteen === null
+        ? PAGE_PATHS.nutritionDishes
+        : `${PAGE_PATHS.nutritionDishes}?canteen=${encodeURIComponent(canteen)}`
+    void navigateTo(url)
   }
 
   const calorieProgress = state.progress.find((item) => item.key === 'caloriesKcal')
@@ -391,6 +409,26 @@ export default function NutritionHomePage() {
               </KdyButton>
             </KdyCard>
           )}
+
+          {/*
+            按食堂看菜品 —— 食堂分类是这一模块的第一层分类维度，
+            因此在首页就给出 7 个食堂的入口（白名单来自 `@kedaya/shared`）。
+          */}
+          <KdyCard title='按食堂看菜品' extra={<Text>菜品库</Text>} elevated={false}>
+            <Text className='kdy-nu-home__hint'>
+              营养数据按食堂分类维护。点一个食堂看看有哪些菜、每份多少营养、数据来自哪里。
+            </Text>
+            <View className='kdy-nu-home__canteens'>
+              <KdyChip active={false} onClick={() => openDishes(null)}>
+                全部菜品
+              </KdyChip>
+              {CANTEEN_NAMES.map((name) => (
+                <KdyChip key={name} active={false} onClick={() => openDishes(name)}>
+                  {name}
+                </KdyChip>
+              ))}
+            </View>
+          </KdyCard>
 
           <View className='kdy-nu-home__actions'>
             <KdyButton

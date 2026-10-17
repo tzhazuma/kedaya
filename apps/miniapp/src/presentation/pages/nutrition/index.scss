@@ -210,6 +210,14 @@
   line-height: 1.5;
 }
 
+/* 按食堂看菜品：7 个食堂 + 「全部菜品」在窄屏上必然换行 */
+.kdy-nu-home__canteens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
+}
+
 .kdy-nu-home__recs {
   display: flex;
   flex-direction: column;

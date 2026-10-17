@@ -64,6 +64,8 @@ import { createCanteenUseCases } from '../application/canteen/canteenUseCases'
 import type { CanteenUseCases } from '../application/canteen/canteenUseCases'
 import { createLogMealUseCase } from '../application/nutrition/logMeal'
 import type { LogMealUseCase } from '../application/nutrition/logMeal'
+import { createDishLibraryUseCase } from '../application/nutrition/dishLibrary'
+import type { DishLibraryUseCase } from '../application/nutrition/dishLibrary'
 import { createMealHistoryUseCase } from '../application/nutrition/mealHistory'
 import type { MealHistoryUseCase } from '../application/nutrition/mealHistory'
 import { createNutritionTargetsUseCase } from '../application/nutrition/nutritionTargets'
@@ -307,9 +309,10 @@ export interface AppContainer {
     // 共建型模块（食堂 / FAQ / 动物观察点 / 偷外卖）
     canteen: CanteenUseCases
     takeoutGuard: TakeoutGuardUseCases
-    // 营养管家（模块 id 仍是 `canteen`）：今日 / 记录 / 历史 / 需求 / 推荐
+    // 营养管家（模块 id 仍是 `canteen`）：今日 / 记录 / 历史 / 需求 / 推荐 / 菜品库
     todayNutrition: TodayNutritionUseCase
     logMeal: LogMealUseCase
+    dishLibrary: DishLibraryUseCase
     mealHistory: MealHistoryUseCase
     nutritionTargets: NutritionTargetsUseCase
     recommendations: RecommendationsUseCase
@@ -641,6 +644,12 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     cacheKey: StorageKeys.nutritionTodayCache,
   })
   const logMeal = createLogMealUseCase({ repository: nutritionRepository })
+  const dishLibrary = createDishLibraryUseCase({
+    repository: nutritionRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.nutritionDishLibraryCache,
+  })
   const mealHistory = createMealHistoryUseCase({ repository: nutritionRepository, clock })
   const nutritionTargets = createNutritionTargetsUseCase({ repository: nutritionRepository })
   const recommendations = createRecommendationsUseCase({ repository: nutritionRepository })
@@ -1022,6 +1031,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       takeoutGuard,
       todayNutrition,
       logMeal,
+      dishLibrary,
       mealHistory,
       nutritionTargets,
       recommendations,

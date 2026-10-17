@@ -132,6 +132,14 @@ export const StorageKeys = {
    * 形状与失效时机都不同（记录一餐就要失效）。
    */
   nutritionTodayCache: `${STORAGE_PREFIX}cache:nutrition:today`,
+  /**
+   * 营养管家「菜品库（按食堂看）」缓存。
+   *
+   * 与 `canteenListCache` 分开：同一张菜品表，但**筛选条件与排序口径不同**
+   * （这里记的是 `canteen` / `category` / `q`）。共用一个 key 会让两边互相
+   * 覆盖对方的筛选结果 —— 表现是「筛选条件与列表对不上」。
+   */
+  nutritionDishLibraryCache: `${STORAGE_PREFIX}cache:nutrition:dish-library`,
   /** 常见问题列表缓存 */
   faqListCache: `${STORAGE_PREFIX}cache:faq:list`,
   /**
