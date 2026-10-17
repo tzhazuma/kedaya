@@ -12,6 +12,12 @@ import {
   miniappDetailLink,
   type NotificationPort,
 } from '../../common/notifications/notification.port';
+import { MEDIA_URL_POLICY } from '../../common/media/media.port';
+import {
+  normalizeImageUrls,
+  resolveMediaUrlPolicy,
+  type MediaUrlPolicy,
+} from '../../common/media/media-url';
 import {
   FLEA_CATEGORIES,
   FLEA_CONDITIONS,
@@ -45,6 +51,11 @@ export class FleaItemService {
   constructor(
     @Inject(FLEA_ITEM_REPOSITORY) private readonly repo: FleaItemRepository,
     @Optional() @Inject(NOTIFICATION_PORT) private readonly notifier?: NotificationPort,
+    /**
+     * 图片地址白名单策略（`@Optional()`：纯领域单测不提供它，
+     * 此时退回默认策略 —— 仍然校验，只是不认 CDN 前缀）。
+     */
+    @Optional() @Inject(MEDIA_URL_POLICY) private readonly mediaUrlPolicy?: MediaUrlPolicy,
   ) {}
 
   async list(query: Partial<FleaItemListQuery> = {}): Promise<Page<FleaItemModel>> {
@@ -71,6 +82,8 @@ export class FleaItemService {
       category: normalizeCategory(input.category),
       condition: input.condition === undefined ? 'good' : normalizeCondition(input.condition),
       campusSpot: normalizeText(input.campusSpot, 60, '交易地点'),
+      // 图片：只接受本平台上传的地址（防外链 / 追踪像素），数量上限由策略统一把关
+      imageUrls: normalizeImageUrls(input.imageUrls, resolveMediaUrlPolicy(this.mediaUrlPolicy)),
     });
   }
 
@@ -98,6 +111,9 @@ export class FleaItemService {
     if (input.condition !== undefined) patch.condition = normalizeCondition(input.condition);
     if (input.campusSpot !== undefined) {
       patch.campusSpot = normalizeText(input.campusSpot, 60, '交易地点');
+    }
+    if (input.imageUrls !== undefined) {
+      patch.imageUrls = normalizeImageUrls(input.imageUrls, resolveMediaUrlPolicy(this.mediaUrlPolicy));
     }
 
     return this.repo.update(id, patch);

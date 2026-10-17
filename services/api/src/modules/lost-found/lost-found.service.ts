@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import type { Page } from '@kedaya/contracts';
 import {
   ConflictError,
@@ -7,6 +7,12 @@ import {
   UnauthenticatedError,
   ValidationError,
 } from '../../common/errors/app-error';
+import { MEDIA_URL_POLICY } from '../../common/media/media.port';
+import {
+  normalizeImageUrls,
+  resolveMediaUrlPolicy,
+  type MediaUrlPolicy,
+} from '../../common/media/media-url';
 import {
   LOST_FOUND_CLOCK_SKEW_MS,
   LOST_FOUND_ITEM_REPOSITORY,
@@ -34,7 +40,11 @@ import {
  */
 @Injectable()
 export class LostFoundItemService {
-  constructor(@Inject(LOST_FOUND_ITEM_REPOSITORY) private readonly repo: LostFoundItemRepository) {}
+  constructor(
+    @Inject(LOST_FOUND_ITEM_REPOSITORY) private readonly repo: LostFoundItemRepository,
+    /** 图片地址白名单策略（`@Optional()`，单测不提供时退回默认策略，仍然校验） */
+    @Optional() @Inject(MEDIA_URL_POLICY) private readonly mediaUrlPolicy?: MediaUrlPolicy,
+  ) {}
 
   async list(query: Partial<LostFoundItemListQuery> = {}): Promise<Page<LostFoundItemModel>> {
     return this.repo.list({
@@ -60,6 +70,7 @@ export class LostFoundItemService {
       place: normalizePlace(input.place),
       happenedAt: normalizeHappenedAt(input.happenedAt),
       contactHint: normalizeText(input.contactHint, 60, '联系方式提示'),
+      imageUrls: normalizeImageUrls(input.imageUrls, resolveMediaUrlPolicy(this.mediaUrlPolicy)),
     });
   }
 
@@ -83,6 +94,9 @@ export class LostFoundItemService {
     if (input.happenedAt !== undefined) patch.happenedAt = normalizeHappenedAt(input.happenedAt);
     if (input.contactHint !== undefined) {
       patch.contactHint = normalizeText(input.contactHint, 60, '联系方式提示');
+    }
+    if (input.imageUrls !== undefined) {
+      patch.imageUrls = normalizeImageUrls(input.imageUrls, resolveMediaUrlPolicy(this.mediaUrlPolicy));
     }
 
     return this.repo.update(id, patch);

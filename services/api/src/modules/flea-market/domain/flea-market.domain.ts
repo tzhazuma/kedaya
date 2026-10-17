@@ -55,6 +55,8 @@ export interface FleaItemModel {
   category: string;
   condition: string;
   campusSpot: string | null;
+  /** 图片地址（仅本平台上传的地址；上传时已剥离 EXIF GPS） */
+  imageUrls: string[];
   status: string;
   /** 预定者（买家）。未预定为 null */
   reservedById: string | null;
@@ -72,6 +74,8 @@ export interface CreateFleaItemInput {
   category: string;
   condition?: string;
   campusSpot?: string | null;
+  /** 图片地址；服务层用 `MediaUrlPolicy` 逐个校验后才落库 */
+  imageUrls?: string[];
 }
 
 /** 更新输入（全部可选；不允许改 sellerId / status —— 状态只能走领域动作） */
@@ -82,6 +86,7 @@ export interface UpdateFleaItemInput {
   category?: string;
   condition?: string;
   campusSpot?: string | null;
+  imageUrls?: string[];
 }
 
 /** 列表查询条件 */

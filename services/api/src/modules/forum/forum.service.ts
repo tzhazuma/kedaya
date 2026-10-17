@@ -12,6 +12,12 @@ import {
   miniappDetailLink,
   type NotificationPort,
 } from '../../common/notifications/notification.port';
+import { MEDIA_URL_POLICY } from '../../common/media/media.port';
+import {
+  normalizeImageUrls,
+  resolveMediaUrlPolicy,
+  type MediaUrlPolicy,
+} from '../../common/media/media-url';
 import { anonymousHandle } from '../auth/domain/verification-code';
 import {
   FORUM_BOARDS,
@@ -49,6 +55,8 @@ export class ForumPostService {
   constructor(
     @Inject(FORUM_POST_REPOSITORY) private readonly repo: ForumPostRepository,
     @Optional() @Inject(NOTIFICATION_PORT) private readonly notifier?: NotificationPort,
+    /** 图片地址白名单策略（`@Optional()`，单测不提供时退回默认策略，仍然校验） */
+    @Optional() @Inject(MEDIA_URL_POLICY) private readonly mediaUrlPolicy?: MediaUrlPolicy,
   ) {}
 
   /** 版块清单 + 每版块帖子数（按契约顺序补齐 0 的后端计算） */
@@ -94,6 +102,7 @@ export class ForumPostService {
       anonHandle: null,
       title: normalizeTitle(input.title),
       body: normalizeBody(input.body, 5000, '正文'),
+      imageUrls: normalizeImageUrls(input.imageUrls, resolveMediaUrlPolicy(this.mediaUrlPolicy)),
     });
 
     if (!anonymous) return created;

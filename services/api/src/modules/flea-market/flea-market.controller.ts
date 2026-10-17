@@ -6,6 +6,7 @@ import { AuthGuard, OptionalAuthGuard } from '../../common/auth/auth.guard';
 import { CurrentUser, OptionalCurrentUser } from '../../common/auth/current-user';
 import { UnauthenticatedError } from '../../common/errors/app-error';
 import { ZodBody, ZodQuery } from '../../common/pipes/zod-validation.pipe';
+import { optionalImageUrlsSchema } from '../../common/media/image-urls.schema';
 import { FleaItemService } from './flea-market.service';
 import {
   FLEA_CATEGORIES,
@@ -36,6 +37,7 @@ const createSchema = z.object({
   category: z.enum(FLEA_CATEGORIES),
   condition: z.enum(FLEA_CONDITIONS).optional(),
   campusSpot: z.string().trim().max(60).nullish(),
+  imageUrls: optionalImageUrlsSchema,
 });
 
 const updateSchema = z.object({
@@ -45,6 +47,7 @@ const updateSchema = z.object({
   category: z.enum(FLEA_CATEGORIES).optional(),
   condition: z.enum(FLEA_CONDITIONS).optional(),
   campusSpot: z.string().trim().max(60).nullish(),
+  imageUrls: optionalImageUrlsSchema,
 });
 
 const listQuerySchema = z.object({

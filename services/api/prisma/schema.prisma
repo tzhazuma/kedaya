@@ -323,6 +323,9 @@ model FleaItem {
   /// new | like-new | good | fair
   condition   String   @default("good")
   campusSpot  String?
+  /// 图片地址。**只存本平台上传的地址**（见 common/media/media-url.ts 的白名单），
+  /// 且上传时已剥离 EXIF GPS（契约 A2.5）。
+  imageUrls   String[] @default([])
   status      String   @default("on-sale")
   /// 被预定/售出后置位，便于"我的发布"展示
   reservedById String?
@@ -463,6 +466,8 @@ model LostFoundItem {
   place       String
   happenedAt  DateTime
   contactHint String?
+  /// 图片地址（同 FleaItem.imageUrls：仅本平台地址，已剥离 EXIF GPS）
+  imageUrls   String[] @default([])
   status      String   @default("open")
   /// 认领/归还后置位（closed | claimed）
   resolvedAt  DateTime?
@@ -502,6 +507,8 @@ model ForumPost {
   anonHandle String?
   title      String
   body       String
+  /// 图片地址（同 FleaItem.imageUrls：仅本平台地址，已剥离 EXIF GPS）
+  imageUrls  String[] @default([])
   status     String   @default("published")
   /// 置顶/加精等治理位（0 = 普通）
   pinnedRank Int      @default(0)

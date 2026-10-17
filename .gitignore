@@ -28,6 +28,9 @@ apps/miniapp/.temp/
 apps/miniapp/.rn_temp/
 project.private.config.json
 
+# ---- 本地上传的媒体文件（MEDIA_STORAGE=local 的落盘目录）----
+.media/
+
 # ---- 编辑器 / 系统 ----
 .DS_Store
 Thumbs.db

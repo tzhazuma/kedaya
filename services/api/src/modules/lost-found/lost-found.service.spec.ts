@@ -25,6 +25,7 @@ const BASE_ITEM: LostFoundItemModel = {
   place: '图书馆一楼大厅',
   happenedAt: new Date('2026-10-15T10:00:00.000Z'),
   contactHint: '站内私信',
+  imageUrls: [],
   status: 'open',
   resolvedAt: null,
   createdAt: new Date('2026-10-15T10:05:00.000Z'),
@@ -98,6 +99,40 @@ describe('LostFoundItemService（失物招领领域用例）', () => {
       await expect(
         service.create({ ...draft, happenedAt: new Date(Date.now() + 60 * 1000) }, REPORTER),
       ).resolves.toMatchObject({ id: 'lf-1' });
+    });
+  });
+
+  describe('图片（只接受本平台上传的地址）', () => {
+    const mediaUrl = '/api/v1/media/files/media-20261017-11111111-2222-3333-4444-555555555555.png';
+
+    it('本平台地址被接受', async () => {
+      await service.create(
+        {
+          kind: 'found',
+          title: '捡到一把伞',
+          place: '图书馆',
+          happenedAt: new Date('2026-10-16T12:00:00.000Z'),
+          imageUrls: [mediaUrl],
+        },
+        REPORTER,
+      );
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ imageUrls: [mediaUrl] }));
+    });
+
+    it('外链被拒绝', async () => {
+      await expect(
+        service.create(
+          {
+            kind: 'found',
+            title: '捡到一把伞',
+            place: '图书馆',
+            happenedAt: new Date('2026-10-16T12:00:00.000Z'),
+            imageUrls: ['https://evil.example/a.jpg'],
+          },
+          REPORTER,
+        ),
+      ).rejects.toBeInstanceOf(ValidationError);
+      expect(repo.create).not.toHaveBeenCalled();
     });
   });
 

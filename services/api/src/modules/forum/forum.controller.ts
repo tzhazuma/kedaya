@@ -6,6 +6,7 @@ import { AuthGuard, OptionalAuthGuard } from '../../common/auth/auth.guard';
 import { CurrentUser, OptionalCurrentUser } from '../../common/auth/current-user';
 import { UnauthenticatedError } from '../../common/errors/app-error';
 import { ZodBody, ZodQuery } from '../../common/pipes/zod-validation.pipe';
+import { optionalImageUrlsSchema } from '../../common/media/image-urls.schema';
 import { ForumPostService } from './forum.service';
 import {
   FORUM_BOARDS,
@@ -33,6 +34,7 @@ const createPostSchema = z.object({
   body: z.string().trim().min(1).max(5000),
   /** 匿名发帖：authorId 不落库，改用服务端生成的匿名 handle */
   anonymous: z.boolean().optional(),
+  imageUrls: optionalImageUrlsSchema,
 });
 
 const replySchema = z.object({

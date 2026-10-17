@@ -32,6 +32,7 @@ const BASE_POST: ForumPostModel = {
   anonHandle: null,
   title: '选课求建议',
   body: '想问问专业选修怎么选',
+  imageUrls: [],
   status: 'published',
   pinnedRank: 0,
   replyCount: 0,
@@ -117,6 +118,7 @@ describe('ForumPostService（论坛领域用例）', () => {
         anonHandle: null,
         title: '求拼车',
         body: '周六去浦东机场',
+        imageUrls: [],
       });
       expect(result.authorId).toBe(AUTHOR);
       expect(repo.update).not.toHaveBeenCalled();
@@ -159,6 +161,28 @@ describe('ForumPostService（论坛领域用例）', () => {
 
     it('正文为空 → VALIDATION_FAILED', async () => {
       await expect(service.create({ ...draft, body: '   ' }, AUTHOR)).rejects.toThrow(ValidationError);
+    });
+  });
+
+  describe('图片（只接受本平台上传的地址）', () => {
+    const mediaUrl = '/api/v1/media/files/media-20261017-11111111-2222-3333-4444-555555555555.jpg';
+
+    it('实名发帖带图：地址被校验后落库', async () => {
+      await service.create(
+        { board: 'campus', title: '带图帖', body: '看图', imageUrls: [mediaUrl] },
+        AUTHOR,
+      );
+      expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ imageUrls: [mediaUrl] }));
+    });
+
+    it('外链被拒绝（防止帖子变成外站导流 / 追踪载体）', async () => {
+      await expect(
+        service.create(
+          { board: 'campus', title: '带图帖', body: '看图', imageUrls: ['https://evil.example/a.jpg'] },
+          AUTHOR,
+        ),
+      ).rejects.toBeInstanceOf(ValidationError);
+      expect(repo.create).not.toHaveBeenCalled();
     });
   });
 

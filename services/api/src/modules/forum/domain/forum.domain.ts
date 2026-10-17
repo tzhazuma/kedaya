@@ -53,6 +53,8 @@ export interface ForumPostModel {
   anonHandle: string | null;
   title: string;
   body: string;
+  /** 图片地址（仅本平台上传的地址；上传时已剥离 EXIF GPS） */
+  imageUrls: string[];
   status: string;
   /** 置顶/加精等治理位（0 = 普通） */
   pinnedRank: number;
@@ -88,6 +90,7 @@ export interface ForumPostCreateData {
   anonHandle: string | null;
   title: string;
   body: string;
+  imageUrls?: string[];
 }
 
 export interface ForumReplyCreateData {
@@ -101,6 +104,7 @@ export interface ForumReplyCreateData {
 export interface ForumPostPatch {
   title?: string;
   body?: string;
+  imageUrls?: string[];
   status?: ForumStatus;
   /** 匿名帖创建后再补写 handle（seed 需要帖子 id） */
   anonHandle?: string | null;
@@ -118,6 +122,7 @@ export interface CreateForumPostInput {
   title: string;
   body: string;
   anonymous?: boolean;
+  imageUrls?: string[];
 }
 
 /** 服务层回复输入 */

@@ -5,11 +5,15 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { json, urlencoded } from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import { API_BASE_PATH, TRACE_HEADER } from '@kedaya/contracts';
 
 import { AppModule } from './app.module';
 import { TraceMiddleware } from './common/middleware/trace.middleware';
+
+/** 请求体上限：base64 图片比原图大 ~33%，8 MB 足够 2 MB 的图 + JSON 外壳 */
+const JSON_BODY_LIMIT = '8mb';
 
 /**
  * 可达鸭后端启动入口。
@@ -21,9 +25,15 @@ import { TraceMiddleware } from './common/middleware/trace.middleware';
  * 统一响应信封与错误码由 AppModule 里的全局拦截器/过滤器负责。
  */
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // bodyParser: false —— 关掉 Nest 默认的 100 KB 请求体上限，改由下面显式注册。
+  // 图片走 base64 JSON（见 media.controller.ts 的取舍说明），默认上限会直接 413。
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
   const config = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
+
+  // ---- 请求体解析（显式注册，便于控制上限与开关 logger）----
+  app.use(json({ limit: JSON_BODY_LIMIT }));
+  app.use(urlencoded({ extended: true, limit: '1mb' }));
 
   // ---- 契约 §6.1：全局前缀 api/v1 ----
   app.setGlobalPrefix(API_BASE_PATH.replace(/^\//, ''));

@@ -6,6 +6,7 @@ import { AuthGuard, OptionalAuthGuard } from '../../common/auth/auth.guard';
 import { CurrentUser, OptionalCurrentUser } from '../../common/auth/current-user';
 import { UnauthenticatedError } from '../../common/errors/app-error';
 import { ZodBody, ZodQuery } from '../../common/pipes/zod-validation.pipe';
+import { optionalImageUrlsSchema } from '../../common/media/image-urls.schema';
 import { LostFoundItemService } from './lost-found.service';
 import {
   LOST_FOUND_KINDS,
@@ -33,6 +34,7 @@ const createSchema = z.object({
   place: z.string().trim().min(1).max(60),
   happenedAt: z.coerce.date(),
   contactHint: z.string().trim().max(60).nullish(),
+  imageUrls: optionalImageUrlsSchema,
 });
 
 const updateSchema = z.object({
@@ -42,6 +44,7 @@ const updateSchema = z.object({
   place: z.string().trim().min(1).max(60).optional(),
   happenedAt: z.coerce.date().optional(),
   contactHint: z.string().trim().max(60).nullish(),
+  imageUrls: optionalImageUrlsSchema,
 });
 
 const listQuerySchema = z.object({

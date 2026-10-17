@@ -66,6 +66,7 @@ export class LostFoundItemPrismaRepository implements LostFoundItemRepository {
         place: input.place,
         happenedAt: input.happenedAt,
         contactHint: input.contactHint ?? null,
+        imageUrls: input.imageUrls ?? [],
         status: 'open',
       },
     });
@@ -85,6 +86,7 @@ export class LostFoundItemPrismaRepository implements LostFoundItemRepository {
     if (input.place !== undefined) data.place = input.place;
     if (input.happenedAt !== undefined) data.happenedAt = input.happenedAt;
     if (input.contactHint !== undefined) data.contactHint = input.contactHint;
+    if (input.imageUrls !== undefined) data.imageUrls = input.imageUrls;
 
     const row = await this.prisma.lostFoundItem.update({ where: { id }, data });
     return toModel(row);
@@ -123,6 +125,7 @@ function toModel(row: LostFoundItem): LostFoundItemModel {
     place: row.place,
     happenedAt: row.happenedAt,
     contactHint: row.contactHint,
+    imageUrls: row.imageUrls,
     status: row.status,
     resolvedAt: row.resolvedAt,
     createdAt: row.createdAt,

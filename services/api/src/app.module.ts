@@ -5,6 +5,7 @@ import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ComplianceModule } from './common/compliance/compliance.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { EnvelopeInterceptor } from './common/interceptors/envelope.interceptor';
+import { MediaModule } from './common/media/media.module';
 import { TraceMiddleware } from './common/middleware/trace.middleware';
 import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
 import { PrismaModule } from './prisma/prisma.module';
@@ -56,6 +57,7 @@ import { WildlifeModule } from './modules/wildlife/wildlife.module';
     // 基础设施 + 合规层（都是 @Global）
     PrismaModule,
     ComplianceModule,
+    MediaModule,
 
     // 19 个业务/基础模块
     AuthModule,

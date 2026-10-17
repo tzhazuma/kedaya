@@ -44,6 +44,8 @@ export interface LostFoundItemModel {
   happenedAt: Date;
   /** 联系方式提示（建议只写「站内私信」之类，不强制收集手机号） */
   contactHint: string | null;
+  /** 图片地址（仅本平台上传的地址；上传时已剥离 EXIF GPS） */
+  imageUrls: string[];
   status: string;
   /** 标记已解决的时间 */
   resolvedAt: Date | null;
@@ -60,6 +62,7 @@ export interface CreateLostFoundItemInput {
   place: string;
   happenedAt: Date;
   contactHint?: string | null;
+  imageUrls?: string[];
 }
 
 /** 更新输入（全部可选；不允许改 reporterId / status —— 状态只能走领域动作） */
@@ -70,6 +73,7 @@ export interface UpdateLostFoundItemInput {
   place?: string;
   happenedAt?: Date;
   contactHint?: string | null;
+  imageUrls?: string[];
 }
 
 /** 状态动作可写的字段集合 */

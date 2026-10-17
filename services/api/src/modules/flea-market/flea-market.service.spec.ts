@@ -39,6 +39,7 @@ const BASE: FleaItemModel = {
   category: 'electronics',
   condition: 'good',
   campusSpot: '二号宿舍楼下',
+  imageUrls: [],
   status: 'on-sale',
   reservedById: null,
   soldAt: null,
@@ -215,6 +216,54 @@ describe('发布', () => {
     await expect(
       service.create({ ...valid, campusSpot: 'y'.repeat(61) }, SELLER),
     ).rejects.toBeInstanceOf(ValidationError);
+  });
+});
+
+describe('图片（契约 A2.5：只接受本平台上传的地址）', () => {
+  let repo: FakeRepo;
+
+  beforeEach(() => {
+    repo = makeRepo();
+  });
+
+  const base = { title: '九成新台灯', priceFen: 3_000, category: 'daily' };
+  const mediaUrl = '/api/v1/media/files/media-20261017-11111111-2222-3333-4444-555555555555.jpg';
+
+  it('本平台地址被接受并原样落库', async () => {
+    await makeService(repo).create({ ...base, imageUrls: [mediaUrl] }, SELLER);
+    expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ imageUrls: [mediaUrl] }));
+  });
+
+  it('外链被拒绝（防追踪像素 / 防盗链），且不会落库', async () => {
+    await expect(
+      makeService(repo).create({ ...base, imageUrls: ['https://evil.example/pixel.jpg'] }, SELLER),
+    ).rejects.toBeInstanceOf(ValidationError);
+    expect(repo.create).not.toHaveBeenCalled();
+  });
+
+  it('超过 9 张直接报错，而不是静默截断', async () => {
+    await expect(
+      makeService(repo).create(
+        { ...base, imageUrls: Array.from({ length: 10 }, () => mediaUrl) },
+        SELLER,
+      ),
+    ).rejects.toThrow(/最多只能上传 9 张/);
+  });
+
+  it('空串与重复地址被丢弃（同一张图点两次不该占两个位置）', async () => {
+    await makeService(repo).create({ ...base, imageUrls: ['', mediaUrl, mediaUrl] }, SELLER);
+    expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ imageUrls: [mediaUrl] }));
+  });
+
+  it('修改时也能改图（不传 = 不动）', async () => {
+    const service = makeService(repo);
+    repo.findById.mockResolvedValue({ ...BASE });
+    await service.update('item-1', { imageUrls: [mediaUrl] }, SELLER);
+    expect(repo.update).toHaveBeenCalledWith('item-1', { imageUrls: [mediaUrl] });
+
+    repo.update.mockClear();
+    await service.update('item-1', { title: '改个标题' }, SELLER);
+    expect(repo.update).toHaveBeenCalledWith('item-1', { title: '改个标题' });
   });
 });
 

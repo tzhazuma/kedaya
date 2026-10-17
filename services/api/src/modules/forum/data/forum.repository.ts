@@ -68,6 +68,7 @@ export class ForumPostPrismaRepository implements ForumPostRepository {
         anonHandle: data.anonHandle,
         title: data.title,
         body: data.body,
+        imageUrls: data.imageUrls ?? [],
         status: 'published',
       },
     });
@@ -83,6 +84,7 @@ export class ForumPostPrismaRepository implements ForumPostRepository {
     const data: Record<string, unknown> = {};
     if (patch.title !== undefined) data.title = patch.title;
     if (patch.body !== undefined) data.body = patch.body;
+    if (patch.imageUrls !== undefined) data.imageUrls = patch.imageUrls;
     if (patch.status !== undefined) data.status = patch.status;
     if (patch.anonHandle !== undefined) data.anonHandle = patch.anonHandle;
 
@@ -175,6 +177,7 @@ function toPostModel(row: ForumPost): ForumPostModel {
     anonHandle: row.anonHandle,
     title: row.title,
     body: row.body,
+    imageUrls: row.imageUrls,
     status: row.status,
     pinnedRank: row.pinnedRank,
     replyCount: row.replyCount,

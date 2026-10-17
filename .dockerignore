@@ -51,3 +51,8 @@ assets
 # ---- 安装备份与临时文件 ----
 .node_modules-install-backup-*
 *.log
+
+# ---- 本地上传的媒体文件（MEDIA_STORAGE=local 的落盘目录）----
+# 镜像里不需要旧图；生产用对象存储，容器文件系统本来也不持久。
+.media
+**/.media

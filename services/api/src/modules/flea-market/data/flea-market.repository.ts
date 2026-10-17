@@ -69,6 +69,7 @@ export class FleaItemPrismaRepository implements FleaItemRepository {
         category: input.category,
         condition: input.condition ?? 'good',
         campusSpot: input.campusSpot ?? null,
+        imageUrls: input.imageUrls ?? [],
         status: 'on-sale',
       },
     });
@@ -88,6 +89,7 @@ export class FleaItemPrismaRepository implements FleaItemRepository {
     if (input.category !== undefined) data.category = input.category;
     if (input.condition !== undefined) data.condition = input.condition;
     if (input.campusSpot !== undefined) data.campusSpot = input.campusSpot;
+    if (input.imageUrls !== undefined) data.imageUrls = input.imageUrls;
 
     const row = await this.prisma.fleaItem.update({ where: { id }, data });
     return toModel(row);
@@ -132,6 +134,7 @@ function toModel(row: FleaItem): FleaItemModel {
     category: row.category,
     condition: row.condition,
     campusSpot: row.campusSpot,
+    imageUrls: row.imageUrls,
     status: row.status,
     reservedById: row.reservedById,
     soldAt: row.soldAt,
