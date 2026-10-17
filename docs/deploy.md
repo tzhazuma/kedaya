@@ -256,6 +256,66 @@ curl -sS -X POST "$BASE/api/v1/forum/posts" \
 # → 期望 400 VALIDATION_FAILED
 
 
+### 5.5 客户端遥测（无需配置，但要配保留策略）
+
+小程序把四类**客户端故障**上报到 `POST /api/v1/telemetry/client-events`：
+
+| 触发 | 什么时候会发生 | 为什么必须上报 |
+| --- | --- | --- |
+| `error` | 未捕获的 JS 异常（`wx.onError`） | 这类错误在组件树之外，**不会**经过 React 错误边界 |
+| `unhandled-rejection` | 未处理的 Promise 拒绝 | 同上；`await` 忘了 catch 就会走到这里 |
+| `render-error` | 页面渲染期抛错（`KdyErrorBoundary` 捕获） | 用户看到的是兜底页，我们需要知道是哪一页、什么错 |
+| `page-not-found` | 进入不存在的页面 | 升级后旧分享链接失效是最常见的入口问题 |
+| `api-failure` | 后端返回 5xx 或信封不合规 | **不是**「断网」——用户没信号是环境问题，报了只会淹没真故障 |
+
+设计要点（改这块代码前请读）：
+
+- **匿名可调用**：崩溃常发生在登录之前（冷启动、token 过期、登录页本身报错）。
+  要求登录＝在最需要日志的场景静默丢包。有登录态时会顺手记 `userId`。
+- **不提供读取接口**：本仓库还没有后台管理员鉴权（`User` 上没有角色位），
+  一个「任何登录用户都能读全站崩溃日志」的接口是明确的信息泄露。排查走下面的方式。
+- **落库失败不影响响应**：遥测是旁路。数据库抖动时它只记 `WARN` 并仍然返回 200 ——
+  否则客户端会因为一次失败的上报**再产生一条遥测**，自激振荡。
+- **服务端强制脱敏**：`Authorization: Bearer …`、裸 JWT、`accessToken`/`refreshToken`/`password`、
+  邮箱、手机号在**入库前**被替换成 `<redacted>`。
+  客户端只负责省流量（截断到 400/3000 字符），安全边界在服务端。
+- **按来源限流 30 条/分钟/IP**：单实例内存实现。多实例部署时实际阈值 = 实例数 × 30，
+  对「防止写爆库」这个目标够用；要精确限流得上 Redis。
+
+#### 怎么看这些日志
+
+```bash
+# 云托管控制台 → 服务 → 日志检索，关键字（每条上报都会打一行 WARN）：
+#   [client:error] / [client:api-failure] / [client:render-error] ...
+# 一行里同时包含页面路径与客户端 traceId，可直接和后端同一次请求的日志对齐。
+
+# 或者按条件查库（ClientEvent 表）
+psql "$DATABASE_URL" -c \
+  "select created_at, kind, route, message from \"ClientEvent\" order by created_at desc limit 50;"
+
+# 只看「我们的后端坏了」这一个信号（api-failure），它是服务端故障的最直接指标
+psql "$DATABASE_URL" -c \
+  "select created_at, message, context from \"ClientEvent\"
+    where kind = 'api-failure' and created_at > now() - interval '1 day'
+    order by created_at desc;"
+```
+
+#### 保留策略（**必须做**）
+
+`ClientEvent` 是纯写入的表，不清理会一路涨成库里最大的表。上线后加一条定时任务
+（云托管「定时任务」或任意机器的 cron，每天跑一次）：
+
+```sql
+delete from "ClientEvent" where "createdAt" < now() - interval '30 days';
+```
+
+30 天是刻意选的：够排查「上周开始有用户反馈」这类问题，又不至于无限膨胀。
+
+> 想关掉上报？目前**没有开关**，这是刻意的：客户端崩溃可观测性是「能让人真正使用」的前提，
+> 而落库内容已脱敏、只保留页面路径与错误文本。若确有合规要求，最小改动是在
+> `apps/miniapp/src/app.tsx` 里不调用 `container.telemetry.installGlobalHandlers()`
+> （错误边界仍会兜住白屏，只是不再上报）。
+
 ---
 
 ## 6. 数据库迁移（独立的发布步骤）
@@ -334,6 +394,12 @@ curl -sS -X POST "$BASE/api/v1/auth/account/login" \
 
 # 6) 站内信链路（把上一步的 accessToken 填进来）
 curl -sS "$BASE/api/v1/notifications/unread-count" -H "authorization: Bearer <token>"
+
+# 7) 遥测端点（匿名可调用；返回 {"ok":true,"data":{"accepted":true}}）
+curl -sS -X POST "$BASE/api/v1/telemetry/client-events" \
+  -H 'content-type: application/json' \
+  -d '{"kind":"error","message":"验收自检","platform":"curl","appVersion":"0.0.0"}'
+# → 然后在日志里搜 [client:error]，在库里查 ClientEvent 表，两处都应该有这条
 ```
 
 | 检查项 | 期望 | 不通过的常见原因 |
@@ -343,6 +409,7 @@ curl -sS "$BASE/api/v1/notifications/unread-count" -H "authorization: Bearer <to
 | 时间字段 | 与北京时间一致 | 容器时区被改成 UTC |
 | 未登录写接口 | `{"ok":false,"error":{"code":"UNAUTHENTICATED"}}` | 说明鉴权链路正常；返回 500 则要看日志 |
 | 日志里的 traceId | 与响应头 `X-KedaYa-Trace` 一致 | 便于把用户报错精确对到一条请求 |
+| 遥测写入 | 库里有 `ClientEvent` 行 | 迁移没跑（该表由 `20261017072546_telemetry_client_events` 创建） |
 
 ---
 
@@ -373,6 +440,9 @@ curl -sS "$BASE/api/v1/notifications/unread-count" -H "authorization: Bearer <to
 | 图片上传（接口与剥离） | **已实现并实测**（`MEDIA_STORAGE=local` 下上传含 GPS 的真实 JPEG：Exif/GPS 段消失、字节数减少、仍是合法 JPEG） | — |
 | 图片上传（真实对象存储 COS/OSS） | **未验证**（无可用的云存储凭据） | 按 5.4 节配 `MEDIA_STORAGE=s3` 后跑一遍「上线前必做的图片验收」 |
 | 小程序端选图（`chooseMedia` + 压缩） | **未验证**（需在微信开发者工具/真机操作） | 导入 `apps/miniapp/dist` 后，在发布页选一张带定位的照片，确认发布后图片可显示（详见 10.4） |
+| 客户端遥测写入 | **已实现并实测**（匿名单条上报 → 库中 `/redacted/` 生效、超长截断、未知 kind 归类、限流 30/分钟/IP 精确命中） | — |
+| 客户端遥测的**真实崩溃采集** | **未验证**（本机无法在真机上触发一次崩溃并观察上报） | 真机（或开发者工具 vConsole）里制造一次 `undefined is not a function`，确认 5.5 节的两个入口（日志 / `ClientEvent` 表）都能看到 |
+| 错误边界（`KdyErrorBoundary`）的实际兜底效果 | **未验证**（需要真机渲染异常才能看到兜底页） | 临时在某个页面里 `throw new Error()`，确认出现「这个页面没能打开」而不是白屏，且「重试 / 返回首页」都能点 |
 
 ---
 
@@ -496,6 +566,9 @@ grep -r "TARO_APP_USE_MOCK" apps/miniapp/dist | head     # 应该没有输出
 | 上传报 `MEDIA_S3_*` 相关启动错误 | 缺变量时的**启动即报错**（与 `DATABASE_URL` 同原则），按提示补齐即可 |
 | 图片地址是 `http://localhost:3999/...` | `MEDIA_STORAGE=local` 且没配 `MEDIA_PUBLIC_BASE_URL`，地址从请求头推导。生产请用 `s3` + `MEDIA_PUBLIC_BASE_URL` |
 | 本地 `npm run build:weapp` 后页面白屏 | `common.wxss` 编译失败 —— 检查是否写了 WXSS 不支持的选择器（`src/presentation/theme/__tests__/wxss-safety.test.ts` 会守） |
+| 页面白屏（不是 mock/域名问题） | 看兜底页在不在。若连兜底页都没有，说明错误发生在 `KdyErrorBoundary` 之外（App 启动阶段）—— 查 `app.tsx` 的 `bootstrapSync` 与容器装配 |
+| 库里 `ClientEvent` 表长得飞快 | 没配保留策略。按 5.5 节的 SQL 加一条每天执行的清理任务（30 天） |
+| 用户报「点进去就崩」但日志里什么都没有 | 先确认构建用的是最新包（错误边界上报要在新包里）；再把用户的 traceId 拿去日志检索。老版本客户端（还没有上报）不会有任何记录 |
 
 ---
 

@@ -64,9 +64,12 @@ import { createMockPrivacyRepository } from '../data/repositories/mockPrivacyRep
 import { createMockAgentRepository } from '../data/repositories/mockAgentRepository'
 import { createHttpMediaRepository } from '../data/repositories/httpMediaRepository'
 import { createMockMediaRepository } from '../data/repositories/mockMediaRepository'
+import { createHttpTelemetryRepository } from '../data/repositories/httpTelemetryRepository'
+import { createConsoleTelemetryRepository } from '../data/repositories/consoleTelemetryRepository'
 import { mockNow } from '../data/mock/fixtures'
 import { createAvatarPickerPort } from '../platform/avatarPicker'
 import { createImagePickerPort } from '../platform/imagePicker'
+import { createTelemetryReporter } from '../platform/telemetry'
 import { createWechatCodePort } from '../platform/wechatLogin'
 import { setUnreadBadge } from '../platform/tabBar'
 import { PAGE_PATHS } from './routes'
@@ -96,6 +99,8 @@ import type { ScheduleRepository } from '../domain/ports/scheduleRepository'
 import type { CampusCardRepository } from '../domain/ports/campusCardRepository'
 import type { PrivacyRepository } from '../domain/ports/privacyRepository'
 import type { AgentRepository } from '../domain/ports/agentRepository'
+import type { TelemetryRepository } from '../domain/ports/telemetryRepository'
+import type { TelemetryReporter } from '../platform/telemetry'
 
 /**
  * 装配层（契约 §7 `app/`：DI、路由注册、运行时工厂）。
@@ -146,6 +151,9 @@ export interface AppContainer {
   /** 相册选图（平台能力：`chooseMedia` → 逐张压缩后的 data URL） */
   imagePicker: ImagePickerPort
   mediaRepository: MediaRepository
+  telemetryRepository: TelemetryRepository
+  /** 客户端遥测上报器（错误边界 / 全局错误钩子 / 服务端故障都走它） */
+  telemetry: TelemetryReporter
   groupBuyRepository: GroupBuyRepository
   notificationRepository: NotificationRepository
   authRepository: AuthRepository
@@ -193,6 +201,8 @@ export interface ContainerOverrides {
   avatarPicker?: AvatarPickerPort
   imagePicker?: ImagePickerPort
   mediaRepository?: MediaRepository
+  telemetryRepository?: TelemetryRepository
+  telemetry?: TelemetryReporter
   env?: Partial<AppEnv>
 }
 
@@ -223,6 +233,25 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
 
   const http = createTaroHttpPort()
   const refresher = createAuthRefresher({ baseUrl: env.apiBaseUrl, http, trace })
+
+  /**
+   * 遥测与 apiClient 互相依赖（遥测仓储要发请求；apiClient 要在服务端 5xx 时回调遥测），
+   * 用一层**延迟委托**打破构造环 —— 比"先塞一个空实现、建好后再替换"更难写错
+   * （后者容易在替换之前就真的发出去，静默丢日志）。
+   */
+  let telemetrySink: TelemetryRepository | null = null
+  const telemetryRepository: TelemetryRepository = {
+    send: (payload) =>
+      telemetrySink === null
+        ? Promise.resolve({
+            ok: true as const,
+            value: { accepted: false },
+          })
+        : telemetrySink.send(payload),
+  }
+
+  const telemetry = overrides.telemetry ?? createTelemetryReporter({ repository: telemetryRepository })
+
   const apiClient = createApiClient({
     baseUrl: env.apiBaseUrl,
     http,
@@ -233,7 +262,19 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     onUnauthenticated: () => {
       sessionStore.setTokens(null)
     },
+    onServerError: (info) => {
+      telemetry.report({
+        kind: 'api-failure',
+        message: `${info.method} ${info.path} → HTTP ${info.status}（${info.code}）：${info.message}`,
+        traceId: info.traceId,
+        context: { status: info.status, code: info.code, method: info.method, path: info.path },
+      })
+    },
   })
+
+  telemetrySink =
+    overrides.telemetryRepository ??
+    (env.useMock ? createConsoleTelemetryRepository() : createHttpTelemetryRepository(apiClient))
 
   const mockRepository = env.useMock
     ? createMockGroupBuyRepository({ latencyMs: env.mockLatencyMs, now: clock.now, viewerId })
@@ -469,6 +510,8 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     avatarPicker,
     imagePicker,
     mediaRepository,
+    telemetryRepository,
+    telemetry,
     groupBuyRepository,
     notificationRepository,
     authRepository,

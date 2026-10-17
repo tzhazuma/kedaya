@@ -55,6 +55,25 @@ export interface ApiClientOptions {
   defaultTimeoutMs?: number
   /** 刷新也失败时的回调（跳登录页 / 清理本地态） */
   onUnauthenticated?: () => void
+  /**
+   * 服务端**自身**出问题时的回调（5xx / 信封不合规）。
+   *
+   * 刻意不报"网络不可用 / 超时"：那是用户环境问题（地铁里没信号），
+   * 上报只会淹没真正的服务端故障。这里要的是「我们的后端坏了」这一类线索。
+   *
+   * 同样刻意**不传 `details`**：它可能整包含有响应原文（里面有用户数据），
+   * 上报只需要知道「哪个接口、什么错、哪次 trace」。
+   */
+  onServerError?: (info: ServerErrorInfo) => void
+}
+
+export interface ServerErrorInfo {
+  path: string
+  method: string
+  status: number
+  code: ApiErrorCode
+  message: string
+  traceId: string
 }
 
 export interface ApiClient {
@@ -197,6 +216,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     trace,
     defaultTimeoutMs = 15_000,
     onUnauthenticated,
+    onServerError,
   } = options
 
   /** 并发去重：同一时刻只允许一个刷新请求在飞 */
@@ -248,8 +268,28 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
         ? statusToErrorCode(response.statusCode)
         : unwrapped.error.code
 
+    const apiError: ApiError = { ...unwrapped.error, code }
+
+    /**
+     * 「我们的后端坏了」这一类才上报：`INTERNAL`（5xx / 信封不合规）。
+     * 业务性失败（校验不过、无权限、冲突）是**预期内**的，
+     * 报上去只会把真正的故障淹没在噪声里。
+     *
+     * 上报放在这里（而不是 `request()`）是为了避免 401→刷新→重试路径重复上报。
+     */
+    if (code === 'INTERNAL') {
+      onServerError?.({
+        path: spec.path,
+        method: spec.method ?? 'GET',
+        status: response.statusCode,
+        code,
+        message: apiError.message,
+        traceId: unwrapped.traceId,
+      })
+    }
+
     return {
-      result: err({ ...unwrapped.error, code }),
+      result: err(apiError),
       unauthorized: code === 'UNAUTHENTICATED',
     }
   }

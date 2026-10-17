@@ -38,3 +38,6 @@ export type { KdyImageUploaderProps } from './KdyImageUploader'
 
 export { KdyImageGallery, KdyImageThumb } from './KdyImageGallery'
 export type { KdyImageGalleryProps, KdyImageThumbProps } from './KdyImageGallery'
+
+export { KdyErrorBoundary, resetErrorBoundary } from './KdyErrorBoundary'
+export type { KdyErrorBoundaryProps } from './KdyErrorBoundary'

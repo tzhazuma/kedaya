@@ -720,3 +720,39 @@ model Notification {
   @@index([userId, readAt, createdAt])
   @@index([userId, createdAt])
 }
+
+/// 运维 · 客户端遥测（**不存任何内容数据**；只存崩溃/服务端故障线索）
+///
+/// 三条设计约束：
+///   · `userId` 可空 —— 崩溃经常发生在登录之前（冷启动、登录页、刷新 token 失败）；
+///     强行要求登录会让最需要排查的场景永远收不到。
+///   · `message` / `stack` 已在服务端 `redactSecrets()` 抹掉 token / 邮箱 / 手机号，
+///     落库的是**已脱敏**文本。
+///   · 表会持续增长 → 上线后必须配保留策略（见 docs/deploy.md「遥测保留」），
+///     否则一年后这张表会变成最大的表。
+model ClientEvent {
+  id         String   @id @default(cuid())
+  /// 白名单：error | unhandled-rejection | page-not-found | api-failure | render-error
+  kind       String
+  message    String
+  stack      String?
+  /// 出错时所在页面路径（例如 presentation/pages/fleaMarket/list/index）
+  route      String?
+  /// 客户端产生的追踪 id，用来和后端日志里的同一请求对齐（契约 §6.1）
+  traceId    String?
+  platform   String?
+  appVersion String?
+  /// 标量键值对（已脱敏、已限量）；Prisma Json 字段
+  context    Json?
+  /// 刻意**不建外键关系**：用户注销时遥测应当保留（否则删除账号会同时抹掉
+  /// 排查线索，而那恰恰是出问题时最需要查的时候）；同时避免 User 被级联删除时
+  /// 把历史故障记录一起带走。
+  userId     String?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([kind, createdAt])
+  @@index([userId, createdAt])
+}
