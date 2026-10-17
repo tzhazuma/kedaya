@@ -133,7 +133,17 @@ export default {
    */
   permission: {
     'scope.userLocation': {
-      desc: '用于记录你发现动物的位置（仅在你主动上报时采集，公开位置会做模糊化处理）',
+      /**
+       * ⚠️ 微信硬限制：`desc` **不得超过 30 个字符**（中英文都按 1 个算），
+       * 超了会在**上传**阶段直接失败，报
+       * `错误码 80058 ... of scope.userLocation exceeds 30, word count: N`，
+       * 而本地编译、单测、`verify:weapp` 全都不会报错 —— 只有真机上传时才炸。
+       * 所以这条文案由 `src/app/__tests__/appConfig.test.ts` 守着，改长短先跑测试。
+       *
+       * 文案要把三件事说完（少一件都可能过不了审核 / 用户不敢授权）：
+       * 用途、采集时机（仅主动上报）、以及公开时的处理（模糊化）。
+       */
+      desc: '用于上报你发现的动物，仅主动采集、公开位置模糊化',
     },
   },
   requiredPrivateInfos: ['getLocation', 'chooseLocation'],
