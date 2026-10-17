@@ -24,11 +24,11 @@ export default function CampusMapPage() {
       <PageHeader
         eyebrow={`校园服务 · ${WILDLIFE_MODULE.id} · map`}
         title="校园地图"
-        description="默认使用仓库内离线渲染的 SVG/GeoJSON 底图（断网可用、校园尺度更细，不依赖在线瓦片）；也可切到 OpenStreetMap 在线瓦片看清校园在张江的位置。两者都用 WGS84，不经过 GCJ-02。地点标注逐项区分「已确证 / 推断 / 近似」，并公开数据来源与精度。"
+        description="两种底图可切换：真实瓦片地图（OpenStreetMap，可缩放拖拽）与仓库内离线渲染的 SVG/GeoJSON（断网可用、校园尺度更细）。两者都用 WGS84，不经过 GCJ-02。地点标注逐项区分「已确证 / 推断 / 近似」，并公开数据来源与精度。"
         actions={undefined}
       />
-      {/* 默认「离线底图」（仓库内 SVG/GeoJSON，断网可用）；
-          「在线地图」是可选增强（Leaflet + OSM 瓦片，需要网络）。 */}
+      {/* 默认「真实地图」（Leaflet + OSM 瓦片），可切到「离线底图」——
+          后者是仓库内离线渲染的 SVG/GeoJSON，断网可用、校园尺度更细。 */}
       <CampusBasemapToggle offlineView={<CampusMapView />} />
     </div>
   );

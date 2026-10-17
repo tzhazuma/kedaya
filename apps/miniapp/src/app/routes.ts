@@ -98,6 +98,29 @@ export function tabBarIndex(path: string): number {
  * 放在 `app/routes.ts` 而不是页面里：首页宫格与「发现」页都要用它，
  * 各写一份必然漂移（新增页面时只改了一处，另一处静默点不进去）。
  */
+export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
+  groupbuy: PAGE_PATHS.groupBuyList,
+  'flea-market': PAGE_PATHS.fleaList,
+  errand: PAGE_PATHS.errandList,
+  buddy: PAGE_PATHS.buddyList,
+  'lost-found': PAGE_PATHS.lostFoundList,
+  forum: PAGE_PATHS.forumList,
+  wildlife: PAGE_PATHS.wildlifeList,
+  canteen: PAGE_PATHS.canteenList,
+  faq: PAGE_PATHS.faqList,
+  'takeout-guard': PAGE_PATHS.takeoutGuardList,
+  techpie: PAGE_PATHS.techpieList,
+  wellbeing: PAGE_PATHS.wellbeingList,
+  'ai-portrait': PAGE_PATHS.aiPortraitHome,
+  'dorm-harmony': PAGE_PATHS.dormHarmonyHome,
+  // 站内通知：就是 tabBar 上的「消息」页（用 switchTab 跳，navigateTo 会失败）
+  notifications: PAGE_PATHS.messages,
+  // 四个核心模块（身份 / 课表 / 校园卡 / 我的）
+  auth: PAGE_PATHS.identity,
+  schedule: PAGE_PATHS.schedule,
+  'campus-card': PAGE_PATHS.campusCard,
+  profile: PAGE_PATHS.profile,
+}
 
 export function forumDetailPath(id: string): string {
   return `${PAGE_PATHS.forumDetail}?id=${encodeURIComponent(id)}`
