@@ -1,5 +1,5 @@
 import { Text, View } from '@tarojs/components'
-import { useDidShow, useReachBottom } from '@tarojs/taro'
+import Taro, { useDidShow, usePullDownRefresh, useReachBottom } from '@tarojs/taro'
 import { useState } from 'react'
 
 import { getContainer } from '../../../../app/container'
@@ -19,7 +19,7 @@ import type {
   ForumStatus,
 } from '../../../../domain/models/forum'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyImageThumb, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyImageThumb, KdyListSkeleton, KdyTag } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -115,6 +115,16 @@ export default function ForumListPage() {
     forum.list.hydrate()
     refresh()
     loadBoards()
+  })
+
+  /**
+   * 下拉刷新：**保留当前筛选条件**，只把游标重置回第一页。
+   * 与「重试」按钮走同一条路径（`load({ cursor: null })`），
+   * 所以不存在「下拉刷新和搜索按钮行为不一致」这种经典问题。
+   * 转圈必须等请求真的结束再收 —— 早收会让用户以为刷完了，其实还没到。
+   */
+  usePullDownRefresh(() => {
+    void forum.list.load({ cursor: null }).then(() => Taro.stopPullDownRefresh())
   })
 
   useReachBottom(() => {
@@ -232,7 +242,7 @@ export default function ForumListPage() {
         <Text className='kdy-forum__cache-hint'>正在后台刷新…</Text>
       )}
 
-      {state.status === 'loading' && <KdyEmpty mode='loading' />}
+      {state.status === 'loading' && <KdyListSkeleton />}
 
       {state.status === 'empty' && (
         <KdyEmpty

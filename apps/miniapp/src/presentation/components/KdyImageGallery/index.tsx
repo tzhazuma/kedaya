@@ -67,7 +67,13 @@ export function KdyImageGallery({ urls, columns = 3, compact = false, className 
             preview(index)
           }}
         >
-          <Image src={url} mode='aspectFill' className='kdy-gallery__image' fallback={<Broken />} />
+          <Image
+            src={url}
+            mode='aspectFill'
+            className='kdy-gallery__image'
+            lazyLoad
+            fallback={<Broken />}
+          />
         </View>
       ))}
     </View>
@@ -100,6 +106,9 @@ export function KdyImageThumb({ url, allUrls, count = 1, className }: KdyImageTh
         src={url}
         mode='aspectFill'
         className='kdy-gallery__thumb-image'
+        // 列表缩略图**必须**懒加载：校园网再快也经不起一屏 20 张图同时开请求，
+        // 而且用户往下滚三屏才看到的图，提前拉就是白烧流量与并发。
+        lazyLoad
         fallback={<Broken />}
         onClick={() => {
           void Taro.previewImage({ current: url, urls: gallery })

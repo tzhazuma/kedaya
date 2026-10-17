@@ -10,7 +10,7 @@ import {
 } from '../../../platform/subscribeMessage'
 import type { NotificationSource, NotificationSummary } from '../../../domain/models/notification'
 import { navigateTo, toast } from '../../../platform/navigation'
-import { KdyAgentFab, KdyButton, KdyCard, KdyChip, KdyEmpty, KdyTag } from '../../components'
+import { KdyAgentFab, KdyButton, KdyCard, KdyChip, KdyEmpty, KdyListSkeleton, KdyTag } from '../../components'
 import type { KdyTagTone } from '../../components'
 import { KdyHeading } from '../../components/KdyHeading'
 import { useStore } from '../../hooks'
@@ -157,11 +157,7 @@ export default function MessagesPage() {
         </KdyCard>
       )}
 
-      {showLoading && (
-        <KdyCard elevated={false}>
-          <KdyEmpty mode='loading' title='正在加载消息…' />
-        </KdyCard>
-      )}
+      {showLoading && <KdyListSkeleton />}
 
       {showError && (
         <KdyCard elevated={false}>

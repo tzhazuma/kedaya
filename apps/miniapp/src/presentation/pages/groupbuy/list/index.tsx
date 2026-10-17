@@ -21,7 +21,7 @@ import type {
 } from '../../../../domain/models/groupbuy'
 import type { GroupBuyRole, GroupBuySort } from '../../../../domain/ports/groupbuyRepository'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyListSkeleton, KdyTag } from '../../../components'
 import type { KdyTagTone } from '../../../components'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -256,9 +256,7 @@ export default function GroupBuyListPage() {
         </View>
       </KdyDemoTools>
 
-      {state.status === 'loading' && (
-        <KdyEmpty mode='loading' description='首次进入，正在拉取拼单列表' />
-      )}
+      {state.status === 'loading' && <KdyListSkeleton />}
 
       {state.status === 'error' && (
         <KdyEmpty

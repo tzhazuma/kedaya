@@ -38,3 +38,14 @@
   color: $kdy-color-text;
   font-size: $kdy-font-size-sm;
 }
+
+/**
+ * 按下反馈。
+ *
+ * 必须写在 `.kdy-card` **之后**：WeChat 的 `hoverClass` 是往元素的 class 列表里
+ * 追加一个类，两条规则同优先级，靠**出现顺序**决定谁生效。
+ */
+.kdy-card--pressed {
+  background-color: $kdy-color-surface-alt;
+  border-color: $kdy-color-border;
+}
