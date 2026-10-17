@@ -66,6 +66,33 @@
   font-size: $kdy-font-size-xs;
 }
 
+/* 可信度：左标签 / 中条 / 右百分比 */
+.kdy-wildlife-tracks__confidence {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  margin: $kdy-space-1 0;
+}
+
+.kdy-wildlife-tracks__confidence-key {
+  flex: none;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-wildlife-tracks__confidence-bar {
+  flex: 1;
+  min-width: 0;
+}
+
+.kdy-wildlife-tracks__confidence-value {
+  flex: none;
+  width: 40px;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-xs;
+  text-align: right;
+}
+
 .kdy-wildlife-tracks__card-disclaimer {
   margin-top: $kdy-space-1;
   color: $kdy-color-ink-soft;

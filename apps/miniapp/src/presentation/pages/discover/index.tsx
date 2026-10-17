@@ -168,7 +168,8 @@ export default function DiscoverPage() {
           ))}
         </View>
         <Text className='kdy-discover__hint'>
-          上排之外的模块若显示为「开发中」，点它会明确告知状态，不会假装可用。
+          六个生活模块都可直接进入。尚未实现的模块（当前是「场馆预约」）点开会如实说明状态，
+          不会给你一个白屏或假的可用入口。
         </Text>
       </KdyCard>
 
@@ -188,9 +189,10 @@ export default function DiscoverPage() {
         ))}
       </KdyCard>
 
-      <KdyCard title='提示' elevated={false}>
+      <KdyCard title='数据来源' elevated={false}>
         <Text className='kdy-discover__hint'>
-          已跑通的业务模块之一，含列表 / 详情 / 参团，默认走 mock 数据。
+          当前为演示模式：校园数据（课表、校园卡、实名）来自确定性模拟数据源，界面会如实标注；
+          生活模块的数据也可在本地演示。接入校方授权后切到真实数据源，权限与审计逻辑不变。
         </Text>
       </KdyCard>
 
@@ -276,6 +278,50 @@ export default function DiscoverPage() {
           </KdyButton>
         </View>
       </KdyCard>
+
+      <KdyDemoTools>
+        <KdyCard title='当前运行端' elevated={false}>
+          <View className='kdy-discover__platform'>
+            <KdyTag tone='brand'>{currentPlatform()}</KdyTag>
+            <Text className='kdy-discover__hint'>
+              weapp = 微信小程序（主端）；h5 = 次要编译目标
+            </Text>
+          </View>
+        </KdyCard>
+
+        <KdyCard title='平台能力试跑' elevated={false}>
+          <View className='kdy-discover__actions'>
+            <KdyButton size='sm' variant='ghost' onClick={() => void handleScan()}>
+              扫码
+            </KdyButton>
+            <KdyButton size='sm' variant='ghost' onClick={() => void handleSubscribe()}>
+              订阅消息
+            </KdyButton>
+            <KdyButton size='sm' variant='ghost' onClick={() => void handleShare()}>
+              分享
+            </KdyButton>
+            <KdyButton size='sm' variant='ghost' onClick={() => void handleMap()}>
+              地图
+            </KdyButton>
+          </View>
+          <Text className='kdy-discover__result'>{lastResult}</Text>
+        </KdyCard>
+
+        <KdyCard title='能力差异矩阵' elevated={false}>
+          {CAPABILITIES.map((capability) => (
+            <View key={capability.id} className='kdy-discover__cap'>
+              <View className='kdy-discover__cap-head'>
+                <Text className='kdy-discover__cap-name'>{capability.nameZh}</Text>
+                <KdyTag tone={capability.weappOnly ? 'danger' : 'info'}>
+                  {capability.weappOnly ? '微信特有' : '两端均有'}
+                </KdyTag>
+              </View>
+              <Text className='kdy-discover__cap-line'>小程序：{capability.weapp}</Text>
+              <Text className='kdy-discover__cap-line'>H5 降级：{capability.h5}</Text>
+            </View>
+          ))}
+        </KdyCard>
+      </KdyDemoTools>
 
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。

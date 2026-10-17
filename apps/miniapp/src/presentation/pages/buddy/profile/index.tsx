@@ -1,4 +1,4 @@
-import { Input, Picker, Text, View } from '@tarojs/components'
+import { Text, View } from '@tarojs/components'
 import { useDidShow } from '@tarojs/taro'
 import { useState } from 'react'
 
@@ -22,7 +22,16 @@ import {
 } from '../../../../domain/models/buddy'
 import type { BuddySkillLevel, BuddyTagGroup } from '../../../../domain/models/buddy'
 import { toast } from '../../../../platform/navigation'
-import { KdyBuddyPrivacyNotice, KdyButton, KdyCard, KdyEmpty, KdyField, KdySwitch, KdyTag } from '../../../components'
+import {
+  KdyBuddyPrivacyNotice,
+  KdyButton,
+  KdyCard,
+  KdyEmpty,
+  KdyField,
+  KdyPicker,
+  KdySwitch,
+  KdyTag,
+} from '../../../components'
 import { useStore } from '../../../hooks'
 import './index.scss'
 
@@ -157,19 +166,16 @@ export default function BuddyProfilePage() {
           {/* ---------------- 院系 ---------------- */}
           <KdyCard title='院系'>
             <KdyField label='院系' hint='仅用于「学术自习」板块的同院系匹配'>
-              <Picker
-                mode='selector'
-                // Taro 的 `range` 要求可变数组，而院系清单是 `readonly` —— 展开一份
-                range={[...SHTU_DEPARTMENTS]}
-                onChange={(event) => {
-                  const value = SHTU_DEPARTMENTS[Number(event.detail.value)]
+              <KdyPicker
+                range={SHTU_DEPARTMENTS}
+                title='选择院系'
+                placeholder='请选择院系'
+                value={data.department === null ? -1 : SHTU_DEPARTMENTS.indexOf(data.department)}
+                onChange={(index) => {
+                  const value = SHTU_DEPARTMENTS[index]
                   if (value !== undefined) profile.setDepartment(value)
                 }}
-              >
-                <Text className='kdy-buddy-profile__picker'>
-                  {data.department ?? '请选择院系'}
-                </Text>
-              </Picker>
+              />
             </KdyField>
             <Text className='kdy-buddy-profile__note'>
               刻意用「院系」而不是「专业」：专业在小程序端填报质量不可控
@@ -283,33 +289,28 @@ export default function BuddyProfilePage() {
             )}
 
             <View className='kdy-buddy-profile__slot-form'>
-              <Picker
-                mode='selector'
-                range={DOW_OPTIONS.map((dow) => AVAILABILITY_DOW_LABELS[dow] ?? '')}
-                onChange={(event) => setDowIndex(Number(event.detail.value))}
-              >
-                <Text className='kdy-buddy-profile__picker'>
-                  {AVAILABILITY_DOW_LABELS[DOW_OPTIONS[dowIndex] ?? 1]}
-                </Text>
-              </Picker>
+              <View className='kdy-buddy-profile__slot-picker'>
+                <KdyPicker
+                  range={DOW_OPTIONS.map((dow) => AVAILABILITY_DOW_LABELS[dow] ?? '')}
+                  title='选择星期'
+                  value={dowIndex}
+                  onChange={setDowIndex}
+                />
+              </View>
 
-              <Picker
-                mode='time'
-                value={startTime}
-                onChange={(event) => setStartTime(String(event.detail.value))}
-              >
-                <Text className='kdy-buddy-profile__picker'>{startTime}</Text>
-              </Picker>
+              <View className='kdy-buddy-profile__slot-picker'>
+                <KdyPicker
+                  mode='time'
+                  value={startTime}
+                  onChange={setStartTime}
+                />
+              </View>
 
               <Text className='kdy-buddy-profile__to'>至</Text>
 
-              <Picker
-                mode='time'
-                value={endTime}
-                onChange={(event) => setEndTime(String(event.detail.value))}
-              >
-                <Text className='kdy-buddy-profile__picker'>{endTime}</Text>
-              </Picker>
+              <View className='kdy-buddy-profile__slot-picker'>
+                <KdyPicker mode='time' value={endTime} onChange={setEndTime} />
+              </View>
             </View>
 
             {slotError !== null && <Text className='kdy-buddy-profile__error'>{slotError}</Text>}
@@ -390,15 +391,11 @@ export default function BuddyProfilePage() {
             <KdyField
               label='自述'
               hint={`${[...(data.bio ?? '')].length}/${BUDDY_BIO_MAX}`}
-            >
-              <Input
-                className='kdy-buddy-profile__input'
-                value={data.bio ?? ''}
-                maxlength={BUDDY_BIO_MAX}
-                placeholder='例如：常打羽毛球，也常泡图书馆'
-                onInput={(event) => profile.setBio(event.detail.value)}
-              />
-            </KdyField>
+              value={data.bio ?? ''}
+              maxLength={BUDDY_BIO_MAX}
+              placeholder='例如：常打羽毛球，也常泡图书馆'
+              onChange={profile.setBio}
+            />
             <Text className='kdy-buddy-profile__note'>
               不要写联系方式（会被校验拦下）—— 申请通过后由站内信交换。
             </Text>

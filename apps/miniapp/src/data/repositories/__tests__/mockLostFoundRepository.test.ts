@@ -118,6 +118,11 @@ describe('标签、时间解析与派生视图', () => {
     expect(summary.mine).toBe(true)
     expect(summary.resolved).toBe(false)
     expect(summary.happenedLabel).toBe('2 小时前')
+    // 原始类型与徽标一起给：卡片按 `kind` 换视觉，不解析中文
+    expect(summary.kind).toBe('lost')
+    expect(summarize(item({ kind: 'found' }), REPORTER, NOW).kind).toBe('found')
+    // 未知类型降级（老数据 / 新枚举）——不抛错
+    expect(summarize(item({ kind: 'nope' }), REPORTER, NOW).kind).toBe('lost')
 
     expect(summarize(item(), OTHER, NOW).mine).toBe(false)
     expect(summarize(item(), null, NOW).mine).toBe(false)

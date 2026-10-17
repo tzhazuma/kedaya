@@ -1,4 +1,4 @@
-import { Text, Textarea, View } from '@tarojs/components'
+import { Text, View } from '@tarojs/components'
 import Taro, {
   useDidShow,
   usePullDownRefresh,
@@ -258,15 +258,16 @@ export default function ForumDetailPage() {
               </View>
             )}
 
-            <KdyField label='回复内容' hint={`${[...replyBody].length}/${FORUM_REPLY_MAX_LENGTH}`} required>
-              <Textarea
-                className='kdy-forum-detail__textarea'
-                value={replyBody}
-                placeholder='友善发言，共建校园社区'
-                maxlength={FORUM_REPLY_MAX_LENGTH}
-                onInput={(event) => setReplyBody(event.detail.value)}
-              />
-            </KdyField>
+            <KdyField
+              label='回复内容'
+              hint={`${[...replyBody].length}/${FORUM_REPLY_MAX_LENGTH}`}
+              required
+              multiline
+              value={replyBody}
+              placeholder='友善发言，共建校园社区'
+              maxLength={FORUM_REPLY_MAX_LENGTH}
+              onChange={setReplyBody}
+            />
 
             <KdyButton
               block

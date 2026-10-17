@@ -13,8 +13,10 @@ import { navigateTo, toast } from '../../../../platform/navigation'
 import {
   KdyButton,
   KdyCard,
+  KdyChip,
   KdyEmpty,
   KdyPrivacyNotice,
+  KdyProgress,
   KdyTag,
 } from '../../../components'
 import { useStore } from '../../../hooks'
@@ -106,18 +108,22 @@ export default function WildlifeTracksPage() {
   return (
     <View className='kdy-page kdy-wildlife-tracks'>
       <View className='kdy-wildlife-tracks__filters'>
-        <View className='kdy-wildlife-tracks__filter' onClick={() => handleSpeciesFilter(null)}>
-          <KdyTag tone={state.activeSpeciesId === null ? 'brand' : 'neutral'}>全部</KdyTag>
+        <View className='kdy-wildlife-tracks__filter'>
+          <KdyChip active={state.activeSpeciesId === null} onClick={() => handleSpeciesFilter(null)}>
+            全部
+          </KdyChip>
         </View>
         {state.species.map((species) => (
           <View
             key={species.id}
             className='kdy-wildlife-tracks__filter'
-            onClick={() => handleSpeciesFilter(species.id)}
           >
-            <KdyTag tone={state.activeSpeciesId === species.id ? 'brand' : 'neutral'}>
+            <KdyChip
+              active={state.activeSpeciesId === species.id}
+              onClick={() => handleSpeciesFilter(species.id)}
+            >
               {species.commonNameZh}
-            </KdyTag>
+            </KdyChip>
           </View>
         ))}
       </View>
@@ -230,9 +236,20 @@ export default function WildlifeTracksPage() {
                   {track.pointCount} 个途经点 · {track.sightingCount} 次上报 · 折线长度{' '}
                   {track.totalDistanceM} 米
                 </Text>
-                <Text className='kdy-wildlife-tracks__card-meta'>
-                  可信度 {Math.round(track.confidence * 100)}% · 算法 {track.algorithmVersion}
-                </Text>
+                {/* 可信度百分比：给条也给数字。这是**推断**的可信度，
+                    不是"这条路径有多真"—— 百分比在这类数据上很容易被读成后者。 */}
+                <View className='kdy-wildlife-tracks__confidence'>
+                  <Text className='kdy-wildlife-tracks__confidence-key'>可信度</Text>
+                  <KdyProgress
+                    className='kdy-wildlife-tracks__confidence-bar'
+                    percent={Math.round(track.confidence * 100)}
+                    tone='warning'
+                  />
+                  <Text className='kdy-wildlife-tracks__confidence-value'>
+                    {Math.round(track.confidence * 100)}%
+                  </Text>
+                </View>
+                <Text className='kdy-wildlife-tracks__card-meta'>算法 {track.algorithmVersion}</Text>
                 <Text className='kdy-wildlife-tracks__card-disclaimer'>
                   {track.disclaimer ?? '（服务端未下发免责说明，请以「推断轨迹」为准）'}
                 </Text>

@@ -1,4 +1,4 @@
-import { Input, Text, Textarea, View } from '@tarojs/components'
+import { Text, View } from '@tarojs/components'
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import { useState } from 'react'
 
@@ -86,29 +86,22 @@ export default function FaqTicketsPage() {
           required
           hint='邮箱或微信号，请勿填写手机号'
           error={errorFor(errors, 'contact')}
-        >
-          <Input
-            className='kdy-faq-tickets__input'
-            value={contact}
-            placeholder='例如 student@shanghaitech.edu.cn 或 wechat: 你的微信号'
-            onInput={(event) => setContact(event.detail.value)}
-          />
-        </KdyField>
+          value={contact}
+          placeholder='例如 student@shanghaitech.edu.cn 或 wechat: 你的微信号'
+          onChange={setContact}
+        />
 
         <KdyField
           label='问题描述'
           required
           hint={`${[...question].length}/${FAQ_TICKET_QUESTION_MAX_LENGTH}`}
           error={errorFor(errors, 'question')}
-        >
-          <Textarea
-            className='kdy-faq-tickets__textarea'
-            value={question}
-            placeholder='请描述你遇到的问题，附上出错时间会更快定位'
-            maxlength={FAQ_TICKET_QUESTION_MAX_LENGTH}
-            onInput={(event) => setQuestion(event.detail.value)}
-          />
-        </KdyField>
+          multiline
+          value={question}
+          placeholder='请描述你遇到的问题，附上出错时间会更快定位'
+          maxLength={FAQ_TICKET_QUESTION_MAX_LENGTH}
+          onChange={setQuestion}
+        />
 
         <KdyButton
           block
@@ -164,11 +157,21 @@ export default function FaqTicketsPage() {
                 </View>
 
                 <Text className='kdy-faq-tickets__question'>{ticket.question}</Text>
-                <Text className='kdy-faq-tickets__contact'>联系方式：{ticket.contact}</Text>
 
-                {ticket.answer !== null && (
-                  <Text className='kdy-faq-tickets__answer'>官方回复：{ticket.answer}</Text>
-                )}
+                {/* 看工单的人只关心一件事：「有人回我了吗」。因此回复单独成块、带左侧色条，
+                    而不是和问题、联系方式挤在同一段灰字里。 */}
+                {ticket.answer !== null ? (
+                  <View className='kdy-faq-tickets__reply'>
+                    <Text className='kdy-faq-tickets__reply-label'>官方回复</Text>
+                    <Text className='kdy-faq-tickets__reply-body'>{ticket.answer}</Text>
+                  </View>
+                ) : ticket.status === 'OPEN' ? (
+                  <Text className='kdy-faq-tickets__waiting'>
+                    还没有回复 —— 工单由志愿者按顺序处理，不承诺响应时限。
+                  </Text>
+                ) : null}
+
+                <Text className='kdy-faq-tickets__contact'>联系方式：{ticket.contact}</Text>
               </View>
             ))}
           </View>

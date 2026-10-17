@@ -73,15 +73,9 @@
   font-weight: $kdy-font-weight-semibold;
 }
 
-.kdy-wildlife-report__input,
-.kdy-wildlife-report__textarea {
-  width: 100%;
-  color: $kdy-color-text;
-  font-size: $kdy-font-size-sm;
-}
-
-.kdy-wildlife-report__textarea {
-  min-height: 140px;
+.kdy-wildlife-report__picker {
+  flex: 1 1 45%;
+  min-width: 0;
 }
 
 /* `<map>` 必须有确定高度 */

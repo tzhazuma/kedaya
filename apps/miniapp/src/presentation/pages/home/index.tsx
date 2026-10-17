@@ -3,7 +3,7 @@ import { MODULES } from '@kedaya/contracts'
 import type { KedayaModule } from '@kedaya/contracts'
 
 import { getContainer } from '../../../app/container'
-import { moduleEntryPath } from '../../../app/routes'
+import { PAGE_PATHS, moduleEntryPath } from '../../../app/routes'
 import { navigateTo, toast } from '../../../platform/navigation'
 import { KdyAgentFab, KdyCard, KdyTag } from '../../components'
 import { KdyModuleIcon } from '../../components/KdyModuleIcon'

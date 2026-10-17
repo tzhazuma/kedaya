@@ -14,6 +14,7 @@ import {
   KdyEmpty,
   KdyField,
   KdyListSkeleton,
+  KdyProgress,
   KdyTag,
 } from '../../../components'
 import type { KdyTagTone } from '../../../components'
@@ -38,7 +39,28 @@ const CALORIE_TONES: Readonly<Record<CalorieLevel, KdyTagTone>> = {
   heavy: 'warning',
 }
 
+/** 三条营养条的定义（顺序固定：蛋白 / 脂肪 / 碳水） */
+const MACRO_ROWS = [
+  { key: 'protein', label: '蛋白', tone: 'brand' },
+  { key: 'fat', label: '脂肪', tone: 'warning' },
+  { key: 'carb', label: '碳水', tone: 'success' },
+] as const
+
+/**
+ * 营养卡 —— 食堂模块的**定制化**外观：把「蛋白 32g · 脂肪 28g · 碳水 96g」
+ * 这句谁也不会读的文字，变成三条**一眼能比**的比例条。
+ *
+ * 三条条的长度是**克数占比**（口径写在卡片底部，不做热量换算 —— 见
+ * `domain/models/canteen.ts` 的 `macroShares`）。克数原值同时给出，
+ * 因为"占比好看"和"够不够吃"是两件事。
+ */
 function CanteenCard({ dish }: { dish: CanteenDishSummary }) {
+  const grams: Readonly<Record<(typeof MACRO_ROWS)[number]['key'], number>> = {
+    protein: dish.proteinG,
+    fat: dish.fatG,
+    carb: dish.carbG,
+  }
+
   return (
     <KdyCard
       elevated={false}
@@ -51,14 +73,34 @@ function CanteenCard({ dish }: { dish: CanteenDishSummary }) {
           <Text className='kdy-canteen-card__name'>{dish.name}</Text>
           <KdyTag tone={CALORIE_TONES[dish.calorieLevel]}>{dish.calorieLevelLabel}</KdyTag>
         </View>
-        <Text className='kdy-canteen-card__meta'>
-          {dish.canteen} · {dish.caloriesLabel}
-        </Text>
-        <Text className='kdy-canteen-card__macro'>{dish.macroSummary}</Text>
-        <View className='kdy-canteen-card__foot'>
+
+        <View className='kdy-canteen-card__meta'>
+          <Text className='kdy-canteen-card__canteen'>{dish.canteen}</Text>
           <Text className='kdy-canteen-card__price'>{dish.priceLabel}</Text>
-          <Text className='kdy-canteen-card__time'>{dish.createdLabel}录入</Text>
         </View>
+
+        <View className='kdy-canteen-card__calories'>
+          <Text className='kdy-canteen-card__calories-value'>{dish.caloriesKcal}</Text>
+          <Text className='kdy-canteen-card__calories-unit'>千卡</Text>
+        </View>
+
+        <View className='kdy-canteen-card__macros'>
+          {MACRO_ROWS.map((row) => (
+            <View className='kdy-canteen-card__macro-row' key={row.key}>
+              <Text className='kdy-canteen-card__macro-key'>{row.label}</Text>
+              <KdyProgress
+                className='kdy-canteen-card__macro-bar'
+                percent={dish.macroShares[row.key]}
+                tone={row.tone}
+              />
+              <Text className='kdy-canteen-card__macro-value'>{grams[row.key]}g</Text>
+            </View>
+          ))}
+        </View>
+
+        <Text className='kdy-canteen-card__foot'>
+          按克数占比 · {dish.createdLabel}录入
+        </Text>
       </View>
     </KdyCard>
   )

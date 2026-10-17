@@ -18,6 +18,7 @@ import { navigateTo, toast } from '../../../../platform/navigation'
 import {
   KdyButton,
   KdyCard,
+  KdyChip,
   KdyEmpty,
   KdyEthicsNotice,
   KdyPrivacyNotice,
@@ -165,18 +166,22 @@ export default function WildlifeMapPage() {
     <View className='kdy-page kdy-wildlife-map'>
       {/* 物种筛选 */}
       <View className='kdy-wildlife-map__filters'>
-        <View className='kdy-wildlife-map__filter' onClick={() => handleSpeciesFilter(null)}>
-          <KdyTag tone={state.activeSpeciesId === null ? 'brand' : 'neutral'}>全部</KdyTag>
+        <View className='kdy-wildlife-map__filter'>
+          <KdyChip active={state.activeSpeciesId === null} onClick={() => handleSpeciesFilter(null)}>
+            全部
+          </KdyChip>
         </View>
         {state.species.map((species) => (
           <View
             key={species.id}
             className='kdy-wildlife-map__filter'
-            onClick={() => handleSpeciesFilter(species.id)}
           >
-            <KdyTag tone={state.activeSpeciesId === species.id ? 'brand' : 'neutral'}>
+            <KdyChip
+              active={state.activeSpeciesId === species.id}
+              onClick={() => handleSpeciesFilter(species.id)}
+            >
               {species.commonNameZh}
-            </KdyTag>
+            </KdyChip>
           </View>
         ))}
       </View>

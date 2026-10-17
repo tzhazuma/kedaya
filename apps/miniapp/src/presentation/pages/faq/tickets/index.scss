@@ -48,6 +48,7 @@
 }
 
 .kdy-faq-tickets__time {
+  margin-left: auto;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
 }
@@ -64,13 +65,32 @@
   word-break: break-all;
 }
 
-.kdy-faq-tickets__answer {
-  padding: $kdy-space-2;
+/* 回复块：左侧一道品牌色，让「已回复」在滚列表时一眼可辨 */
+.kdy-faq-tickets__reply {
+  padding: $kdy-space-2 $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-left: 3px solid $kdy-color-brand;
+  border-radius: $kdy-radius-sm;
+}
+
+.kdy-faq-tickets__reply-label {
+  display: block;
+  margin-bottom: $kdy-space-1;
+  color: $kdy-color-brand-strong;
+  font-size: $kdy-font-size-xs;
+  font-weight: $kdy-font-weight-medium;
+}
+
+.kdy-faq-tickets__reply-body {
   color: $kdy-color-ink-soft;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
+}
+
+.kdy-faq-tickets__waiting {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
 }
 
 .kdy-faq-tickets__actions {

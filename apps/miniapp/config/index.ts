@@ -101,9 +101,41 @@ const baseConfig: UserConfigExport<'webpack5'> = {
     compile: {
       include: [path.resolve(__dirname, '..', '..', '..', 'packages')],
     },
+    /**
+     * 依赖解析必须能看到**本端**的 `node_modules`。
+     *
+     * npm 的 workspace 提升会把 `@taroify/core` 的传递依赖（如
+     * `react-transition-group`）装到**仓库根**的 `node_modules`，
+     * 而从根目录向上查找时**永远到不了** `apps/miniapp/node_modules`
+     * —— 于是 `react-transition-group/esm` 里 `import 'react-dom'`
+     * 这条链（被 Taro 别名成 `@tarojs/react`）在根目录解析失败：
+     *
+     *   resolve 'react-dom' in '.../node_modules/react-transition-group/esm'
+     *     aliased with mapping 'react-dom': '@tarojs/react'
+     *     → /node_modules/@tarojs/react doesn't exist
+     *
+     * 把本端 node_modules 放进解析路径，Taroify 的弹层/选择器才能正常打包。
+     */
+    webpackChain(chain: Chain) {
+      chain.resolve.modules
+        .prepend(path.resolve(__dirname, '..', 'node_modules'))
+        // 保留默认的「逐级向上找 node_modules」语义（`react` 之类被提升到仓库根）。
+        .add('node_modules')
+    },
     postcss: {
       pxtransform: { enable: true, config: {} },
       cssModules: { enable: false },
+    },
+    /**
+     * 小程序端同样按 h5 的方式忽略 CSS chunk 顺序告警。
+     *
+     * 分包（subPackages）下，同一个公共样式会被多个 chunk 同时引用，
+     * 引用顺序取决于页面依赖图 —— 顺序不同会让 `mini-css-extract-plugin`
+     * 直接**报错中断构建**（`Conflicting order`），而站点样式本身并不依赖
+     * 这个顺序（各页面样式类名互不重叠，公共部分在 `common.wxss`）。
+     */
+    miniCssExtractPluginOption: {
+      ignoreOrder: true,
     },
   },
   h5: {

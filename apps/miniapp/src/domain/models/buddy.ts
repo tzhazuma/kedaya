@@ -509,6 +509,14 @@ export interface BuddyPostSummary {
   capacity: number
   joinedCount: number
   remainingSlots: number
+  /**
+   * 名额填充百分比（0–100）。
+   *
+   * 卡片要画一条「已有 3/6 人」的名额条。这个数字**不能**让页面自己算：
+   * `capacity` 为 0 时（老数据）除零会得到 `NaN`，条形图会静默画成空/满。
+   * 判定与夹紧只在领域层做一次。
+   */
+  fillPercent: number
   genderPreference: BuddyGenderPreference
   genderPreferenceLabel: string
   minSkillLevel: BuddySkillLevel | null
@@ -528,6 +536,20 @@ export interface BuddyPostSummary {
  */
 export function buddyRemainingSlots(post: Pick<BuddyPost, 'capacity' | 'joinedCount'>): number {
   return Math.max(0, post.capacity - post.joinedCount)
+}
+
+/**
+ * 名额填充百分比（0–100 整数）。
+ *
+ * `capacity <= 0`（老数据 / 后端未填）返回 0，而不是 `NaN` —— `NaN` 传进
+ * 进度条会被夹成 0，但中间那一步的语义已经是错的（"算不出来"和"一个人都没有"
+ * 是两回事），所以在这里显式给出 0 并留下这条注释。
+ * 超过容量（后端允许小幅超额）夹到 100，条形图不会撑破容器。
+ */
+export function buddyFillPercent(post: Pick<BuddyPost, 'capacity' | 'joinedCount'>): number {
+  if (!(post.capacity > 0)) return 0
+  const percent = Math.round((post.joinedCount / post.capacity) * 100)
+  return Math.max(0, Math.min(100, percent))
 }
 
 /** 活动是否已过开始时间（`groupbuy.isExpired` 的搭子版，同样刻意改名避免 barrel 歧义） */
@@ -1181,6 +1203,7 @@ export function summarizeBuddyPost(post: BuddyPost, now: Date): BuddyPostSummary
     capacity: post.capacity,
     joinedCount: post.joinedCount,
     remainingSlots: buddyRemainingSlots(post),
+    fillPercent: buddyFillPercent(post),
     genderPreference: post.genderPreference,
     genderPreferenceLabel: BUDDY_GENDER_PREFERENCE_LABELS[post.genderPreference],
     minSkillLevel: post.minSkillLevel,

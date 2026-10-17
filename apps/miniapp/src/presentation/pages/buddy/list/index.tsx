@@ -10,12 +10,21 @@ import {
   buddyRecommendationsPath,
 } from '../../../../app/routes'
 import {
+  BUDDY_SECTION_DESCRIPTIONS,
   BUDDY_SECTION_LABELS,
   BUDDY_SECTIONS,
+  BUDDY_SKILL_LEVEL_LABELS,
 } from '../../../../domain/models/buddy'
 import type { BuddyPostSummary, BuddySection } from '../../../../domain/models/buddy'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyBuddyPrivacyNotice, KdyButton, KdyCard, KdyEmpty, KdyTag } from '../../../components'
+import {
+  KdyBuddyPrivacyNotice,
+  KdyButton,
+  KdyCard,
+  KdyEmpty,
+  KdyProgress,
+  KdyTag,
+} from '../../../components'
 import type { KdyTagTone } from '../../../components'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -53,7 +62,25 @@ function statusTone(status: BuddyPostSummary['status']): KdyTagTone {
   return 'neutral'
 }
 
+/**
+ * 搭子卡 —— **活动邀约**的定制化外观。
+ *
+ * 找搭子和刷商品不同：用户要判断的是「什么时候、在哪、还剩几个位置、有没有
+ * 门槛」。所以卡片按这个顺序组织：
+ *   1. 标题 + 状态（报名中 / 已满 / 已过期…）；
+ *   2. 活动类型 + 时间 + 地点三行事实（左标签对齐，扫起来比一句
+ *      `10月24日 14:00 · 羽毛球馆` 快）；
+ *   3. **名额条**（已有 3/6 人）+「还差 N 人」；
+ *   4. 标签（羽毛球 / 新手友好…）与门槛（仅同性 / 需要中级）；
+ *   5. 发起人。
+ */
 function BuddyCard({ item }: { item: BuddyPostSummary }) {
+  const full = item.remainingSlots === 0
+  const requirements = [
+    item.genderPreference === 'any' ? null : item.genderPreferenceLabel,
+    item.minSkillLevel === null ? null : `需 ${BUDDY_SKILL_LEVEL_LABELS[item.minSkillLevel]}`,
+  ].filter((text): text is string => text !== null)
+
   return (
     <KdyCard
       elevated={false}
@@ -67,16 +94,37 @@ function BuddyCard({ item }: { item: BuddyPostSummary }) {
           <KdyTag tone={statusTone(item.status)}>{item.statusLabel}</KdyTag>
         </View>
 
-        <View className='kdy-buddy-card__meta'>
-          <KdyTag tone='info'>{item.sectionLabel}</KdyTag>
-          <Text className='kdy-buddy-card__time'>{item.startsAtLabel}</Text>
+        <View className='kdy-buddy-card__facts'>
+          <View className='kdy-buddy-card__fact'>
+            <Text className='kdy-buddy-card__fact-key'>活动</Text>
+            <Text className='kdy-buddy-card__fact-value'>{item.activityLabel}</Text>
+          </View>
+          <View className='kdy-buddy-card__fact'>
+            <Text className='kdy-buddy-card__fact-key'>时间</Text>
+            <Text className='kdy-buddy-card__fact-value'>
+              {item.startsAtLabel} · 约 {item.durationMin} 分钟
+            </Text>
+          </View>
+          <View className='kdy-buddy-card__fact'>
+            <Text className='kdy-buddy-card__fact-key'>地点</Text>
+            <Text className='kdy-buddy-card__fact-value'>{item.location}</Text>
+          </View>
         </View>
 
-        <View className='kdy-buddy-card__row'>
-          <Text className='kdy-buddy-card__place'>{item.location}</Text>
-          <Text className='kdy-buddy-card__count'>
-            {item.joinedCount}/{item.capacity} 人 · 还差 {item.remainingSlots} 人
-          </Text>
+        <View className='kdy-buddy-card__slots'>
+          <View className='kdy-buddy-card__slots-row'>
+            <Text className='kdy-buddy-card__slots-text'>
+              已有 {item.joinedCount} / {item.capacity} 人
+            </Text>
+            <Text className={full ? 'kdy-buddy-card__slots-left is-full' : 'kdy-buddy-card__slots-left'}>
+              {full ? '已满员' : `还差 ${item.remainingSlots} 人`}
+            </Text>
+          </View>
+          <KdyProgress
+            className='kdy-buddy-card__slots-bar'
+            percent={item.fillPercent}
+            tone={full ? 'success' : 'brand'}
+          />
         </View>
 
         {item.tagLabels.length > 0 && (
@@ -87,6 +135,10 @@ function BuddyCard({ item }: { item: BuddyPostSummary }) {
               </KdyTag>
             ))}
           </View>
+        )}
+
+        {requirements.length > 0 && (
+          <Text className='kdy-buddy-card__requirements'>门槛：{requirements.join(' · ')}</Text>
         )}
 
         <View className='kdy-buddy-card__foot'>
@@ -171,6 +223,14 @@ export default function BuddyListPage() {
           </View>
         ))}
       </View>
+
+      {/* 板块说明：切到某个板块时告诉用户这里会有什么，
+          「全部」时给一句总括。三个板块的差异是**内容**差异，不是视觉差异。 */}
+      <Text className='kdy-buddy-list__section-hint'>
+        {section === 'all'
+          ? '学术自习 / 日常搭子 / 运动组队 —— 三个板块各自发布'
+          : BUDDY_SECTION_DESCRIPTIONS[section]}
+      </Text>
 
       <View className='kdy-buddy-list__actions'>
         <KdyButton size='sm' variant='ghost' onClick={() => void navigateTo(buddyCreatePath(section))}>

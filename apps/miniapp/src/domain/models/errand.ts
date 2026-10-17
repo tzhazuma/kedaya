@@ -111,6 +111,15 @@ export interface ErrandTaskSummary {
   rewardFen: number
   rewardLabel: string
   routeLabel: string
+  /**
+   * 出发地 / 目的地**分开**给。
+   *
+   * 为什么不能只给 `routeLabel`：跑腿卡片的核心视觉是「取件点 → 送达点」两行导轨，
+   * 页面若拿 `routeLabel` 去 `split('→')` 就是在解析一个**展示字符串** ——
+   * 地点名里出现 `→` 就会静默切错。分开给，展示与数据各自负责自己的形状。
+   */
+  fromPlace: string
+  toPlace: string
   /** 「还有 6 小时」/「已截止」 */
   deadlineLabel: string
   timeLabel: string
@@ -123,6 +132,21 @@ export interface ErrandTaskSummary {
   takenByMe: boolean
   /** 是否已经有人接单（用于「待接单」卡片提示） */
   hasRunner: boolean
+  /**
+   * 截止时间是否已过。
+   *
+   * 为什么放进摘要而不是让页面比较字符串：`deadlineLabel` 是**已经本地化过**的
+   * 文案（"已截止" / "还有 3 小时"），页面拿它做判断只能靠 `includes('已')` 之类
+   * 的字符串猜测 —— 那是会静默出错的做法。判定条件只在领域层算一次。
+   */
+  deadlinePassed: boolean
+  /**
+   * 是否**临近**截止（未过期且 ≤ {@link ERRAND_URGENT_WINDOW_MS}）。
+   *
+   * 跑腿的"来不来得及"以小时计，所以卡片对这类任务要给醒目提示；
+   * 阈值是一个**具名常量**，不是散落在样式里的魔法数字。
+   */
+  deadlineUrgent: boolean
 }
 
 export function isErrandStatus(value: unknown): value is ErrandStatus {
@@ -148,6 +172,22 @@ export function errandRouteLabel(task: Pick<ErrandTask, 'fromPlace' | 'toPlace'>
 }
 
 /**
+ * 「临近截止」的窗口：2 小时。
+ *
+ * 取值理由：跑腿的时效性以**小时**为单位 —— 30 分钟的短单和 6 小时的普通单
+ * 对用户的意义不同，而 2 小时是"现在出发还来得及、但该决定了"的分界。
+ */
+export const ERRAND_URGENT_WINDOW_MS = 2 * 60 * 60 * 1000
+
+/** 截止时间的两种派生判断（非法时间一律当作"未过期、不紧急"，不抛错） */
+function deadlineState(deadline: string, now: Date): { passed: boolean; urgent: boolean } {
+  const at = new Date(deadline).getTime()
+  if (Number.isNaN(at)) return { passed: false, urgent: false }
+  const left = at - now.getTime()
+  return { passed: left <= 0, urgent: left > 0 && left <= ERRAND_URGENT_WINDOW_MS }
+}
+
+/**
  * 绝对时间文案（`MM-DD HH:mm`，本地时区）。
  *
  * 纯函数：跑在 presentation 之外的测试里也不需要 Taro / 时区库。
@@ -165,13 +205,18 @@ export function summarizeErrandTask(
   viewerId: string | null,
   now: Date,
 ): ErrandTaskSummary {
+  const deadline = deadlineState(task.deadline, now)
   return {
     id: task.id,
     title: task.title,
     rewardFen: task.rewardFen,
     rewardLabel: fenToYuan(task.rewardFen),
     routeLabel: errandRouteLabel(task),
+    fromPlace: task.fromPlace,
+    toPlace: task.toPlace,
     deadlineLabel: formatDeadline(task.deadline, now),
+    deadlinePassed: deadline.passed,
+    deadlineUrgent: deadline.urgent,
     timeLabel: formatRelativeTime(task.updatedAt === '' ? task.createdAt : task.updatedAt, now),
     status: isErrandStatus(task.status) ? task.status : 'open',
     statusLabel: errandStatusLabel(task.status),

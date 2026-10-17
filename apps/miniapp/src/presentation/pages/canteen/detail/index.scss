@@ -35,6 +35,47 @@
   gap: $kdy-space-2;
 }
 
+/* 三大营养素占比条 —— 与列表卡同一套形状，详情页只是多给精确克数 */
+.kdy-canteen-detail__macros {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-2;
+}
+
+.kdy-canteen-detail__macro-row {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-3;
+}
+
+.kdy-canteen-detail__macro-key {
+  width: 64px;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-canteen-detail__macro-bar {
+  flex: 1;
+  height: 8px;
+  overflow: hidden;
+  border-radius: $kdy-radius-pill;
+}
+
+.kdy-canteen-detail__macro-value {
+  width: 64px;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-xs;
+  text-align: right;
+}
+
+.kdy-canteen-detail__macro-note {
+  display: block;
+  margin-bottom: $kdy-space-3;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
 .kdy-canteen-detail__row {
   display: flex;
   gap: $kdy-space-3;

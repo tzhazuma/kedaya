@@ -38,6 +38,8 @@ import { createNotificationUseCases } from '../application/notification/notifica
 import type { NotificationUseCases } from '../application/notification/notificationUseCases'
 import { createSessionUseCase } from '../application/auth/session'
 import type { SessionUseCase } from '../application/auth/session'
+import { createAuthAccountUseCase } from '../application/auth/authAccount'
+import type { AuthAccountUseCase } from '../application/auth/authAccount'
 import { createBindCampusUseCase } from '../application/techpie/bindCampus'
 import type { BindCampusUseCase } from '../application/techpie/bindCampus'
 import { createCampusCardUseCase } from '../application/techpie/campusCard'
@@ -52,6 +54,32 @@ import { createWildlifeTracksUseCase } from '../application/wildlife/tracks'
 import type { WildlifeTracksUseCase } from '../application/wildlife/tracks'
 import { createWildlifeMapUseCase } from '../application/wildlife/wildlifeMap'
 import type { WildlifeMapUseCase } from '../application/wildlife/wildlifeMap'
+import { createFleaMarketUseCases } from '../application/fleaMarket/fleaMarketUseCases'
+import type { FleaMarketUseCases } from '../application/fleaMarket/fleaMarketUseCases'
+import { createErrandUseCases } from '../application/errand/errandUseCases'
+import type { ErrandUseCases } from '../application/errand/errandUseCases'
+import { createLostFoundUseCases } from '../application/lostFound/lostFoundUseCases'
+import type { LostFoundUseCases } from '../application/lostFound/lostFoundUseCases'
+import { createCanteenUseCases } from '../application/canteen/canteenUseCases'
+import type { CanteenUseCases } from '../application/canteen/canteenUseCases'
+import { createTakeoutGuardUseCases } from '../application/takeoutGuard/takeoutGuardUseCases'
+import type { TakeoutGuardUseCases } from '../application/takeoutGuard/takeoutGuardUseCases'
+import { createWellbeingUseCases } from '../application/wellbeing/wellbeingUseCases'
+import type { WellbeingUseCases } from '../application/wellbeing/wellbeingUseCases'
+import { createAiPortraitUseCases } from '../application/aiPortrait/aiPortraitUseCases'
+import type { AiPortraitUseCases } from '../application/aiPortrait/aiPortraitUseCases'
+import { createDormHarmonyUseCases } from '../application/dormHarmony/dormHarmonyUseCases'
+import type { DormHarmonyUseCases } from '../application/dormHarmony/dormHarmonyUseCases'
+import { createCampusUseCases } from '../application/campus/campusUseCases'
+import type { CampusUseCases } from '../application/campus/campusUseCases'
+import { createPrivacyUseCase } from '../application/privacy/privacyUseCases'
+import type { PrivacyUseCase } from '../application/privacy/privacyUseCases'
+import { createAgentUseCase } from '../application/agent/agentUseCases'
+import type { AgentUseCase } from '../application/agent/agentUseCases'
+import { createMediaUseCases } from '../application/media/mediaUseCases'
+import type { MediaUseCases } from '../application/media/mediaUseCases'
+import { createReportUseCases } from '../application/report/reportUseCases'
+import type { ReportUseCases } from '../application/report/reportUseCases'
 import { createApiClient, createAuthRefresher, createTaroHttpPort, createTracePort } from '../data/api'
 import type { ApiClient } from '../data/api'
 import { createTaroMediaUploader } from '../data/api/mediaUpload'
@@ -68,6 +96,11 @@ import type { MockFaqRepository } from '../data/repositories/mockFaqRepository'
 import { createMockForumRepository } from '../data/repositories/mockForumRepository'
 import type { MockForumRepository } from '../data/repositories/mockForumRepository'
 import { createMockGroupBuyRepository } from '../data/repositories/mockGroupBuyRepository'
+import type { MockGroupBuyRepository } from '../data/repositories/mockGroupBuyRepository'
+import { createMockTechpieRepository } from '../data/repositories/mockTechpieRepository'
+import type { MockTechpieRepository } from '../data/repositories/mockTechpieRepository'
+import { createMockWildlifeRepository } from '../data/repositories/mockWildlifeRepository'
+import type { MockWildlifeRepository } from '../data/repositories/mockWildlifeRepository'
 import { createHttpNotificationRepository } from '../data/repositories/httpNotificationRepository'
 import { createMockNotificationRepository } from '../data/repositories/mockNotificationRepository'
 import { createHttpAuthRepository } from '../data/repositories/httpAuthRepository'
@@ -76,12 +109,8 @@ import { createHttpFleaMarketRepository } from '../data/repositories/httpFleaMar
 import { createMockFleaMarketRepository } from '../data/repositories/mockFleaMarketRepository'
 import { createHttpErrandRepository } from '../data/repositories/httpErrandRepository'
 import { createMockErrandRepository } from '../data/repositories/mockErrandRepository'
-import { createHttpBuddyRepository } from '../data/repositories/httpBuddyRepository'
-import { createMockBuddyRepository } from '../data/repositories/mockBuddyRepository'
 import { createHttpLostFoundRepository } from '../data/repositories/httpLostFoundRepository'
 import { createMockLostFoundRepository } from '../data/repositories/mockLostFoundRepository'
-import { createHttpForumRepository } from '../data/repositories/httpForumRepository'
-import { createMockForumRepository } from '../data/repositories/mockForumRepository'
 import { createHttpDormHarmonyRepository } from '../data/repositories/httpDormHarmonyRepository'
 import { createMockDormHarmonyRepository } from '../data/repositories/mockDormHarmonyRepository'
 import { createHttpIdentityRepository } from '../data/repositories/httpIdentityRepository'
@@ -98,14 +127,8 @@ import { createMockMediaRepository } from '../data/repositories/mockMediaReposit
 import { createMockReportRepository } from '../data/repositories/mockReportRepository'
 import { createHttpCanteenRepository } from '../data/repositories/httpCanteenRepository'
 import { createMockCanteenRepository } from '../data/repositories/mockCanteenRepository'
-import { createHttpFaqRepository } from '../data/repositories/httpFaqRepository'
-import { createMockFaqRepository } from '../data/repositories/mockFaqRepository'
-import { createHttpWildlifeRepository } from '../data/repositories/httpWildlifeRepository'
-import { createMockWildlifeRepository } from '../data/repositories/mockWildlifeRepository'
 import { createHttpTakeoutGuardRepository } from '../data/repositories/httpTakeoutGuardRepository'
 import { createMockTakeoutGuardRepository } from '../data/repositories/mockTakeoutGuardRepository'
-import { createHttpTechpieRepository } from '../data/repositories/httpTechpieRepository'
-import { createMockTechpieRepository } from '../data/repositories/mockTechpieRepository'
 import { createHttpWellbeingRepository } from '../data/repositories/httpWellbeingRepository'
 import { createMockWellbeingRepository } from '../data/repositories/mockWellbeingRepository'
 import { createHttpAiPortraitRepository } from '../data/repositories/httpAiPortraitRepository'
@@ -118,29 +141,45 @@ import { createImagePickerPort } from '../platform/imagePicker'
 import { createTelemetryReporter } from '../platform/telemetry'
 import { createWechatCodePort } from '../platform/wechatLogin'
 import { setUnreadBadge } from '../platform/tabBar'
+import { createLogPort } from '../platform/log'
 import { PAGE_PATHS } from './routes'
-import type { MockGroupBuyRepository } from '../data/repositories/mockGroupBuyRepository'
-import { createMockTechpieRepository } from '../data/repositories/mockTechpieRepository'
-import type { MockTechpieRepository } from '../data/repositories/mockTechpieRepository'
-import { createMockWildlifeRepository } from '../data/repositories/mockWildlifeRepository'
-import type { MockWildlifeRepository } from '../data/repositories/mockWildlifeRepository'
 import { createMemoryStorage } from '../data/storage/memoryStorage'
 import { createSessionStore, createTokenStore } from '../data/storage/sessionStore'
 import { StorageKeys } from '../data/storage/keys'
 import { createTaroStorage } from '../data/storage/taroStorage'
 import { CAMPUS_CARD_PAYMENT_CODE_REGISTERED } from '../domain/models/campusCard'
-import { createLogPort } from '../platform/log'
 import type { CachePort } from '../domain/ports/cachePort'
 import type { ClockPort } from '../domain/ports/clockPort'
+import type { LogPort } from '../domain/ports/logPort'
+import type { AgentRepository } from '../domain/ports/agentRepository'
+import type { AiPortraitRepository } from '../domain/ports/aiPortraitRepository'
+import type { AuthRepository } from '../domain/ports/authRepository'
+import type { AvatarPickerPort, ImagePickerPort } from '../domain/ports/mediaPort'
 import type { BuddyRepository } from '../domain/ports/buddyRepository'
+import type { CampusCardRepository } from '../domain/ports/campusCardRepository'
+import type { CanteenRepository } from '../domain/ports/canteenRepository'
+import type { DormHarmonyRepository } from '../domain/ports/dormHarmonyRepository'
+import type { ErrandTaskRepository } from '../domain/ports/errandRepository'
 import type { FaqRepository } from '../domain/ports/faqRepository'
+import type { FleaItemRepository } from '../domain/ports/fleaMarketRepository'
 import type { ForumRepository } from '../domain/ports/forumRepository'
 import type { GroupBuyRepository } from '../domain/ports/groupbuyRepository'
-import type { LogPort } from '../domain/ports/logPort'
+import type { IdentityRepository } from '../domain/ports/identityRepository'
+import type { LostFoundRepository } from '../domain/ports/lostFoundRepository'
+import type { MediaRepository } from '../domain/ports/mediaRepository'
+import type { NotificationRepository } from '../domain/ports/notificationRepository'
+import type { PrivacyRepository } from '../domain/ports/privacyRepository'
+import type { ReportRepository } from '../domain/ports/reportRepository'
+import type { ScheduleRepository } from '../domain/ports/scheduleRepository'
 import type { AuthRefresherPort, SessionStorePort, TokenStorePort } from '../domain/ports/sessionPort'
+import type { TakeoutGuardRepository } from '../domain/ports/takeoutGuardRepository'
 import type { TechpieRepository } from '../domain/ports/techpieRepository'
-import type { TracePort } from '../domain/ports/tracePort'
+import type { TelemetryRepository } from '../domain/ports/telemetryRepository'
+import type { WechatCodePort } from '../domain/ports/wechatPort'
+import type { WellbeingRepository } from '../domain/ports/wellbeingRepository'
 import type { WildlifeRepository } from '../domain/ports/wildlifeRepository'
+import type { TelemetryReporter } from '../platform/telemetry'
+import type { TracePort } from '../domain/ports/tracePort'
 
 /**
  * 装配层（契约 §7 `app/`：DI、路由注册、运行时工厂）。
@@ -198,11 +237,26 @@ export interface AppContainer {
   /** 客户端遥测上报器（错误边界 / 全局错误钩子 / 服务端故障都走它） */
   telemetry: TelemetryReporter
   groupBuyRepository: GroupBuyRepository
+  notificationRepository: NotificationRepository
+  authRepository: AuthRepository
+  fleaMarketRepository: FleaItemRepository
+  errandRepository: ErrandTaskRepository
+  buddyRepository: BuddyRepository
+  lostFoundRepository: LostFoundRepository
   forumRepository: ForumRepository
+  canteenRepository: CanteenRepository
   faqRepository: FaqRepository
   wildlifeRepository: WildlifeRepository
-  buddyRepository: BuddyRepository
+  takeoutGuardRepository: TakeoutGuardRepository
   techpieRepository: TechpieRepository
+  wellbeingRepository: WellbeingRepository
+  aiPortraitRepository: AiPortraitRepository
+  dormHarmonyRepository: DormHarmonyRepository
+  identityRepository: IdentityRepository
+  scheduleRepository: ScheduleRepository
+  campusCardRepository: CampusCardRepository
+  privacyRepository: PrivacyRepository
+  agentRepository: AgentRepository
   /** 仅 mock 模式下非空 —— 页面用它演示「三态」 */
   mockControls: MockGroupBuyRepository | null
   /** 论坛的 mock 演示控制面（仅 mock 模式下非空） */
@@ -218,10 +272,22 @@ export interface AppContainer {
   useCases: {
     session: SessionUseCase
     auth: AuthAccountUseCase
+    // 拼单
     listGroupBuys: ListGroupBuysUseCase
     groupBuyDetail: GroupBuyDetailUseCase
     createGroupBuy: CreateGroupBuyUseCase
     joinGroupBuy: JoinGroupBuyUseCase
+    myGroupBuys: MyGroupBuysUseCase
+    // 站内通知
+    notifications: NotificationUseCases
+    // 六个业务模块（跳蚤 / 跑腿 / 找搭子 / 失物招领 / 论坛 / 拼单已在上面）
+    fleaMarket: FleaMarketUseCases
+    errand: ErrandUseCases
+    lostFound: LostFoundUseCases
+    // 共建型模块（食堂 / FAQ / 动物观察点 / 偷外卖）
+    canteen: CanteenUseCases
+    takeoutGuard: TakeoutGuardUseCases
+    // 论坛 / 找搭子 / FAQ / 动物观测 / TechPie 用的是细粒度用例（见下）
     listForumBoards: ListForumBoardsUseCase
     listForumPosts: ListForumPostsUseCase
     forumPostDetail: ForumPostDetailUseCase
@@ -242,6 +308,16 @@ export interface AppContainer {
     capabilities: CapabilitiesUseCase
     bindCampus: BindCampusUseCase
     campusCard: CampusCardUseCase
+    // 敏感 / 高敏模块
+    wellbeing: WellbeingUseCases
+    aiPortrait: AiPortraitUseCases
+    dormHarmony: DormHarmonyUseCases
+    // 四个核心模块 + 全局助手
+    campus: CampusUseCases
+    privacy: PrivacyUseCase
+    agent: AgentUseCase
+    media: MediaUseCases
+    report: ReportUseCases
   }
 }
 
@@ -254,6 +330,14 @@ export interface ContainerOverrides {
   wildlifeRepository?: WildlifeRepository
   buddyRepository?: BuddyRepository
   techpieRepository?: TechpieRepository
+  authRepository?: AuthRepository
+  mediaRepository?: MediaRepository
+  reportRepository?: ReportRepository
+  telemetryRepository?: TelemetryRepository
+  telemetry?: TelemetryReporter
+  wechatCode?: WechatCodePort
+  avatarPicker?: AvatarPickerPort
+  imagePicker?: ImagePickerPort
   log?: LogPort
   env?: Partial<AppEnv>
 }
@@ -340,13 +424,22 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     ? createMockGroupBuyRepository({ latencyMs: env.mockLatencyMs, now: clock.now, viewerId })
     : null
   const mockForumRepository = env.useMock
-    ? createMockForumRepository({ latencyMs: env.mockLatencyMs })
+    ? createMockForumRepository({ latencyMs: env.mockLatencyMs, now: clock.now })
     : null
   const mockFaqRepository = env.useMock
-    ? createMockFaqRepository({ latencyMs: env.mockLatencyMs })
+    ? createMockFaqRepository({ latencyMs: env.mockLatencyMs, now: clock.now })
     : null
   const mockWildlifeRepository = env.useMock
-    ? createMockWildlifeRepository({ latencyMs: env.mockLatencyMs })
+    ? createMockWildlifeRepository({ latencyMs: env.mockLatencyMs, now: clock.now })
+    : null
+  /**
+   * TechPie / 校园能力的 mock 演示控制面。
+   *
+   * ⚠️ `log` 从第一天就注入：绑定动作是**日志脱敏的第一现场**
+   * （白名单外的字段整条剔除），离线演示也必须跑在同一条链路上。
+   */
+  const mockTechpieRepository = env.useMock
+    ? createMockTechpieRepository({ latencyMs: env.mockLatencyMs, now: clock.now, log })
     : null
   /**
    * 找搭子仓储。
@@ -356,12 +449,10 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
    * （与 `groupbuy` 不同 —— 那个模块的 `join` body 本身就要带 displayName）。
    * 身份是环境属性，不是参数。
    */
-  const mockTechpieRepository = env.useMock
-    ? createMockTechpieRepository({ latencyMs: env.mockLatencyMs, log })
-    : null
   const mockBuddyRepository = env.useMock
     ? createMockBuddyRepository({
         latencyMs: env.mockLatencyMs,
+        now: clock.now,
         currentUser: () => {
           const profile = sessionStore.getSnapshot().profile
           return profile === null ? null : { id: profile.id, nickname: profile.nickname }
@@ -397,7 +488,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     overrides.buddyRepository ?? mockBuddyRepository ?? createHttpBuddyRepository(apiClient)
 
   /**
-   * TechPie / 校园能力仓储。
+   * TechPie / 校园能力仓储（含校园卡）。
    *
    * ⚠️ 本端**没有** webview-session 的实现（契约 §11.10-F：小程序 `web-view`
    * 无法注入 cookie，I3 在本端没有出口）。校园系统走 W4 —— 用户自己登录。
@@ -476,17 +567,6 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     viewerId,
   })
 
-  const buddyRepository: BuddyRepository = env.useMock
-    ? createMockBuddyRepository({ cache, viewerId, latencyMs: env.mockLatencyMs, now: clock.now })
-    : createHttpBuddyRepository(apiClient)
-  const buddy = createBuddyUseCases({
-    repository: buddyRepository,
-    cache,
-    clock,
-    cacheKey: StorageKeys.buddyListCache,
-    viewerId,
-  })
-
   const lostFoundRepository: LostFoundRepository = env.useMock
     ? createMockLostFoundRepository({ cache, viewerId, latencyMs: env.mockLatencyMs, now: clock.now })
     : createHttpLostFoundRepository(apiClient)
@@ -495,17 +575,6 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     cache,
     clock,
     cacheKey: StorageKeys.lostFoundListCache,
-    viewerId,
-  })
-
-  const forumRepository: ForumRepository = env.useMock
-    ? createMockForumRepository({ cache, viewerId, latencyMs: env.mockLatencyMs, now: clock.now })
-    : createHttpForumRepository(apiClient)
-  const forum = createForumUseCases({
-    repository: forumRepository,
-    cache,
-    clock,
-    cacheKey: StorageKeys.forumListCache,
     viewerId,
   })
 
@@ -525,27 +594,6 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     cacheKey: StorageKeys.canteenListCache,
   })
 
-  const faqRepository: FaqRepository = env.useMock
-    ? createMockFaqRepository({ latencyMs: env.mockLatencyMs, now: clock.now })
-    : createHttpFaqRepository(apiClient)
-  const faq = createFaqUseCases({
-    repository: faqRepository,
-    cache,
-    clock,
-    cacheKey: StorageKeys.faqListCache,
-    helpfulMarksKey: StorageKeys.faqHelpfulMarks,
-  })
-
-  const wildlifeRepository: WildlifeRepository = env.useMock
-    ? createMockWildlifeRepository({ cache, latencyMs: env.mockLatencyMs, now: clock.now })
-    : createHttpWildlifeRepository(apiClient)
-  const wildlife = createWildlifeUseCases({
-    repository: wildlifeRepository,
-    cache,
-    clock,
-    cacheKey: StorageKeys.wildlifeListCache,
-  })
-
   const takeoutGuardRepository: TakeoutGuardRepository = env.useMock
     ? createMockTakeoutGuardRepository({ viewerId, latencyMs: env.mockLatencyMs, now: clock.now })
     : createHttpTakeoutGuardRepository(apiClient)
@@ -555,16 +603,6 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     clock,
     cacheKey: StorageKeys.takeoutGuardListCache,
     viewerId,
-  })
-
-  const techpieRepository: TechpieRepository = env.useMock
-    ? createMockTechpieRepository({ cache, latencyMs: env.mockLatencyMs, now: clock.now })
-    : createHttpTechpieRepository(apiClient)
-  const techpie = createTechpieUseCases({
-    repository: techpieRepository,
-    cache,
-    clock,
-    cacheKey: StorageKeys.techpieListCache,
   })
 
   // 心理支持是 **有归属** 的敏感模块：列表只有本人预约，因此和偷外卖一样注入 viewerId，
@@ -714,6 +752,8 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     onUnreadChange: setUnreadBadge,
   })
 
+  /* ---------------- 论坛 ---------------- */
+
   const listForumBoards = createListForumBoardsUseCase({
     repository: forumRepository,
     cache,
@@ -748,6 +788,8 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     clock,
   })
 
+  /* ---------------- 常见问题 ---------------- */
+
   const browseFaq = createBrowseFaqUseCase({
     repository: faqRepository,
     cache,
@@ -763,6 +805,8 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     cacheKey: StorageKeys.faqTicketListCache,
     session: sessionStore,
   })
+
+  /* ---------------- 猫鸟黑天鹅（观察点 / 轨迹 / 上报） ---------------- */
 
   const wildlifeMap = createWildlifeMapUseCase({
     repository: wildlifeRepository,
@@ -873,11 +917,26 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     telemetryRepository,
     telemetry,
     groupBuyRepository,
+    notificationRepository,
+    authRepository,
+    fleaMarketRepository,
+    errandRepository,
+    buddyRepository,
+    lostFoundRepository,
     forumRepository,
+    canteenRepository,
     faqRepository,
     wildlifeRepository,
-    buddyRepository,
+    takeoutGuardRepository,
     techpieRepository,
+    wellbeingRepository,
+    aiPortraitRepository,
+    dormHarmonyRepository,
+    identityRepository,
+    scheduleRepository,
+    campusCardRepository,
+    privacyRepository,
+    agentRepository,
     mockControls: mockRepository,
     mockForumControls: mockForumRepository,
     mockFaqControls: mockFaqRepository,
@@ -886,9 +945,18 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     mockTechpieControls: mockTechpieRepository,
     useCases: {
       session,
+      auth,
       listGroupBuys,
       groupBuyDetail,
+      createGroupBuy,
       joinGroupBuy,
+      myGroupBuys,
+      notifications,
+      fleaMarket,
+      errand,
+      lostFound,
+      canteen,
+      takeoutGuard,
       listForumBoards,
       listForumPosts,
       forumPostDetail,
@@ -909,6 +977,14 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       capabilities,
       bindCampus,
       campusCard,
+      wellbeing,
+      aiPortrait,
+      dormHarmony,
+      campus,
+      privacy,
+      agent,
+      media,
+      report,
     },
   }
 }

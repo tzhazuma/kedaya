@@ -48,78 +48,152 @@
   z-index: $kdy-z-index-sticky;
 }
 
-.kdy-flea-card {
+/* 双列商品网格 */
+.kdy-flea__grid {
   display: flex;
-  align-items: flex-start;
+  flex-wrap: wrap;
+  align-items: stretch;
   gap: $kdy-space-3;
+  padding: 0 $kdy-space-4;
+}
 
-  // 文字徽标（不是 emoji/图片）：分类名的视觉锚点
-  &__badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 96px;
-    height: 88px;
-    background: $kdy-color-brand-soft;
-    border-radius: $kdy-radius-md;
-    color: $kdy-color-ink;
-    font-size: $kdy-font-size-sm;
-    font-weight: $kdy-font-weight-medium;
-  }
+.kdy-flea-card {
+  /* 两列：`calc((100% - gap) / 2)`，不减 gap 会溢出到第二行只剩一个 */
+  width: calc((100% - #{$kdy-space-3}) / 2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: $kdy-color-surface;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-md;
+}
 
-  // 有图时用图当锚点（比文字徽标更能决定"点不点"）
-  &__cover {
-    width: 96px;
-    height: 88px;
-    flex: none;
-  }
+.kdy-flea-card--pressed {
+  background: $kdy-color-surface-alt;
+}
 
-  &__main {
-    flex: 1;
-    min-width: 0;
-  }
+.kdy-flea-card__cover {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  background: $kdy-color-brand-soft;
+}
 
-  &__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $kdy-space-2;
-  }
+.kdy-flea-card__image {
+  display: block;
+  width: 100%;
+  height: 160px;
+}
 
-  &__title {
-    flex: 1;
-    overflow: hidden;
-    color: $kdy-color-ink;
-    font-size: $kdy-font-size-md;
-    font-weight: $kdy-font-weight-semibold;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+/* 没有图时退化成文字徽标 —— 不编一张假图 */
+.kdy-flea-card__badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 160px;
+  background: $kdy-color-brand-soft;
+}
 
-  &__meta {
-    display: block;
-    margin: $kdy-space-1 0;
-    overflow: hidden;
-    color: $kdy-color-text-muted;
-    font-size: $kdy-font-size-xs;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+.kdy-flea-card__badge-text {
+  color: $kdy-color-brand-strong;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-medium;
+}
 
-  &__foot {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-  }
+.kdy-flea-card__category {
+  position: absolute;
+  left: $kdy-space-2;
+  top: $kdy-space-2;
+  padding: 2px $kdy-space-2;
+  border-radius: $kdy-radius-sm;
+  background: rgba($kdy-color-surface, 0.92);
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+}
 
-  &__price {
-    color: $kdy-color-danger;
-    font-size: $kdy-font-size-lg;
-    font-weight: $kdy-font-weight-bold;
-  }
+.kdy-flea-card__status {
+  position: absolute;
+  right: $kdy-space-2;
+  top: $kdy-space-2;
+  padding: 2px $kdy-space-2;
+  border-radius: $kdy-radius-sm;
+  background: $kdy-color-ink-soft;
+  color: $kdy-color-text-inverse;
+  font-size: $kdy-font-size-xs;
+}
 
-  &__time {
-    color: $kdy-color-text-muted;
-    font-size: $kdy-font-size-xs;
-  }
+.kdy-flea-card__status.is-sold {
+  background: $kdy-color-ink;
+}
+
+.kdy-flea-card__count {
+  position: absolute;
+  right: $kdy-space-2;
+  bottom: $kdy-space-2;
+  padding: 2px $kdy-space-2;
+  border-radius: $kdy-radius-pill;
+  background: rgba($kdy-color-ink, 0.56);
+  color: $kdy-color-text-inverse;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-flea-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-1;
+  padding: $kdy-space-2 $kdy-space-3 $kdy-space-3;
+}
+
+.kdy-flea-card__title {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-semibold;
+  line-height: $kdy-line-height-normal;
+  /* 标题固定两行：格子高度不随标题长短跳动 */
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.kdy-flea-card__meta {
+  overflow: hidden;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kdy-flea-card__foot {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: $kdy-space-1;
+  margin-top: $kdy-space-1;
+}
+
+.kdy-flea-card__price {
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-lg;
+  font-weight: $kdy-font-weight-bold;
+  line-height: $kdy-line-height-tight;
+}
+
+.kdy-flea-card__price.is-sold {
+  color: $kdy-color-text-muted;
+  text-decoration: line-through;
+}
+
+.kdy-flea-card__flag {
+  padding: 0 $kdy-space-1;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-sm;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-flea-card__time {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
 }

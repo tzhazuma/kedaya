@@ -198,6 +198,24 @@ describe('summarize 展示摘要', () => {
     expect(summary.progressPercent).toBe(75)
     expect(summary.joinable).toBe(true)
     expect(summary.deadlineLabel).toContain('还有')
+    // 截止的两个标记由下面专门的用例覆盖（fixture 是 6 小时后 → 未过期）
+    expect(summary.deadlinePassed).toBe(false)
+  })
+
+  it('临期（≤12 小时）与已截止是两个互斥标记 —— 卡片据此催单', () => {
+    // 6 小时后截止 → 临期（拼单以天计，12 小时内算"今天就到点了"）
+    const soon = summarize(makeGroupBuy({ deadline: hoursFromNow(6) }), NOW)
+    expect(soon.deadlineUrgent).toBe(true)
+    expect(soon.deadlinePassed).toBe(false)
+    expect(soon.joinable).toBe(true)
+
+    // 3 天后 → 不催
+    expect(summarize(makeGroupBuy({ deadline: hoursFromNow(72) }), NOW).deadlineUrgent).toBe(false)
+
+    // 已过 → 只剩 passed，urgent 必须为 false（否则卡片会同时"催"和"划线"）
+    const gone = summarize(makeGroupBuy({ deadline: hoursFromNow(-1) }), NOW)
+    expect(gone.deadlinePassed).toBe(true)
+    expect(gone.deadlineUrgent).toBe(false)
   })
 
   it('已截止时 joinable=false 且文案为「已截止」', () => {

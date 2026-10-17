@@ -24,7 +24,7 @@
 | 抓取时间 | 2026-10-17 19:07–19:31（+08:00） |
 | POI 要素 | **186 个**（建筑 86 / 水域 14 / 康体 8 / 绿地 38 / 设施 20 / 校门 15 / 轨道 5） |
 | 地点标注 | `CAMPUS_LOCATION_DEFS` 全部 **25 个**；10 已确证 / 7 推断 / 8 近似 |
-| 底图 | `campus-basemap.svg`（浅色）+ `campus-basemap-dark.svg`（深色），1400×868 px |
+| 底图 | **离线（默认）**：`campus-basemap.svg`（浅色）+ `campus-basemap-dark.svg`（深色），1400×868 px；可选在线：OSM 瓦片（Leaflet，需网络） |
 | 投影 | WGS84 → 本地等距平面（ENU，原点 31.1795,121.591）→ 线性视口；**不经过 GCJ-02** |
 | 学校官方平面图 | **未抓取、未复制、未逐点比对**（版权未确认） |
 
@@ -358,6 +358,11 @@ mock fixture（`apps/web/src/data/mock/fixtures/wildlife.ts`）的区域坐标�
 - 修正应在**数据层**：按 `wildlife-map.md §3.4` 重新采集 ≥6 个控制点，
   重锚定 fixture 与 zone seed（超出本次校园地图的写作用域：`data/mock/` 只读）。
 
+另一个**既有的对比度问题**（不在本次写作用域，未修改）：
+`WildlifeBasemapMap` 的普通观测点用 `text-ink-soft`（`--kdy-color-ink-soft: #1B2436`），
+在深色底图上几乎看不见（橙色/红色的"疑似受伤"点正常）。默认关闭「观测点」图层，
+打开后仍可见但对比度低；建议由组件负责人改用 `text-info` 或单独的 marker 令牌。
+
 ---
 
 ## 7. 许可与合规（必须遵守）
@@ -467,9 +472,10 @@ npm run start -w @kedaya/web -- --port 3100
 
 | 截图 | 内容 |
 | --- | --- |
-| `11-map-offline-light.png` / `12-map-offline-light.png` | 离线底图全页（深色 / 浅色主题） |
-| `17-map-detail-light.png` | 离线底图细节：25 个地点标注 + 5 个活动区域 + 3 个热点 + 3 条推断轨迹（虚线） |
-| `18-map-detail-dark.png` | 同一画面的深色底图版本 |
+| `19-final-offline-light-full.png` | 离线底图（默认）全页 · 浅色主题：底图、图层、数据来源、精度、25 个地点、隐私说明 |
+| `20-final-map-detail-light.png` | 离线底图细节：25 个地点标注 + 5 个活动区域 + 3 个热点 + 3 条推断轨迹（黄色虚线） |
+| `21-final-map-detail-dark.png` | 同一画面的深色底图版本（`campus-basemap-dark.svg`） |
+| `22-final-map-all-layers-dark.png` / `23-final-map-markers-dark.png` | 打开「观测点」图层后的深色地图（模糊化观测点） |
 | `15-map-online-light.png` | 可选的在线 OSM 瓦片模式（含 ODbL 署名） |
 | `16-map-error-state.png` | 错误态：提示 + 重试 + 保留上一次成功数据 |
 

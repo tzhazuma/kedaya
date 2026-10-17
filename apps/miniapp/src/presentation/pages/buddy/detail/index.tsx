@@ -1,4 +1,4 @@
-import { Text, Textarea, View } from '@tarojs/components'
+import { Text, View } from '@tarojs/components'
 import { useDidShow, useRouter } from '@tarojs/taro'
 import { useState } from 'react'
 
@@ -10,7 +10,7 @@ import {
 } from '../../../../domain/models/buddy'
 import type { BuddyApplication } from '../../../../domain/models/buddy'
 import { navigateBack, toast } from '../../../../platform/navigation'
-import { KdyBuddyPrivacyNotice, KdyButton, KdyCard, KdyEmpty, KdyTag } from '../../../components'
+import { KdyBuddyPrivacyNotice, KdyButton, KdyCard, KdyEmpty, KdyField, KdyTag } from '../../../components'
 import type { KdyTagTone } from '../../../components'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -209,12 +209,14 @@ export default function BuddyDetailPage() {
                   <Text className='kdy-buddy-detail__note'>
                     提交的是**申请**，不占名额；发起人接受后才算加入。
                   </Text>
-                  <Textarea
-                    className='kdy-buddy-detail__textarea'
+                  <KdyField
+                    label='申请留言'
+                    hint={`${[...message].length}/200`}
+                    multiline
                     value={message}
-                    maxlength={200}
+                    maxLength={200}
                     placeholder='想对发起人说点什么（可选，≤200 字，只有发起人能看到）'
-                    onInput={(event) => setMessage(event.detail.value)}
+                    onChange={setMessage}
                   />
                   {state.eligibility !== null && !state.eligibility.allowed && (
                     <Text className='kdy-buddy-detail__blocked'>{state.eligibility.message}</Text>
