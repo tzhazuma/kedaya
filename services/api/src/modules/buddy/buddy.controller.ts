@@ -1,7 +1,7 @@
 /**
  * 找搭子 · HTTP 层（规格 §5.1 端点总表 + §5.2 的 5 个冻结 action 名）
  *
- * ## 端点总表（19 个 + 1 个矩阵必需但规格表遗漏的）
+ * ## 端点总表（19 个 + 2 个规格表遗漏但必需的）
  *
  * | # | 方法 | 路径 | 幂等键 |
  * | --- | --- | --- | --- |
@@ -25,6 +25,14 @@
  * | 17 | GET | `/questionnaires/:slug` | — |
  * | 18 | POST | `/questionnaires/:slug/responses` | **必需** |
  * | 19 | GET | `/questionnaires/:slug/responses/me` | — |
+ * | 20 | GET | `/tags` | — ← **本实现补充**，见下 |
+ *
+ * > **20 为什么必须存在（跨端 wire 缺口）**：服务端的封闭标签表是权威
+ * > （`assertKnownTags` 抛 `UNKNOWN_TAG:<key>`），但规格 §5.1 的端点表里
+ * > **没有**任何让客户端取到这张表的读端点。小程序因此只能内置一份镜像，
+ * > 镜像一漂移，用户选到的标签就会被服务端拒绝，而客户端提交前无从得知。
+ * > 修法是让服务端**下发权威表**（表本身仍只有 `@kedaya/contracts` 那一份）。
+ * > 它是 `GET`，因此**不挂** `IdempotencyInterceptor`。
  *
  * > **12b 为什么必须存在**：规格 §6.1 的可见性矩阵写着"申请人列表：发起人 ✅"，
  * > 但 §5.1 的端点表里没有对应的读端点 —— 没有它，发起人拿不到 `applicationId`，
@@ -65,7 +73,7 @@ import { normalizeLimit, readCursor } from '../../common/pagination/cursor';
 import { ZodBody, ZodQuery } from '../../common/pipes/zod-validation.pipe';
 import { BUDDY_ACTIVITIES, BUDDY_SECTIONS, type BuddySection } from './domain/section';
 import { SKILL_LEVELS } from './domain/tags';
-import { BUDDY_POST_STATUSES } from './domain/buddy-post.state';
+import { BUDDY_POST_STATUSES, type BuddyPostStatus } from './domain/buddy-post.state';
 import { BUDDY_APPLICATION_STATUSES } from './domain/buddy-application.state';
 import type { CreateBuddyPostInput, UpdateBuddyPostInput } from './domain/buddy.domain';
 import { BuddyProfileService } from './application/buddy-profile.service';
@@ -74,6 +82,7 @@ import { BuddyApplicationService } from './application/buddy-application.service
 import { BuddyRecommendService } from './application/buddy-recommend.service';
 import { BuddyFeedbackService } from './application/buddy-feedback.service';
 import { BuddyQuestionnaireService } from './application/buddy-questionnaire.service';
+import { BuddyTagsService } from './application/buddy-tags.service';
 import {
   assertFutureStartsAt,
   assertKnownLocation,
@@ -160,11 +169,49 @@ const putProfileSchema = z.object({
 
 const questionnaireAnswersSchema = z.object({ answers: z.record(z.string(), z.unknown()) });
 
+/* ---------------- GET /items 的 status 过滤（跨端 wire 缺口 3） ---------------- */
+
+/**
+ * 可过滤的帖子状态白名单。
+ *
+ * ⚠️ **`EXPIRED` 刻意不在其中**：它由 `startsAt` 到期推导，不是用户可操作的状态，
+ * 而且列表本来就有 `startsAt > now` 的约束 —— 允许 `status=EXPIRED`
+ * 只会得到一个永远为空的查询。请求它是 `VALIDATION_FAILED`（fail closed），
+ * 而不是"静默返回空列表"（后者会让客户端以为"确实没有过期活动"）。
+ *
+ * 顺序与 `BUDDY_POST_STATUSES` 一致，下面有编译期断言保证它不会漏掉或新增冻结状态。
+ */
+const LISTABLE_POST_STATUSES = ['OPEN', 'FULL', 'CLOSED', 'CANCELLED'] as const;
+
+/**
+ * `status` 查询参数：支持**重复**（`?status=OPEN&status=FULL`）与**逗号多值**
+ * （`?status=OPEN,FULL`）两种写法 —— 三端框架的序列化习惯不同
+ * （小程序/Web 用重复键，Flutter 的 `Uri` 习惯用逗号），服务端两种都收，
+ * 免得某一端要为了"服务端只认一种"而写适配层。
+ *
+ * 缺省（不传 / 空串 / 全是空项）→ `undefined` = **不过滤**，与规格 §5.3 一致
+ * （§5.3 的 query 表没有 `status`；§5.9 的 `where status='OPEN'` 与它矛盾，
+ * 按 Lead 裁决以 §5.3 为准）。
+ */
+const postStatusFilterSchema = z.preprocess(
+  (value) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    const raw = Array.isArray(value) ? value : [value];
+    const parts = raw
+      .flatMap((entry) => (typeof entry === 'string' ? entry.split(',') : [entry]))
+      .map((entry) => (typeof entry === 'string' ? entry.trim() : entry))
+      .filter((entry) => entry !== '');
+    return parts.length > 0 ? parts : undefined;
+  },
+  z.array(z.enum(LISTABLE_POST_STATUSES)).optional(),
+);
+
 const listQuerySchema = z.object({
   section: sectionSchema.optional(),
   activity: z.string().max(200).optional(),
   tags: z.string().max(500).optional(),
   startsAfter: z.string().max(64).optional(),
+  status: postStatusFilterSchema,
   cursor: z.string().max(500).optional(),
   limit: z.union([z.string(), z.number()]).optional(),
   sort: z.enum(['createdAt_desc', 'startsAt_asc']).optional(),
@@ -190,6 +237,14 @@ export type UpdateSchemaMatchesDomain = AssertAssignable<
   UpdateBuddyPostInput,
   z.infer<typeof patchPostSchema>
 >;
+/**
+ * `status` 过滤白名单必须**全是**冻结状态（新增一个不存在的状态会在这里编译失败）。
+ * 反向（漏掉某个可过滤状态）由 `EXPIRED` 的刻意排除说明，见上面的注释。
+ */
+export type ListableStatusesAreFrozen = AssertAssignable<
+  BuddyPostStatus,
+  (typeof LISTABLE_POST_STATUSES)[number]
+>;
 
 /* ------------------------------------------------------------------ *
  * 控制器
@@ -207,7 +262,23 @@ export class BuddyController {
     @Inject(BuddyRecommendService) private readonly recommend: BuddyRecommendService,
     @Inject(BuddyFeedbackService) private readonly feedback: BuddyFeedbackService,
     @Inject(BuddyQuestionnaireService) private readonly questionnaires: BuddyQuestionnaireService,
+    @Inject(BuddyTagsService) private readonly tags: BuddyTagsService,
   ) {}
+
+  /* ---------------- 标签表（20） ---------------- */
+
+  /**
+   * 权威标签表 + 数量上限。
+   *
+   * `GET` → **不挂** `IdempotencyInterceptor`（拦截器只对 POST 生效，但这里刻意不挂，
+   * 免得将来拦截器扩展成"所有方法都要求幂等键"时把读端点也拖下水）。
+   * 登录要求由控制器级 `AuthGuard` 保证 —— 与其它 buddy 端点一致。
+   */
+  @Get('tags')
+  @ApiOperation({ summary: '权威标签表与数量上限（客户端渲染选择器用）' })
+  listTags() {
+    return this.tags.list();
+  }
 
   /* ---------------- 资料（1–3） ---------------- */
 
@@ -251,7 +322,7 @@ export class BuddyController {
   /* ---------------- 活动列表 / CRUD（4–8） ---------------- */
 
   @Get('items')
-  @ApiOperation({ summary: '活动列表（游标分页，契约 §6.1 不用 offset）' })
+  @ApiOperation({ summary: '活动列表（游标分页，契约 §6.1 不用 offset；status 可多值）' })
   listItems(@CurrentUser() userId: string, @ZodQuery(listQuerySchema) query: z.infer<typeof listQuerySchema>) {
     const startsAfter = query.startsAfter ? new Date(query.startsAfter) : undefined;
     if (startsAfter && Number.isNaN(startsAfter.getTime())) {
@@ -263,6 +334,9 @@ export class BuddyController {
       activities: parseCsv(query.activity),
       tags: parseCsv(query.tags),
       startsAfter,
+      // 缺省 undefined = **不过滤**（规格 §5.3 优先于 §5.9，见 schema 处的说明）。
+      // 传了就必须是 LISTABLE_POST_STATUSES 里的值，否则管道已经 400。
+      statuses: query.status,
       cursor: readCursor(query as unknown as Record<string, unknown>),
       limit: normalizeLimit(query.limit),
       // 默认 createdAt_desc：这样游标就是 id，**逐字符合**契约 api-contract §3.1。
@@ -486,6 +560,8 @@ export const BUDDY_CONSTANTS = {
   activities: BUDDY_ACTIVITIES,
   skillLevels: SKILL_LEVELS,
   postStatuses: BUDDY_POST_STATUSES,
+  /** `GET /items?status=` 的白名单（比冻结状态少一个刻意排除的 `EXPIRED`） */
+  listablePostStatuses: LISTABLE_POST_STATUSES,
   applicationStatuses: BUDDY_APPLICATION_STATUSES,
   /** 契约 §11.2 冻结的 5 个 action 名（规格 §5.2） */
   actions: ['join', 'leave', 'close', 'decide', 'feedback'] as const,

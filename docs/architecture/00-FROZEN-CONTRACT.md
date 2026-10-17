@@ -822,3 +822,80 @@ STUMatch 有 `dating`（交友/约会）板块。裁决：**可达鸭不实现**
 | 3 | **`vector` 档生产不可达** | 无中文 embedding 模型/Worker。hash 档就地算；vector 档**只读**已存向量，读不到就整次降级为 rule，**绝不混用两种向量空间**（混用会让相似度失去意义）。 |
 | 4 | **F5（性别准入）当前不可达** | 全仓**没有任何地方采集性别**（`BuddyProfile` 按 §6.3 明确不采集）。判定函数已实现并单测，未知一律**保守放行** —— 否则 `same`/`other` 的活动**没人能申请**。 |
 | 5 | **`post.tags` 并入 `target.creator.activityTags`** | 共享 `ruleScoreFor` 只读 creator 字段。取舍：帖子 tags 是**公开信息**，一定参与；发起人 `BuddyProfile` 特征**仅当 `matchEnabled=true`** 才参与（在仓储层过滤，不可能忘记）。 |
+
+
+### 11.17 可解释性必须**结构性**保证（v1.3.5 · 2026-10-17）
+
+#### 问题：同一类缺陷出现了**两次**
+
+「推荐理由」与「推荐分数」必须自洽 —— 这是可解释性的定义：
+**理由必须能解释分数**。不解释任何分数的理由不是解释，是噪音，而且会误导用户
+（让他以为系统考虑了某个因素，从而高估该推荐的匹配度）。
+
+但这条约束**靠约定守不住**，实测两次失守：
+
+| 轮次 | 缺陷 | 发现者 |
+| --- | --- | --- |
+| 第一次 | `academic`/`sport` 展示「时间能碰上」，但只有 `daily` 给这 0.2 分 | api 实现 `buddy` 时 |
+| 第二次 | `academic` 展示「常在同一个区域」、`daily` 展示「共同活动 N 项」，而这两个板块**根本没有对应分项**（贡献恒为 0）；另有量级不符（`daily` 兴趣标 0.1/项、实际 0.15/项；`academic` 活动标 0.15/项、实际固定 0.1） | api 补齐 wire 缺口时 |
+
+两次都是"**补一处**"。第一次的修法（给 `explainMatch` 加一个 `section === 'daily'` 判断）
+只解决了那一条，所以第二次必然发生 —— **只要还存在两份独立的系数，就还会有第三次。**
+
+#### 裁决：改成**结构性**约束，而不是继续补
+
+**系数只写一次。** `packages/shared/src/buddy/scoring.ts` 里的 `COEFFICIENTS`
+是全模块唯一的系数来源；`ruleScoreFor`（算分）与 `explainMatch`（给理由）
+共用同一个 `evaluateRules` 内核：
+
+```
+ruleScoreFor  = Σ evaluateRules(...).score
+explainMatch  = evaluateRules(...).filter(hit).map(→ { code, label, weight: score })
+```
+
+于是：
+- **被展示的理由，其 `weight` 一定真的进了分数**（结构保证，不是约定）
+- **没进分数的规则不会出现在理由里**（它在 `COEFFICIENTS` 里就不存在）
+- **权重不可能标错**（`weight` 用的是实际得分，不是另写一个"名义权重"）
+
+`academic` **没有** `same-area` 项、`daily` **没有** `shared-activities` 项 ——
+现在它们不在表里，所以结构上无法被展示。
+
+#### 验收：结构性不变式 + **反证**
+
+`packages/shared/src/buddy/buddy.test.ts` 新增一组不变式测试：
+**`explainMatch` 的权重之和 === `ruleScoreFor`**（未触顶时逐位相等），
+覆盖三板块 × 12 种因子开关组合。
+
+并且做了**反证**（一条不会失败的测试等于没有测试）：
+
+| 故意引入的错误 | 结果 |
+| --- | --- |
+| 让 `explainMatch` 报告错误的权重（`weight + 0.07`） | **24 条用例失败** |
+| 重放第一次的缺陷（`academic` 展示一条不加分的 `same-area`） | **守卫用例失败** |
+
+#### 附带：`buddy` 三处跨端 wire 缺口（已补齐）
+
+| # | 缺口 | 处置 |
+| --- | --- | --- |
+| 1 | 服务端**没有** `GET /buddy/tags` —— 客户端拿不到权威标签表，只能内置副本（必然漂移） | 新增端点，返回 `tags` + `limits` + `locations`（含 `label` 才是提交值） |
+| 2 | `/buddy/recommendations` 只回 `reason` 字符串，无结构化理由 → 客户端只能自己算，**解释与服务端排序不一致** | 同时下发 `reasons: {code,label,weight}[]`；**`reason` 字符串保留**（三端兼容） |
+| 3 | `/buddy/items` 没有 `status` 过滤 → 已满/已关闭的活动会**静默消失** | 加 `status` 多值参数（支持重复与逗号两种写法）；**缺省不过滤**（§5.3 优先于 §5.9 的自相矛盾） |
+
+#### 附带：全局既有缺陷 —— 后台标签页永久骨架屏
+
+`apps/web` 的 TanStack Query 用默认 `networkMode: 'online'`，
+查询在**标签页不可见**时进入 `paused`，重试器用
+`focusManager.isFocused() && onlineManager.isOnline()` 决定是否继续
+⇒ **后台标签页里请求失败 → 重试永久暂停 → UI 永远停在骨架屏**，
+既不出错误态也不出重试按钮。契约 §8 要求的是"失败静默降级为错误态 UI"。
+
+**两个团队各自独立复现过**，且既有 `/groupbuy` 与新增 `/wildlife`、`/buddy` 表现一致
+⇒ **全局既有缺陷**，不是某个模块引入的。
+
+**处置**：`queries` 与 `mutations` 都显式设 `networkMode: 'always'`。
+理由：我们本来就要在后台标签页完成请求；`'always'` 是官方为此提供的语义，
+比"伪造 focus 状态"更直白。代价是离线时不再自动暂停 —— 这正是我们要的
+（失败要变成**错误态 UI**，而不是一个永远不结束的 loading）。
+配置抽到 `apps/web/src/app/query-client.ts`（独立于 JSX，便于单测直接断言），
+并有 6 条测试钉住，防止被"顺手清理"掉。

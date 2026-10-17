@@ -50,6 +50,7 @@ import {
   type BuddySection,
   type FeedbackRecord,
   type MatchMode,
+  type MatchReason,
 } from '@kedaya/shared';
 import { activitiesOf } from '../domain/section';
 import { TIME_ORDER_REASON } from '../domain/reason';
@@ -87,8 +88,20 @@ export interface RecommendItem {
   };
   /** 保留 3 位小数（对齐 `matching.py:466`） */
   score: number;
-  /** 中文理由，**保证非空**（验收 T35） */
+  /** 中文理由，**保证非空**（验收 T35）。**兼容字段，不得删除** —— 三端都在用 */
   reason: string;
+  /**
+   * 结构化理由（跨端 wire 缺口 2）：`{ code, label, weight }[]`，按权重降序。
+   *
+   * 三端此前**各自在客户端算一份** `explainMatch` 来展示逐条理由，
+   * 而客户端的输入（发起人特征）与服务端并不完全相同 ——
+   * 于是用户会看到一条与服务端排序不一致的"为什么推荐给你"。
+   * 现在由服务端下发，客户端不再需要自己算，也就不可能不一致。
+   *
+   * 与 `reason` 同源（同一次 `explainMatch` 输出）。rule 降级档
+   * （没有资料 / 未开匹配，`score = 0`）诚实返回 `[]` —— 那时确实没有规则命中。
+   */
+  reasons: MatchReason[];
 }
 
 export interface RecommendResult {
@@ -182,7 +195,13 @@ export class BuddyRecommendService {
     for (const match of scored.items) {
       const post = byId.get(match.postId);
       if (!post) continue;
-      items.push({ post: this.postBrief(post), score: match.score, reason: match.reason });
+      items.push({
+        post: this.postBrief(post),
+        score: match.score,
+        reason: match.reason,
+        // 结构化理由由 `scoreCandidates` 用同一次 `explainMatch` 产出，这里只透传。
+        reasons: match.reasons,
+      });
     }
 
     return { matchMode: mode, items, nextCursor: null };
@@ -272,8 +291,14 @@ export class BuddyRecommendService {
     };
   }
 
-  /** 未开启匹配时的条目：score 0、reason "按时间排序"（规格 §5.7 末段） */
+  /**
+   * 未开启匹配时的条目：score 0、reason "按时间排序"（规格 §5.7 末段）。
+   *
+   * `reasons: []` 是**诚实**的：这条推荐没有命中任何匹配规则，
+   * 它只是因为"开放且未开始"被按时间列出来。用空数组而不是编一条
+   * `weight: 0` 的理由，客户端就能区分"没有理由"与"有理由但权重很小"。
+   */
   private timeOrderedItem(post: BuddyPostModel): RecommendItem {
-    return { post: this.postBrief(post), score: 0, reason: TIME_ORDER_REASON };
+    return { post: this.postBrief(post), score: 0, reason: TIME_ORDER_REASON, reasons: [] };
   }
 }

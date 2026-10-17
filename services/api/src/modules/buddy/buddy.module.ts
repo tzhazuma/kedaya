@@ -39,6 +39,7 @@ import { BuddyApplicationService } from './application/buddy-application.service
 import { BuddyRecommendService } from './application/buddy-recommend.service';
 import { BuddyFeedbackService } from './application/buddy-feedback.service';
 import { BuddyQuestionnaireService } from './application/buddy-questionnaire.service';
+import { BuddyTagsService } from './application/buddy-tags.service';
 import { BuddyMatchingService } from './application/buddy-matching.service';
 import { BuddyProfilePrismaRepository, BuddyPostPrismaRepository, BuddyUserPrismaRepository } from './data/buddy.repository';
 import {
@@ -98,6 +99,8 @@ import {
     BuddyRecommendService,
     BuddyFeedbackService,
     BuddyQuestionnaireService,
+    // 标签表读取：纯投影，无 IO、无仓储依赖（唯一真相在 @kedaya/contracts）
+    BuddyTagsService,
   ],
   exports: [BuddyMatchingService],
 })

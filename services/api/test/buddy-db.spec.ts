@@ -561,3 +561,87 @@ describe('资料仓储（真实 SQL）', () => {
     expect(read?.availability).toEqual([{ dow: 6, startMin: 840, endMin: 1020 }]);
   });
 });
+
+/* ================================================================== *
+ * 跨端 wire 缺口 3：列表的 status 过滤（真实 SQL）
+ * ================================================================== */
+
+describe('帖子仓储的 status 过滤（跨端 wire 缺口 3，真实 SQL）', () => {
+  /** 本 describe 独占的标签，用来把数据集与其它用例隔离 */
+  const TAG = 'debate';
+  const IDS = ['status-open', 'status-full', 'status-closed', 'status-cancelled'] as const;
+
+  beforeAll(async () => {
+    const statuses = ['OPEN', 'FULL', 'CLOSED', 'CANCELLED'] as const;
+    for (const [index, status] of statuses.entries()) {
+      await createPost({ id: IDS[index] as string, status, tags: [TAG], activity: 'other' });
+    }
+  }, 60_000);
+
+  it('缺省（`statuses` 未传）= **不过滤**：FULL/CLOSED/CANCELLED 也在结果里（§5.3 优先于 §5.9）', async () => {
+    const page = await posts.list({
+      tags: [TAG],
+      limit: 100,
+      sort: 'createdAt_desc',
+      startsAfter: new Date(0),
+    });
+    expect(page.items.map((item) => item.post.id).sort()).toEqual([...IDS].sort());
+    expect(page.items.map((item) => item.post.status).sort()).toEqual([
+      'CANCELLED',
+      'CLOSED',
+      'FULL',
+      'OPEN',
+    ]);
+  });
+
+  it('`statuses` 单值 / 多值走 SQL 的 IN（并集）', async () => {
+    const one = await posts.list({
+      tags: [TAG],
+      statuses: ['FULL'],
+      limit: 100,
+      sort: 'createdAt_desc',
+      startsAfter: new Date(0),
+    });
+    expect(one.items.map((item) => item.post.id)).toEqual(['status-full']);
+
+    const many = await posts.list({
+      tags: [TAG],
+      statuses: ['CLOSED', 'CANCELLED'],
+      limit: 100,
+      sort: 'createdAt_desc',
+      startsAfter: new Date(0),
+    });
+    expect(many.items.map((item) => item.post.id).sort()).toEqual(['status-cancelled', 'status-closed']);
+  });
+
+  it('`statuses: []` = 不过滤（避免"传了空数组就什么都查不到"）', async () => {
+    const page = await posts.list({
+      tags: [TAG],
+      statuses: [],
+      limit: 100,
+      sort: 'createdAt_desc',
+      startsAfter: new Date(0),
+    });
+    expect(page.items).toHaveLength(IDS.length);
+  });
+
+  it('status 过滤与游标分页兼容：limit=1 翻页无重复无跳过', async () => {
+    const seen: string[] = [];
+    let cursor: string | undefined;
+    for (let page = 0; page < 10; page += 1) {
+      const result = await posts.list({
+        tags: [TAG],
+        statuses: ['OPEN', 'CLOSED'],
+        limit: 1,
+        cursor,
+        sort: 'createdAt_desc',
+        startsAfter: new Date(0),
+      });
+      for (const item of result.items) seen.push(item.post.id);
+      if (!result.nextCursor) break;
+      cursor = result.nextCursor;
+    }
+    expect(new Set(seen).size).toBe(seen.length);
+    expect(seen.sort()).toEqual(['status-closed', 'status-open']);
+  });
+});

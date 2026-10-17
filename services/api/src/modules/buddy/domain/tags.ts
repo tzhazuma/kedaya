@@ -25,9 +25,11 @@ export {
   isSkillLevel,
   skillRank,
   CAMPUS_LOCATIONS,
+  CAMPUS_LOCATION_DEFS,
   isKnownLocation,
   normalizeLocation,
   type BuddyTagDef,
   type BuddyTagGroup,
   type BuddySkillLevel,
+  type CampusLocationDef,
 } from '@kedaya/contracts';

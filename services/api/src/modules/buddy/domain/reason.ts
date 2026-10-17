@@ -14,7 +14,13 @@
  * 本文件就会写出对应文案。三者不可能各自漂移。
  */
 
-import { explainMatch, type BuddySection, type MatchSubject, type MatchTarget } from '@kedaya/shared';
+import {
+  explainMatch,
+  type BuddySection,
+  type MatchReason,
+  type MatchSubject,
+  type MatchTarget,
+} from '@kedaya/shared';
 import { tagLabels } from './tags';
 
 /** 无任何规则命中时的回落文案（对齐 `matching.py:299-301`） */
@@ -40,14 +46,20 @@ function intersect(a: readonly string[] | null | undefined, b: readonly string[]
  *
  * ⚠️ 返回**永远非空**（验收 T35：三种模式的 `GET /recommendations`
  * 都必须返回非空 `reason`）。无命中时回落 `有潜在匹配`。
+ *
+ * `precomputed` 让调用方把**已经算好的** `explainMatch` 结果传进来，
+ * 从而保证 `reason`（字符串）与 `reasons`（结构化数组）来自**同一次**调用 ——
+ * 两处各自再算一次也能得到相同结果（纯函数），但"同一次输出"是**可证明**的，
+ * 而"两次调用结果相同"要靠纯函数这个约定。缺省时自己算，保持向后兼容。
  */
 export function buildReason(
   section: BuddySection,
   me: MatchSubject,
   target: MatchTarget,
   opts: { availabilityOverlaps?: boolean } = {},
+  precomputed?: readonly MatchReason[],
 ): string {
-  const reasons = explainMatch(section, me, target, opts);
+  const reasons = precomputed ?? explainMatch(section, me, target, opts);
   if (reasons.length === 0) return FALLBACK_REASON;
 
   const sharedInterests = intersect(me.interestTags, target.creator.interestTags);

@@ -11,9 +11,12 @@ import {
   explainMatch,
   feedbackAdjustment,
   FEEDBACK_ACTION_WEIGHTS,
+  COEFFICIENTS,
   fuseScore,
   ruleScoreFor,
+  type BuddySection,
   type MatchSubject,
+  type MatchTarget,
 } from './scoring';
 import { cosineDistance, hashVector, l2Normalize, profileText } from './hashVector';
 
@@ -470,5 +473,137 @@ describe('l2Normalize / profileText', () => {
     const a = profileText({ interestTags: ['b', 'a'], activityTags: ['y', 'x'] });
     const b = profileText({ interestTags: ['a', 'b'], activityTags: ['x', 'y'] });
     expect(a).toBe(b);
+  });
+});
+
+/* ================================================================== *
+ * 结构性不变式：理由必须能解释分数
+ *
+ * 这一组是整个模块**最重要的测试**。它存在的理由是同一类 bug 出现过**两次**：
+ *   1. `academic`/`sport` 展示「时间能碰上」，但只有 `daily` 给那 0.2 分
+ *   2. `academic` 展示「常在同一个区域」、`daily` 展示「共同活动 N 项」，
+ *      而这两个板块根本没有对应分项（贡献恒为 0）；
+ *      另有量级不符（`daily` 兴趣标 0.1/项、实际 0.15/项）
+ *
+ * 前两次都是"补一处"，所以第三次还会来。这次改成**结构性**约束：
+ * 系数只有 `COEFFICIENTS` 一份，理由由它生成。下面用不变式把它钉死。
+ * ================================================================== */
+
+/** 造一个可控的 me/target，逐项开关各因子 */
+function scenario(opts: {
+  sharedInterests?: number;
+  sharedActivities?: number;
+  sameDepartment?: boolean;
+  sameSkill?: boolean;
+  sameArea?: boolean;
+  availabilityOverlaps?: boolean;
+}) {
+  const me: MatchSubject = {
+    department: opts.sameDepartment ? 'SIST' : 'SLST',
+    interestTags: Array.from({ length: opts.sharedInterests ?? 0 }, (_, i) => `i${i}`),
+    activityTags: Array.from({ length: opts.sharedActivities ?? 0 }, (_, i) => `a${i}`),
+    preferredAreas: opts.sameArea ? ['图书馆'] : ['体育馆'],
+    skillLevel: opts.sameSkill ? 'regular' : 'beginner',
+  };
+  const other: MatchSubject = {
+    department: opts.sameDepartment ? 'SIST' : 'SIST-other',
+    interestTags: me.interestTags,
+    activityTags: me.activityTags,
+    preferredAreas: opts.sameArea ? ['图书馆'] : ['田径场'],
+    skillLevel: opts.sameSkill ? 'regular' : 'competitive',
+  };
+  return { me, target: { creator: other, tags: [] } as MatchTarget,
+           opts: { availabilityOverlaps: opts.availabilityOverlaps ?? false } };
+}
+
+describe('⚠️ 不变式：explainMatch 的权重之和 === ruleScoreFor（无 clamp 时）', () => {
+  const SECTIONS: BuddySection[] = ['academic', 'daily', 'sport'];
+
+  // 覆盖各因子的开关组合
+  const CASES = [
+    {}, { sharedInterests: 1 }, { sharedInterests: 3 }, { sharedInterests: 9 },
+    { sharedActivities: 1 }, { sharedActivities: 5 },
+    { sameDepartment: true }, { sameSkill: true }, { sameArea: true },
+    { availabilityOverlaps: true },
+    { sharedInterests: 2, sharedActivities: 2, sameDepartment: true, sameSkill: true, sameArea: true, availabilityOverlaps: true },
+    { sharedInterests: 1, sharedActivities: 1, sameArea: true, availabilityOverlaps: true },
+  ];
+
+  for (const section of SECTIONS) {
+    for (const [idx, c] of CASES.entries()) {
+      it(`${section} #${idx} 理由权重之和恰等于规则分`, () => {
+        const { me, target, opts } = scenario(c);
+        const score = ruleScoreFor(section, me, target, opts);
+        const reasons = explainMatch(section, me, target, opts);
+        const sum = reasons.reduce((s, r) => s + r.weight, 0);
+
+        // 若未触顶（<1），理由之和必须**逐位**等于规则分
+        if (score < 1) {
+          expect(sum, `理由之和 ${sum} ≠ 规则分 ${score}（${JSON.stringify(c)}）`).toBeCloseTo(score, 9);
+        } else {
+          // 触顶时，理由之和 ≥ 1（被 clamp 掉了超额部分）
+          expect(sum).toBeGreaterThanOrEqual(1);
+        }
+      });
+    }
+  }
+
+  it('**每一条**理由的 code 都能在系数表里找到（不可能凭空造理由）', () => {
+    for (const section of SECTIONS) {
+      const codes = new Set(COEFFICIENTS[section].map((r) => r.code));
+      for (const c of CASES) {
+        const { me, target, opts } = scenario(c);
+        for (const r of explainMatch(section, me, target, opts)) {
+          expect(codes.has(r.code), `${section} 的理由 ${r.code} 不在系数表里`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('**没有任何**系数表里的规则会"有分无理由"或"有理由无分"', () => {
+    // 对每条规则单独构造"只有它命中"的场景，断言：
+    //   score > 0  ⟺  该 code 出现在理由里
+    const onlyOne: Record<string, (s: BuddySection) => ReturnType<typeof scenario>> = {
+      'same-department': () => scenario({ sameDepartment: true }),
+      'same-skill': () => scenario({ sameSkill: true }),
+      'same-area': () => scenario({ sameArea: true }),
+      'availability-overlap': () => scenario({ availabilityOverlaps: true }),
+      'shared-interests': () => scenario({ sharedInterests: 1 }),
+      'shared-activities': () => scenario({ sharedActivities: 1 }),
+    };
+
+    for (const section of SECTIONS) {
+      for (const rule of COEFFICIENTS[section]) {
+        const build = onlyOne[rule.code];
+        expect(build, `系数表出现了未覆盖的 code: ${rule.code}`).toBeDefined();
+        const { me, target, opts } = build!(section);
+        const reasons = explainMatch(section, me, target, opts);
+        const present = reasons.some((r) => r.code === rule.code);
+        const score = ruleScoreFor(section, me, target, opts);
+
+        // 这条规则被展示 ⟺ 分数真的被它加过
+        if (present) {
+          expect(score, `${section}.${rule.code} 被展示却没加分`).toBeGreaterThan(0);
+        }
+        // 反向：这条规则是场景里唯一的因子，若它不加分就不该被展示
+        if (!present) {
+          expect(score, `${section}.${rule.code} 没被展示却加了分`).toBe(0);
+        }
+      }
+    }
+  });
+
+  it('academic 不含 same-area、daily 不含 shared-activities（曾经被错误展示过）', () => {
+    expect(COEFFICIENTS.academic.map((r) => r.code)).not.toContain('same-area');
+    expect(COEFFICIENTS.daily.map((r) => r.code)).not.toContain('shared-activities');
+    // 而且这两个因子在这些板块里**确实不改变分数**
+    const a = scenario({ sameArea: true });
+    expect(ruleScoreFor('academic', a.me, a.target, a.opts)).toBe(
+      ruleScoreFor('academic', scenario({}).me, scenario({}).target, {}),
+    );
+    const d = scenario({ sharedActivities: 3 });
+    expect(ruleScoreFor('daily', d.me, d.target, d.opts)).toBe(
+      ruleScoreFor('daily', scenario({}).me, scenario({}).target, {}),
+    );
   });
 });

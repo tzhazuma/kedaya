@@ -10,6 +10,24 @@
  *   1. 删掉「同学校」规则 —— 单校部署下恒为真，零信息量却让总分虚高 0.2
  *   2. 「年龄差 ≤3」换成「可用时段重叠」—— 年龄不该用于组队
  *   3. 新增 7 条硬过滤（在打分之前）
+ *
+ * ## 本文件的结构性约束（这是同一类 bug 修了两次之后的结论）
+ *
+ * **系数只能写一次。** `ruleScoreFor`（算分）与 `explainMatch`（给理由）
+ * 必须从**同一张系数表** `COEFFICIENTS` 派生，且共用同一个 `evaluateRules` 内核。
+ *
+ * 为什么：早先两者各写各的，于是反复出现
+ * **"展示了一条理由，但该理由对分数毫无贡献"** 的不一致：
+ *   - 第一轮：`academic`/`sport` 展示「时间能碰上」，但只有 `daily` 给这 0.2 分
+ *   - 第二轮（api 实现时发现）：`academic` 展示「常在同一个区域」、`daily` 展示「共同活动 N 项」，
+ *     而这两个板块**根本没有对应的分项** —— 贡献恒为 0；
+ *     另有量级不符（`daily` 兴趣标 0.1/项、实际 0.15/项；`academic` 活动标 0.15/项、实际固定 0.1）
+ *
+ * 每次都"补一处"是治不好的 —— 只要还有两份独立的系数，就还会有第三处。
+ * 所以现在系数**只有 `COEFFICIENTS` 一份**，理由由它**生成**：
+ * 结构上不可能再出现"有理由没分"，也不可能出现"权重标错"。
+ *
+ * 可解释性的定义就是「**理由必须能解释分数**」。不解释任何分数的理由不是解释，是噪音。
  */
 
 export type BuddySection = 'academic' | 'daily' | 'sport';
@@ -84,8 +102,110 @@ export function applyHardFilters(input: HardFilterInput, now: Date): HardFilterR
 }
 
 /* ------------------------------------------------------------------ *
- * 规则分（规格 §3.3 的软打分表）
+ * 系数表 —— **唯一来源**
  * ------------------------------------------------------------------ */
+
+/** 一条「按共同标签数计分」的规则：`min(cap, perItem × n)` */
+export interface TagCountRule {
+  kind: 'tag-count';
+  /** 理由 code（客户端展示用） */
+  code: string;
+  /** 理由文案模板，`{n}` 会替换成共同项数 */
+  label: string;
+  /** 每命中一项加多少 */
+  perItem: number;
+  /** 该项总分上限 */
+  cap: number;
+  /** 用哪一组标签比较 */
+  source: 'interests' | 'activities';
+}
+
+/** 一条「命中即加分」的规则（不分数量） */
+export interface FlatRule {
+  kind: 'flat';
+  code: string;
+  label: string;
+  weight: number;
+  /** 触发条件 */
+  when: 'same-department' | 'same-skill' | 'same-area' | 'availability-overlap';
+}
+
+/** 一条「有共同项即加分」（不看数量）的规则 */
+export interface PresenceRule {
+  kind: 'presence';
+  code: string;
+  label: string;
+  weight: number;
+  source: 'activities';
+}
+
+export type ScoringRule = TagCountRule | FlatRule | PresenceRule;
+
+/**
+ * 三板块的规则表（规格 §3.3 的软打分表）。
+ *
+ * ⚠️ **这是全模块唯一的系数来源。** `ruleScoreFor` 与 `explainMatch` 都从这里派生 ——
+ * 结构上不可能再出现"展示了理由但该理由不加分"。
+ *
+ * 与 STUMatch 的差异（规格 §3.3）：
+ * - `academic` **删掉**「同学校 +0.2」（单校部署恒为真，零信息量）
+ * - `daily` 把「年龄差 ≤3」换成「可用时段重叠」；「同城」换成「同区域」
+ * - `sport` 用「同水平」替代 dating 的年龄差
+ * - `academic` **没有** `same-area` 项、`daily` **没有** `shared-activities` 项
+ *   —— 这两条正是之前被错误展示过的理由；现在它们**不在表里**，就不会被展示
+ */
+export const COEFFICIENTS: Readonly<Record<BuddySection, readonly ScoringRule[]>> = {
+  academic: [
+    { kind: 'flat', code: 'same-department', label: '同一个院系', weight: 0.4, when: 'same-department' },
+    {
+      kind: 'tag-count',
+      code: 'shared-interests',
+      label: '共同兴趣 {n} 项',
+      perItem: 0.1,
+      cap: 0.3,
+      source: 'interests',
+    },
+    { kind: 'presence', code: 'shared-activities', label: '共同活动', weight: 0.1, source: 'activities' },
+  ],
+  daily: [
+    {
+      kind: 'tag-count',
+      code: 'shared-interests',
+      label: '共同兴趣 {n} 项',
+      perItem: 0.15,
+      cap: 0.5,
+      source: 'interests',
+    },
+    {
+      kind: 'flat',
+      code: 'availability-overlap',
+      label: '时间能碰上',
+      weight: 0.2,
+      when: 'availability-overlap',
+    },
+    { kind: 'flat', code: 'same-area', label: '常在同一个区域', weight: 0.1, when: 'same-area' },
+  ],
+  sport: [
+    { kind: 'flat', code: 'same-skill', label: '水平接近', weight: 0.3, when: 'same-skill' },
+    {
+      kind: 'tag-count',
+      code: 'shared-activities',
+      label: '共同活动 {n} 项',
+      perItem: 0.15,
+      cap: 0.4,
+      source: 'activities',
+    },
+    {
+      kind: 'tag-count',
+      code: 'shared-interests',
+      label: '共同兴趣 {n} 项',
+      perItem: 0.1,
+      cap: 0.2,
+      source: 'interests',
+    },
+    { kind: 'flat', code: 'same-area', label: '常在同一个区域', weight: 0.1, when: 'same-area' },
+  ],
+};
 
 const clamp01 = (n: number): number => (n < 0 ? 0 : n > 1 ? 1 : n);
 
@@ -105,6 +225,85 @@ function sharedCount(
   return n;
 }
 
+/** 判定一条 flat 规则的触发条件是否成立 */
+function flatConditionHolds(
+  when: FlatRule['when'],
+  me: MatchSubject,
+  other: MatchSubject,
+  opts: { availabilityOverlaps?: boolean },
+): boolean {
+  switch (when) {
+    case 'same-department':
+      return Boolean(me.department && other.department && me.department === other.department);
+    case 'same-skill':
+      return Boolean(me.skillLevel && other.skillLevel && me.skillLevel === other.skillLevel);
+    case 'same-area':
+      return (
+        (me.preferredAreas ?? []).length > 0 &&
+        sharedCount(me.preferredAreas ?? [], other.preferredAreas ?? []) > 0
+      );
+    case 'availability-overlap':
+      return opts.availabilityOverlaps === true;
+    default:
+      return false;
+  }
+}
+
+/** 一条规则的实际得分与命中数量 */
+interface RuleHit {
+  rule: ScoringRule;
+  /** 实际得分（已应用 cap） */
+  score: number;
+  /** 命中的共同项数（flat 规则命中时为 1；未命中为 0） */
+  count: number;
+  /** 该规则是否命中（决定是否展示理由） */
+  hit: boolean;
+}
+
+/**
+ * 评估一个板块的全部规则 —— `ruleScoreFor` 与 `explainMatch` 的**共同内核**。
+ *
+ * 两者关系：`ruleScoreFor = Σ hits.score`；
+ * `explainMatch = hits.filter(hit).map(→ MatchReason)`。
+ * 因此**任何被展示的理由，其 weight 一定真的进了分数** —— 这是结构保证，不是约定。
+ */
+function evaluateRules(
+  section: BuddySection,
+  me: MatchSubject,
+  target: MatchTarget,
+  opts: { availabilityOverlaps?: boolean } = {},
+): RuleHit[] {
+  const other = target.creator;
+  const rules = COEFFICIENTS[section];
+
+  return rules.map((rule): RuleHit => {
+    switch (rule.kind) {
+      case 'tag-count': {
+        const a = rule.source === 'interests' ? me.interestTags : me.activityTags;
+        const b = rule.source === 'interests' ? other.interestTags : other.activityTags;
+        const n = sharedCount(a, b);
+        return {
+          rule,
+          count: n,
+          hit: n > 0,
+          score: n > 0 ? Math.min(rule.cap, rule.perItem * n) : 0,
+        };
+      }
+      case 'presence': {
+        const n = sharedCount(me.activityTags, other.activityTags);
+        return { rule, count: n, hit: n > 0, score: n > 0 ? rule.weight : 0 };
+      }
+      case 'flat': {
+        const ok = flatConditionHolds(rule.when, me, other, opts);
+        return { rule, count: ok ? 1 : 0, hit: ok, score: ok ? rule.weight : 0 };
+      }
+      default:
+        // 穷尽性：新增规则种类会在这里编译报错
+        throw new Error(`evaluateRules: 未知规则种类 ${JSON.stringify(rule)}`);
+    }
+  });
+}
+
 /**
  * 规则分。**融合前必须 clamp 到 [0,1]** —— 各板块之和可能超过 1
  * （academic 最高 0.8 / daily 0.8 / sport 1.0），不 clamp 会把 0.30 的权重放大。
@@ -115,43 +314,8 @@ export function ruleScoreFor(
   target: MatchTarget,
   opts: { availabilityOverlaps?: boolean } = {},
 ): number {
-  const other = target.creator;
-  const sharedInterests = sharedCount(me.interestTags, other.interestTags);
-  const sharedActivities = sharedCount(me.activityTags, other.activityTags);
-  const sameArea =
-    (me.preferredAreas ?? []).length > 0 &&
-    sharedCount(me.preferredAreas ?? [], other.preferredAreas ?? []) > 0;
-
-  let score = 0;
-
-  switch (section) {
-    case 'academic': {
-      // 同院系（不是同专业 —— 小程序端填报质量不可控，规格 §3.3）
-      if (me.department && other.department && me.department === other.department) score += 0.4;
-      score += Math.min(0.3, 0.1 * sharedInterests);
-      score += sharedActivities > 0 ? 0.1 : 0;
-      // 「同学校」规则**刻意删除**：单校部署下恒为真，零信息量
-      break;
-    }
-    case 'daily': {
-      score += Math.min(0.5, 0.15 * sharedInterests);
-      if (opts.availabilityOverlaps) score += 0.2; // 替代 STUMatch 的「年龄差 ≤3」
-      if (sameArea) score += 0.1; // 替代「同城」，单校部署下同城无意义
-      break;
-    }
-    case 'sport': {
-      if (me.skillLevel && other.skillLevel && me.skillLevel === other.skillLevel) score += 0.3;
-      score += Math.min(0.4, 0.15 * sharedActivities);
-      score += Math.min(0.2, 0.1 * sharedInterests);
-      if (sameArea) score += 0.1;
-      break;
-    }
-    default:
-      // 穷尽性：新增板块会在这里编译报错
-      throw new Error(`ruleScoreFor: 未知板块 ${String(section)}`);
-  }
-
-  return clamp01(score);
+  const total = evaluateRules(section, me, target, opts).reduce((sum, h) => sum + h.score, 0);
+  return clamp01(total);
 }
 
 /* ------------------------------------------------------------------ *
@@ -260,48 +424,28 @@ export interface MatchReason {
   weight: number;
 }
 
+/**
+ * 可解释理由 —— **由 `COEFFICIENTS` 生成，与 `ruleScoreFor` 同源**。
+ *
+ * 因此：**每一条理由的 `weight` 都真的进了 `ruleScoreFor`**，
+ * 且**没进分数的规则不会出现在理由里**。这是结构保证：
+ * 两者读同一张表、跑同一个 `evaluateRules`。
+ *
+ * `weight` 用的是**实际得分**（已应用 cap / 已乘数量），不是"名义权重" ——
+ * 这样界面上的数字与排序依据永远一致。
+ */
 export function explainMatch(
   section: BuddySection,
   me: MatchSubject,
   target: MatchTarget,
   opts: { availabilityOverlaps?: boolean } = {},
 ): MatchReason[] {
-  const other = target.creator;
-  const reasons: MatchReason[] = [];
-  const si = sharedCount(me.interestTags, other.interestTags);
-  const sa = sharedCount(me.activityTags, other.activityTags);
-  const sameArea =
-    (me.preferredAreas ?? []).length > 0 &&
-    sharedCount(me.preferredAreas ?? [], other.preferredAreas ?? []) > 0;
-
-  if (section === 'academic' && me.department && me.department === other.department) {
-    reasons.push({ code: 'same-department', label: '同一个院系', weight: 0.4 });
-  }
-  if (si > 0) {
-    reasons.push({ code: 'shared-interests', label: `共同兴趣 ${si} 项`, weight: si * 0.1 });
-  }
-  if (sa > 0) {
-    reasons.push({ code: 'shared-activities', label: `共同活动 ${sa} 项`, weight: sa * 0.15 });
-  }
-  // ⚠️ **只有 `daily` 板块**才展示"时间能碰上" —— 因为 `ruleScoreFor` 也只在 daily 给这 0.2 分。
-  // 早先版本对三个板块都展示该理由，于是 academic/sport 的推荐会出现
-  // "时间合适"却**不加分**的矛盾：用户看到的理由解释不了他看到的排序。
-  // 可解释性的定义就是"理由必须能解释分数"，所以这里必须与打分表严格一致。
-  // （由 api 在实现 `buddy` 时发现并上报，Lead 裁决：改代码，不改规格。）
-  if (section === 'daily' && opts.availabilityOverlaps) {
-    reasons.push({ code: 'availability-overlap', label: '时间能碰上', weight: 0.2 });
-  }
-  if (sameArea) {
-    reasons.push({ code: 'same-area', label: '常在同一个区域', weight: 0.1 });
-  }
-  if (
-    section === 'sport' &&
-    me.skillLevel &&
-    other.skillLevel &&
-    me.skillLevel === other.skillLevel
-  ) {
-    reasons.push({ code: 'same-skill', label: '水平接近', weight: 0.3 });
-  }
-
-  return reasons.sort((a, b) => b.weight - a.weight);
+  return evaluateRules(section, me, target, opts)
+    .filter((h) => h.hit && h.score > 0)
+    .map((h) => ({
+      code: h.rule.code,
+      label: h.rule.kind === 'tag-count' ? h.rule.label.replace('{n}', String(h.count)) : h.rule.label,
+      weight: h.score,
+    }))
+    .sort((a, b) => b.weight - a.weight);
 }

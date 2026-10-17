@@ -206,8 +206,13 @@ export class BuddyPostPrismaRepository implements BuddyPostRepository {
 
   async list(query: PostListQuery): Promise<PostPage> {
     const activities = resolveActivities(query);
+    const statuses = query.statuses && query.statuses.length > 0 ? [...new Set(query.statuses)] : undefined;
     const where: Record<string, unknown> = {
-      status: 'OPEN',
+      // ⚠️ 规格 §5.3（query 表无 status → 不过滤）**优先于** §5.9 的 `where status='OPEN'`。
+      // 硬编码 OPEN 会让 FULL/CLOSED/CANCELLED 的活动在列表里**静默消失** ——
+      // 用户以为活动没了，而它只是满了/被关了（Web 端因此只能自造 includeClosed）。
+      // 过滤现在由 `statuses` 显式驱动；缺省不过滤。
+      ...(statuses ? { status: { in: statuses } } : {}),
       deletedAt: null,
       startsAt: { gt: query.startsAfter ?? new Date() },
       ...(activities.length > 0 ? { activity: { in: activities } } : {}),

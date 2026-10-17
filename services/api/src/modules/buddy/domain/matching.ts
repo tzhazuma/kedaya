@@ -29,12 +29,14 @@
 import {
   applyHardFilters,
   baseScoreFromCosineDistance,
+  explainMatch,
   feedbackAdjustment,
   fuseScore,
   ruleScoreFor,
   type BuddySection,
   type FeedbackRecord,
   type MatchMode,
+  type MatchReason,
   type MatchSubject,
   type MatchTarget,
 } from '@kedaya/shared';
@@ -75,7 +77,21 @@ export interface MatchCandidate {
 export interface ScoredMatch {
   postId: string;
   score: number;
+  /** 中文理由（**兼容字段**：三端都在用，不得删除；永远非空） */
   reason: string;
+  /**
+   * 结构化理由（跨端 wire 缺口 2）：`{ code, label, weight }[]`，按权重降序。
+   *
+   * 与 `reason` **同源**：两者由同一次 `explainMatch` 输出派生
+   * （字符串是它的中文拼接，数组是它的原样投影）。
+   * 客户端要展示"为什么推荐给你"并让理由**可排序/可解释**时用这个字段；
+   * 只想要一句中文时用 `reason`。
+   *
+   * ⚠️ 权重之和**不一定等于** `score`：规则分在融合前会 clamp 到 [0,1]，
+   * 且兴趣项本身有上限（academic 的 `min(0.3, 0.1×n)`）。权重表达的是
+   * "这条理由命中了哪条规则、该规则值多少分"，不是"它贡献了总分的百分之几"。
+   */
+  reasons: MatchReason[];
 }
 
 export interface ScoreOptions {
@@ -168,13 +184,17 @@ export function scoreCandidates(options: ScoreOptions): ScoreResult {
       towerScore: undefined,
     });
 
+    // 理由**只算一次**：`reasons`（结构化）与 `reason`（中文串）都从这一次
+    // `explainMatch` 输出派生，因此两者不可能互相漂移。
+    const reasonOpts = { availabilityOverlaps: candidate.availabilityOverlaps };
+    const reasons = explainMatch(section, me, target, reasonOpts);
+
     scored.push({
       match: {
         postId: candidate.post.id,
         score: roundScore(finalScore),
-        reason: buildReason(section, me, target, {
-          availabilityOverlaps: candidate.availabilityOverlaps,
-        }),
+        reason: buildReason(section, me, target, reasonOpts, reasons),
+        reasons,
       },
       vector: candidate.vector,
       relevance: finalScore,

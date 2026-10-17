@@ -26,7 +26,20 @@ import { ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
-import { API_BASE_PATH, IDEMPOTENCY_HEADER, TRACE_HEADER } from '@kedaya/contracts';
+import {
+  API_BASE_PATH,
+  BUDDY_TAGS,
+  CAMPUS_LOCATION_DEFS,
+  IDEMPOTENCY_HEADER,
+  MAX_ACTIVITY_TAGS,
+  MAX_INTEREST_TAGS,
+  MAX_POST_TAGS,
+  MAX_PREFERRED_AREAS,
+  TAG_KEYS,
+  TRACE_HEADER,
+  activeTags,
+  isKnownLocation,
+} from '@kedaya/contracts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { AddressInfo } from 'node:net';
 import type { NextFunction, Request, Response } from 'express';
@@ -218,6 +231,8 @@ describe('鉴权（规格 §5.1）', () => {
     ['GET', '/recommendations?section=sport'],
     ['GET', '/applications'],
     ['GET', '/questionnaires'],
+    // 跨端 wire 缺口 1：标签表端点与其它 buddy 端点一致，也要求 Bearer
+    ['GET', '/tags'],
   ];
 
   it.each(endpoints)('%s %s 未带 token → 401 UNAUTHENTICATED', async (method, path) => {
@@ -1234,5 +1249,355 @@ describe('问卷（规格 §5.1 端点 16–19）', () => {
     await seedUser(ctx.prisma, 'user-no-answers', '没填过');
     const empty = await call(`/questionnaires/${SLUG}/responses/me`, { token: fresh });
     expect(empty.body.data).toBeNull();
+  });
+});
+
+/* ================================================================== *
+ * 10. 跨端 wire 缺口 1：GET /tags（权威标签表）
+ * ================================================================== */
+
+interface TagWire {
+  key: string;
+  label: string;
+  group: string;
+  aliases: string[];
+  isActive: boolean;
+}
+
+describe('GET /tags（权威标签表，跨端 wire 缺口 1）', () => {
+  it('返回权威表：与 @kedaya/contracts 的 BUDDY_TAGS **逐字、逐序**一致', async () => {
+    const result = await call<{ tags: TagWire[] }>('/tags', { token: tokens[ME] });
+    expect(result.status).toBe(200);
+    expect(result.body.ok).toBe(true);
+
+    // 期望值**由唯一真相推导**，不是手抄一份 —— 手抄正是这个缺陷的成因。
+    const expected = BUDDY_TAGS.map((tag) => ({
+      key: tag.key,
+      label: tag.label,
+      group: tag.group,
+      aliases: [...(tag.aliases ?? [])],
+      isActive: tag.isActive !== false,
+    }));
+
+    expect(result.body.data.tags).toEqual(expected); // toEqual 深比较，且数组顺序敏感
+    expect(result.body.data.tags.map((tag) => tag.key)).toEqual([...TAG_KEYS]);
+  });
+
+  it('active 子集与契约的 activeTags() 一致（客户端据此渲染选择器）', async () => {
+    const result = await call<{ tags: TagWire[] }>('/tags', { token: tokens[ME] });
+    expect(result.body.data.tags.filter((tag) => tag.isActive).map((tag) => tag.key)).toEqual(
+      activeTags().map((tag) => tag.key),
+    );
+    // 当前权威表无下架标签（如实断言：新增下架标签时这条会提醒补下架路径测试）
+    expect(result.body.data.tags.every((tag) => tag.isActive)).toBe(true);
+  });
+
+  it('数量上限与契约常量一致（客户端据此做提交前本地校验，而不是提交后吃 400）', async () => {
+    const result = await call<{ limits: Record<string, number> }>('/tags', { token: tokens[ME] });
+    expect(result.body.data.limits).toEqual({
+      maxInterestTags: MAX_INTEREST_TAGS,
+      maxActivityTags: MAX_ACTIVITY_TAGS,
+      maxPostTags: MAX_POST_TAGS,
+      maxPreferredAreas: MAX_PREFERRED_AREAS,
+    });
+  });
+
+  it('字段形状完整：aliases 恒为数组（无别名时是 []），isActive 恒为布尔', async () => {
+    const result = await call<{ tags: TagWire[] }>('/tags', { token: tokens[ME] });
+    for (const tag of result.body.data.tags) {
+      expect(typeof tag.key).toBe('string');
+      expect(tag.label.length).toBeGreaterThan(0);
+      expect(['sport', 'study', 'meal', 'travel', 'interest']).toContain(tag.group);
+      expect(Array.isArray(tag.aliases), tag.key).toBe(true);
+      expect(typeof tag.isActive, tag.key).toBe('boolean');
+    }
+
+    // 无别名的标签必须给 []，而不是省略字段（省略会让客户端各自解释 undefined）
+    expect(result.body.data.tags.find((tag) => tag.key === 'volleyball')?.aliases).toEqual([]);
+    // 有别名的标签原样下发（别名词表**仅用于搜索**，不参与匹配）
+    expect(result.body.data.tags.find((tag) => tag.key === 'badminton')?.aliases).toEqual(['打羽毛球']);
+  });
+
+  it('是 GET：**不要求** Idempotency-Key（带不带都 200，且数据一致）', async () => {
+    const without = await call<{ tags: TagWire[] }>('/tags', { token: tokens[ME] });
+    const withKey = await call<{ tags: TagWire[] }>('/tags', {
+      token: tokens[ME],
+      idempotencyKey: nextKey('tags'),
+    });
+    expect(without.status).toBe(200);
+    expect(withKey.status).toBe(200);
+    expect(withKey.body.data).toEqual(without.body.data);
+  });
+
+  it('一并下发校园地点白名单，与契约 CAMPUS_LOCATION_DEFS 逐字一致（**label 才是提交值**）', async () => {
+    const result = await call<{ locations: Array<{ key: string; label: string }> }>('/tags', {
+      token: tokens[ME],
+    });
+    expect(result.body.data.locations).toEqual(
+      CAMPUS_LOCATION_DEFS.map((location) => ({ key: location.key, label: location.label })),
+    );
+    expect(result.body.data.locations.length).toBeGreaterThan(5);
+  });
+
+  it('闭环：端点下发的 location **label** 直接提交会被接受，而 key（英文 slug）会被拒', async () => {
+    const result = await call<{ locations: Array<{ key: string; label: string }> }>('/tags', {
+      token: tokens[ME],
+    });
+    const location = result.body.data.locations[0]!;
+
+    // label（中文名）是 wire value → 通过白名单
+    expect(isKnownLocation(location.label)).toBe(true);
+    const accepted = await createPost({ title: '标签端点闭环-正确命名空间', location: location.label });
+    expect(accepted.status).toBe(201);
+
+    // key（英文 slug）不是 wire value → 被拒。
+    // 这正是收敛前 Web 端的真实缺陷：两个命名空间完全不相交，用户选的任何地点都被拒。
+    expect(isKnownLocation(location.key)).toBe(false);
+    const rejected = await createPost({ title: '标签端点闭环-错误命名空间', location: location.key });
+    expect(rejected.body.error?.code).toBe('VALIDATION_FAILED');
+    expect(rejected.body.error?.details).toMatchObject({ reason: 'UNKNOWN_LOCATION' });
+  });
+});
+
+/* ================================================================== *
+ * 11. 跨端 wire 缺口 2：GET /recommendations 的结构化理由
+ * ================================================================== */
+
+interface ReasonWire {
+  code: string;
+  label: string;
+  weight: number;
+}
+
+/** code → `reason` 字符串里对应的中文片段（两者同源，必须能互相解释） */
+const REASON_CODE_TEXT: Record<string, string> = {
+  'same-department': '同院系',
+  'shared-interests': '共同兴趣',
+  'shared-activities': '共同活动',
+  'availability-overlap': '时间合适',
+  'same-area': '常去同一区域',
+  'same-skill': '运动水平相同',
+};
+
+describe('GET /recommendations 的 reasons（跨端 wire 缺口 2）', () => {
+  it('每个 item 同时有 reason（字符串，**兼容字段**）与 reasons（结构化数组，权重降序）', async () => {
+    await setProfile(ME, { sections: ['sport'] });
+    const result = await call<{ items: Array<{ reason: string; reasons: ReasonWire[] }> }>(
+      '/recommendations?section=sport&limit=10',
+      { token: tokens[ME] },
+    );
+    expect(result.body.data.items.length).toBeGreaterThan(0);
+
+    for (const item of result.body.data.items) {
+      // 兼容：`reason` 仍在且非空（三端都在用，删了会破坏兼容）
+      expect(typeof item.reason).toBe('string');
+      expect(item.reason.length).toBeGreaterThan(0);
+
+      // 新增：结构化理由
+      expect(Array.isArray(item.reasons)).toBe(true);
+      for (const reason of item.reasons) {
+        expect(typeof reason.code).toBe('string');
+        expect(reason.label.length).toBeGreaterThan(0);
+        expect(typeof reason.weight).toBe('number');
+        expect(reason.weight).toBeGreaterThan(0);
+      }
+      const weights = item.reasons.map((reason) => reason.weight);
+      expect([...weights].sort((a, b) => b - a)).toEqual(weights);
+    }
+  });
+
+  it('reasons 与 score 同源：academic 同院系候选带 same-department(0.4)，且 reason 串含"同院系"', async () => {
+    await setProfile(SAME_DEPT, { sections: ['academic'], department: '信息学院' });
+    const created = await createPost(
+      { activity: 'study', title: '同源理由-同院系', location: '图书馆' },
+      tokens[SAME_DEPT],
+    );
+    expect(created.body.ok).toBe(true);
+    await setProfile(ME, {
+      sections: ['academic'],
+      department: '信息学院',
+      interestTags: [],
+      activityTags: [],
+    });
+
+    const result = await call<{
+      items: Array<{ post: { id: string }; reason: string; reasons: ReasonWire[] }>;
+    }>('/recommendations?section=academic&limit=50', { token: tokens[ME] });
+
+    const item = result.body.data.items.find(
+      (entry) => entry.post.id === (created.body.data as { id: string }).id,
+    );
+    expect(item).toBeDefined();
+    expect(item!.reasons.find((reason) => reason.code === 'same-department')).toMatchObject({
+      code: 'same-department',
+      label: '同一个院系',
+      weight: 0.4,
+    });
+    expect(item!.reason).toContain('同院系');
+
+    // 字符串与数组同源：`reason` 只取前 3 条，因此前 3 条的 code 都能在串里找到对应中文
+    for (const reason of item!.reasons.slice(0, 3)) {
+      expect(item!.reason, reason.code).toContain(REASON_CODE_TEXT[reason.code] as string);
+    }
+  });
+
+  it('academic / sport 的 reasons **不含** availability-overlap；daily 含（weight 0.2）', async () => {
+    const sportPost = await createPost(
+      { activity: 'sport', title: '理由-时段-sport', tags: ['badminton'] },
+      tokens[CREATOR],
+    );
+    const studyPost = await createPost(
+      { activity: 'study', title: '理由-时段-academic', location: '图书馆' },
+      tokens[CREATOR],
+    );
+    const mealPost = await createPost({ activity: 'meal', title: '理由-时段-daily' }, tokens[CREATOR]);
+    for (const created of [sportPost, studyPost, mealPost]) expect(created.body.ok).toBe(true);
+
+    await setProfile(ME, { sections: ['sport', 'academic', 'daily'] });
+
+    const cases = [
+      ['sport', sportPost],
+      ['academic', studyPost],
+      ['daily', mealPost],
+    ] as const;
+
+    for (const [section, created] of cases) {
+      const result = await call<{ items: Array<{ post: { id: string }; reasons: ReasonWire[] }> }>(
+        `/recommendations?section=${section}&limit=50`,
+        { token: tokens[ME] },
+      );
+      const item = result.body.data.items.find(
+        (entry) => entry.post.id === (created.body.data as { id: string }).id,
+      );
+      expect(item, `${section} 找不到候选（F7 时段重叠应通过）`).toBeDefined();
+
+      const overlap = item!.reasons.find((reason) => reason.code === 'availability-overlap');
+      if (section === 'daily') {
+        expect(overlap).toMatchObject({ code: 'availability-overlap', label: '时间能碰上', weight: 0.2 });
+      } else {
+        // 只有 daily 给这 0.2 分 → 另外两个板块展示该理由会让用户看到一个解释不了排序的理由
+        expect(overlap, section).toBeUndefined();
+      }
+    }
+  });
+
+  it('rule 降级档（没有资料）：reasons=[]、score=0、reason 仍是"按时间排序"（诚实：无规则命中）', async () => {
+    // OTHER 在别处被设过资料，这里显式删除以确定落在 rule 档
+    await call('/profile', { method: 'DELETE', token: tokens[OTHER] });
+
+    const result = await call<{
+      matchMode: string;
+      items: Array<{ score: number; reason: string; reasons: ReasonWire[] }>;
+    }>('/recommendations?section=sport', { token: tokens[OTHER] });
+
+    expect(result.body.data.matchMode).toBe('rule');
+    expect(result.body.data.items.length).toBeGreaterThan(0);
+    for (const item of result.body.data.items) {
+      expect(item.score).toBe(0);
+      expect(item.reason).toBe('按时间排序');
+      expect(item.reasons).toEqual([]);
+    }
+  });
+});
+
+/* ================================================================== *
+ * 12. 跨端 wire 缺口 3：GET /items 的 status 过滤
+ * ================================================================== */
+
+describe('GET /items 的 status 过滤（跨端 wire 缺口 3）', () => {
+  /** 本 describe 独占的标签，用来把数据集与其它用例隔离 */
+  const TAG = 'debate';
+  const ALL_STATUSES = ['OPEN', 'FULL', 'CLOSED', 'CANCELLED'] as const;
+  type ListableStatus = (typeof ALL_STATUSES)[number];
+
+  let ids: Record<ListableStatus, string>;
+
+  beforeAll(async () => {
+    const created: Partial<Record<ListableStatus, string>> = {};
+    for (const status of ALL_STATUSES) {
+      const post = await createPost({ title: `状态过滤-${status}`, tags: [TAG], activity: 'other' });
+      expect(post.body.ok).toBe(true);
+      const id = (post.body.data as { id: string }).id;
+      // 直接改库：状态机不允许随意流转（`FULL → CANCELLED` 等），
+      // 而这里要测的是**读端点的过滤**，不是流转规则。
+      await ctx.prisma.buddyPost.update({ where: { id }, data: { status } });
+      created[status] = id;
+    }
+    ids = created as Record<ListableStatus, string>;
+  }, 60_000);
+
+  async function list(query: string) {
+    return call<{ items: Array<{ id: string; status: string }>; nextCursor: string | null }>(
+      `/items?tags=${TAG}&limit=100${query}`,
+      { token: tokens[ME] },
+    );
+  }
+
+  it('缺省（不传 status）→ **不过滤**：FULL/CLOSED/CANCELLED 都能看到（规格 §5.3 优先于 §5.9）', async () => {
+    const result = await list('');
+    expect(result.body.ok).toBe(true);
+    const returned = new Set(result.body.data.items.map((item) => item.id));
+    for (const status of ALL_STATUSES) {
+      expect(returned.has(ids[status]), `${status} 被静默隐藏了`).toBe(true);
+    }
+  });
+
+  it.each(['OPEN', 'FULL', 'CLOSED', 'CANCELLED'])('status=%s 只回该状态', async (status) => {
+    const result = await list(`&status=${status}`);
+    const items = result.body.data.items;
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.every((item) => item.status === status)).toBe(true);
+    expect(items.map((item) => item.id)).toContain(ids[status as ListableStatus]);
+
+    for (const other of ALL_STATUSES) {
+      if (other !== status) expect(items.map((item) => item.id)).not.toContain(ids[other]);
+    }
+  });
+
+  it('重复参数（?status=OPEN&status=CLOSED）→ 并集', async () => {
+    const result = await list('&status=OPEN&status=CLOSED');
+    expect(result.body.data.items.map((item) => item.id).sort()).toEqual([ids.OPEN, ids.CLOSED].sort());
+  });
+
+  it('逗号多值（?status=FULL,CANCELLED）→ 并集（三端序列化习惯不同，两种都收）', async () => {
+    const result = await list('&status=FULL,CANCELLED');
+    expect(result.body.data.items.map((item) => item.id).sort()).toEqual(
+      [ids.FULL, ids.CANCELLED].sort(),
+    );
+  });
+
+  it('status 与游标分页兼容：limit=1 翻页无重复无跳过，且只在过滤后的集合里翻', async () => {
+    const seen: string[] = [];
+    let cursor: string | undefined;
+    for (let page = 0; page < 5; page += 1) {
+      const query = new URLSearchParams({ tags: TAG, limit: '1', status: 'OPEN,FULL' });
+      if (cursor) query.set('cursor', cursor);
+      const result = await call<{ items: Array<{ id: string; status: string }>; nextCursor: string | null }>(
+        `/items?${query.toString()}`,
+        { token: tokens[ME] },
+      );
+      for (const item of result.body.data.items) {
+        expect(['OPEN', 'FULL']).toContain(item.status);
+        seen.push(item.id);
+      }
+      if (!result.body.data.nextCursor) break;
+      cursor = result.body.data.nextCursor;
+    }
+    expect(seen.sort()).toEqual([ids.OPEN, ids.FULL].sort());
+  });
+
+  it.each(['BOGUS', 'open', 'EXPIRED', 'OPEN,BOGUS'])(
+    '非法 status=%s → VALIDATION_FAILED（fail closed，不静默返回空列表）',
+    async (bad) => {
+      const result = await call(`/items?status=${bad}`, { token: tokens[ME] });
+      expect(result.status).toBe(400);
+      expect(result.body.error?.code).toBe('VALIDATION_FAILED');
+    },
+  );
+
+  it('空 status（?status=）→ 视同不传 = 不过滤', async () => {
+    const result = await list('&status=');
+    expect(result.body.ok).toBe(true);
+    expect(result.body.data.items.length).toBeGreaterThanOrEqual(ALL_STATUSES.length);
   });
 });

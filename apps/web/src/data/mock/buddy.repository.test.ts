@@ -826,7 +826,9 @@ describe('recommendations：理由来自 explainMatch，且带 matchMode', () =>
     expect(item.reason.length).toBeGreaterThan(0);
     expect(item.reasons.map((r) => r.code)).toContain('same-department');
     expect(item.reasons.map((r) => r.label)).toContain('同一个院系');
-    expect(item.reasons.map((r) => r.code)).toContain('same-area');
+    // ⚠️ **academic 不含 same-area** —— academic 没有区域分项，
+    // 展示它会是一条"不加分的理由"（已由共享包结构性修复）。
+    expect(item.reasons.map((r) => r.code)).not.toContain('same-area');
     // 3 位小数
     expect(String(item.score).split('.')[1]?.length ?? 0).toBeLessThanOrEqual(3);
     expect(item.score).toBeGreaterThan(0);

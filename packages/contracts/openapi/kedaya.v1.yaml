@@ -927,6 +927,50 @@ paths:
   # 匹配算法在 @kedaya/shared/buddy，三端共用同一份（可解释性要求）
   # ⚠️ 三板块只有 academic / daily / sport —— **明确不做 dating**（契约 §11.10-G）
   # ==================================================================
+  /buddy/tags:
+    get:
+      tags: [buddy]
+      summary: 封闭标签表（**唯一真相**）
+      description: |
+        服务端是标签的**执法点**（非法标签抛 `UNKNOWN_TAG:<key>`），
+        因此必须让客户端能拿到权威表 —— 否则客户端只能内置一份副本，
+        而副本**必然会漂移**。
+
+        ⚠️ 这不是假设：收敛前四个端各有一份标签表，实测服务端 62 / 小程序 62 /
+        **Web 46**，导致 **Web 用户选到的 23 个标签会被后端拒**。
+        现已收敛到 `packages/contracts/src/buddy-tags.ts` 单一真相，
+        本端点让运行时也能拿到同一份。
+      responses:
+        '200':
+          description: 标签表 + 数量上限
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          tags:
+                            type: array
+                            items: { $ref: '#/components/schemas/BuddyTagDef' }
+                          limits:
+                            type: object
+                            properties:
+                              maxInterestTags: { type: integer }
+                              maxActivityTags: { type: integer }
+                              maxPostTags: { type: integer }
+                              maxPreferredAreas: { type: integer }
+                          locations:
+                            type: array
+                            description: |
+                              校园地点白名单。⚠️ **`label` 才是提交值**（服务端校验中文名），
+                              `key` 只用于埋点/i18n。
+                              ⚠️ 这份清单**仍是占位**（规格未决问题 U10）。
+                            items: { $ref: '#/components/schemas/CampusLocationDef' }
+
   /buddy/profile:
     get:
       tags: [buddy]
@@ -968,9 +1012,16 @@ paths:
             enum: [study, sport, game, meal, travel, other]
         - name: status
           in: query
+          description: |
+            按状态过滤。**缺省不过滤**（规格 §5.3 的 query 表没有 status；
+            §5.9 的示例却 where status='OPEN' —— 规格自相矛盾，以 §5.3 为准）。
+            支持多值（重复参数）。客户端要展示"已满/已关闭"时必须显式传，
+            否则这些状态会**静默消失**，用户以为活动没了。
           schema:
-            type: string
-            enum: [OPEN, FULL, CLOSED, CANCELLED]
+            type: array
+            items:
+              type: string
+              enum: [OPEN, FULL, CLOSED, CANCELLED]
       responses:
         '200': { $ref: '#/components/responses/ModuleList' }
     post:
@@ -1157,6 +1208,10 @@ paths:
                           items:
                             type: array
                             items: { $ref: '#/components/schemas/BuddyRecommendation' }
+                      # ⚠️ 两个理由字段**并存**：
+                      #   `reason`  单条拼接字符串（服务端原文，兼容既有三端）
+                      #   `reasons` 结构化条目（带权重、可排序，客户端据此渲染"为什么推荐给你"）
+                      # 只给字符串时客户端只能自己算一份，那样**解释会与服务端排序不一致**。
 
 
   /lost-found/items:
@@ -1933,6 +1988,39 @@ components:
         deadline: { type: string, format: date-time }
 
     # ---- buddy：找搭子 ----
+    BuddyTagDef:
+      type: object
+      required: [key, label, group]
+      properties:
+        key:
+          type: string
+          description: 机器值（小写 kebab-case）。**这是进匹配特征的值。**
+        label: { type: string, description: 中文显示名 }
+        group:
+          type: string
+          enum: [sport, study, meal, travel, interest]
+        aliases:
+          type: array
+          items: { type: string }
+          description: 别名词表，**仅用于搜索**，不用于匹配（规格 §3.2）
+        isActive:
+          type: boolean
+          description: 下架标签不删除（历史数据仍引用），但不再出现在选择器里
+
+    CampusLocationDef:
+      type: object
+      required: [key, label]
+      properties:
+        key:
+          type: string
+          description: 稳定机器标识，**不是**提交值
+        label:
+          type: string
+          description: |
+            中文显示名 —— **这才是提交给服务端的值**（服务端白名单校验中文名）。
+            ⚠️ 收敛前 Web 用英文 slug（`gym`），服务端用中文名（`体育馆`），
+            两个命名空间完全不相交 ⇒ Web 选的任何地点都会被判为不在白名单。
+
     BuddyProfile:
       type: object
       description: |
@@ -2113,8 +2201,18 @@ components:
           minimum: 0
           maximum: 1
           description: 保留 3 位小数（与 STUMatch 对齐）
+        reason:
+          type: string
+          description: |
+            单条拼接的中文理由（如"同院系、共同兴趣 3 项、时间合适"）。
+            **保留**是为兼容既有三端；新代码应优先用 `reasons`。
         reasons:
           type: array
+          description: |
+            结构化理由，来自 `@kedaya/shared` 的 `explainMatch` ——
+            **与 `score` 同源**，所以理由一定能解释分数。
+            （已修过一处不一致：「时间能碰上」只在 `daily` 出现，
+             因为只有 daily 给那 0.2 分。不解释任何分数的理由不是解释，是噪音。）
           items: { $ref: '#/components/schemas/BuddyMatchReason' }
         feedbackAdjustment: { type: number }
 

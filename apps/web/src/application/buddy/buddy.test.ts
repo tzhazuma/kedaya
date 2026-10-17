@@ -6,7 +6,7 @@
  * `常在同一个区域`），一条都没有时回落为 `有潜在匹配` —— **不能只给分数**。
  */
 import type { ApiError, Page } from '@kedaya/contracts';
-import { explainMatch, err, ok, type MatchReason, type MatchSubject, type Result } from '@kedaya/shared';
+import { explainMatch, ruleScoreFor, err, ok, type MatchReason, type MatchSubject, type Result } from '@kedaya/shared';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -296,16 +296,26 @@ describe('explainMatch：推荐理由来自共享纯函数（不是只有分数�
     tags: ['self-study'],
   };
 
-  it('academic：同院系 + 共同兴趣 3 项 + 共同活动 1 项 + 常在同一个区域', () => {
+  it('academic：同院系 + 共同兴趣 3 项 + 共同活动（**不含**常在同一个区域）', () => {
     const reasons = explainMatch('academic', me, target);
     const labels = reasons.map((reason) => reason.label);
     expect(labels).toContain('同一个院系');
     expect(labels).toContain('共同兴趣 3 项');
-    expect(labels).toContain('共同活动 1 项');
-    expect(labels).toContain('常在同一个区域');
+    // ⚠️ academic 的活动规则是「有共同项即加分」的**固定 0.1**，所以文案不带数量
+    // （与 sport 的 `共同活动 N 项` 不同 —— 后者按项数计分）
+    expect(labels).toContain('共同活动');
+    // ⚠️ **academic 没有区域分项**，所以不该出现该理由。
+    // 原先本条断言它出现 —— 那是"展示了一条不加分的理由"（已由共享包结构性修复）。
+    expect(labels).not.toContain('常在同一个区域');
+    expect(reasons.map((r) => r.code)).not.toContain('same-area');
     // 权重降序：同院系 0.4 排第一
     expect(reasons[0]?.label).toBe('同一个院系');
     expect(reasons.map((r) => r.code)).toContain('same-department');
+    // 理由权重之和恰等于规则分（可解释性的定义）
+    const score = ruleScoreFor('academic', me, target);
+    if (score < 1) {
+      expect(reasons.reduce((s, r) => s + r.weight, 0)).toBeCloseTo(score, 9);
+    }
   });
 
   it('daily：时间能碰上（可用时段重叠）会被单独列出', () => {

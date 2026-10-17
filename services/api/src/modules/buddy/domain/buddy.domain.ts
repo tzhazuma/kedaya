@@ -173,6 +173,15 @@ export interface PostListQuery {
   activities?: string[];
   tags?: string[];
   startsAfter?: Date;
+  /**
+   * 按状态过滤（`OPEN` / `FULL` / `CLOSED` / `CANCELLED`，可多值）。
+   *
+   * ⚠️ **缺省（`undefined` / 空数组）= 不过滤**，与规格 §5.3 一致。
+   * 规格 §5.9 的示例 `where status='OPEN'` 与 §5.3 的 query 表矛盾，
+   * Lead 裁决以 §5.3 为准（否则 Web 端的"已满/已关闭"活动会**静默消失**）。
+   * 这是本模块相对 §5.9 的第二处有意偏离，记入交付说明。
+   */
+  statuses?: string[];
   cursor?: string;
   limit: number;
   /** 默认 `createdAt_desc`（符合契约 §3.1 的游标定义）；`startsAt_asc` 用复合游标 */

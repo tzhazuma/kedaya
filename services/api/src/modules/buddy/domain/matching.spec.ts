@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { FeedbackRecord } from '@kedaya/shared';
+import {
+  explainMatch,
+  ruleScoreFor,
+  type FeedbackRecord,
+  type MatchSubject,
+} from '@kedaya/shared';
 import { scoreCandidates, roundScore, type MatchCandidate } from './matching';
 import { skillRank } from './tags';
 
@@ -537,5 +542,203 @@ describe('理由（规格 §5.7，验收 T35 的一部分）', () => {
     });
     const parts = result.items[0]!.reason.split('、');
     expect(parts.length).toBeLessThanOrEqual(3);
+  });
+});
+
+/* ================================================================== *
+ * 跨端 wire 缺口 2：结构化理由 `reasons`
+ * ================================================================== */
+
+/**
+ * ✅ 自洽性（可解释性的定义：**理由必须能解释分数**）
+ *
+ * `reasons` 是 `explainMatch` 的**原样投影**，所以"理由能不能解释分数"完全取决于
+ * 共享包的两个函数是否对齐。
+ *
+ * 这里曾经记录过**三类残留不一致**（都是"理由解释不了分数"）：
+ *   1. academic 的 `same-area` 会出现，但 academic 没有区域分项 → 贡献恒为 0
+ *   2. daily 的 `shared-activities` 会出现，但 daily 没有活动标签项 → 贡献恒为 0
+ *   3. 权重量级不符：daily 共同兴趣标 0.1/项、实际 0.15/项；academic 共同活动标 0.15/项、实际固定 0.1
+ *
+ * **这些已在 `packages/shared` 结构性修复**（不再"补一处"，而是把系数收敛成唯一一张
+ * `COEFFICIENTS` 表，`ruleScoreFor` 与 `explainMatch` 共用同一个 `evaluateRules` 内核）。
+ * 因此**结构上不可能**再出现"有理由没分"或"权重标错"。
+ *
+ * 共享包另有一组**结构性不变式**测试直接钉死这一点
+ * （`explainMatch` 权重之和 === `ruleScoreFor`），并做过反证：
+ * 故意把权重 +0.07 → 24 条用例失败；故意重放 academic 的 `same-area` → 守卫用例失败。
+ *
+ * 本文件下方的用例改为断言**对齐后**的行为。
+ */
+describe('跨端 wire 缺口 2：结构化理由 reasons（与服务端打分同源）', () => {
+  const me = {
+    department: '信息学院',
+    skillLevel: 'regular',
+    interestTags: ['music'],
+    activityTags: ['badminton'],
+    preferredAreas: ['体育馆'],
+  };
+  const creator = {
+    department: '信息学院',
+    skillLevel: 'regular',
+    interestTags: ['music'],
+    activityTags: ['badminton'],
+    preferredAreas: ['体育馆'],
+  };
+
+  it('reasons 就是 explainMatch 的同一份输出（逐条 deep equal），reason 字符串仍在', () => {
+    const item = candidate({
+      post: { id: 'p1', activity: 'sport', tags: ['badminton'] },
+      creator,
+      availabilityOverlaps: true,
+    });
+    const result = score({ section: 'sport', me, candidates: [item] });
+    const expected = explainMatch(
+      'sport',
+      me as MatchSubject,
+      { creator, tags: item.post.tags },
+      { availabilityOverlaps: true },
+    );
+
+    expect(result.items[0]!.reasons).toEqual(expected);
+    expect(expected.length).toBeGreaterThan(0);
+    // 兼容字段仍在且非空（三端都在用，删了会破坏兼容）
+    expect(typeof result.items[0]!.reason).toBe('string');
+    expect(result.items[0]!.reason.length).toBeGreaterThan(0);
+  });
+
+  it('reasons 按权重降序、每条 weight > 0（客户端可直接渲染排序）', () => {
+    const result = score({
+      section: 'sport',
+      me,
+      candidates: [candidate({ post: { id: 'p1', activity: 'sport', tags: ['badminton'] }, creator })],
+    });
+    const weights = result.items[0]!.reasons.map((reason) => reason.weight);
+    expect(weights.length).toBeGreaterThan(0);
+    expect([...weights].sort((a, b) => b - a)).toEqual(weights);
+    for (const weight of weights) expect(weight).toBeGreaterThan(0);
+  });
+
+  it('academic / sport 的 reasons **不含** availability-overlap（只有 daily 给那 0.2 分）', () => {
+    const target = { creator: { ...creator, department: null }, tags: ['badminton'] };
+    for (const section of ['academic', 'sport'] as const) {
+      const item = candidate({
+        post: { id: 'p1', activity: section === 'sport' ? 'sport' : 'study', tags: ['badminton'] },
+        creator: { ...creator, department: null },
+        availabilityOverlaps: true,
+      });
+      const result = score({ section, me, candidates: [item] });
+      expect(result.items[0]!.reasons.map((reason) => reason.code)).not.toContain('availability-overlap');
+
+      // 更强的一条：该因子在这两个板块**真的不加分**（差分恒为 0）
+      expect(ruleScoreFor(section, me as MatchSubject, target, { availabilityOverlaps: true })).toBe(
+        ruleScoreFor(section, me as MatchSubject, target, { availabilityOverlaps: false }),
+      );
+    }
+  });
+
+  it('daily 的 reasons 含 availability-overlap（weight 0.2），且这 0.2 **真的**进了 ruleScoreFor', () => {
+    const target = { creator, tags: [] };
+    const delta =
+      ruleScoreFor('daily', me as MatchSubject, target, { availabilityOverlaps: true }) -
+      ruleScoreFor('daily', me as MatchSubject, target, { availabilityOverlaps: false });
+    expect(delta).toBeCloseTo(0.2, 6);
+
+    const reason = explainMatch('daily', me as MatchSubject, target, { availabilityOverlaps: true }).find(
+      (entry) => entry.code === 'availability-overlap',
+    );
+    expect(reason).toMatchObject({ code: 'availability-overlap', label: '时间能碰上', weight: 0.2 });
+  });
+
+  it('严格对齐的三条：same-department 只在 academic / same-skill 只在 sport / availability 只在 daily', () => {
+    const target = { creator, tags: [] };
+    const codesOf = (section: 'academic' | 'daily' | 'sport') =>
+      explainMatch(section, me as MatchSubject, target, { availabilityOverlaps: true }).map((r) => r.code);
+
+    // same-department 只在 academic；ruleScoreFor 也只在 academic 给 0.4
+    expect(codesOf('academic')).toContain('same-department');
+    expect(codesOf('daily')).not.toContain('same-department');
+    expect(codesOf('sport')).not.toContain('same-department');
+    expect(
+      ruleScoreFor('academic', me as MatchSubject, target, { availabilityOverlaps: true }) -
+        ruleScoreFor('academic', me as MatchSubject, { creator: { ...creator, department: null }, tags: [] }, {
+          availabilityOverlaps: true,
+        }),
+    ).toBeCloseTo(0.4, 6);
+
+    // same-skill 只在 sport；ruleScoreFor 也只在 sport 给 0.3
+    expect(codesOf('sport')).toContain('same-skill');
+    expect(codesOf('academic')).not.toContain('same-skill');
+    expect(codesOf('daily')).not.toContain('same-skill');
+    expect(
+      ruleScoreFor('sport', me as MatchSubject, target, { availabilityOverlaps: true }) -
+        ruleScoreFor('sport', me as MatchSubject, { creator: { ...creator, skillLevel: 'beginner' }, tags: [] }, {
+          availabilityOverlaps: true,
+        }),
+    ).toBeCloseTo(0.3, 6);
+  });
+
+  it('✅ 已对齐：每条理由的权重都真的进了分数（不再有"不加分的理由"）', () => {
+    // 本条原先断言"残留不一致"（钉住现状）。共享包结构性修复后改为断言**对齐**。
+    // 不变量：某因子存在时的规则分 − 该因子移除后的规则分 === 该理由的 weight。
+    const target = { creator, tags: [] };
+    const without = (patch: Partial<typeof creator>) => ({
+      creator: { ...creator, ...patch },
+      tags: [] as string[],
+    });
+
+    for (const section of ['academic', 'daily', 'sport'] as const) {
+      const reasons = explainMatch(section, me as MatchSubject, target, { availabilityOverlaps: true });
+      const full = ruleScoreFor(section, me as MatchSubject, target, { availabilityOverlaps: true });
+
+      // 逐条理由：把它对应的因子移除，分数必须恰好下降该 weight
+      for (const r of reasons) {
+        const stripped =
+          r.code === 'same-area'
+            ? without({ preferredAreas: [] })
+            : r.code === 'shared-activities'
+              ? without({ activityTags: [] })
+              : r.code === 'shared-interests'
+                ? without({ interestTags: [] })
+                : r.code === 'same-department'
+                  ? without({ department: '另一个学院' })
+                  : r.code === 'same-skill'
+                    ? without({ skillLevel: 'competitive' })
+                    : r.code === 'availability-overlap'
+                      ? target
+                      : null;
+        if (stripped === null) continue; // 未知 code 由共享包的不变式测试负责
+
+        const opts =
+          r.code === 'availability-overlap' ? { availabilityOverlaps: false } : { availabilityOverlaps: true };
+        const reduced = ruleScoreFor(section, me as MatchSubject, stripped, opts);
+        // 触顶（=1）时下降量会被 clamp 吃掉，故只在未触顶时断言精确相等
+        if (full < 1) {
+          expect(full - reduced, `${section}.${r.code} 的 weight ${r.weight} 与真实差分不符`).toBeCloseTo(
+            r.weight,
+            6,
+          );
+        }
+      }
+
+      // 反向：没出现在理由里的因子，不应该改变分数
+      for (const code of ['same-area', 'shared-activities', 'shared-interests', 'same-department', 'same-skill']) {
+        if (reasons.some((r) => r.code === code)) continue;
+        const stripped =
+          code === 'same-area'
+            ? without({ preferredAreas: [] })
+            : code === 'shared-activities'
+              ? without({ activityTags: [] })
+              : code === 'shared-interests'
+                ? without({ interestTags: [] })
+                : code === 'same-department'
+                  ? without({ department: '另一个学院' })
+                  : without({ skillLevel: 'competitive' });
+        expect(
+          full - ruleScoreFor(section, me as MatchSubject, stripped, { availabilityOverlaps: true }),
+          `${section}: ${code} 没出现在理由里，却改变了分数`,
+        ).toBe(0);
+      }
+    }
   });
 });
