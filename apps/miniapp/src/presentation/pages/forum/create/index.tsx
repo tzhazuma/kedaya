@@ -14,7 +14,7 @@ import {
 } from '../../../../domain/models/forum'
 import type { DraftFieldError } from '../../../../domain/models/forum'
 import { toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyEmpty, KdyField, KdySwitch, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdySwitch, KdyTag } from '../../../components'
 import { useStore } from '../../../hooks'
 import './index.scss'
 
@@ -126,9 +126,10 @@ export default function ForumCreatePage() {
               <View
                 key={board.id}
                 className='kdy-forum-create__board'
-                onClick={() => setBoardId(board.id)}
               >
-                <KdyTag tone={activeBoardId === board.id ? 'brand' : 'neutral'}>{board.name}</KdyTag>
+                <KdyChip active={activeBoardId === board.id} onClick={() => setBoardId(board.id)}>
+                  {board.name}
+                </KdyChip>
               </View>
             ))}
             {boardState.boards.length === 0 && (

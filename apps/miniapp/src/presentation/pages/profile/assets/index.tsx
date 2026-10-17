@@ -1,7 +1,5 @@
 import { Text, View } from '@tarojs/components'
 import { useDidShow, useReachBottom } from '@tarojs/taro'
-import Progress from '@taroify/core/progress'
-import '@taroify/core/progress/style'
 import { fenToYuan } from '@kedaya/shared'
 
 import { getContainer } from '../../../../app/container'
@@ -9,7 +7,7 @@ import { PAGE_PATHS, groupBuyDetailPath } from '../../../../app/routes'
 import type { GroupBuyRole } from '../../../../domain/ports/groupbuyRepository'
 import type { GroupBuySummary } from '../../../../domain/models/groupbuy'
 import { navigateTo } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyProgress, KdyTag } from '../../../components'
 import type { KdyTagTone } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
@@ -31,6 +29,19 @@ function statusTone(status: GroupBuySummary['status']): KdyTagTone {
   if (status === 'full') return 'success'
   if (status === 'closed') return 'neutral'
   return 'danger'
+}
+
+/**
+ * 截止时间的样式：临期高亮、已过期划线。
+ *
+ * 「我的资产」里最该被催的是**还没成团、快到期**的那几单，所以截止时间不再是
+ * 一行灰字。判定来自领域层的 `deadlineUrgent` / `deadlinePassed` ——
+ * 页面不自己比时间，否则「临期窗口」会在这一页悄悄变成另一个值。
+ */
+function deadlineClass(item: GroupBuySummary): string {
+  if (item.deadlinePassed) return 'kdy-assets__card-deadline is-passed'
+  if (item.deadlineUrgent) return 'kdy-assets__card-deadline is-urgent'
+  return 'kdy-assets__card-deadline'
 }
 
 const OTHER_MODULES: readonly { label: string; detail: string; path: string }[] = [
@@ -149,20 +160,38 @@ export default function ProfileAssetsPage() {
                   <KdyTag tone={statusTone(item.status)}>{item.statusLabel}</KdyTag>
                 </View>
 
-                <Text className='kdy-assets__card-meta'>
-                  ¥{fenToYuan(item.priceFen)}/份 · 已凑 {item.joinedQuantity}/{item.targetCount} 份
-                  {' · '}
-                  {role === 'owner' ? '我发起的' : `发起人 ${item.initiatorName}`}
-                </Text>
+                <View className='kdy-assets__card-row'>
+                  <Text className='kdy-assets__card-progress'>
+                    已拼 {item.joinedQuantity} / {item.targetCount} 份
+                  </Text>
+                  <Text
+                    className={
+                      item.remainingSlots === 0
+                        ? 'kdy-assets__card-short is-full'
+                        : 'kdy-assets__card-short'
+                    }
+                  >
+                    {item.remainingSlots === 0 ? '已拼满' : `还差 ${item.remainingSlots} 份`}
+                  </Text>
+                </View>
 
-                <Progress percent={item.progressPercent} />
+                <KdyProgress
+                  className='kdy-assets__card-bar'
+                  percent={item.progressPercent}
+                  tone={item.remainingSlots === 0 ? 'success' : 'brand'}
+                />
 
                 <View className='kdy-assets__card-foot'>
-                  <Text className='kdy-assets__card-deadline'>{item.deadlineLabel}</Text>
-                  {item.pickupPlace !== '' && (
-                    <Text className='kdy-assets__card-place'>取货：{item.pickupPlace}</Text>
-                  )}
+                  <Text className={deadlineClass(item)}>{item.deadlineLabel}</Text>
+                  <Text className='kdy-assets__card-meta'>
+                    ¥{fenToYuan(item.priceFen)}/份 ·{' '}
+                    {role === 'owner' ? '我发起的' : `发起人 ${item.initiatorName}`}
+                  </Text>
                 </View>
+
+                {item.pickupPlace !== '' && (
+                  <Text className='kdy-assets__card-place'>取货：{item.pickupPlace}</Text>
+                )}
               </View>
             </KdyCard>
           ))}

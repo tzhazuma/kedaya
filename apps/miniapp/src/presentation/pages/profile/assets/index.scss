@@ -50,9 +50,40 @@
   color: $kdy-color-ink-soft;
 }
 
+/* 「已拼 6 / 10 份」+ 「还差 4 份」—— 进度是这一页的主角 */
+.kdy-assets__card-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+}
+
+.kdy-assets__card-progress {
+  font-size: $kdy-font-size-sm;
+  font-weight: 600;
+  color: $kdy-color-ink;
+}
+
+.kdy-assets__card-short {
+  font-size: $kdy-font-size-sm;
+  font-weight: 700;
+  color: $kdy-color-brand-strong;
+}
+
+.kdy-assets__card-short.is-full {
+  font-weight: 500;
+  color: $kdy-color-success;
+}
+
+.kdy-assets__card-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: $kdy-radius-pill;
+}
+
 .kdy-assets__card-foot {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: $kdy-space-2;
   flex-wrap: wrap;
@@ -60,7 +91,20 @@
 
 .kdy-assets__card-deadline {
   font-size: $kdy-font-size-xs;
-  color: $kdy-color-warning;
+  color: $kdy-color-text-muted;
+}
+
+.kdy-assets__card-deadline.is-urgent {
+  padding: 2px $kdy-space-2;
+  border-radius: $kdy-radius-pill;
+  background: $kdy-color-brand-soft;
+  color: $kdy-color-brand-strong;
+  font-weight: $kdy-font-weight-medium;
+}
+
+.kdy-assets__card-deadline.is-passed {
+  color: $kdy-color-text-muted;
+  text-decoration: line-through;
 }
 
 .kdy-assets__card-place {

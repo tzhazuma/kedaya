@@ -19,6 +19,7 @@ import { navigateBack, toast } from '../../../../platform/navigation'
 import {
   KdyButton,
   KdyCard,
+  KdyChip,
   KdyEmpty,
   KdyEthicsNotice,
   KdyField,
@@ -247,11 +248,13 @@ export default function WildlifeReportPage() {
                 <View
                   key={species.id}
                   className='kdy-wildlife-report__species-item'
-                  onClick={() => report.setSpecies(species.id)}
                 >
-                  <KdyTag tone={state.draft.speciesId === species.id ? 'brand' : 'neutral'}>
+                  <KdyChip
+                    active={state.draft.speciesId === species.id}
+                    onClick={() => report.setSpecies(species.id)}
+                  >
                     {species.commonNameZh}
-                  </KdyTag>
+                  </KdyChip>
                   {species.isProtected && <KdyTag tone='danger'>保护 / 重点管理</KdyTag>}
                 </View>
               ))}
@@ -274,11 +277,13 @@ export default function WildlifeReportPage() {
                   <View
                     key={individual.id}
                     className='kdy-wildlife-report__individual'
-                    onClick={() => report.setIndividual(individual.id)}
                   >
-                    <KdyTag tone={state.draft.individualId === individual.id ? 'brand' : 'neutral'}>
+                    <KdyChip
+                      active={state.draft.individualId === individual.id}
+                      onClick={() => report.setIndividual(individual.id)}
+                    >
                       {individual.name}
-                    </KdyTag>
+                    </KdyChip>
                   </View>
                 ))}
             </View>
@@ -402,11 +407,13 @@ export default function WildlifeReportPage() {
                   <View
                     key={zone.id}
                     className='kdy-wildlife-report__zone'
-                    onClick={() => report.setZoneId(state.draft.zoneId === zone.id ? null : zone.id)}
                   >
-                    <KdyTag tone={state.draft.zoneId === zone.id ? 'brand' : 'neutral'}>
+                    <KdyChip
+                      active={state.draft.zoneId === zone.id}
+                      onClick={() => report.setZoneId(state.draft.zoneId === zone.id ? null : zone.id)}
+                    >
                       {zone.name}
-                    </KdyTag>
+                    </KdyChip>
                   </View>
                 ))}
               </View>

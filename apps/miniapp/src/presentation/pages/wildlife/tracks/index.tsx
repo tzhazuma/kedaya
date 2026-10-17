@@ -13,6 +13,7 @@ import { navigateTo, toast } from '../../../../platform/navigation'
 import {
   KdyButton,
   KdyCard,
+  KdyChip,
   KdyEmpty,
   KdyPrivacyNotice,
   KdyProgress,
@@ -107,18 +108,22 @@ export default function WildlifeTracksPage() {
   return (
     <View className='kdy-page kdy-wildlife-tracks'>
       <View className='kdy-wildlife-tracks__filters'>
-        <View className='kdy-wildlife-tracks__filter' onClick={() => handleSpeciesFilter(null)}>
-          <KdyTag tone={state.activeSpeciesId === null ? 'brand' : 'neutral'}>全部</KdyTag>
+        <View className='kdy-wildlife-tracks__filter'>
+          <KdyChip active={state.activeSpeciesId === null} onClick={() => handleSpeciesFilter(null)}>
+            全部
+          </KdyChip>
         </View>
         {state.species.map((species) => (
           <View
             key={species.id}
             className='kdy-wildlife-tracks__filter'
-            onClick={() => handleSpeciesFilter(species.id)}
           >
-            <KdyTag tone={state.activeSpeciesId === species.id ? 'brand' : 'neutral'}>
+            <KdyChip
+              active={state.activeSpeciesId === species.id}
+              onClick={() => handleSpeciesFilter(species.id)}
+            >
               {species.commonNameZh}
-            </KdyTag>
+            </KdyChip>
           </View>
         ))}
       </View>

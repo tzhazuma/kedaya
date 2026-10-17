@@ -6,7 +6,7 @@ import { getContainer } from '../../../../app/container'
 import { PAGE_PATHS } from '../../../../app/routes'
 import { FAQ_CATEGORY_ALL } from '../../../../domain/models/faq'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyAccordion, KdyButton, KdyCard, KdyEmpty, KdySearchBar, KdyTag } from '../../../components'
+import { KdyAccordion, KdyButton, KdyCard, KdyChip, KdyEmpty, KdySearchBar, KdyTag } from '../../../components'
 import { useStore } from '../../../hooks'
 import './index.scss'
 
@@ -111,10 +111,13 @@ export default function FaqPage() {
 
       <View className='kdy-faq__categories'>
         {categories.map((category) => (
-          <View key={category} className='kdy-faq__category' onClick={() => handleSelectCategory(category)}>
-            <KdyTag tone={state.activeCategory === category ? 'brand' : 'neutral'}>
+          <View key={category} className='kdy-faq__category'>
+            <KdyChip
+              active={state.activeCategory === category}
+              onClick={() => handleSelectCategory(category)}
+            >
               {category === FAQ_CATEGORY_ALL ? '全部' : category}
-            </KdyTag>
+            </KdyChip>
           </View>
         ))}
       </View>

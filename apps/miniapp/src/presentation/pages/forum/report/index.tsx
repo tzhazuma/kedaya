@@ -9,7 +9,7 @@ import {
 } from '../../../../domain/models/forum'
 import type { ForumReportReason, ForumReportTargetType } from '../../../../domain/models/forum'
 import { navigateBack, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyEmpty, KdySwitch, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdySwitch } from '../../../components'
 import './index.scss'
 
 /**
@@ -81,10 +81,10 @@ export default function ForumReportPage() {
 
         <View className='kdy-forum-report__reasons'>
           {FORUM_REPORT_REASONS.map((item) => (
-            <View key={item} className='kdy-forum-report__reason' onClick={() => setReason(item)}>
-              <KdyTag tone={reason === item ? 'brand' : 'neutral'}>
+            <View key={item} className='kdy-forum-report__reason'>
+              <KdyChip active={reason === item} onClick={() => setReason(item)}>
                 {FORUM_REPORT_REASON_LABELS[item]}
-              </KdyTag>
+              </KdyChip>
             </View>
           ))}
         </View>
