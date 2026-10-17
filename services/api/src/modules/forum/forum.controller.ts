@@ -1,101 +1,145 @@
-/**
- * 论坛 · forum（契约 §4）
- *
- * 本文件由 scripts/scaffold.mjs 生成；要改形状请改脚本里的 SPEC 表，
- * 改完重跑 `npm run scaffold`，避免 15 个模块各写一套。
- */
-import { Controller, Delete, Get, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Controller, Delete, Get, Inject, Param, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { modulePath } from '@kedaya/contracts';
 import { z } from 'zod';
-import { OptionalAuthGuard } from '../../common/auth/auth.guard';
-import { OptionalCurrentUser } from '../../common/auth/current-user';
-import { normalizeLimit, readCursor } from '../../common/pagination/cursor';
-import { ZodBody } from '../../common/pipes/zod-validation.pipe';
+import { AuthGuard, OptionalAuthGuard } from '../../common/auth/auth.guard';
+import { CurrentUser, OptionalCurrentUser } from '../../common/auth/current-user';
+import { UnauthenticatedError } from '../../common/errors/app-error';
+import { ZodBody, ZodQuery } from '../../common/pipes/zod-validation.pipe';
 import { ForumPostService } from './forum.service';
-import type { CreateForumPostInput, UpdateForumPostInput } from './domain/forum.domain';
+import {
+  FORUM_BOARDS,
+  FORUM_REPLIES_PAGE_SIZE,
+  FORUM_SORTS,
+  FORUM_STATUSES,
+  type CreateForumPostInput,
+  type CreateForumReplyInput,
+} from './domain/forum.domain';
+
+/**
+ * 论坛 HTTP 层（契约 §6.1 统一形状）。
+ *
+ * 鉴权策略：
+ *   · 读接口（版块 / 列表 / 详情）挂 `OptionalAuthGuard` —— 未登录也能逛；
+ *   · 写接口（发帖 / 回复 / 关闭 / 删除）逐个挂 `AuthGuard` —— 必须登录；
+ *   · `anonymous: true` 只影响**存储形态**（authorId 置 null），不影响鉴权：
+ *     发帖人始终必须先登录，只是登录身份不会写进内容里。
+ *   · `mine=1` 需要登录，且匿名帖天然不计入（没有 authorId 可匹配）。
+ */
+
+const createPostSchema = z.object({
+  board: z.enum(FORUM_BOARDS),
+  title: z.string().trim().min(1).max(80),
+  body: z.string().trim().min(1).max(5000),
+  /** 匿名发帖：authorId 不落库，改用服务端生成的匿名 handle */
+  anonymous: z.boolean().optional(),
+});
 
 const replySchema = z.object({
-  body: z.string().min(1).max(5000),
-  anonHandle: z.string().min(1).max(64).optional(),
+  body: z.string().trim().min(1).max(2000),
+  anonymous: z.boolean().optional(),
 });
 
-const createSchema = z.object({
-  board: z.string().min(1).max(500),
-  authorId: z.string().max(500).nullish(),
-  anonHandle: z.string().max(500).nullish(),
-  title: z.string().min(1).max(500),
-  body: z.string().min(1).max(500),
-  status: z.string().min(1).max(500).optional(),
+const listQuerySchema = z.object({
+  cursor: z.string().min(1).max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  board: z.enum(FORUM_BOARDS).optional(),
+  status: z.enum(FORUM_STATUSES).optional(),
+  q: z.string().trim().min(1).max(60).optional(),
+  sort: z.enum(FORUM_SORTS).optional(),
+  /** `mine=1` → 我发的（匿名帖不计入，需要登录） */
+  mine: z.union([z.literal('1'), z.literal('true'), z.literal('0'), z.literal('false')]).optional(),
 });
 
-const updateSchema = createSchema.partial();
+const detailQuerySchema = z.object({
+  replyCursor: z.string().min(1).max(200).optional(),
+  replyLimit: z.coerce.number().int().min(1).max(FORUM_REPLIES_PAGE_SIZE).optional(),
+});
 
-/**
- * 编译期防漂移断言：Zod 推导出的类型必须兼容 domain 声明的输入类型。
- * 只改了一边就会直接编译失败。
- */
-type AssertAssignable<Target, Actual extends Target> = true;
-export type CreateSchemaMatchesDomain = AssertAssignable<CreateForumPostInput, z.infer<typeof createSchema>>;
-export type UpdateSchemaMatchesDomain = AssertAssignable<UpdateForumPostInput, z.infer<typeof updateSchema>>;
+type CreatePostBody = z.infer<typeof createPostSchema>;
+type ReplyBody = z.infer<typeof replySchema>;
+type ListQuery = z.infer<typeof listQuerySchema>;
+type DetailQuery = z.infer<typeof detailQuerySchema>;
 
-/**
- * 契约 §6.1 的统一 CRUD 形状：
- *   GET/POST /items, GET/PATCH/DELETE /items/:id, POST /items/:id/<action>
- */
+/** 编译期防漂移：Zod schema 必须与 domain 的输入类型兼容 */
+type AssertAssignable<Target, __Actual extends Target> = true;
+export type CreateSchemaMatchesDomain = AssertAssignable<CreateForumPostInput, CreatePostBody>;
+export type ReplySchemaMatchesDomain = AssertAssignable<CreateForumReplyInput, ReplyBody>;
+
 @ApiTags('forum · 论坛')
 @Controller(modulePath('forum'))
 @UseGuards(OptionalAuthGuard)
 export class ForumController {
   constructor(@Inject(ForumPostService) private readonly service: ForumPostService) {}
 
-  @Get('items')
-  @ApiOperation({ summary: '列表（游标分页，契约 §6.1 不用 offset）' })
-  list(@Query() query: Record<string, unknown>) {
-    return this.service.list({ cursor: readCursor(query), limit: normalizeLimit(query.limit) });
+  @Get('boards')
+  @ApiOperation({ summary: '版块清单 + 每版块帖子数（一次 groupBy 统计）' })
+  boards() {
+    return this.service.boards();
   }
 
-  @Post('items')
-  @ApiOperation({ summary: '创建' })
-  create(
-    @OptionalCurrentUser() actorId: string | undefined,
-    @ZodBody(createSchema) body: CreateForumPostInput,
-  ) {
+  @Get('posts')
+  @ApiOperation({
+    summary: '帖子列表（版块/关键词/状态筛选 + 最新/热度排序）',
+    description: '公开可读，默认只返回 published。`mine=1` 需要登录。',
+  })
+  list(@OptionalCurrentUser() viewerId: string | undefined, @ZodQuery(listQuerySchema) query: ListQuery) {
+    const onlyMine = query.mine === '1' || query.mine === 'true';
+    if (onlyMine && !viewerId) throw new UnauthenticatedError('查看「我的帖子」需要先登录');
+
+    return this.service.list({
+      ...(query.cursor === undefined ? {} : { cursor: query.cursor }),
+      ...(query.limit === undefined ? {} : { limit: query.limit }),
+      ...(query.board === undefined ? {} : { board: query.board }),
+      ...(query.status === undefined ? {} : { status: query.status }),
+      ...(query.q === undefined ? {} : { keyword: query.q }),
+      ...(query.sort === undefined ? {} : { sort: query.sort }),
+      ...(onlyMine && viewerId ? { authorId: viewerId } : {}),
+    });
+  }
+
+  @Post('posts')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '发帖（登录用户，可选匿名）' })
+  create(@CurrentUser() actorId: string, @ZodBody(createPostSchema) body: CreatePostBody) {
     return this.service.create(body, actorId);
   }
 
-  @Get('items/:id')
-  @ApiOperation({ summary: '详情' })
-  detail(@Param('id') id: string) {
-    return this.service.detail(id);
+  @Get('posts/:id')
+  @ApiOperation({ summary: '帖子详情 + 一页回复（replyCursor / replyLimit）' })
+  detail(@Param('id') id: string, @ZodQuery(detailQuerySchema) query: DetailQuery) {
+    return this.service.detail(id, {
+      ...(query.replyCursor === undefined ? {} : { cursor: query.replyCursor }),
+      ...(query.replyLimit === undefined ? {} : { limit: query.replyLimit }),
+    });
   }
 
-  @Patch('items/:id')
-  @ApiOperation({ summary: '更新' })
-  update(@Param('id') id: string, @ZodBody(updateSchema) body: UpdateForumPostInput) {
-    return this.service.update(id, body);
+  @Post('posts/:id/replies')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '回复主题（登录用户，可选匿名；同一事务维护 replyCount）' })
+  reply(@CurrentUser() actorId: string, @Param('id') id: string, @ZodBody(replySchema) body: ReplyBody) {
+    return this.service.reply(id, body, actorId);
   }
 
-  @Delete('items/:id')
-  @ApiOperation({ summary: '删除/下架' })
-  async remove(@Param('id') id: string): Promise<{ id: string; deleted: true }> {
-    await this.service.remove(id);
-    return { id, deleted: true };
+  @Post('posts/:id/close')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '关闭主题（仅实名作者；匿名帖不可关闭）' })
+  close(@CurrentUser() actorId: string, @Param('id') id: string) {
+    return this.service.close(id, actorId);
   }
 
-  @Post('items/:id/reply')
-  @ApiOperation({ summary: '回复主题（实名或匿名，匿名与实名解耦存储）' })
-  reply(
-    @OptionalCurrentUser() actorId: string | undefined,
+  @Delete('posts/:id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '删除主题（仅实名作者；匿名帖不可删除）' })
+  async remove(
+    @CurrentUser() actorId: string,
     @Param('id') id: string,
-    @ZodBody(replySchema) body: z.infer<typeof replySchema>,
-  ) {
-    return this.service.reply(id, body.body, actorId, body.anonHandle);
-  }
-
-  @Get('items/:id/replies')
-  @ApiOperation({ summary: '主题回复列表' })
-  replies(@Param('id') id: string) {
-    return this.service.replies(id);
+  ): Promise<{ id: string; deleted: true }> {
+    await this.service.remove(id, actorId);
+    return { id, deleted: true };
   }
 }

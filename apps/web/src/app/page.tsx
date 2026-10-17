@@ -2,10 +2,14 @@ import { ArrowRight, Layers, Lock, Ruler, ShieldCheck, Wallet } from 'lucide-rea
 import Link from 'next/link';
 
 import {
+  API_ONLY_MODULES,
   AUDITED_MODULES,
   CONSENT_GATED_MODULES,
+  DELIVERED_MODULES,
+  MINIAPP_MODULES,
   PORTAL_MODULES,
   PORTAL_MODULE_GROUPS,
+  WEB_READY_MODULES,
 } from '@/domain/models/modules';
 import { categoryLabel } from '@/domain/models/module';
 import { KdyBadge } from '@/presentation/components/KdyBadge';
@@ -63,6 +67,11 @@ export default function HomePage() {
             共 {PORTAL_MODULES.length} 个模块（{PORTAL_MODULE_GROUPS.core.length} 基础 +{' '}
             {PORTAL_MODULE_GROUPS.business.length} 业务）。
           </p>
+          <p className="max-w-xl text-xs text-muted">
+            其中 {DELIVERED_MODULES.length} 个模块已经能在端上真的用起来：微信小程序为主端
+            （账号体系 + 拼单 + 跳蚤 + 跑腿 + 找搭子 + 失物招领 + 论坛 + 宿舍矛盾），
+            Web 门户先交付拼单垂直切片。宫格角标会如实标注每个模块当前的交付状态。
+          </p>
           <div className="flex flex-wrap items-center gap-3">
             <KdyButton href="/groupbuy">
               进入拼单垂直切片
@@ -110,6 +119,69 @@ export default function HomePage() {
             <ModuleGrid modules={PORTAL_MODULE_GROUPS[group]} />
           </div>
         ))}
+      </section>
+
+      {/* ---------------- 交付范围（如实标注） ---------------- */}
+      <section className="flex flex-col gap-4" aria-labelledby="delivery-heading">
+        <header className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 id="delivery-heading" className="text-xxl font-bold text-body">
+              交付范围
+            </h2>
+            <p className="text-sm text-muted">
+              宫格角标按端标注可用性；这里汇总「现在真的能用」的部分，其余模块明确不算已交付。
+            </p>
+          </div>
+          <KdyBadge tone="brand">
+            {DELIVERED_MODULES.length} / {PORTAL_MODULES.length} 模块可用
+          </KdyBadge>
+        </header>
+
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          <KdyCard className="flex flex-col gap-2">
+            <h3 className="text-sm font-semibold text-body">
+              Web 门户（{WEB_READY_MODULES.length}）
+            </h3>
+            <p className="text-xs text-muted">浏览器里可以直接使用的垂直切片。</p>
+            <ul className="flex flex-col gap-1">
+              {WEB_READY_MODULES.map((mod) => (
+                <li key={mod.id} className="text-sm">
+                  <Link href={mod.href} className="text-body hover:text-brand-strong">
+                    {mod.nameZh}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </KdyCard>
+
+          <KdyCard className="flex flex-col gap-2">
+            <h3 className="text-sm font-semibold text-body">
+              微信小程序（{MINIAPP_MODULES.length}）
+            </h3>
+            <p className="text-xs text-muted">
+              主端已上线；Web 端还没有页面，点进模块说明页可以看到该模块的能力清单。
+            </p>
+            <ul className="flex flex-wrap gap-1">
+              {MINIAPP_MODULES.map((mod) => (
+                <li key={mod.id}>
+                  <Link href={mod.href}>
+                    <KdyBadge tone="info">{mod.nameZh}</KdyBadge>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </KdyCard>
+
+          <KdyCard className="flex flex-col gap-2">
+            <h3 className="text-sm font-semibold text-body">
+              仅后端接口（{API_ONLY_MODULES.length}）
+            </h3>
+            <p className="text-xs text-muted">
+              已挂 <code className="font-mono">/api/v1/&lt;route&gt;/items</code>{' '}
+              脚手架接口，两端页面都还没做 —— 门户不会为它们伪造内容。
+            </p>
+          </KdyCard>
+        </div>
       </section>
 
       {/* ---------------- 隐私与合规 ---------------- */}

@@ -29,7 +29,7 @@ const updateSchema = createSchema.partial();
  * 编译期防漂移断言：Zod 推导出的类型必须兼容 domain 声明的输入类型。
  * 只改了一边就会直接编译失败。
  */
-type AssertAssignable<Target, Actual extends Target> = true;
+type AssertAssignable<Target, _Actual extends Target> = true;
 export type CreateSchemaMatchesDomain = AssertAssignable<CreateNotificationInput, z.infer<typeof createSchema>>;
 export type UpdateSchemaMatchesDomain = AssertAssignable<UpdateNotificationInput, z.infer<typeof updateSchema>>;
 

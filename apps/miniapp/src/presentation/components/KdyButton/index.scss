@@ -6,7 +6,7 @@
   margin: 0;
   padding: 0 $kdy-space-4;
   border: 1px solid transparent;
-  border-radius: $kdy-radius-md;
+  border-radius: $kdy-radius-pill;
   font-size: $kdy-font-size-sm;
   font-weight: 500;
   line-height: 1;
@@ -19,13 +19,13 @@
 }
 
 .kdy-btn--sm {
-  height: 28px;
+  min-height: 44px;
   padding: 0 $kdy-space-3;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-btn--md {
-  height: 40px;
+  height: 46px;
 }
 
 .kdy-btn--lg {
@@ -45,7 +45,7 @@
 
 .kdy-btn--secondary {
   background-color: $kdy-color-brand-soft;
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-ink;
 }
 
 .kdy-btn--ghost {

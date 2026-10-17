@@ -49,6 +49,13 @@ npm run lint      -w @kedaya/miniapp
    - AppID：**游客模式**即可（`project.config.json` 里是占位值 `touristappid`）
 3. 导入后即可看到 tabBar 四个页面与拼单垂直切片（默认走 **mock 数据**，不需要后端）。
 
+也支持直接导入仓库根目录：根目录的 `project.config.json` 已将
+`miniprogramRoot` 设为 `apps/miniapp/dist/`。请从开发者工具的「小程序」分类导入，
+不要选「其他项目」。根目录可执行 `nvm use && npm run dev:weapp`，等待终端编译成功后
+再点击开发者工具的「编译」。若提示找不到 `app.json`，先确认构建已成功。
+开发工具 Docker 插件的 `docker: command not found` 不属于小程序运行错误；
+本地 Mock 预览不需要 Docker。
+
 ### 关于 appid（必须替换才能真机调试）
 
 `project.config.json` 的 `appid` 是**占位符** `touristappid`（微信游客模式），
@@ -82,11 +89,11 @@ apps/miniapp/
     │   ├── bootstrap.ts       #   bootstrapSync（同步 hydrate）+ refreshInBackground
     │   └── routes.ts          #   页面路径常量（纯数据，无 Taro 依赖）
     ├── application/           # 用例层：编排，不含 IO
-    │   ├── auth/session.ts
+    │   ├── auth/              #   session.ts（会话读取）、authAccount.ts（注册/登录/微信/资料/绑定）
     │   └── groupbuy/          #   listGroupBuys / groupBuyDetail / joinGroupBuy
     ├── domain/                # 纯领域：零框架依赖
-    │   ├── models/            #   groupbuy.ts（状态推导/参团资格）、session.ts
-    │   └── ports/             #   GroupBuyRepository / HttpPort / CachePort / ClockPort ...
+    │   ├── models/            #   groupbuy.ts（状态推导/参团资格）、auth.ts、profile.ts、session.ts
+    │   └── ports/             #   GroupBuyRepository / AuthRepository / WechatCodePort / AvatarPickerPort / HttpPort ...
     ├── data/                  # adapters：实现 ports
     │   ├── api/               #   request.ts（信封解包 + 401 刷新重试）、taroHttpAdapter.ts
     │   ├── repositories/      #   http / mock 两套 GroupBuyRepository
@@ -173,6 +180,8 @@ apps/miniapp/
 | 扫码 | `wx.scanCode` 原生相机 | 无原生扫码 → `UNSUPPORTED`，引导手动输入 | `platform/scanner.ts` |
 | 分享 | **不能静默分享**：必须用户点击 `<Button open-type="share">` 或右上角转发 | `navigator.share` → 再降级复制链接 | `platform/share.ts` |
 | 地图 | `wx.openLocation` 打开微信内置地图（可直接导航） | 高德 Web URI → 再降级复制坐标 | `platform/map.ts` |
+| 微信登录凭证 | `Taro.login()` → code（需服务端配置 AppID/Secret） | 无微信环境 → 稳定的 `dev:<设备标识>` 模拟凭证 | `platform/wechatLogin.ts` |
+| 头像选择 | `chooseAvatar` 临时文件 → `compressImage` → ≤64KB data URL | 无此能力 → 按钮替换为说明文案 | `platform/avatarPicker.ts` |
 
 失败语义统一为 `PlatformFailure.code ∈ {UNSUPPORTED, REJECTED, FAILED}`，
 UI 可以据此区分「这个端没有」「用户拒绝」「调用出错」。
@@ -218,6 +227,9 @@ npm run test -w @kedaya/miniapp
 | `src/data/repositories/__tests__/mockGroupBuyRepository.test.ts` | 游标分页、参团写动作、三态控制面、深拷贝隔离 |
 | `src/application/groupbuy/__tests__/listGroupBuys.test.ts` | 契约 §8：同步 hydrate、失败静默降级、empty/error 态、loadMore 续页、快照引用稳定 |
 | `src/data/storage/__tests__/sessionStore.test.ts` | 会话 hydrate、快照引用稳定（`useSyncExternalStore` 前提）、tokenStore 视图 |
+| `src/domain/models/__tests__/auth.test.ts` | 邮箱/blob 校验、密码强度提示、会话 DTO 形状校验 |
+| `src/data/repositories/__tests__/mockAuthRepository.test.ts` | mock 复刻后端语义：验证码一次性、改密踢下线、微信 openid 与邮箱是同一份身份、绑定冲突、解绑护栏 |
+| `src/application/auth/__tests__/authAccount.test.ts` | 用例职责：本地校验先拦、成功后会话落盘、未登录拒绝、微信登录编排（配置探测 / 首次建号 / 凭证失败不落盘） |
 
 ---
 
@@ -232,15 +244,21 @@ npm run test -w @kedaya/miniapp
 - 统一网络层：`/api/v1`、Bearer、`X-KedaYa-Trace`、`Idempotency-Key`、信封解包、401 刷新重试
 - Taro 同步存储 adapter + 内存 adapter + 会话/token 存储
 - mock adapter（确定性种子数据 + 内存数据库 + 三态控制面）
-- 平台能力封装（订阅消息 / 扫码 / 分享 / 地图 / 导航），逐个注明微信特有与 H5 降级
+- 平台能力封装（订阅消息 / 扫码 / 分享 / 地图 / 导航 / 微信登录凭证 / 头像压缩），逐个注明微信特有与 H5 降级
+- 账号体系（接真实后端，非占位）：
+  - **邮箱 + 密码**：注册（验证码）→ 登录 → 改密 / 找回密码 → 登出
+  - **微信小程序快捷注册 / 登录**：`Taro.login()` → 后端 `jscode2session` → openid → 同一套 KedaYa 自有 JWT；
+    首次登录自动建号并引导「完善资料」（`KdyField type='nickname'` + `KdyButton openType='chooseAvatar'`）
+  - **账号安全**：昵称/头像编辑、绑定邮箱（给只有微信的账号补后路）、绑定/解绑微信
+  - 客户端与后端**同一套校验规则**（验证码一次性、密码强度、昵称按码点截断、头像 ≤64KB）
 - 拼单垂直切片：列表 + 详情 + 参团，三态齐全，默认 mock
-- 4 个复用组件：`KdyCard` / `KdyButton` / `KdyEmpty` / `KdyTag`（全部取自设计令牌）
-- 5 个 Vitest 测试文件（domain / 网络层 / mock 仓储 / 列表用例 / 会话存储）
+- 复用组件：`KdyCard` / `KdyButton` / `KdyField` / `KdyChip` / `KdyTag` / `KdyEmpty` / `KdyHeading` / `KdyAvatar`（全部取自设计令牌）
+- Vitest 测试（node 环境，无需模拟器）：domain / 网络层 / mock 仓储 / 用例 / 会话存储 / WXSS 安全
 
 ### ❌ 未实现（诚实清单）
 
-- **统一身份认证**：契约 §5 第一级身份层（CAS / Egate OAuth → KedaYa JWT）未接入。
-  「我的」页的登录是**明确标注的骨架占位**（`data/mock/mockAuth.ts` 伪造形状合法的 token）。
+- **CAS / Egate OAuth**：契约 §5 第一级身份层里的**校园统一身份认证**未接入
+  （邮箱密码与微信小程序登录已可用，且签发同一套 KedaYa 自有 JWT）。
 - **校园系统绑定**：契约 §5 第二级能力层（`CampusSessionPort`）未实现。
   `profile.campusBound` 目前是手工切换的占位开关。
 - **敏感模块二次同意**：契约 §9 的同意流程与审计日志未实现（首页对这类模块只做标注 + 提示）。
@@ -250,6 +268,8 @@ npm run test -w @kedaya/miniapp
 - **H5 端未实机验证**：`build:h5` 脚本已就绪，但本轮只验证了 `weapp` 构建。
 - **CI / 真机预览**：未在真机与微信开发者工具中打开验证（无图形环境）。
 - **E2E 测试**：未接入小程序自动化（miniprogram-automator）。
+- **头像存储**：当前没有对象存储，微信头像压成 ≤64KB 的 data URL 存 `User.avatarUrl`；
+  接入 OSS 后应改成「上传返回 URL」（只需替换 `platform/avatarPicker.ts` 的实现）。
 
 ### ⚠️ 已知问题 / 需要在别处修
 
@@ -274,3 +294,8 @@ npm run test -w @kedaya/miniapp
 
 见本目录交付说明（Lead 的 task-3 交付消息）中粘贴的真实命令输出。
 本 README 不复制输出，避免与真实结果脱节。
+# UI 开发约定
+
+基础组件统一使用 Taroify，图标使用 Taroify Icons；采用可达鸭黄、暖白背景与简约卡片。
+新增页面先阅读 [AGENTS.md](./AGENTS.md) 和 [UI 规范](../../docs/miniapp-ui.md)。
+主题入口为 `src/presentation/theme/appearance.scss`，尺寸基准为 375px。

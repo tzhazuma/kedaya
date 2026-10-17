@@ -5,6 +5,7 @@ import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ComplianceModule } from './common/compliance/compliance.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { EnvelopeInterceptor } from './common/interceptors/envelope.interceptor';
+import { TraceMiddleware } from './common/middleware/trace.middleware';
 import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -77,6 +78,9 @@ import { WildlifeModule } from './modules/wildlife/wildlife.module';
     WildlifeModule,
   ],
   providers: [
+    // main.ts 用 `app.get(TraceMiddleware)` 取出后 `app.use()` 注册，
+    // 所以它必须是**容器里的 provider**（只 `@Injectable()` 不够）。
+    TraceMiddleware,
     { provide: APP_PIPE, useClass: ZodValidationPipe },
     { provide: APP_INTERCEPTOR, useClass: EnvelopeInterceptor },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

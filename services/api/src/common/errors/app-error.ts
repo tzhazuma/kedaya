@@ -70,6 +70,18 @@ export class ConflictError extends AppError {
 }
 
 /**
+ * 触发频控（契约 §6.1 冻结了 `RATE_LIMITED`，此前没有对应的错误类）。
+ *
+ * 用于：验证码发送过频、上游返回限流、微信 jscode2session 被限频等。
+ * `details.retryAfterSeconds` 有值时，客户端应据此展示倒计时。
+ */
+export class RateLimitedError extends AppError {
+  constructor(message = '操作过于频繁，请稍后再试', details?: unknown) {
+    super('RATE_LIMITED', message, details);
+  }
+}
+
+/**
  * 第二级（能力层）未绑定（契约 §5 硬规则 3）：
  * 身份有效，但用户还没绑定对应校园系统。
  */

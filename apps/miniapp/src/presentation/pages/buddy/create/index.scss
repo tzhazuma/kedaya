@@ -1,0 +1,37 @@
+.kdy-buddy-create__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+}
+
+.kdy-buddy-create__actions {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-3;
+  margin-top: $kdy-space-5;
+}
+
+.kdy-buddy-create__hint {
+  display: block;
+  margin-top: $kdy-space-3;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-buddy-create__problems,
+.kdy-buddy-create__error {
+  display: block;
+  margin: $kdy-space-3 $kdy-space-5 0;
+  padding: $kdy-space-2 $kdy-space-3;
+  color: $kdy-color-text-muted;
+  background: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-sm;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-buddy-create__error {
+  color: $kdy-color-danger;
+  background: rgba($kdy-color-danger, 0.08);
+}

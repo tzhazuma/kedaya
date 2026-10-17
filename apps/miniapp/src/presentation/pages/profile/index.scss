@@ -53,3 +53,36 @@
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
+.kdy-profile__identity {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-4;
+  margin: $kdy-space-3 $kdy-space-5 $kdy-space-5;
+  padding: $kdy-space-5;
+  border-radius: $kdy-radius-xl;
+}
+
+.kdy-profile__identity-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.kdy-profile__name {
+  display: block;
+  margin-bottom: $kdy-space-1;
+  font-size: $kdy-font-size-lg;
+  font-weight: 600;
+}
+
+.kdy-profile__link {
+  color: $kdy-color-brand-strong;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-profile__error {
+  display: block;
+  margin-top: $kdy-space-3;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}

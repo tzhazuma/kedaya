@@ -1,22 +1,30 @@
 import { Text, View } from '@tarojs/components'
+import Taro, { useDidShow } from '@tarojs/taro'
+import { useState } from 'react'
 
 import { getContainer } from '../../../app/container'
-import { createMockSignIn } from '../../../data/mock/mockAuth'
-import { toast } from '../../../platform/navigation'
-import { KdyButton, KdyCard, KdyTag } from '../../components'
+import { PAGE_PATHS } from '../../../app/routes'
+import type { WechatStatusDto } from '../../../domain/models/auth'
+import { navigateTo, toast } from '../../../platform/navigation'
+import { KdyAvatar, KdyButton, KdyCard, KdyTag } from '../../components'
+import { KdyHeading } from '../../components/KdyHeading'
 import { useStore } from '../../hooks'
 import './index.scss'
 
 /**
- * 我的 —— 会话状态 + 隐私合规声明。
+ * 我的 —— 账号信息 + 账号安全 + 隐私合规声明。
  *
- * ⚠️ 这里的「登录」是**骨架占位**：真实流程是
- * `wx.login` → code → 后端换 KedaYa JWT（契约 §5 第一级身份层），
- * 校园系统绑定走独立的 `CampusSessionPort`（第二级能力层），本骨架未实现。
- * 页面上明确标注，避免被误认为已接通统一身份认证。
+ * 账号体系接真实后端（`/auth/account/*`、`/auth/wechat/*`、`/auth/me`）：
+ *   · 未登录 → 提供「登录」「注册」入口；
+ *   · 已登录 → 昵称/头像可改；微信可绑定/解绑；邮箱密码可绑定/修改；可退出登录。
+ *
+ * 三条登录路径（CAS / 邮箱密码 / 微信）在界面上是**对等**的：
+ * 任何一条都能登录，但只要还有别的路径，就允许解绑另一条 ——
+ * 「至少保留一种登录方式」由后端强校验（绑微信/解绑微信都会检查）。
+ *
+ * 登录 ≠ 绑定校园系统：`campusBound` 为 false 时，校园能力会被后端
+ * 以 `CAMPUS_BINDING_REQUIRED` 拦下（契约 §5 硬规则 3）。
  */
-
-const mockSignIn = createMockSignIn()
 
 /** 契约 §9 不可妥协的隐私规则（原文摘录，让用户与开发者都能看到） */
 const PRIVACY_RULES: readonly { title: string; detail: string }[] = [
@@ -50,83 +58,214 @@ const PRIVACY_RULES: readonly { title: string; detail: string }[] = [
 export default function ProfilePage() {
   const container = getContainer()
   const session = container.useCases.session
+  const auth = container.useCases.auth
   const state = useStore(session)
 
-  function handleSignIn(): void {
-    const result = mockSignIn()
-    if (!result.ok) {
-      toast('登录失败')
+  const [signingOut, setSigningOut] = useState(false)
+  const [wechat, setWechat] = useState<WechatStatusDto | null>(null)
+  const [wechatBusy, setWechatBusy] = useState(false)
+  const [accountError, setAccountError] = useState<string | null>(null)
+
+  /**
+   * 微信绑定状态不放在会话里（它随时可能被其它设备改），
+   * 因此每次回到本页都重新拉一次；失败就静默保留上一次的结果。
+   */
+  async function refreshWechatStatus(): Promise<void> {
+    if (state.profile === null) {
+      setWechat(null)
       return
     }
-    session.signIn(result.value.tokens, result.value.profile)
-    toast('已用测试账号登录', 'success')
+    const result = await auth.wechatStatus()
+    if (result.ok) setWechat(result.value)
   }
 
-  function handleSignOut(): void {
-    session.signOut()
+  useDidShow(() => {
+    void refreshWechatStatus()
+  })
+
+  async function handleSignOut(): Promise<void> {
+    if (signingOut) return
+    setSigningOut(true)
+    await auth.logout()
+    setSigningOut(false)
+    setWechat(null)
     toast('已退出登录')
   }
 
-  function handleToggleCampusBinding(): void {
-    if (state.profile === null) {
-      toast('请先登录')
+  async function handleBindWechat(): Promise<void> {
+    if (wechatBusy) return
+    setAccountError(null)
+    setWechatBusy(true)
+    const result = await auth.bindWechat()
+    setWechatBusy(false)
+
+    if (!result.ok) {
+      setAccountError(result.error.message)
       return
     }
-    const next = !state.profile.campusBound
-    session.markCampusBound(next)
-    toast(next ? '已标记为「已绑定校园系统」（占位）' : '已标记为「未绑定校园系统」')
+    setWechat(result.value)
+    toast('微信已绑定', 'success')
   }
+
+  async function handleUnbindWechat(): Promise<void> {
+    if (wechatBusy) return
+    setAccountError(null)
+    const confirmed = await Taro.showModal({
+      title: '解绑微信',
+      content: '解绑后需要改用邮箱密码登录，确定继续吗？',
+      confirmText: '解绑',
+      confirmColor: '#d33f3f',
+    })
+    if (!confirmed.confirm) return
+
+    setWechatBusy(true)
+    const result = await auth.unbindWechat()
+    setWechatBusy(false)
+
+    if (!result.ok) {
+      setAccountError(result.error.message)
+      return
+    }
+    setWechat(result.value)
+    toast('微信已解绑')
+  }
+
+  const wechatBound = wechat?.bound ?? state.profile?.wechatBound ?? false
+  const hasPassword = state.profile?.hasPassword ?? true
 
   return (
     <View className='kdy-page kdy-profile'>
-      <KdyCard title='账号' elevated={false}>
-        {state.profile === null ? (
-          <View>
-            <Text className='kdy-profile__hint'>
-              未登录。参团等写操作需要登录；浏览拼单列表不需要。
-            </Text>
-            <View className='kdy-profile__actions'>
-              <KdyButton size='sm' onClick={handleSignIn}>
-                用测试账号登录
-              </KdyButton>
-            </View>
-          </View>
-        ) : (
-          <View>
-            <View className='kdy-profile__row'>
-              <Text className='kdy-profile__k'>昵称</Text>
-              <Text className='kdy-profile__v'>{state.profile.nickname}</Text>
-            </View>
-            <View className='kdy-profile__row'>
-              <Text className='kdy-profile__k'>学号</Text>
-              <Text className='kdy-profile__v'>{state.profile.studentId ?? '未绑定'}</Text>
-            </View>
-            <View className='kdy-profile__row'>
-              <Text className='kdy-profile__k'>院系</Text>
-              <Text className='kdy-profile__v'>{state.profile.college ?? '未绑定'}</Text>
-            </View>
-            <View className='kdy-profile__row'>
-              <Text className='kdy-profile__k'>校园系统</Text>
-              <KdyTag tone={state.profile.campusBound ? 'success' : 'warning'}>
-                {state.profile.campusBound ? '已绑定' : '未绑定'}
-              </KdyTag>
-            </View>
-            <View className='kdy-profile__row'>
-              <Text className='kdy-profile__k'>Token 过期时间</Text>
-              <Text className='kdy-profile__v'>{state.tokens?.expiresAt ?? '-'}</Text>
-            </View>
+      <KdyHeading title='我的校园生活' subtitle='在这里，照顾好你的每一件小事。' />
+      <View className='kdy-profile__identity kdy-glass'>
+        <KdyAvatar src={state.profile?.avatarUrl ?? null} size={64} />
+        <View className='kdy-profile__identity-text'>
+          <Text className='kdy-profile__name'>{state.profile?.nickname ?? '你好，新同学'}</Text>
+          <Text className='kdy-profile__hint'>
+            {state.profile ? '今天也要过得开心鸭' : '登录后即可发布、接单、发帖'}
+          </Text>
+        </View>
+      </View>
 
-            <View className='kdy-profile__actions'>
-              <KdyButton size='sm' variant='ghost' onClick={handleToggleCampusBinding}>
-                切换绑定状态（占位）
-              </KdyButton>
-              <KdyButton size='sm' variant='danger' onClick={handleSignOut}>
-                退出登录
-              </KdyButton>
-            </View>
+      {state.profile === null ? (
+        <KdyCard title='账号' elevated={false}>
+          <Text className='kdy-profile__hint'>
+            未登录。浏览内容不需要登录；发布、接单、发帖等写操作需要先登录。
+          </Text>
+          <View className='kdy-profile__actions'>
+            <KdyButton
+              size='sm'
+              onClick={() => {
+                void navigateTo(PAGE_PATHS.authLogin)
+              }}
+            >
+              登录
+            </KdyButton>
+            <KdyButton
+              size='sm'
+              variant='ghost'
+              onClick={() => {
+                void navigateTo(PAGE_PATHS.authRegister)
+              }}
+            >
+              注册新账号
+            </KdyButton>
           </View>
-        )}
-      </KdyCard>
+        </KdyCard>
+      ) : (
+        <KdyCard
+          title='账号与安全'
+          elevated={false}
+          extra={
+            <Text
+              className='kdy-profile__link'
+              onClick={() => {
+                void navigateTo(PAGE_PATHS.profileEdit)
+              }}
+            >
+              编辑资料
+            </Text>
+          }
+        >
+          <View className='kdy-profile__row'>
+            <Text className='kdy-profile__k'>昵称</Text>
+            <Text className='kdy-profile__v'>{state.profile.nickname}</Text>
+          </View>
+          <View className='kdy-profile__row'>
+            <Text className='kdy-profile__k'>邮箱</Text>
+            <Text className='kdy-profile__v'>{state.profile.email ?? '未绑定'}</Text>
+          </View>
+          <View className='kdy-profile__row'>
+            <Text className='kdy-profile__k'>微信</Text>
+            <KdyTag tone={wechatBound ? 'success' : 'neutral'}>
+              {wechatBound ? (wechat?.simulated ? '已绑定（演示）' : '已绑定') : '未绑定'}
+            </KdyTag>
+          </View>
+          <View className='kdy-profile__row'>
+            <Text className='kdy-profile__k'>校园系统</Text>
+            <KdyTag tone={state.profile.campusBound ? 'success' : 'warning'}>
+              {state.profile.campusBound ? '已绑定' : '未绑定'}
+            </KdyTag>
+          </View>
+
+          {accountError !== null && <Text className='kdy-profile__error'>{accountError}</Text>}
+
+          <View className='kdy-profile__actions'>
+            {hasPassword ? (
+              <KdyButton
+                size='sm'
+                variant='ghost'
+                onClick={() => {
+                  void navigateTo(PAGE_PATHS.authChangePassword)
+                }}
+              >
+                修改密码
+              </KdyButton>
+            ) : (
+              <KdyButton
+                size='sm'
+                onClick={() => {
+                  void navigateTo(PAGE_PATHS.authBindEmail)
+                }}
+              >
+                绑定邮箱
+              </KdyButton>
+            )}
+
+            {wechatBound ? (
+              <KdyButton
+                size='sm'
+                variant='ghost'
+                disabled={wechat !== null && !wechat.canUnbind}
+                loading={wechatBusy}
+                onClick={() => void handleUnbindWechat()}
+              >
+                解绑微信
+              </KdyButton>
+            ) : (
+              <KdyButton size='sm' loading={wechatBusy} onClick={() => void handleBindWechat()}>
+                绑定微信
+              </KdyButton>
+            )}
+          </View>
+
+          {wechatBound && wechat !== null && !wechat.canUnbind && (
+            <Text className='kdy-profile__hint'>
+              当前只有微信一种登录方式，先绑定邮箱密码才能解绑微信。
+            </Text>
+          )}
+
+          <View className='kdy-profile__actions'>
+            <KdyButton
+              size='sm'
+              variant='danger'
+              loading={signingOut}
+              onClick={() => void handleSignOut()}
+            >
+              退出登录
+            </KdyButton>
+          </View>
+        </KdyCard>
+      )}
 
       <KdyCard title='隐私与合规' elevated={false}>
         {PRIVACY_RULES.map((rule) => (
@@ -141,9 +280,12 @@ export default function ProfilePage() {
         <Text className='kdy-profile__hint'>
           可达鸭（KedaYa）· 上海科技大学统一校园服务平台 · 第三方开源项目（非官方）。
         </Text>
-        <Text className='kdy-profile__hint'>
-          吉祥物为原创美术，与任何第三方角色形象无关。
-        </Text>
+        <Text className='kdy-profile__hint'>吉祥物为原创美术，与任何第三方角色形象无关。</Text>
+        {container.env.useMock && (
+          <Text className='kdy-profile__hint'>
+            当前为本地演示模式：数据来自内存 Mock，刷新后重置。
+          </Text>
+        )}
       </KdyCard>
 
       <Text className='kdy-disclaimer'>

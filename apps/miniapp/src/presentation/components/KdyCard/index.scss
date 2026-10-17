@@ -1,10 +1,10 @@
 .kdy-card {
   box-sizing: border-box;
-  margin: $kdy-space-2 $kdy-space-4;
-  padding: $kdy-space-4;
+  margin: $kdy-space-3 $kdy-space-5;
+  padding: $kdy-space-5;
   background-color: $kdy-color-surface;
-  border: 1px solid $kdy-color-border;
-  border-radius: $kdy-radius-lg;
+  border: 1px solid rgba($kdy-color-border, 0.5);
+  border-radius: $kdy-radius-xl;
 }
 
 .kdy-card--elevated {
@@ -16,7 +16,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: $kdy-space-2;
+  gap: $kdy-space-3;
+  margin-bottom: $kdy-space-4;
 }
 
 .kdy-card__title {

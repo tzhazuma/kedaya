@@ -11,6 +11,7 @@
 
 .kdy-gb-list__demo {
   display: flex;
+  flex-wrap: wrap;
   gap: $kdy-space-2;
   padding: $kdy-space-2 $kdy-space-4 $kdy-space-3;
 }
@@ -73,7 +74,7 @@
 }
 
 .kdy-gb-card__price {
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-ink;
   font-size: $kdy-font-size-lg;
   font-weight: 700;
 }

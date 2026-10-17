@@ -1,0 +1,126 @@
+.kdy-forum-detail__head {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+}
+
+.kdy-forum-detail__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+}
+
+.kdy-forum-detail__meta {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-forum-detail__body {
+  display: block;
+  margin-top: $kdy-space-3;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-md;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.kdy-forum-detail__rows {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-4;
+}
+
+.kdy-forum-detail__row {
+  display: flex;
+  gap: $kdy-space-3;
+}
+
+.kdy-forum-detail__k {
+  width: 140px;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-forum-detail__v {
+  flex: 1;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.7;
+}
+
+.kdy-forum-detail__replies {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-3;
+}
+
+.kdy-forum-detail__reply {
+  padding: $kdy-space-3;
+  background: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-sm;
+}
+
+.kdy-forum-detail__reply-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+}
+
+.kdy-forum-detail__reply-author {
+  color: $kdy-color-brand-strong;
+  font-size: $kdy-font-size-xs;
+  font-weight: $kdy-font-weight-medium;
+}
+
+.kdy-forum-detail__reply-time {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-forum-detail__reply-body {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.kdy-forum-detail__more {
+  display: flex;
+  justify-content: center;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-forum-detail__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-2;
+}
+
+.kdy-forum-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-3;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-forum-detail__hint {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-forum-detail__error {
+  display: block;
+  margin-top: $kdy-space-3;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}

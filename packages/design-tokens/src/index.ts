@@ -2,7 +2,7 @@
  * @kedaya/design-tokens
  *
  * 可达鸭设计令牌。唯一真相来源是 `tokens.json`；
- * 本目录下的 `tokens.generated.ts`、`dist/*`、`dart/*` 全部由
+ * 本目录下的 `tokens.generated.ts` 和包内的 `dist/*` 全部由
  * `scripts/generate.mjs` 生成，**不要手改**。
  *
  * 重新生成：

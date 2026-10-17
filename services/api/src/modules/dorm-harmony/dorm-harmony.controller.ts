@@ -1,44 +1,69 @@
-import { Controller, Delete, Get, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, Inject, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { modulePath } from '@kedaya/contracts';
 import { z } from 'zod';
 import { AuthGuard } from '../../common/auth/auth.guard';
 import { CurrentUser } from '../../common/auth/current-user';
-import { normalizeLimit, readCursor } from '../../common/pagination/cursor';
-import { ZodBody } from '../../common/pipes/zod-validation.pipe';
+import { ForbiddenError } from '../../common/errors/app-error';
+import { ZodBody, ZodQuery } from '../../common/pipes/zod-validation.pipe';
 import { DormHarmonyService } from './dorm-harmony.service';
-import type {
-  CreateDormHarmonyCaseInput,
-  UpdateDormHarmonyCaseInput,
+import {
+  DORM_HARMONY_EXPECTATIONS,
+  type SubmitDormHarmonyCaseInput,
 } from './domain/dorm-harmony.domain';
 
-const createSchema = z.object({
-  building: z.string().min(1).max(64),
-  topic: z.string().min(1).max(200),
-  detail: z.string().max(4000).nullish(),
-  // 允许客户端自带 handle（例如小程序本地生成），不传则由服务端生成
-  anonHandle: z.string().min(1).max(64).optional(),
+/**
+ * 宿舍矛盾 HTTP 层（高敏感 · 匿名）。
+ *
+ * 鉴权策略（本模块与其他模块相反，需要特别说明）：
+ *   · 案子读写**全部公开**，只靠一次性**追踪码**授权。这是因为一旦要求登录，
+ *     实名身份就会与案件出现在同一个请求里，匿名承诺立刻失效；
+ *   · 唯一需要登录的是 `mediator-reply`（调解员是校方工作人员，实名回复是职责）；
+ *   · **不提供公开列表**：列表会泄漏全校的议题分布，属隐私事故。
+ *
+ * 追踪码明文只在 `POST cases` 的响应里出现一次；此后所有读写都必须带上它。
+ */
+
+const submitSchema = z.object({
+  building: z.string().trim().min(1).max(20),
+  topic: z.string().trim().min(1).max(40),
+  detail: z.string().max(2000).nullish(),
+  expectation: z.enum(DORM_HARMONY_EXPECTATIONS).nullish(),
 });
 
-const updateSchema = z.object({
-  topic: z.string().min(1).max(200).optional(),
-  detail: z.string().max(4000).nullish(),
-  status: z.string().min(1).max(40).optional(),
-  mediatorId: z.string().min(1).max(64).nullish(),
+const detailQuerySchema = z.object({
+  trackCode: z.string().trim().min(1).max(64).optional(),
 });
 
-const mediatorSchema = z.object({ mediatorId: z.string().min(1).max(64) });
+const messageSchema = z.object({
+  trackCode: z.string().trim().min(1).max(64),
+  body: z.string().trim().min(1).max(2000),
+});
 
-type AssertAssignable<Target, Actual extends Target> = true;
-export type CreateSchemaMatchesDomain = AssertAssignable<
-  CreateDormHarmonyCaseInput,
-  z.infer<typeof createSchema>
->;
+const closeSchema = z.object({
+  trackCode: z.string().trim().min(1).max(64),
+});
+
+const mediatorReplySchema = z.object({
+  body: z.string().trim().min(1).max(2000),
+});
+
+type SubmitBody = z.infer<typeof submitSchema>;
+type DetailQuery = z.infer<typeof detailQuerySchema>;
+type MessageBody = z.infer<typeof messageSchema>;
+type CloseBody = z.infer<typeof closeSchema>;
+type MediatorReplyBody = z.infer<typeof mediatorReplySchema>;
+
+/** 编译期防漂移：Zod schema 必须与 domain 的输入类型兼容 */
+type AssertAssignable<Target, __Actual extends Target> = true;
+export type SubmitSchemaMatchesDomain = AssertAssignable<SubmitDormHarmonyCaseInput, SubmitBody>;
 
 @ApiTags('dorm-harmony · 宿舍矛盾（高敏感 · 匿名）')
 @Controller(modulePath('dorm-harmony'))
 export class DormHarmonyController {
   constructor(@Inject(DormHarmonyService) private readonly service: DormHarmonyService) {}
+
+  /* -------- 二次同意（实名入口，与匿名案子分离） -------- */
 
   @Get('consents')
   @UseGuards(AuthGuard)
@@ -64,59 +89,56 @@ export class DormHarmonyController {
     return this.service.revokeConsent(userId);
   }
 
-  @Get('items')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
+  /* -------- 匿名案子（追踪码即能力） -------- */
+
+  @Get('cases')
   @ApiOperation({
-    summary: '调解申请列表（摘要，不含 detail；无同意 → CONSENT_REQUIRED）',
+    summary: '【不提供】公开列表',
+    description:
+      '出于隐私考虑，本模块不提供公开的调解议题列表（列表会泄漏全校议题分布）。请通过提交时返回的追踪码访问自己的案子。',
   })
-  list(@CurrentUser() userId: string, @Query() query: Record<string, unknown>) {
-    return this.service.list(userId, {
-      cursor: readCursor(query),
-      limit: normalizeLimit(query.limit),
-    });
+  list(): never {
+    throw new ForbiddenError(
+      '宿舍矛盾议题涉及高度隐私，平台不提供公开列表；请通过提交时返回的追踪码访问你自己的案子',
+    );
   }
 
-  @Post('items')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '提交匿名调解申请（存储层与实名解耦）' })
-  create(
-    @CurrentUser() userId: string,
-    @ZodBody(createSchema) body: CreateDormHarmonyCaseInput,
-  ) {
-    return this.service.create(userId, body);
+  @Post('cases')
+  @ApiOperation({
+    summary: '提交匿名调解申请（公开，无需登录）',
+    description: '返回 `{ case, trackCode }`。`trackCode` 仅返回一次，请务必自行保存。',
+  })
+  submit(@ZodBody(submitSchema) body: SubmitBody) {
+    return this.service.submit(body);
   }
 
-  @Get('items/:id')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '申请详情（写审计）' })
-  detail(@CurrentUser() userId: string, @Param('id') id: string) {
-    return this.service.detail(userId, id);
+  @Get('cases/:id')
+  @ApiOperation({ summary: '查看调解申请详情 + 留言（需出示追踪码）' })
+  detail(@Param('id') id: string, @ZodQuery(detailQuerySchema) query: DetailQuery) {
+    return this.service.detail(id, query.trackCode);
   }
 
-  @Patch('items/:id')
+  @Post('cases/:id/messages')
+  @ApiOperation({ summary: '学生追加留言（需出示追踪码）' })
+  postMessage(@Param('id') id: string, @ZodBody(messageSchema) body: MessageBody) {
+    return this.service.postMessage(id, body.trackCode, body.body);
+  }
+
+  @Post('cases/:id/close')
+  @ApiOperation({ summary: '学生自己结案（需出示追踪码）' })
+  close(@Param('id') id: string, @ZodBody(closeSchema) body: CloseBody) {
+    return this.service.closeCase(id, body.trackCode);
+  }
+
+  @Post('cases/:id/mediator-reply')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '更新申请（写审计）' })
-  update(
-    @CurrentUser() userId: string,
+  @ApiOperation({ summary: '调解员回复（需要登录；唯一实名入口）' })
+  mediatorReply(
+    @CurrentUser() mediatorId: string,
     @Param('id') id: string,
-    @ZodBody(updateSchema) body: UpdateDormHarmonyCaseInput,
+    @ZodBody(mediatorReplySchema) body: MediatorReplyBody,
   ) {
-    return this.service.update(userId, id, body);
-  }
-
-  @Post('items/:id/mediator')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '领域动作：调解员介入' })
-  assignMediator(
-    @CurrentUser() userId: string,
-    @Param('id') id: string,
-    @ZodBody(mediatorSchema) body: z.infer<typeof mediatorSchema>,
-  ) {
-    return this.service.assignMediator(userId, id, body.mediatorId);
+    return this.service.mediatorReply(id, body.body, mediatorId);
   }
 }

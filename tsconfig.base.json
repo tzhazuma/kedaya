@@ -15,6 +15,14 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": false,
+    /*
+     * 共享包（@kedaya/contracts / @kedaya/shared）的 `main` 指向 TS 源码，
+     * 且内部相对导入带 `.ts` 扩展名 —— 这样 Node 的类型剥离能在运行时直接加载源码。
+     * `rewriteRelativeImportExtensions` 让 tsc 在产物里把 `.ts` 重写回 `.js`，
+     * 保证 CommonJS 产物（`dist/packages/**`）同样可运行。
+     */
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,

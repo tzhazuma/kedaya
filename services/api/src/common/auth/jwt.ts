@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { UnauthenticatedError } from '../errors/app-error';
 
 /**
@@ -21,6 +21,15 @@ export interface JwtPayload {
   typ: TokenType;
   iat: number;
   exp: number;
+  /**
+   * 令牌唯一 id（仅刷新令牌使用）。
+   *
+   * 为什么必须有：JWT 的内容只由 `{sub, typ, iat, exp}` 决定，
+   * 同一秒内为同一用户签发的两个刷新令牌会是**完全相同的字符串** ——
+   * 那样"轮换"就失去了意义（旧令牌等于新令牌，撤销旧的就等于撤销新的）。
+   * 因此刷新令牌强制带 jti，保证每次签发都不同。
+   */
+  jti?: string;
 }
 
 interface JwtHeader {
@@ -36,12 +45,24 @@ function hmac(data: string, secret: string): string {
   return createHmac('sha256', secret).update(data).digest('base64url');
 }
 
-export function signJwt(sub: string, type: TokenType, secret: string, ttlSeconds: number): string {
+export function signJwt(
+  sub: string,
+  type: TokenType,
+  secret: string,
+  ttlSeconds: number,
+  options: { jti?: string } = {},
+): string {
   if (!secret) throw new Error('JWT_SECRET 未配置');
 
   const now = Math.floor(Date.now() / 1000);
   const header: JwtHeader = { alg: 'HS256', typ: 'JWT' };
   const payload: JwtPayload = { sub, typ: type, iat: now, exp: now + ttlSeconds };
+  if (type === 'refresh') {
+    // 刷新令牌一律带 jti：轮换/撤销都依赖它
+    payload.jti = options.jti ?? randomUUID();
+  } else if (options.jti !== undefined) {
+    payload.jti = options.jti;
+  }
 
   const signingInput = `${encodeSegment(header)}.${encodeSegment(payload)}`;
   return `${signingInput}.${hmac(signingInput, secret)}`;

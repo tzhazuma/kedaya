@@ -1,0 +1,37 @@
+.kdy-lost-create__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+}
+
+.kdy-lost-create__actions {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-3;
+  margin-top: $kdy-space-5;
+}
+
+.kdy-lost-create__hint {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.7;
+}
+
+.kdy-lost-create__problems,
+.kdy-lost-create__error {
+  display: block;
+  margin-top: $kdy-space-3;
+  padding: $kdy-space-2 $kdy-space-3;
+  color: $kdy-color-text-muted;
+  background: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-sm;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-lost-create__error {
+  color: $kdy-color-danger;
+  background: rgba(211, 63, 63, 0.08);
+}

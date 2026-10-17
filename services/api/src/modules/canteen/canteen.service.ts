@@ -6,7 +6,6 @@
  */
 import { Inject, Injectable } from '@nestjs/common';
 import { CrudService } from '../../common/crud/crud.service';
-import { ValidationError } from '../../common/errors/app-error';
 import {
   CANTEEN_DISH_REPOSITORY,
   type CreateCanteenDishInput,

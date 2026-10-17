@@ -4,14 +4,24 @@ import { fenToYuan } from '@kedaya/shared'
 import { useEffect, useState } from 'react'
 
 import { getContainer } from '../../../../app/container'
-import { PAGE_PATHS, groupBuyDetailPath, readIdParam } from '../../../../app/routes'
+import {
+  PAGE_PATHS,
+  groupBuyDetailPath,
+  readIdParam,
+} from '../../../../app/routes'
 import { navigateTo, toast } from '../../../../platform/navigation'
 import { openLocation } from '../../../../platform/map'
 import { shareToFriend } from '../../../../platform/share'
-import { SUBSCRIBE_TEMPLATES, requestSubscribeMessage } from '../../../../platform/subscribeMessage'
+import {
+  SUBSCRIBE_TEMPLATES,
+  requestSubscribeMessage,
+} from '../../../../platform/subscribeMessage'
 import { KdyButton, KdyCard, KdyEmpty, KdyTag } from '../../../components'
 import { useStore } from '../../../hooks'
 import './index.scss'
+import Progress from '@taroify/core/progress'
+import '@taroify/core/progress/style'
+import { KdyHeading } from '../../../components/KdyHeading'
 
 /**
  * 拼单详情页 —— 垂直切片的读 + 写。
@@ -75,7 +85,9 @@ export default function GroupBuyDetailPage() {
       toast('参团成功', 'success')
 
       // 微信特有：一次性订阅「成团提醒」；H5 会返回 UNSUPPORTED，静默忽略
-      const subscribed = await requestSubscribeMessage([SUBSCRIBE_TEMPLATES.groupBuyFull])
+      const subscribed = await requestSubscribeMessage([
+        SUBSCRIBE_TEMPLATES.groupBuyFull,
+      ])
       if (!subscribed.ok && subscribed.error.code === 'REJECTED') {
         toast('未开启成团提醒，可在小程序设置里重新打开')
       }
@@ -136,9 +148,18 @@ export default function GroupBuyDetailPage() {
 
   return (
     <View className='kdy-page kdy-gb-detail'>
+      <KdyHeading
+        title='好物一起，快乐加倍'
+        subtitle='确认拼单信息，再和同学一起出发。'
+        eyebrow='KEDAYA · 拼单详情'
+      />
       <KdyCard
         title={summary.title}
-        extra={<KdyTag tone={summary.joinable ? 'brand' : 'neutral'}>{summary.statusLabel}</KdyTag>}
+        extra={
+          <KdyTag tone={summary.joinable ? 'brand' : 'neutral'}>
+            {summary.statusLabel}
+          </KdyTag>
+        }
       >
         <View className='kdy-gb-detail__meta'>
           <KdyTag tone='neutral'>{summary.categoryLabel}</KdyTag>
@@ -146,22 +167,24 @@ export default function GroupBuyDetailPage() {
         </View>
 
         <View className='kdy-gb-detail__price-row'>
-          <Text className='kdy-gb-detail__price'>¥{fenToYuan(summary.priceFen)}</Text>
+          <Text className='kdy-gb-detail__price'>
+            ¥{fenToYuan(summary.priceFen)}
+          </Text>
           <Text className='kdy-gb-detail__price-unit'>/ 份</Text>
           <Text className='kdy-gb-detail__total'>
             当前合计 ¥{fenToYuan(summary.totalAmountFen)}
           </Text>
         </View>
 
-        <View className='kdy-gb-detail__bar'>
-          <View
-            className='kdy-gb-detail__bar-inner'
-            style={`width: ${summary.progressPercent}%`}
-          />
-        </View>
+        <Progress
+          className='kdy-gb-detail__bar'
+          percent={summary.progressPercent}
+          label={false}
+        />
         <Text className='kdy-gb-detail__progress-text'>
-          {summary.joinedQuantity}/{summary.targetCount} 份（{summary.progressPercent}%）· 还差{' '}
-          {summary.remainingSlots} 份 · {summary.deadlineLabel}
+          {summary.joinedQuantity}/{summary.targetCount} 份（
+          {summary.progressPercent}%）· 还差 {summary.remainingSlots} 份 ·{' '}
+          {summary.deadlineLabel}
         </Text>
 
         <View className='kdy-gb-detail__kv'>
@@ -178,21 +201,30 @@ export default function GroupBuyDetailPage() {
         </View>
 
         {groupBuy !== null && (
-          <Text className='kdy-gb-detail__description'>{groupBuy.description}</Text>
+          <Text className='kdy-gb-detail__description'>
+            {groupBuy.description}
+          </Text>
         )}
       </KdyCard>
 
       <KdyCard title='已参团同学' elevated={false}>
         {groupBuy === null || groupBuy.participants.length === 0 ? (
-          <Text className='kdy-gb-detail__empty-participants'>还没有人参团，你可以是第一个</Text>
+          <Text className='kdy-gb-detail__empty-participants'>
+            还没有人参团，你可以是第一个
+          </Text>
         ) : (
           <View>
             {groupBuy.participants.map((participant) => (
-              <View key={`${participant.id}-${participant.joinedAt}`} className='kdy-gb-detail__participant'>
+              <View
+                key={`${participant.id}-${participant.joinedAt}`}
+                className='kdy-gb-detail__participant'
+              >
                 <Text className='kdy-gb-detail__participant-name'>
                   {participant.anonymous ? '匿名同学' : participant.displayName}
                 </Text>
-                <Text className='kdy-gb-detail__participant-qty'>× {participant.quantity}</Text>
+                <Text className='kdy-gb-detail__participant-qty'>
+                  × {participant.quantity}
+                </Text>
               </View>
             ))}
           </View>

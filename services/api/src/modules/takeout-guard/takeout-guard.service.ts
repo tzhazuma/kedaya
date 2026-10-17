@@ -6,7 +6,7 @@
  */
 import { Inject, Injectable } from '@nestjs/common';
 import { CrudService } from '../../common/crud/crud.service';
-import { ValidationError } from '../../common/errors/app-error';
+import {} from '../../common/errors/app-error';
 import {
   TAKEOUT_REPORT_REPOSITORY,
   type CreateTakeoutReportInput,

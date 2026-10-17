@@ -12,6 +12,7 @@ import {
   type UserRecord,
   type UserRepository,
 } from './domain/auth.domain';
+import { createInMemoryAuth } from './testing/in-memory-auth';
 
 /**
  * 契约 §5「两级身份模型」的回归测试。
@@ -52,6 +53,11 @@ function makeUsers(): UserRepository {
   return {
     upsertFromIdentity: vi.fn().mockResolvedValue(USER),
     findById: vi.fn().mockResolvedValue(USER),
+    findIdentity: vi.fn().mockResolvedValue(null),
+    linkIdentity: vi.fn(),
+    unlinkIdentity: vi.fn().mockResolvedValue(0),
+    listIdentities: vi.fn().mockResolvedValue([]),
+    updateProfile: vi.fn().mockResolvedValue(USER),
   } as unknown as UserRepository;
 }
 
@@ -84,8 +90,16 @@ function makeCampusSession(options: {
 
 function build(authPort: AuthPort, campusSession = makeCampusSession()) {
   const users = makeUsers();
-  const service = new AuthService(authPort, campusSession, users, makeConfig());
-  return { service, users, campusSession };
+  const sessions = createInMemoryAuth({ now: () => new Date('2026-10-17T00:00:00.000Z') });
+  const service = new AuthService(
+    authPort,
+    campusSession,
+    users,
+    sessions.accounts,
+    makeConfig(),
+    sessions.sessions,
+  );
+  return { service, users, campusSession, sessions };
 }
 
 /** 递归收集对象里的所有 key（用于检查是否泄漏 session 类字段） */
@@ -118,15 +132,19 @@ describe('契约 §5 · 两级身份模型解耦', () => {
   });
 
   describe('login（第一级）', () => {
-    it('返回值恰好是 5 个字段，结构上不给校园 session 留位置', async () => {
+    it('返回值不含任何校园 session 字段（结构上不给凭据留位置）', async () => {
       const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
       const { service } = build(authPort);
 
       const result = await service.login('mock-20260001');
 
+      // 形状被显式锁住：新增字段必须在这里"过一遍"，
+      // 免得哪天有人顺手把 session/cookie 塞进登录响应。
       expect(Object.keys(result).sort()).toEqual([
         'accessToken',
+        'account',
         'campusBound',
+        'expiresAt',
         'expiresIn',
         'refreshToken',
         'user',
@@ -229,6 +247,84 @@ describe('契约 §5 · 两级身份模型解耦', () => {
       await expect(service.requireCampusSession(USER.id, 'CARD')).rejects.toMatchObject({
         code: 'CAMPUS_BINDING_REQUIRED',
       });
+    });
+  });
+
+  describe('令牌会话（轮换 / 撤销）', () => {
+    it('login 会把 refresh token 的指纹写进会话表，而不是明文', async () => {
+      const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
+      const { service, sessions } = build(authPort);
+
+      const result = await service.login('ticket');
+      const stored = sessions.inspect().sessions;
+
+      expect(stored).toHaveLength(1);
+      expect(JSON.stringify(stored)).not.toContain(result.refreshToken);
+    });
+
+    it('refresh 会轮换 refreshToken：旧的那一支立即失效', async () => {
+      const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
+      const { service } = build(authPort);
+
+      const login = await service.login('ticket');
+      const refreshed = await service.refresh(login.refreshToken);
+
+      expect(refreshed.refreshToken).not.toBe(login.refreshToken);
+      expect(refreshed.expiresIn).toBeGreaterThan(0);
+      expect(new Date(refreshed.expiresAt).getTime()).toBeGreaterThan(Date.now());
+
+      await expect(service.refresh(login.refreshToken)).rejects.toThrow(/登录状态已失效/);
+    });
+
+    it('被撤销过的令牌再次使用 → 全部会话下线（按令牌泄漏处理）', async () => {
+      const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
+      const { service, sessions } = build(authPort);
+
+      const login = await service.login('ticket');
+      await service.refresh(login.refreshToken);
+
+      // 用已轮换掉的旧令牌重放
+      await expect(service.refresh(login.refreshToken)).rejects.toThrow();
+
+      expect(sessions.inspect().sessions.every((s) => s.revokedAt !== null)).toBe(true);
+    });
+
+    it('伪造的 refreshToken（签名不对）→ UNAUTHENTICATED', async () => {
+      const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
+      const { service } = build(authPort);
+
+      await expect(service.refresh('a.b.c')).rejects.toThrow(/签名校验失败|格式不正确/);
+    });
+
+    it('access token 不能当 refreshToken 用', async () => {
+      const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
+      const { service } = build(authPort);
+
+      const login = await service.login('ticket');
+      await expect(service.refresh(login.accessToken)).rejects.toThrow(/请使用 refreshToken/);
+    });
+
+    it('logout 撤销指定会话；不带 token 时撤销该用户全部会话', async () => {
+      const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
+      const { service } = build(authPort);
+
+      const first = await service.login('ticket');
+      const second = await service.login('ticket');
+
+      expect(await service.logout(USER.id, first.refreshToken)).toEqual({ revoked: 1 });
+      expect(await service.logout(USER.id)).toEqual({ revoked: 1 });
+
+      await expect(service.refresh(second.refreshToken)).rejects.toThrow(/登录状态已失效/);
+    });
+
+    it('revokeAllSessions 用于改密后强制下线', async () => {
+      const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
+      const { service } = build(authPort);
+
+      await service.login('ticket');
+      await service.login('ticket');
+
+      expect(await service.revokeAllSessions(USER.id)).toBe(2);
     });
   });
 });

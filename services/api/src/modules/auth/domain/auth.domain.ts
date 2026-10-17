@@ -7,7 +7,15 @@ import { InternalError } from '../../../common/errors/app-error';
  *   "AuthPort 只认第一级。它**不知道**任何校园系统的 cookie/session/tgc。"
  * ================================================================== */
 
-export type CampusIdentityProvider = 'SHTU_CAS' | 'SHTU_EGATE';
+/**
+ * 第一级的**身份来源**。
+ *
+ * 注意它们都只是"你是谁"，与"你能访问哪些校园系统"（第二级）无关：
+ *   · SHTU_CAS / SHTU_EGATE —— 上科大统一身份认证
+ *   · WECHAT_MINIPROGRAM    —— 微信小程序登录（同一身份层，另一条入口）
+ *   · LOCAL_EMAIL           —— 自建邮箱账号（凭据存 UserCredential，不落本表）
+ */
+export type CampusIdentityProvider = 'SHTU_CAS' | 'SHTU_EGATE' | 'WECHAT_MINIPROGRAM';
 
 /** 纯身份：回答"你是谁"。**不允许**出现任何凭据字段。 */
 export interface CampusIdentity {
@@ -95,10 +103,37 @@ export interface UserRecord {
   createdAt: Date;
 }
 
+/** 身份映射的只读视图（列表用；**不含**任何凭据） */
+export interface IdentityRecord {
+  provider: CampusIdentityProvider;
+  externalId: string;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+}
+
+export interface ProfilePatch {
+  displayName?: string;
+  /** 传 `null` 表示清空头像 */
+  avatarUrl?: string | null;
+  department?: string | null;
+}
+
 export interface UserRepository {
   /** 首次登录建档；已存在则刷新身份映射并返回既有账户 */
   upsertFromIdentity(identity: CampusIdentity): Promise<UserRecord>;
   findById(id: string): Promise<UserRecord | null>;
+  /** 按上游标识查身份映射（用于"这个微信号已经属于别的账号"的冲突判定） */
+  findIdentity(
+    provider: CampusIdentityProvider,
+    externalId: string,
+  ): Promise<{ userId: string; identity: IdentityRecord } | null>;
+  /** 把一个新的身份映射挂到既有账号上（账号关联 / 绑定） */
+  linkIdentity(userId: string, identity: CampusIdentity): Promise<IdentityRecord>;
+  /** 解绑某个身份来源；返回解除的映射数量 */
+  unlinkIdentity(userId: string, provider: CampusIdentityProvider): Promise<number>;
+  listIdentities(userId: string): Promise<IdentityRecord[]>;
+  /** 更新展示资料（昵称 / 头像 / 院系） */
+  updateProfile(userId: string, patch: ProfilePatch): Promise<UserRecord>;
 }
 
 export const USER_REPOSITORY = Symbol('KEDAYA_USER_REPOSITORY');

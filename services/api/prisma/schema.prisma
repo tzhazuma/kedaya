@@ -34,6 +34,8 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  /// 自建账号凭据（邮箱 + 密码）。仅密码登录方式存在时为 null（例如纯 CAS 账号）
+  credential     UserCredential?
   identities     AuthIdentity[]
   campusBindings CampusBinding[]
   consents       Consent[]
@@ -44,8 +46,93 @@ model User {
   notifications  Notification[]
   portrait       AiPortraitProfile?
   appointments   WellbeingAppointment[]
+  refreshSessions RefreshSession[]
+  /// 用户在各模块里发布的内容（所有权判定的唯一依据）
+  fleaItems      FleaItem[]
+  errandTasks    ErrandTask[]
+  errandRuns     ErrandTask[] @relation("ErrandRunner")
+  buddyGroups    BuddyGroup[]
+  buddyMembers   BuddyMember[]
+  lostFoundItems LostFoundItem[]
+  forumPosts     ForumPost[]
+  forumReplies   ForumReply[]
 
   @@index([createdAt])
+}
+
+/// 自建账号凭据：邮箱 + 密码（**与 CAS 身份层物理分离**）。
+///
+/// 访问域：identity
+/// 硬规则：
+///   1. 只存 `scrypt` 派生的哈希（含随机盐与成本参数），绝不落明文或可逆密文；
+///   2. 连续失败次数与锁定时间写在本表，锁定判定由服务层执行；
+///   3. 本表**不**参与 `AuthPort`（第一级 CAS 端口）—— 它是第二条独立的登录方式，
+///      两条路径最终都收敛到同一个 KedaYa `User`。
+model UserCredential {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  /// 规范化小写邮箱；唯一索引用于「邮箱即账号」
+  email             String    @unique
+  /// scrypt 哈希，格式 scrypt$N$r$p$saltB64$hashB64
+  passwordHash      String
+  /// active | locked | disabled
+  status            String    @default("active")
+  failedAttempts    Int       @default(0)
+  lockedUntil       DateTime?
+  passwordChangedAt DateTime  @default(now())
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([status])
+}
+
+/// 一次性验证码（注册 / 找回密码 / 更换密码）。
+///
+/// 访问域：identity
+/// 硬规则：
+///   1. 只存哈希，验证码明文仅出现在发信内容里；
+///   2. 有 TTL、最大尝试次数与冷却时间，全部在服务层强制；
+///   3. 消费后写 `consumedAt`，不物理删除，便于审计与防重放。
+model VerificationCode {
+  id         String    @id @default(cuid())
+  /// 目标（规范化小写邮箱）
+  target     String
+  /// register | reset-password | change-password
+  purpose    String
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int       @default(0)
+  ip         String?
+  createdAt  DateTime  @default(now())
+
+  @@index([target, purpose, createdAt])
+  @@index([expiresAt])
+}
+
+/// 刷新令牌会话：让 refreshToken **可撤销、可轮换**（登出即失效）。
+///
+/// 访问域：identity
+/// 只存 `sha256(token)`，不存令牌本身；轮换时旧行立即 `revokedAt`。
+model RefreshSession {
+  id           String    @id @default(cuid())
+  userId       String
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  userAgent    String?
+  ip           String?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
 }
 
 /// 第一级 · 身份层。上科大统一身份认证（CAS / Egate OAuth）的映射结果。
@@ -237,32 +324,65 @@ model FleaItem {
   condition   String   @default("good")
   campusSpot  String?
   status      String   @default("on-sale")
+  /// 被预定/售出后置位，便于"我的发布"展示
+  reservedById String?
+  soldAt      DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  seller User @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
   @@index([status, category])
   @@index([priceFen])
+  @@index([sellerId, status])
 }
 
 /// 宿舍矛盾 · dorm-harmony（**高敏感**）
 ///
 /// 访问域：dorm-harmony
 /// 契约 §9：匿名调解，禁止进入通用画像；ai-portrait 不得读取本表。
+///
+/// 匿名与「可追踪」并存的做法（重要）：
+///   本表**没有**指向 `User` 的外键（防止实名关联），
+///   用户在提交时会拿到一次性的 `trackCode` 明文，
+///   服务端只存 `trackCodeHash`。后续查询/追加留言都必须出示该 code，
+///   因此"能追踪自己的案子"与"服务端不知道案子属于谁"可以同时成立。
 model DormHarmonyCase {
-  id         String   @id @default(cuid())
+  id            String   @id @default(cuid())
   /// 匿名 handle —— 与实名 User 无外键，刻意解耦
-  anonHandle String
-  building   String
-  topic      String
-  detail     String?
-  status     String   @default("submitted")
+  anonHandle    String
+  /// 追踪码的哈希（明文只在提交响应里出现一次）
+  trackCodeHash String?
+  building      String
+  topic         String
+  detail        String?
+  status        String   @default("submitted")
   /// 调解员（宿管/辅导员），未介入时为 null
-  mediatorId String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  mediatorId    String?
+  /// 期望的解决方式：talk | mediation | rule | other
+  expectation   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  messages DormHarmonyMessage[]
 
   @@index([status, building])
   @@index([anonHandle])
+}
+
+/// 宿舍矛盾调解留言（匿名线索）。高敏感：只按 caseId 关联。
+model DormHarmonyMessage {
+  id         String   @id @default(cuid())
+  caseId     String
+  /// student | mediator
+  fromRole   String   @default("student")
+  anonHandle String?
+  body       String
+  createdAt  DateTime @default(now())
+
+  case DormHarmonyCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, createdAt])
 }
 
 /// 跑腿 · errand（低敏感）
@@ -279,11 +399,20 @@ model ErrandTask {
   toPlace     String
   deadline    DateTime
   status      String   @default("open")
+  /// 接单时间 / 送达时间，用于超时判定与「我的跑腿」排序
+  acceptedAt  DateTime?
+  deliveredAt DateTime?
+  settledAt   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  requester User  @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+  runner    User? @relation("ErrandRunner", fields: [runnerId], references: [id], onDelete: SetNull)
+
   @@index([status, deadline])
   @@index([rewardFen])
+  @@index([requesterId, status])
+  @@index([runnerId, status])
 }
 
 /// 找搭子 · buddy（低敏感）
@@ -292,6 +421,7 @@ model BuddyGroup {
   ownerId    String
   activity   String
   title      String
+  description String?
   campusSpot String
   startsAt   DateTime
   capacity   Int
@@ -299,8 +429,27 @@ model BuddyGroup {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  owner   User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members BuddyMember[]
+
   @@index([status, startsAt])
   @@index([activity])
+}
+
+/// 搭子成员（组队关系）。与 BuddyGroup 分离，便于精确控制容量与退出。
+model BuddyMember {
+  id       String   @id @default(cuid())
+  groupId  String
+  userId   String
+  /// owner | member
+  role     String   @default("member")
+  joinedAt DateTime @default(now())
+
+  group BuddyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
 }
 
 /// 失物招领 · lost-found（低敏感）
@@ -315,11 +464,16 @@ model LostFoundItem {
   happenedAt  DateTime
   contactHint String?
   status      String   @default("open")
+  /// 认领/归还后置位（closed | claimed）
+  resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
   @@index([kind, status])
   @@index([happenedAt])
+  @@index([reporterId, status])
 }
 
 /// 食堂营养 · canteen（低敏感）
@@ -349,13 +503,19 @@ model ForumPost {
   title      String
   body       String
   status     String   @default("published")
+  /// 置顶/加精等治理位（0 = 普通）
+  pinnedRank Int      @default(0)
+  replyCount Int      @default(0)
+  lastReplyAt DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  author  User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
   replies ForumReply[]
 
   @@index([board, status, createdAt])
   @@index([anonHandle])
+  @@index([authorId])
 }
 
 /// 论坛回复
@@ -365,9 +525,11 @@ model ForumReply {
   authorId   String?
   anonHandle String?
   body       String
+  status     String   @default("published")
   createdAt  DateTime @default(now())
 
-  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post   ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   @@index([postId, createdAt])
 }

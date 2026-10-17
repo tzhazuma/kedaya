@@ -1,11 +1,13 @@
-import { Construction, Lock, ShieldCheck } from 'lucide-react';
+import { Construction, Lock, ShieldCheck, Smartphone } from 'lucide-react';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { deliveryStageLabel } from '@/domain/models/delivery';
 import { findPortalModule } from '@/domain/models/module';
 import { PORTAL_MODULES } from '@/domain/models/modules';
 import { KdyAlert } from '@/presentation/components/KdyAlert';
-import { KdyBadge } from '@/presentation/components/KdyBadge';
+import { KdyBadge, type KdyBadgeTone } from '@/presentation/components/KdyBadge';
 import { KdyButton } from '@/presentation/components/KdyButton';
 import { KdyCard } from '@/presentation/components/KdyCard';
 import { PageHeader } from '@/presentation/components/PageHeader';
@@ -15,7 +17,14 @@ interface ModulePageProps {
   params: Promise<{ moduleId: string }>;
 }
 
-/** 让所有 19 个模块都有可达页面（而非 404），并如实标注"尚未实现"。 */
+/**
+ * 模块说明页。
+ *
+ * 19 个模块都要可达（而非 404），并且**如实**说明交付范围：
+ *   · `web`      —— 理论上会直接跳真实页面（`href`），这里只做兜底；
+ *   · `miniapp`  —— 已在小程序上线，页面给出能力清单与使用方式；
+ *   · `api-only` —— 只有后端接口，明确写"端上页面待做"，不伪造可用状态。
+ */
 export function generateStaticParams() {
   return PORTAL_MODULES.map((mod) => ({ moduleId: mod.id }));
 }
@@ -31,12 +40,20 @@ export async function generateMetadata({ params }: ModulePageProps): Promise<Met
   };
 }
 
-export default async function ModulePlaceholderPage({ params }: ModulePageProps) {
+const DELIVERY_TONE: Record<string, KdyBadgeTone> = {
+  web: 'brand',
+  miniapp: 'info',
+  'api-only': 'neutral',
+};
+
+export default async function ModulePage({ params }: ModulePageProps) {
   const { moduleId } = await params;
   const mod = findPortalModule(PORTAL_MODULES, moduleId);
   if (!mod) notFound();
 
   const Icon = moduleIcon(mod.icon);
+  const { delivery } = mod;
+  const delivered = delivery.stage !== 'api-only';
 
   return (
     <div className="flex flex-col gap-6">
@@ -44,7 +61,14 @@ export default async function ModulePlaceholderPage({ params }: ModulePageProps)
         eyebrow={mod.category === 'core' ? '基础能力' : '校园服务'}
         title={mod.nameZh}
         description={mod.summary}
-        actions={<KdyBadge tone="neutral">{mod.sensitivityLabel}</KdyBadge>}
+        actions={
+          <>
+            <KdyBadge tone={DELIVERY_TONE[delivery.stage] ?? 'neutral'}>
+              {deliveryStageLabel(delivery.stage)}
+            </KdyBadge>
+            <KdyBadge tone="neutral">{mod.sensitivityLabel}</KdyBadge>
+          </>
+        }
       />
 
       <KdyCard className="flex flex-col gap-4">
@@ -63,13 +87,35 @@ export default async function ModulePlaceholderPage({ params }: ModulePageProps)
           </div>
         </div>
 
-        <KdyAlert tone="info" title="该模块尚未实现">
-          <p className="flex items-center gap-1">
-            <Construction className="size-3.5" aria-hidden />
-            本页面由冻结契约的模块注册表自动生成，用于保证 {PORTAL_MODULES.length}{' '}
-            个模块入口都可达。业务实现按模块逐个交付。
-          </p>
-        </KdyAlert>
+        {delivery.stage === 'miniapp' ? (
+          <KdyAlert tone="info" title="已在微信小程序端上线，Web 端页面待做">
+            <p className="flex items-start gap-1">
+              <Smartphone className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+              <span>
+                这个模块在小程序里已经是真实可用的（后端同一套 API）。
+                想在浏览器里用，请先在小程序端体验；Web 端页面会随后续切片补齐。
+              </span>
+            </p>
+          </KdyAlert>
+        ) : null}
+
+        {delivery.stage === 'api-only' ? (
+          <KdyAlert tone="info" title="端上页面尚未实现">
+            <p className="flex items-center gap-1">
+              <Construction className="size-3.5" aria-hidden />
+              本页面由冻结契约的模块注册表自动生成，用于保证 {PORTAL_MODULES.length}{' '}
+              个模块入口都可达。该模块目前只有后端脚手架接口，Web 与小程序的页面都还没做，
+              不会展示任何伪造数据。
+            </p>
+          </KdyAlert>
+        ) : null}
+
+        {delivery.note ? (
+          <div className="flex flex-col gap-2 rounded-md bg-surface-alt p-3">
+            <span className="text-xs font-semibold text-muted">端上能力</span>
+            <p className="text-sm text-body">{delivery.note}</p>
+          </div>
+        ) : null}
 
         <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
           <div>
@@ -79,6 +125,13 @@ export default async function ModulePlaceholderPage({ params }: ModulePageProps)
           <div>
             <dt className="text-xs text-muted">API 路由前缀</dt>
             <dd className="font-mono text-body">/api/v1/{mod.route}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">交付状态</dt>
+            <dd className="text-body">
+              {deliveryStageLabel(delivery.stage)}
+              {delivered ? '（可用）' : '（仅接口）'}
+            </dd>
           </div>
           <div>
             <dt className="text-xs text-muted">敏感级</dt>
@@ -99,7 +152,7 @@ export default async function ModulePlaceholderPage({ params }: ModulePageProps)
           <p className="flex items-start gap-1">
             <Lock className="mt-0.5 size-3.5 shrink-0" aria-hidden />
             该模块属于高敏感域：首次进入必须显式同意，且可随时撤回；数据采集最小化，
-            不与通用画像互通。同意门 UI 尚未实现（见 README「未实现」）。
+            不与通用画像互通。小程序端已实现同意门（同意记录落本地 + 服务端）。
           </p>
         </KdyAlert>
       ) : null}
@@ -115,11 +168,24 @@ export default async function ModulePlaceholderPage({ params }: ModulePageProps)
       ) : null}
 
       <div className="flex flex-wrap gap-3">
-        <KdyButton href="/groupbuy">查看已实现的拼单切片</KdyButton>
+        {delivery.webHref ? (
+          <KdyButton href={delivery.webHref}>在 Web 端使用</KdyButton>
+        ) : null}
+        <KdyButton href="/groupbuy" variant={delivery.webHref ? 'secondary' : 'primary'}>
+          查看已实现的拼单切片
+        </KdyButton>
         <KdyButton href="/" variant="secondary">
           返回首页
         </KdyButton>
       </div>
+
+      <p className="text-xs text-muted">
+        想看小程序端的模块清单？首页宫格里的交付角标是按端标注的 —— 标着
+        <Link href="/" className="mx-1 text-brand-strong hover:underline">
+          「小程序已上线」
+        </Link>
+        的模块都能在微信小程序里真的用起来。
+      </p>
     </div>
   );
 }

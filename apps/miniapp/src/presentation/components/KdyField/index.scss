@@ -1,0 +1,46 @@
+/**
+ * KdyField 样式 —— 全部取自设计令牌（`$kdy-*`），无手写色值。
+ */
+
+.kdy-field {
+  padding: $kdy-space-2 0;
+}
+
+.kdy-field__inner {
+  background: transparent;
+
+  // Taroify 的 Field 默认带下边框与灰底，这里改成"卡片内输入行"的极简样式
+  .taroify-cell {
+    background: transparent;
+  }
+
+  .taroify-field__label {
+    width: 160px;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-sm;
+  }
+
+  .taroify-field__control {
+    min-height: 64px;
+  }
+}
+
+.kdy-field__input {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-md;
+}
+
+.kdy-field--error {
+  .taroify-field__label,
+  .kdy-field__input {
+    color: $kdy-color-danger;
+  }
+}
+
+.kdy-field__hint {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}

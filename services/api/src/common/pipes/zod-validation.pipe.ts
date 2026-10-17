@@ -1,4 +1,4 @@
-import { Body, Injectable, Query, type PipeTransform } from '@nestjs/common';
+import { Body, Injectable, Optional, Query, type PipeTransform } from '@nestjs/common';
 import type { ZodType } from 'zod';
 import { ValidationError } from '../errors/app-error';
 import { zodIssuesToDetails } from '../errors/zod-details';
@@ -24,12 +24,17 @@ export function parseWith<T>(schema: ZodType<T>, value: unknown, what = '请求�
  * 全局注册的 Zod 管道（`APP_PIPE`）。不带 schema 时是透传形态 ——
  * 它保证整条管道只有一个校验入口；真正的逐路由校验由
  * `@ZodBody` / `@ZodQuery` 复用同一个 `parseWith`。
+ *
+ * 构造函数参数必须是 `@Optional()`：`app.module.ts` 用
+ * `{ provide: APP_PIPE, useClass: ZodValidationPipe }` 注册它，
+ * 此时容器需要能**无参**实例化 —— 没有 `@Optional()` 会得到
+ * "Nest can't resolve dependencies of the ZodValidationPipe" 而起不来。
  */
 @Injectable()
 export class ZodValidationPipe<T = unknown> implements PipeTransform<unknown, T> {
   constructor(
-    private readonly schema?: ZodType<T>,
-    private readonly what = '请求参数',
+    @Optional() private readonly schema?: ZodType<T>,
+    @Optional() private readonly what = '请求参数',
   ) {}
 
   transform(value: unknown): T {

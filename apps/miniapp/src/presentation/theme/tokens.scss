@@ -16,4 +16,7 @@
 //
 // 一旦上游生成器修好，把下面这行换回包内产物即可：
 //   @import '../../../../../packages/design-tokens/dist/tokens.scss';
+// Taroify 默认基于 750px（$hd: 2），本项目统一 375px，组件也必须按 1 倍生成。
+@use '@taroify/core/styles/variables' with ($hd: 1);
+@use 'sass:color';
 @import './tokens.generated.scss';

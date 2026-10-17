@@ -4,8 +4,11 @@ import {
   CampusBindingRequiredError,
   InternalError,
   UnauthenticatedError,
+  ValidationError,
 } from '../../common/errors/app-error';
 import { signJwt, verifyJwt } from '../../common/auth/jwt';
+import { describeAccount } from './domain/account-summary';
+import type { AccountSession } from './domain/account-session';
 import {
   AUTH_PORT,
   CAMPUS_SESSION_PORT,
@@ -16,20 +19,31 @@ import {
   type CampusBindingRecord,
   type CampusPlatform,
   type CampusSessionPort,
+  type ProfilePatch,
   type UserRecord,
   type UserRepository,
 } from './domain/auth.domain';
+import { sanitizeDisplayName, validateAvatarDataUrl } from './domain/display-name';
+import {
+  LOCAL_ACCOUNT_REPOSITORY,
+  REFRESH_SESSION_REPOSITORY,
+  type AuthRequestContext,
+  type LocalAccountRepository,
+  type RefreshSessionRepository,
+} from './domain/local-account.domain';
+import { sha256Hex } from './domain/verification-code';
 
-export interface LoginResult {
-  user: UserRecord;
+/** 登录结果（与邮箱密码 / 微信路径同构，客户端只写一套解析） */
+export type LoginResult = Omit<AccountSession, 'isNewUser'>;
+
+/** 令牌三元组 + 绝对过期时间（客户端可直接落本地） */
+export interface IssuedTokens {
   accessToken: string;
   refreshToken: string;
+  /** ISO-8601 UTC */
+  expiresAt: string;
+  /** access token 有效期（秒），与 `expiresAt` 冗余，便于客户端做倒计时 */
   expiresIn: number;
-  /**
-   * 恒定 false：**登录 ≠ 已绑定校园系统**（契约 §5 硬规则 3）。
-   * 客户端据此决定是否展示"绑定校园系统"引导，而不是靠猜。
-   */
-  campusBound: false;
 }
 
 export interface MeResult {
@@ -41,6 +55,9 @@ export interface MeResult {
 
 export interface RefreshResult {
   accessToken: string;
+  refreshToken: string;
+  /** ISO-8601 UTC */
+  expiresAt: string;
   expiresIn: number;
 }
 
@@ -58,7 +75,9 @@ export class AuthService {
     @Inject(AUTH_PORT) private readonly authPort: AuthPort,
     @Inject(CAMPUS_SESSION_PORT) private readonly campusSession: CampusSessionPort,
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    @Inject(LOCAL_ACCOUNT_REPOSITORY) private readonly localAccounts: LocalAccountRepository,
     @Inject(ConfigService) private readonly config: ConfigService,
+    @Inject(REFRESH_SESSION_REPOSITORY) private readonly refreshSessions: RefreshSessionRepository,
   ) {}
 
   private jwtSecret(): string {
@@ -81,34 +100,157 @@ export class AuthService {
    * 返回值里**没有任何**校园系统 session/cookie —— 这是契约 §5 的核心约束，
    * 由 `assertIdentityOnly()` 在运行时兜底断言。
    */
-  async login(ticket: string): Promise<LoginResult> {
+  async login(ticket: string, context: AuthRequestContext = {}): Promise<LoginResult> {
     const identity = assertIdentityOnly(
       await this.authPort.authenticateTicket(ticket),
       'AuthPort',
     );
 
     const user = await this.users.upsertFromIdentity(identity);
-    const expiresIn = this.accessTtl();
+    const issued = await this.issueTokens(user.id, context);
+    const account = await describeAccount(
+      { accounts: this.localAccounts, users: this.users },
+      user.id,
+    );
 
     return {
       user,
-      accessToken: signJwt(user.id, 'access', this.jwtSecret(), expiresIn),
-      refreshToken: signJwt(user.id, 'refresh', this.jwtSecret(), this.refreshTtl()),
-      expiresIn,
+      accessToken: issued.accessToken,
+      refreshToken: issued.refreshToken,
+      expiresIn: issued.expiresIn,
+      expiresAt: issued.expiresAt,
       campusBound: false,
+      account,
     };
   }
 
-  async refresh(refreshToken: string): Promise<RefreshResult> {
+  /**
+   * 更新自己的展示资料（昵称 / 头像 / 院系）。
+   *
+   * 为什么放在身份层：昵称与头像是**第一级身份**的展示属性，
+   * 与"我的"模块的隐私开关（ProfileSetting）不是一回事。
+   * 邮箱、学号这类由上游/凭据决定的字段**不允许**在这里改。
+   */
+  async updateProfile(userId: string, patch: ProfilePatch): Promise<UserRecord> {
+    const normalized: ProfilePatch = {};
+
+    if (patch.displayName !== undefined) {
+      const displayName = sanitizeDisplayName(patch.displayName);
+      if (displayName === null) {
+        throw new ValidationError('昵称不能为空', { field: 'displayName' });
+      }
+      normalized.displayName = displayName;
+    }
+
+    if (patch.avatarUrl !== undefined && patch.avatarUrl !== null) {
+      const avatar = validateAvatarDataUrl(patch.avatarUrl);
+      if (!avatar.ok || avatar.dataUrl === undefined) {
+        throw new ValidationError(avatar.reason ?? '头像不合法', { field: 'avatarUrl' });
+      }
+      normalized.avatarUrl = avatar.dataUrl;
+    } else if (patch.avatarUrl === null) {
+      normalized.avatarUrl = null;
+    }
+
+    if (patch.department !== undefined) {
+      const department = sanitizeDisplayName(patch.department);
+      normalized.department = department;
+    }
+
+    if (Object.keys(normalized).length === 0) {
+      throw new ValidationError('没有需要更新的字段');
+    }
+
+    return this.users.updateProfile(userId, normalized);
+  }
+
+  /**
+   * 签发一对令牌，并把 refresh token 的**指纹**写进会话表。
+   *
+   * 这是「登出立刻生效」与「刷新令牌轮换」的前提：
+   * access token 仍然无状态；refresh token 必须能在库里被撤销。
+   */
+  async issueTokens(userId: string, context: AuthRequestContext = {}): Promise<IssuedTokens> {
+    const expiresIn = this.accessTtl();
+    const refreshTtl = this.refreshTtl();
+    const refreshToken = signJwt(userId, 'refresh', this.jwtSecret(), refreshTtl);
+
+    await this.refreshSessions.create({
+      userId,
+      tokenHash: sha256Hex(refreshToken),
+      expiresAt: new Date(Date.now() + refreshTtl * 1000),
+      ...(context.userAgent === undefined ? {} : { userAgent: context.userAgent }),
+      ...(context.ip === undefined ? {} : { ip: context.ip }),
+    });
+
+    return {
+      accessToken: signJwt(userId, 'access', this.jwtSecret(), expiresIn),
+      refreshToken,
+      expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
+      expiresIn,
+    };
+  }
+
+  /**
+   * 用 refreshToken 换取新的令牌对（**轮换**）。
+   *
+   * 三重校验，缺一不可：
+   *   1. JWT 签名 + `typ === 'refresh'`；
+   *   2. 会话表里存在该指纹且未被撤销；
+   *   3. 会话未过期。
+   * 通过后旧会话立即撤销并记录 `replacedById`，被盗令牌最多只能再用一次。
+   */
+  async refresh(refreshToken: string, context: AuthRequestContext = {}): Promise<RefreshResult> {
     const payload = verifyJwt(refreshToken, this.jwtSecret());
     if (payload.typ !== 'refresh') {
       throw new UnauthenticatedError('请使用 refreshToken 换取新的访问令牌');
     }
-    const expiresIn = this.accessTtl();
+
+    const tokenHash = sha256Hex(refreshToken);
+    const session = await this.refreshSessions.findByHash(tokenHash);
+    if (!session) {
+      throw new UnauthenticatedError('登录状态已失效，请重新登录');
+    }
+    if (session.revokedAt !== null) {
+      // 已轮换过的令牌被再次使用：按"令牌可能已泄漏"处理，撤销该用户全部会话
+      await this.refreshSessions.revokeAllForUser(session.userId);
+      throw new UnauthenticatedError('登录状态已失效，请重新登录');
+    }
+    if (session.expiresAt.getTime() <= Date.now()) {
+      throw new UnauthenticatedError('登录状态已过期，请重新登录');
+    }
+
+    const issued = await this.issueTokens(session.userId, context);
+    await this.refreshSessions.revoke(session.id);
     return {
-      accessToken: signJwt(payload.sub, 'access', this.jwtSecret(), expiresIn),
-      expiresIn,
+      accessToken: issued.accessToken,
+      refreshToken: issued.refreshToken,
+      expiresAt: issued.expiresAt,
+      expiresIn: issued.expiresIn,
     };
+  }
+
+  /**
+   * 登出。
+   *
+   * 给了 refreshToken 就只撤销这一台设备；没给（或已被撤销）则撤销该用户全部会话 ——
+   * 这是"在别处登出 / 怀疑账号被盗"时的正确语义。
+   */
+  async logout(userId: string, refreshToken?: string): Promise<{ revoked: number }> {
+    if (refreshToken !== undefined && refreshToken.length > 0) {
+      const session = await this.refreshSessions.findByHash(sha256Hex(refreshToken));
+      if (session && session.userId === userId && session.revokedAt === null) {
+        await this.refreshSessions.revoke(session.id);
+        return { revoked: 1 };
+      }
+    }
+    const revoked = await this.refreshSessions.revokeAllForUser(userId);
+    return { revoked };
+  }
+
+  /** 改密码 / 重置密码后强制所有设备重新登录 */
+  async revokeAllSessions(userId: string): Promise<number> {
+    return this.refreshSessions.revokeAllForUser(userId);
   }
 
   async me(userId: string): Promise<MeResult> {

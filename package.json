@@ -2,18 +2,21 @@
   "name": "kedaya",
   "version": "0.1.0",
   "private": true,
-  "description": "可达鸭 · 上海科技大学统一校园服务平台（微信小程序 / Flutter 原生 / Web / NestJS）",
-  "packageManager": "npm@11.20.0",
+  "description": "可达鸭 · 上海科技大学统一校园服务平台（微信小程序 / Web / NestJS）",
+  "packageManager": "npm@10.9.9",
   "workspaces": [
     "packages/*",
     "services/*",
     "apps/*"
   ],
   "engines": {
-    "node": ">=22"
+    "node": "^22.12.0 || >=24.0.0"
   },
   "scripts": {
-    "tokens": "node packages/design-tokens/scripts/generate.mjs && node scripts/sync-flutter-tokens.mjs",
+    "dev:web": "npm run dev -w @kedaya/web -- --port 3001",
+    "dev:weapp": "npm run dev:weapp -w @kedaya/miniapp",
+    "build:weapp": "npm run build:weapp -w @kedaya/miniapp",
+    "tokens": "node packages/design-tokens/scripts/generate.mjs",
     "typecheck": "turbo run typecheck",
     "build": "turbo run build",
     "test": "turbo run test",

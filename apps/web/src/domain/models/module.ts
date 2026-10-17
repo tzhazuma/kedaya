@@ -9,6 +9,8 @@
  */
 import type { KedayaModule, ModuleCategory, Sensitivity } from '@kedaya/contracts';
 
+import { deliveryOf, isDelivered, type ModuleDelivery } from './delivery';
+
 /** 宫格强调色 —— 只允许语义名，具体色值由 design-tokens 决定 */
 export type ModuleAccent = 'brand' | 'info' | 'success' | 'warning' | 'danger' | 'neutral';
 
@@ -40,6 +42,8 @@ export interface PortalModule extends KedayaModule {
   href: string;
   icon: ModuleIconKey;
   accent: ModuleAccent;
+  /** 交付状态：Web 已上线 / 小程序已上线 / 仅接口（见 `delivery.ts`） */
+  delivery: ModuleDelivery;
   /** 是否展示"需二次同意"角标（契约 §9） */
   consentBadge: boolean;
   /** 是否属于审计范围（high / critical） */
@@ -66,13 +70,15 @@ export function isAuditedSensitivity(sensitivity: Sensitivity): boolean {
   return sensitivity === 'high' || sensitivity === 'critical';
 }
 
-/** 已实现真实页面的模块；其余走 `/m/<id>` 建设中占位页 */
-const IMPLEMENTED_ROUTES: Readonly<Record<string, string>> = {
-  groupbuy: '/groupbuy',
-};
-
+/**
+ * 宫格点击目标。
+ *
+ * 只有 `delivery.stage === 'web'` 的模块有真实页面（`webHref`）；
+ * 其余统一去 `/m/<id>` 的模块说明页（那里会如实说明交付范围）。
+ * 交付状态的唯一来源是 `delivery.ts`，这里不再维护第二份映射表。
+ */
 export function moduleHref(id: string): string {
-  return IMPLEMENTED_ROUTES[id] ?? `/m/${id}`;
+  return deliveryOf(id).webHref ?? `/m/${id}`;
 }
 
 export interface ModuleDecoration {
@@ -90,6 +96,7 @@ export function decorateModule(module: KedayaModule, decoration?: ModuleDecorati
     href: moduleHref(module.id),
     icon: decoration?.icon ?? 'circle-help',
     accent: decoration?.accent ?? 'neutral',
+    delivery: deliveryOf(module.id),
     consentBadge: module.requiresConsent,
     audited: isAuditedSensitivity(module.sensitivity),
     sensitivityLabel: sensitivityLabel(module.sensitivity),
@@ -171,6 +178,21 @@ export function validateModuleRegistry(
     }
     if (isAuditedSensitivity(m.sensitivity) !== m.audited) {
       problems.push(`模块 ${m.id} 的审计标记与敏感级不一致`);
+    }
+    // 交付状态必须自洽：标了 Web 已上线就得有真实路由，没上线就只能去说明页。
+    if (m.delivery.stage === 'web') {
+      if (m.delivery.webHref === undefined) {
+        problems.push(`模块 ${m.id} 标记为 Web 已上线，却没有 webHref`);
+      } else if (m.href !== m.delivery.webHref) {
+        problems.push(
+          `模块 ${m.id} 的 href(${m.href}) 与交付状态声明的 webHref(${m.delivery.webHref}) 不一致`,
+        );
+      }
+    } else if (m.href !== `/m/${m.id}`) {
+      problems.push(`模块 ${m.id} 未在 Web 上线，href 应为 /m/${m.id}，实际 ${m.href}`);
+    }
+    if (isDelivered(m.delivery) && !m.delivery.note) {
+      problems.push(`模块 ${m.id} 已交付，但缺少交付说明（delivery.note）`);
     }
   }
 

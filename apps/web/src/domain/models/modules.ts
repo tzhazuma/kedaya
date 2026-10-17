@@ -16,6 +16,7 @@ import {
   type ModuleDecoration,
   type PortalModule,
 } from './module';
+import { isDelivered } from './delivery';
 
 /**
  * UI 装饰表：key = 冻结模块 id。
@@ -59,6 +60,26 @@ export const CONSENT_GATED_MODULES: readonly PortalModule[] = consentGatedModule
 
 /** 需要审计的模块（high + critical；注意 auth / campus-card 在列但**无同意门**） */
 export const AUDITED_MODULES: readonly PortalModule[] = auditedModules(PORTAL_MODULES);
+
+/** Web 门户已有真实页面的模块（`delivery.stage === 'web'`） */
+export const WEB_READY_MODULES: readonly PortalModule[] = PORTAL_MODULES.filter(
+  (m) => m.delivery.stage === 'web',
+);
+
+/** 只在微信小程序端上线的模块 */
+export const MINIAPP_MODULES: readonly PortalModule[] = PORTAL_MODULES.filter(
+  (m) => m.delivery.stage === 'miniapp',
+);
+
+/** 端上已经能用的模块（Web + 小程序） */
+export const DELIVERED_MODULES: readonly PortalModule[] = PORTAL_MODULES.filter((m) =>
+  isDelivered(m.delivery),
+);
+
+/** 只有后端接口、端上页面还没做的模块 */
+export const API_ONLY_MODULES: readonly PortalModule[] = PORTAL_MODULES.filter(
+  (m) => !isDelivered(m.delivery),
+);
 
 /** 模块总数 —— 与契约 §4 对齐（5 + 14 = 19） */
 export const PORTAL_MODULE_COUNT = PORTAL_MODULES.length;

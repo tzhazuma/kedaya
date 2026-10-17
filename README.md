@@ -10,7 +10,7 @@
 
 [![CI](https://github.com/tzhazuma/kedaya/actions/workflows/ci.yml/badge.svg)](https://github.com/tzhazuma/kedaya/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Platform](https://img.shields.io/badge/platform-微信小程序%20%7C%20iOS%20%7C%20Android%20%7C%20鸿蒙%20%7C%20Web-brightgreen)
+![Platform](https://img.shields.io/badge/platform-微信小程序%20%7C%20Web-brightgreen)
 
 </div>
 
@@ -29,10 +29,9 @@
 
 | 端 | 技术 | 状态 |
 | --- | --- | --- |
-| **微信小程序**（主端） | Taro 4 + React 19 | 🚧 框架就绪 |
-| **原生移动端** iOS / Android / 鸿蒙 | Flutter 3 | 🚧 框架就绪 |
-| **Web 门户 + 管理后台** | Next.js 16 | 🚧 框架就绪 |
-| **后端** | NestJS 12 + Prisma + PostgreSQL | 🚧 框架就绪 |
+| **微信小程序**（主端） | Taro 4 + React 19 | ✅ 账号体系（注册/登录/改密/找回）+ 六个业务模块 |
+| **Web 门户 + 管理后台** | Next.js 16 | 🚧 门户 + 拼单切片 + 管理台；其余模块待补 |
+| **后端** | NestJS 12 + Prisma + PostgreSQL | ✅ 账号体系 + 六个业务模块（真库真 HTTP） |
 
 **名字的由来**：可达鸭 —— "在上科大什么需求都可以**到达**的鸭"。
 
@@ -42,15 +41,14 @@
 
 ```mermaid
 graph TB
-    subgraph clients["客户端 · 三端共享契约"]
+    subgraph clients["客户端 · 小程序与 Web 共享契约"]
         MP["微信小程序<br/>Taro 4 + React 19<br/><i>主端</i>"]
-        MB["原生移动端<br/>Flutter 3<br/>iOS / Android / 鸿蒙"]
         WEB["Web 门户 + 管理后台<br/>Next.js 16"]
     end
 
     subgraph shared["共享契约层 · packages/"]
         CON["@kedaya/contracts<br/>信封 · 错误码 · 19 模块注册表 · OpenAPI"]
-        TOK["@kedaya/design-tokens<br/>tokens.json → CSS / SCSS / TS / Dart"]
+        TOK["@kedaya/design-tokens<br/>tokens.json → CSS / SCSS / TS / JS"]
         SHR["@kedaya/shared<br/>Result · 金额(整数分) · 时间 · 校验"]
     end
 
@@ -70,13 +68,10 @@ graph TB
     end
 
     MP --> CON
-    MB --> CON
     WEB --> CON
     MP --> TOK
-    MB --> TOK
     WEB --> TOK
     MP --> SHR
-    MB --> SHR
     WEB --> SHR
 
     CON --> API
@@ -104,7 +99,7 @@ presentation ──> application ──> domain <── data
 ```
 
 `domain` 层**零框架依赖**：它只定义模型和 `ports`（接口），由 `data` 层实现适配器。
-这样领域逻辑可以被三端共享、被单元测试覆盖、被 mock 替换。
+这样领域逻辑可以被小程序与 Web 共享、被单元测试覆盖、被 mock 替换。
 
 ### 2. 两级身份模型
 
@@ -134,14 +129,13 @@ presentation ──> application ──> domain <── data
 kedaya/
 ├── apps/
 │   ├── miniapp/          Taro 4 → 微信小程序（主端）+ H5
-│   ├── mobile/           Flutter → iOS / Android / 鸿蒙
 │   └── web/              Next.js 16 → Web 门户 + 管理后台
 ├── services/
 │   └── api/              NestJS 12 + Prisma → /api/v1
 ├── packages/
 │   ├── contracts/        响应信封 · 错误码 · 19 模块注册表 · OpenAPI 3.1
-│   ├── design-tokens/    tokens.json → CSS / SCSS / TS / Dart（单一真相）
-│   └── shared/           Result · 金额 · 时间 · 校验（纯 TS，三端共用）
+│   ├── design-tokens/    tokens.json → CSS / SCSS / TS / JS（单一真相）
+│   └── shared/           Result · 金额 · 时间 · 校验（纯 TS，客户端与 API 共用）
 ├── docs/
 │   ├── architecture/     总览 · 领域模型 · API 契约 · 客户端架构 · 安全 · 路线图
 │   └── adr/              架构决策记录
@@ -152,6 +146,21 @@ kedaya/
 
 ## 快速开始
 
+本地开发使用 Node **22.23.3**（Prisma 要求 22.12+，Node 21 不受支持）。
+首次安装及日常启动可使用：
+
+```bash
+nvm install
+nvm use
+./scripts/with-npm-lock.sh npm ci
+
+./scripts/dev.sh weapp   # 编译微信小程序，然后在微信开发者工具导入仓库根目录
+./scripts/dev.sh web     # Next.js 门户，http://localhost:3001
+```
+
+两个客户端默认均使用 Mock，可独立运行，无需启动数据库或后端。
+`dev.sh` 会自动选择 `.nvmrc` 指定的 Node，避免旧终端仍使用 Node 21。
+
 ```bash
 git clone https://github.com/tzhazuma/kedaya.git
 cd kedaya
@@ -161,15 +170,22 @@ npm install
 ### Web 门户
 
 ```bash
-npm run dev -w @kedaya/web          # http://localhost:3000
+npm run dev:web                    # http://localhost:3001
 ```
 
 ### 微信小程序（主端）
 
 ```bash
-npm run dev:weapp -w @kedaya/miniapp
-# 然后用「微信开发者工具」打开 apps/miniapp/ 目录，指向 dist/
+nvm use                            # 使用 .nvmrc 中的 Node 22（已安装依赖后）
+npm run dev:weapp                   # 保持终端运行，等待编译成功
+# 微信开发者工具 → 小程序 → 导入项目 → 选择本仓库根目录
+# 根目录 project.config.json 已指向 apps/miniapp/dist/
 ```
+
+首次运行需要先在仓库根目录执行 `npm ci`。只生成一次预览产物可执行
+`npm run build:weapp`。也可以导入 `apps/miniapp/`，其配置指向同一份产物。
+必须以「小程序」类型导入，不能选「其他项目」。如果之前误建为其他项目，
+请回到项目列表的「小程序」分类重新导入。默认使用本地 Mock，无需启动 API 或 Docker。
 
 ### 后端
 
@@ -178,13 +194,6 @@ docker compose -f services/api/docker-compose.yml up -d   # Postgres + Redis
 cp services/api/.env.example services/api/.env
 npm run prisma:migrate -w @kedaya/api
 npm run dev -w @kedaya/api          # http://localhost:3000/api/v1
-```
-
-### 原生移动端
-
-```bash
-# 需先安装 Flutter SDK >= 3.6.2
-cd apps/mobile && flutter pub get && flutter run
 ```
 
 ### 全仓校验
@@ -222,7 +231,7 @@ npm run tokens         # 重新生成设计令牌
 **基础模块**：身份 · 课表 · 校园卡 · 我的 · 通知
 
 > 模块清单的**唯一真相**是 [`packages/contracts/src/modules.ts`](packages/contracts/src/modules.ts)。
-> 三端的导航、宫格、权限判定全部由它驱动，**不允许在各端硬编码**。
+> 小程序与 Web 的导航、宫格、权限判定全部由它驱动，**不允许在各端硬编码**。
 
 ---
 
@@ -243,7 +252,7 @@ npm run tokens         # 重新生成设计令牌
 ## 设计令牌：单一真相
 
 所有颜色、间距、圆角、字号定义在 [`packages/design-tokens/tokens.json`](packages/design-tokens/tokens.json)，
-由生成器派生出四端产物 —— **任何一端都不允许手写色值**：
+由生成器派生出 TS、CSS、SCSS 和 JS 产物 —— **任何一端都不允许手写色值**：
 
 ```bash
 npm run tokens
@@ -253,7 +262,7 @@ npm run tokens
 tokens.json ──┬──> src/tokens.generated.ts    Web / 小程序 / 后端
               ├──> dist/tokens.css            CSS 变量 --kdy-*
               ├──> dist/tokens.scss           SCSS 变量 $kdy-*
-              └──> dart/kedaya_tokens.dart    Flutter KedaYaTokens
+              └──> dist/tokens.js             运行时 ESM
 ```
 
 ---
@@ -261,11 +270,11 @@ tokens.json ──┬──> src/tokens.generated.ts    Web / 小程序 / 后端
 ## 与 TechPie 的关系
 
 [TechPie](https://github.com/HeZeBang/TechPie-flutter)（GeekPie 出品，MIT）是本项目的**重要参考实现**。
-可达鸭延续了它的核心架构思想 —— 六边形分层、feature-first、Riverpod 装配、
+可达鸭延续了它的核心架构思想 —— 六边形分层、feature-first、依赖装配、
 启动不阻塞、两级身份模型 —— 并在此基础上：
 
-- 把契约层抽成**跨语言共享包**（TechPie 是单一 Flutter 应用，无可共享契约层）
-- 把端从"Flutter 一个应用"扩展为**小程序 + 原生 + Web 三端**
+- 把契约层抽成**共享 TypeScript 包**，供客户端与 API 使用
+- 提供**微信小程序 + Web 门户与管理后台**
 - 把模块从"课表/作业"扩展为**19 个校园服务模块**
 - 强化隐私合规（二次同意 + 审计 + 匿名身份解耦）
 
@@ -277,10 +286,10 @@ TechPie 整合模块（`techpie`）用于与 TechPie / GeekPie 体系互联互�
 
 | 阶段 | 范围 | 状态 |
 | --- | --- | --- |
-| **M0 · 框架** | 契约层、设计令牌、四端骨架、CI | 🚧 进行中 |
-| **M1 · 基础模块** | 身份、课表、校园卡、我的、通知 | ⏳ |
-| **M2 · 低敏感业务** | 拼单、跳蚤、跑腿、找搭子、失物招领、食堂营养、常见问题、猫鸟黑天鹅 | ⏳ |
-| **M3 · 高敏感业务** | 论坛、偷外卖、宿舍矛盾、心理治疗 | ⏳ |
+| **M0 · 框架** | 契约层、设计令牌、小程序 / Web / API 骨架、CI | ✅ |
+| **M1 · 基础模块** | 身份、课表、校园卡、我的、通知 | 🚧 自建账号体系（邮箱 + 密码）完成；课表 / 校园卡 / 通知待做 |
+| **M2 · 低敏感业务** | 拼单、跳蚤、跑腿、找搭子、失物招领、食堂营养、常见问题、猫鸟黑天鹅 | 🚧 拼单（Web + 小程序）、跳蚤、跑腿、找搭子、失物招领完成；其余待做 |
+| **M3 · 高敏感业务** | 论坛、偷外卖、宿舍矛盾、心理治疗 | 🚧 论坛、宿舍矛盾（匿名 + 同意门）完成；其余待做 |
 | **M4 · AI 与整合** | AI 校园画像、TechPie 整合 | ⏳ |
 
 ---
@@ -304,6 +313,9 @@ TechPie 整合模块（`techpie`）用于与 TechPie / GeekPie 体系互联互�
 1. [`docs/architecture/00-FROZEN-CONTRACT.md`](docs/architecture/00-FROZEN-CONTRACT.md) —— 冻结契约，所有接口的真相来源
 2. [`docs/architecture/`](docs/architecture/) —— 架构文档
 3. [`docs/adr/`](docs/adr/) —— 架构决策记录
+
+当前交付范围为微信小程序、Web 和 NestJS API。旧冻结契约与 ADR 中涉及原生端的内容
+保留作历史参考；当前客户端结构以 [客户端架构](docs/architecture/04-client-architecture.md) 为准。
 
 **提 PR 前请确保 `npm run typecheck && npm run test` 全绿。**
 

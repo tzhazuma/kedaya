@@ -5,11 +5,15 @@
  */
 export { KdyButton } from './KdyButton'
 export type {
+  ChooseAvatarDetail,
   KdyButtonOpenType,
   KdyButtonProps,
   KdyButtonSize,
   KdyButtonVariant,
 } from './KdyButton'
+
+export { KdyAvatar } from './KdyAvatar'
+export type { KdyAvatarProps } from './KdyAvatar'
 
 export { KdyCard } from './KdyCard'
 export type { KdyCardProps } from './KdyCard'
@@ -19,3 +23,9 @@ export type { KdyEmptyMode, KdyEmptyProps } from './KdyEmpty'
 
 export { KdyTag } from './KdyTag'
 export type { KdyTagProps, KdyTagTone } from './KdyTag'
+
+export { KdyField } from './KdyField'
+export type { KdyFieldProps, KdyFieldType } from './KdyField'
+
+export { KdyChip } from './KdyChip'
+export type { KdyChipProps } from './KdyChip'

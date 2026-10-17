@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, Headers, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { MODULES, modulePath } from '@kedaya/contracts';
 import { z } from 'zod';
@@ -7,6 +7,7 @@ import { CurrentUser } from '../../common/auth/current-user';
 import { ValidationError } from '../../common/errors/app-error';
 import { ZodBody } from '../../common/pipes/zod-validation.pipe';
 import { CAMPUS_PLATFORMS, type CampusPlatform } from './domain/auth.domain';
+import { readAuthContext } from './request-context';
 import { AuthService } from './auth.service';
 
 const loginSchema = z.object({
@@ -31,6 +32,16 @@ const bindSchema = z.object({
     .optional(),
 });
 
+const updateProfileSchema = z
+  .object({
+    /** 昵称：去空白后 1–24 字（服务层用 `sanitizeDisplayName` 再规范一次） */
+    displayName: z.string().min(1).max(64).optional(),
+    /** 头像 data URL（≤64KB）。传 null 表示清空 */
+    avatarUrl: z.string().max(200_000).nullable().optional(),
+    department: z.string().max(64).nullable().optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, { message: '没有需要更新的字段' });
+
 @ApiTags('auth · 身份（两级模型）')
 @Controller(modulePath('auth'))
 export class AuthController {
@@ -38,18 +49,26 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({
-    summary: '第一级登录：上科大统一身份认证 → KedaYa 自有 JWT',
+    summary: '第一级登录（上科大 CAS）：ticket → KedaYa 自有 JWT',
     description:
       '只返回身份与自有令牌。校园系统 session **不在**此响应中（契约 §5 硬规则 1）。',
   })
-  login(@ZodBody(loginSchema) body: z.infer<typeof loginSchema>) {
-    return this.authService.login(body.ticket);
+  login(
+    @ZodBody(loginSchema) body: z.infer<typeof loginSchema>,
+    @Headers() headers: Record<string, string | string[] | undefined>,
+  ) {
+    return this.authService.login(body.ticket, readAuthContext(headers));
   }
 
   @Post('refresh')
-  @ApiOperation({ summary: '用 refreshToken 换取新的 accessToken' })
-  refresh(@ZodBody(refreshSchema) body: z.infer<typeof refreshSchema>) {
-    return this.authService.refresh(body.refreshToken);
+  @ApiOperation({
+    summary: '用 refreshToken 换取新的令牌对（轮换 + 旧令牌立即失效）',
+  })
+  refresh(
+    @ZodBody(refreshSchema) body: z.infer<typeof refreshSchema>,
+    @Headers() headers: Record<string, string | string[] | undefined>,
+  ) {
+    return this.authService.refresh(body.refreshToken, readAuthContext(headers));
   }
 
   @Get('me')
@@ -61,6 +80,19 @@ export class AuthController {
   })
   me(@CurrentUser() userId: string) {
     return this.authService.me(userId);
+  }
+
+  @Patch('me')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: '更新我的展示资料（昵称 / 头像 / 院系）',
+    description:
+      '三个客户端共用一个入口。「更正权」（隐私文档 §7.2）在这里落地：' +
+      '邮箱与学号由凭据/上游决定，不允许在此修改。',
+  })
+  updateMe(@CurrentUser() userId: string, @ZodBody(updateProfileSchema) body: z.infer<typeof updateProfileSchema>) {
+    return this.authService.updateProfile(userId, body);
   }
 
   @Get('campus-bindings')

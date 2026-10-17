@@ -1,6 +1,6 @@
 # @kedaya/design-tokens
 
-可达鸭**设计令牌** —— 三端共享的视觉唯一真相。
+可达鸭**设计令牌** —— 小程序与 Web 共享的视觉唯一真相。
 
 ## 核心规则
 
@@ -18,8 +18,7 @@ tokens.json          ← 只有这个文件需要手改
 tokens.json ──┬──> src/tokens.generated.ts    Web / 小程序 / 后端（TS）
               ├──> dist/tokens.css            CSS 变量 --kdy-*（Next.js）
               ├──> dist/tokens.scss           SCSS 变量 $kdy-*（Taro 小程序）
-              ├──> dist/tokens.js             运行时 ESM
-              └──> dart/kedaya_tokens.dart    Flutter KedaYaTokens
+              └──> dist/tokens.js             运行时 ESM
 ```
 
 ## 重新生成
@@ -33,12 +32,12 @@ npm run generate -w @kedaya/design-tokens   # 或直接跑这个
 
 `--kdy-<group>-<kebab-key>`，camelCase 键转 kebab-case：
 
-| tokens.json | CSS | SCSS | Dart |
-| --- | --- | --- | --- |
-| `color.brandStrong` | `--kdy-color-brand-strong` | `$kdy-color-brand-strong` | `KedaYaTokens.colorBrandStrong` |
-| `space.4` | `--kdy-space-4` | `$kdy-space-4` | `KedaYaTokens.space4` |
-| `radius.lg` | `--kdy-radius-lg` | `$kdy-radius-lg` | `KedaYaTokens.radiusLg` |
-| `fontSize.xxl` | `--kdy-font-size-xxl` | `$kdy-font-size-xxl` | `KedaYaTokens.fontSizeXxl` |
+| tokens.json | CSS | SCSS |
+| --- | --- | --- |
+| `color.brandStrong` | `--kdy-color-brand-strong` | `$kdy-color-brand-strong` |
+| `space.4` | `--kdy-space-4` | `$kdy-space-4` |
+| `radius.lg` | `--kdy-radius-lg` | `$kdy-radius-lg` |
+| `fontSize.xxl` | `--kdy-font-size-xxl` | `$kdy-font-size-xxl` |
 
 ## 各端用法
 
@@ -78,18 +77,6 @@ cssVar('color', 'brand');  // 'var(--kdy-color-brand)'
 px('space', '4');          // '16px'
 ```
 
-### Flutter
-
-```dart
-import 'package:kedaya/../kedaya_tokens.dart';  // 复制 dart/kedaya_tokens.dart 到 lib/
-
-Container(
-  color: KedaYaTokens.colorSurface,
-  padding: const EdgeInsets.all(KedaYaTokens.space4),
-  child: Text('拼单', style: TextStyle(fontSize: KedaYaTokens.fontSizeMd)),
-)
-```
-
 ## 令牌分组
 
 | 组 | 数量 | 说明 |
@@ -117,4 +104,4 @@ Container(
 
 1. 改 `tokens.json`
 2. `npm run tokens`
-3. 提交 `tokens.json` **和**生成产物（四端都要能无构建直接消费）
+3. 提交 `tokens.json` **和**生成产物（小程序与 Web 都要能无构建直接消费）

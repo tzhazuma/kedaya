@@ -25,7 +25,7 @@ const updateSchema = createSchema.partial().extend({
   crisisFlag: z.boolean().optional(),
 });
 
-type AssertAssignable<Target, Actual extends Target> = true;
+type AssertAssignable<Target, _Actual extends Target> = true;
 export type CreateSchemaMatchesDomain = AssertAssignable<
   WellbeingAppointmentDraft,
   z.infer<typeof createSchema>

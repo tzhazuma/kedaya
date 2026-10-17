@@ -68,8 +68,15 @@ apps/web/
 ### 首页宫格为什么"不硬编码"
 
 `src/domain/models/modules.ts` 从 `@kedaya/contracts` 的 `MODULES` 派生 `PORTAL_MODULES`（19 个 = 5 基础 + 14 业务），
-只补 UI 装饰（icon / accent）。首页、`/m/[moduleId]` 占位页、管理后台开关表**三处共用同一份数据**。
-`validateModuleRegistry()`（纯函数）+ 单测会在有人漏装饰/漏模块/重复 id 时立刻失败。
+只补 UI 装饰（icon / accent / **交付状态**）。首页、`/m/[moduleId]` 说明页、管理后台开关表**三处共用同一份数据**。
+`validateModuleRegistry()`（纯函数）+ 单测会在有人漏装饰/漏模块/重复 id/漏登记交付状态时立刻失败。
+
+### 交付状态为什么单独一张表
+
+契约只说"有这 19 个模块"，不说"哪些已经能用"——而门户必须说真话。
+`src/domain/models/delivery.ts` 是**唯一真相**：`web`（有真实页面）/ `miniapp`（小程序已上线）/
+`api-only`（只有接口）。宫格角标、模块说明页、`moduleHref()` 全部由它派生，
+且 `stage: 'web'` 必须带 `webHref`（单测兜底，杜绝"标着可用、点进去是占位页"）。
 
 ---
 
@@ -88,7 +95,7 @@ apps/web/
 | 5+ 复用组件 | `presentation/components/` | `KdyCard` `KdyButton` `KdyBadge` `KdyEmpty` `KdySkeleton` `KdyAlert` `ModuleGrid` `PageHeader` `SiteHeader` `SiteFooter` `UnofficialNotice` |
 | 主题 Provider | `presentation/theme/` | light/dark/system 三态；`useSyncExternalStore` 订阅 `localStorage` + `matchMedia`；写 `<html data-theme>`（system 移除）+ `dark` class + `color-scheme`，暗色配色来自令牌 `colorDark` |
 | 品牌资源 | `public/brand/` | `kedaya-mascot.svg`、`kedaya-cover.svg`（复制，源文件未动）+ `cover.png`（1200×630，`rsvg-convert`） |
-| 测试 | `src/**/*.test.ts` | 6 个文件 / **81 个用例**，全部纯逻辑（node 环境，无需 jsdom） |
+| 测试 | `src/**/*.test.ts` | 7 个文件 / **88 个用例**，全部纯逻辑（node 环境，无需 jsdom） |
 
 ### 测试覆盖
 
@@ -96,6 +103,7 @@ apps/web/
 | --- | --- | --- |
 | `domain/models/groupbuy.test.ts` | 19 | 名额/进度/参团资格/状态机/折扣/整数分金额/排序/领域校验 |
 | `domain/models/modules.test.ts` | 12 | 注册表与契约一一对应、`validateModuleRegistry` 零问题、同意门恰为 3 个、审计范围 = high+critical |
+| `domain/models/delivery.test.ts` | 7 | 交付状态：Web 已上线的必须有真实路由、小程序已上线的清单、未登记走 api-only 兜底、注册表自洽（含"标了 Web 已上线却没页面"的负例） |
 | `domain/models/audit.test.ts` | 14 | 脱敏、审计摘要四要素、过滤/聚合/排序、开关权限、`toggleModule` 不可变 |
 | `data/api/client.test.ts` | 13 | 信封成功/失败、非信封兜底、非 JSON、网络异常、请求头与查询串、trace 兜底、baseUrl 覆盖 |
 | `application/groupbuy/groupbuy.test.ts` | 10 | 视图模型本地化（分转元/相对时间）、用例编排、错误码透传 |
@@ -114,9 +122,14 @@ apps/web/
    因为没有可见的布局/文字闪烁（只是配色切换），暂未引入该脚本。
 3. **业务缓存/离线未实现**：契约 §8 要求"启动时 hydrate 缓存"。当前只 hydrate 了主题偏好，
    拼单列表是纯网络/mock 拉取（首屏为骨架屏，符合"禁止阻塞等待网络"）。
-4. **同意门 UI 未实现**：`/m/[moduleId]` 只**提示**需要二次同意，
+4. **同意门 UI 未实现（仅 Web 端）**：`/m/[moduleId]` 只**提示**需要二次同意，
    没有实现真实的同意记录、撤回、`CONSENT_REQUIRED` 拦截（客户端能识别该错误码但未接流程）。
-5. **其余 17 个模块只有占位页**：仅 `groupbuy` 有真实垂直切片。
+   小程序端已实现真实的同意门（同意记录落 `StorageKeys.consent` + 服务端），Web 端待补。
+5. **Web 端只有拼单是真实切片**：小程序端已上线 9 个模块
+   （账号体系 + 拼单 + 跳蚤 + 跑腿 + 找搭子 + 失物招领 + 论坛 + 宿舍矛盾 + 我的），
+   Web 端页面待做。**模块交付状态的唯一真相是 `domain/models/delivery.ts`**：
+   首页宫格角标、`/m/[moduleId]` 说明页都由它驱动，标着「Web 已上线」就一定有真实路由
+   （`validateModuleRegistry` 会在单测里拦住"标了却没页面"）。其余模块只有后端脚手架接口。
 6. **后台不落库**：模块开关只改内存；审计条目在 mock 里是**追加到内存**，刷新即回到种子数据。
    开关状态没有做乐观更新回滚（失败时只提示 + 重新拉取）。
 7. **`/api/v1/admin/*` 不在契约 §6.1 的路由前缀表内**：审计与模块开关属管理域，
@@ -166,6 +179,9 @@ $ npm run test -w @kedaya/web
  Test Files  6 passed (6)
       Tests  81 passed (81)
 ```
+> 2026-10 更新：新增 `domain/models/delivery.test.ts`（7 用例）后为 **7 文件 / 88 用例**，全部通过
+> （`npm run test -w @kedaya/web`）。门户宫格与 `/m/[moduleId]` 现在按交付状态如实标注
+> （「Web 已上线 / 小程序已上线 / 接口就绪」）。
 
 ```bash
 $ npm run build -w @kedaya/web
@@ -268,6 +284,9 @@ Route (app)
   `domain/ports/<mod>.ts`（端口）→ `data/schemas/<mod>.ts`（zod + 双向类型断言）→
   `data/mock/<mod>.repository.ts` → `data/repositories/<mod>.http.ts` → `application/<mod>/*.ts`（VM 映射）→
   `presentation/components/<mod>/*` → `app/(portal)/<mod>/page.tsx`。
+- **别忘登记交付状态**：Web 端上线后，在 `domain/models/delivery.ts` 里把该模块改成
+  `stage: 'web'` + `webHref`（Web 端页面的真实路由）；只在小程序上线的写 `stage: 'miniapp'`。
+  宫格角标、模块说明页、`moduleHref()` 全部由这张表派生 —— 不要在组件里另写判断。
 - **UI 不做计算**：金额转元、相对时间、状态文案全部在 application 层完成；
   组件只渲染 VM 字段（这样纯逻辑可用 node 环境单测，不需要 jsdom）。
 - **错误只有一个通道**：端口返回 `Result<T, ApiError>`；

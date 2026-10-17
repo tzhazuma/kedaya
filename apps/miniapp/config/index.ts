@@ -1,4 +1,5 @@
 import path from 'node:path'
+import type Chain from 'webpack-chain'
 
 import { defineConfig, type UserConfigExport } from '@tarojs/cli'
 import type { IProjectConfig } from '@tarojs/taro/types/compile'
@@ -16,18 +17,52 @@ import prodConfig from './prod'
  * 该入口文件本身只做一件事：`@import` 设计令牌包的派生产物
  * `packages/design-tokens/dist/tokens.scss`。
  */
-const TOKENS_SCSS = path.resolve(__dirname, '..', 'src', 'presentation', 'theme', 'tokens.scss')
+const TOKENS_SCSS = path.resolve(
+  __dirname,
+  '..',
+  'src',
+  'presentation',
+  'theme',
+  'tokens.scss',
+)
 
 const baseConfig: UserConfigExport<'webpack5'> = {
   projectName: 'kedaya-miniapp',
   date: '2026-10-16',
-  designWidth: 750,
+  designWidth: 375,
   deviceRatio: { 640: 2.34 / 2, 750: 1, 828: 1.81 / 2, 375: 2 },
   sourceRoot: 'src',
   outputRoot: 'dist',
+  alias: {
+    '@taroify/core': path.dirname(
+      require.resolve('@taroify/core/package.json'),
+    ),
+    /**
+     * 接管 Taroify 图标样式入口（见 src/presentation/theme/taroify-icon-style.ts）。
+     *
+     * 原入口的 @font-face 指向 `//at.alicdn.com/...`：真机需要配置合法域名、
+     * 协议相对地址在部分基础库不解析。接管后先加载官方样式（保留字形映射），
+     * 再追加 base64 内联字体覆盖它，图标即可离线渲染。
+     *
+     * 之所以用 alias 而不是在 app.scss 里覆盖：app.scss 编译为 `app-origin.wxss`，
+     * 而 `app.wxss` 是 `@import "./app-origin.wxss"` 在前、`@import "./common.wxss"` 在后，
+     * 官方样式在 common.wxss 里，写在 app.scss 反而会被后加载的官方规则反超。
+     */
+    '@taroify/icons/style/index.js': path.resolve(
+      __dirname,
+      '..',
+      'src',
+      'presentation',
+      'theme',
+      'taroify-icon-style.ts',
+    ),
+  },
   plugins: [],
   defineConstants: {},
-  copy: { patterns: [], options: {} },
+  copy: {
+    patterns: [{ from: 'src/assets/tabs', to: 'dist/assets/tabs' }],
+    options: {},
+  },
   framework: 'react',
   /**
    * webpack5 是唯一编译器（契约 §2）。
@@ -35,6 +70,8 @@ const baseConfig: UserConfigExport<'webpack5'> = {
    * 而本仓库多个工作流并行安装/构建，必须避免对共享目录的隐式写入。
    */
   compiler: { type: 'webpack5', prebundle: { enable: false } },
+  cache: { enable: false },
+  sass: { resource: [TOKENS_SCSS] },
   /**
    * 必须把 workspace 里的 TS 包纳入 babel-loader 的处理范围。
    *
@@ -44,21 +81,30 @@ const baseConfig: UserConfigExport<'webpack5'> = {
    * packages 下各包 src 目录里的真实路径，落在 sourceDir 之外 → 没有 loader →
    * `ModuleParseError: Unexpected token`。
    *
-   * Taro 为此提供了 `compile.include`（见 @tarojs/taro 的 ICompileOption），
+   * Taro 为此提供了 `mini.compile.include` / `h5.compile.include`，
    * 它会 unshift 进 script rule 的 include 列表。
    */
-  compile: {
-    include: [path.resolve(__dirname, '..', '..', '..', 'packages')],
-  },
-  cache: { enable: false },
-  sass: { resource: [TOKENS_SCSS] },
   mini: {
+    // compile 是平台配置，放在顶层会被 runner 忽略。
+    compile: {
+      include: [path.resolve(__dirname, '..', '..', '..', 'packages')],
+    },
     postcss: {
       pxtransform: { enable: true, config: {} },
       cssModules: { enable: false },
     },
   },
   h5: {
+    // workspace 依赖可能位于本端 node_modules；H5 运行时从根依赖引用时也应解析到同一份。
+    webpackChain(chain: Chain) {
+      chain.resolve.alias.set(
+        '@tarojs/plugin-framework-react/dist/runtime',
+        require.resolve('@tarojs/plugin-framework-react/dist/runtime'),
+      )
+    },
+    compile: {
+      include: [path.resolve(__dirname, '..', '..', '..', 'packages')],
+    },
     publicPath: '/',
     staticDirectory: 'static',
     output: {

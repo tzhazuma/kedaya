@@ -1,17 +1,31 @@
 import { Text, View } from '@tarojs/components'
-import Taro, { useDidShow, usePullDownRefresh, useReachBottom } from '@tarojs/taro'
+import Taro, {
+  useDidShow,
+  usePullDownRefresh,
+  useReachBottom,
+} from '@tarojs/taro'
 import { fenToYuan } from '@kedaya/shared'
 import { useState } from 'react'
 
 import { getContainer } from '../../../../app/container'
 import { groupBuyDetailPath } from '../../../../app/routes'
-import { GROUP_BUY_CATEGORIES, GROUP_BUY_CATEGORY_LABELS } from '../../../../domain/models/groupbuy'
-import type { GroupBuyCategoryFilter, GroupBuySummary } from '../../../../domain/models/groupbuy'
+import {
+  GROUP_BUY_CATEGORIES,
+  GROUP_BUY_CATEGORY_LABELS,
+} from '../../../../domain/models/groupbuy'
+import type {
+  GroupBuyCategoryFilter,
+  GroupBuySummary,
+} from '../../../../domain/models/groupbuy'
 import { navigateTo, toast } from '../../../../platform/navigation'
 import { KdyButton, KdyCard, KdyEmpty, KdyTag } from '../../../components'
 import type { KdyTagTone } from '../../../components'
 import { useStore } from '../../../hooks'
 import './index.scss'
+import Progress from '@taroify/core/progress'
+import '@taroify/core/progress/style'
+import { KdyHeading } from '../../../components/KdyHeading'
+import { KdyDemoTools } from '../../../components/KdyDemoTools'
 
 /**
  * 拼单列表页 —— 垂直切片的入口。
@@ -27,7 +41,10 @@ import './index.scss'
  * 不是硬编码假状态）。
  */
 
-const CATEGORY_FILTERS: readonly GroupBuyCategoryFilter[] = ['all', ...GROUP_BUY_CATEGORIES]
+const CATEGORY_FILTERS: readonly GroupBuyCategoryFilter[] = [
+  'all',
+  ...GROUP_BUY_CATEGORIES,
+]
 
 function categoryFilterLabel(filter: GroupBuyCategoryFilter): string {
   return filter === 'all' ? '全部' : GROUP_BUY_CATEGORY_LABELS[filter]
@@ -60,22 +77,26 @@ function GroupBuyCard({ item }: { item: GroupBuySummary }) {
         </View>
 
         <View className='kdy-gb-card__row'>
-          <Text className='kdy-gb-card__price'>¥{fenToYuan(item.priceFen)}</Text>
+          <Text className='kdy-gb-card__price'>
+            ¥{fenToYuan(item.priceFen)}
+          </Text>
           <Text className='kdy-gb-card__progress'>
-            {item.joinedQuantity}/{item.targetCount} 份 · 还差 {item.remainingSlots} 份
+            {item.joinedQuantity}/{item.targetCount} 份 · 还差{' '}
+            {item.remainingSlots} 份
           </Text>
         </View>
 
-        <View className='kdy-gb-card__bar'>
-          <View
-            className='kdy-gb-card__bar-inner'
-            style={`width: ${item.progressPercent}%`}
-          />
-        </View>
+        <Progress
+          className='kdy-gb-card__bar'
+          percent={item.progressPercent}
+          label={false}
+        />
 
         <View className='kdy-gb-card__foot'>
           <Text className='kdy-gb-card__deadline'>{item.deadlineLabel}</Text>
-          <Text className='kdy-gb-card__initiator'>发起人 {item.initiatorName}</Text>
+          <Text className='kdy-gb-card__initiator'>
+            发起人 {item.initiatorName}
+          </Text>
         </View>
       </View>
     </KdyCard>
@@ -99,7 +120,9 @@ export default function GroupBuyListPage() {
   })
 
   usePullDownRefresh(() => {
-    void list.load({ category, cursor: null }).then(() => Taro.stopPullDownRefresh())
+    void list
+      .load({ category, cursor: null })
+      .then(() => Taro.stopPullDownRefresh())
   })
 
   useReachBottom(() => {
@@ -138,31 +161,38 @@ export default function GroupBuyListPage() {
 
   return (
     <View className='kdy-page kdy-gb-list'>
+      <KdyHeading
+        title='一起拼单，好物共享'
+        subtitle='和身边的同学，凑一份刚刚好的快乐。'
+        eyebrow='KEDAYA · 校园拼单'
+      />
       <View className='kdy-gb-list__filters'>
         {CATEGORY_FILTERS.map((filter) => (
-          <View
-            key={filter}
-            className='kdy-gb-list__filter'
-            onClick={() => handleSelectCategory(filter)}
-          >
-            <KdyTag tone={filter === category ? 'brand' : 'neutral'}>
+          <View key={filter} className='kdy-gb-list__filter'>
+            <KdyButton
+              size='sm'
+              variant={filter === category ? 'primary' : 'ghost'}
+              onClick={() => handleSelectCategory(filter)}
+            >
               {categoryFilterLabel(filter)}
-            </KdyTag>
+            </KdyButton>
           </View>
         ))}
       </View>
 
-      <View className='kdy-gb-list__demo'>
-        <KdyButton size='sm' variant='ghost' onClick={handleSimulateError}>
-          模拟错误态
-        </KdyButton>
-        <KdyButton size='sm' variant='ghost' onClick={handleSimulateEmpty}>
-          模拟空态
-        </KdyButton>
-        <KdyButton size='sm' variant='ghost' onClick={handleResetDemo}>
-          重置演示数据
-        </KdyButton>
-      </View>
+      <KdyDemoTools>
+        <View className='kdy-gb-list__demo'>
+          <KdyButton size='sm' variant='ghost' onClick={handleSimulateError}>
+            模拟错误态
+          </KdyButton>
+          <KdyButton size='sm' variant='ghost' onClick={handleSimulateEmpty}>
+            模拟空态
+          </KdyButton>
+          <KdyButton size='sm' variant='ghost' onClick={handleResetDemo}>
+            重置演示数据
+          </KdyButton>
+        </View>
+      </KdyDemoTools>
 
       {state.status === 'loading' && (
         <KdyEmpty mode='loading' description='首次进入，正在拉取拼单列表' />
@@ -189,23 +219,29 @@ export default function GroupBuyListPage() {
       {state.status === 'ready' && (
         <View>
           {state.fromCache && (
-            <Text className='kdy-gb-list__hint'>当前展示本地缓存，正在后台刷新…</Text>
+            <Text className='kdy-gb-list__hint'>
+              当前展示本地缓存，正在后台刷新…
+            </Text>
           )}
 
           {state.items.map((item) => (
             <GroupBuyCard key={item.id} item={item} />
           ))}
 
-          {state.loadingMore && <Text className='kdy-gb-list__more'>正在加载更多…</Text>}
-          {!state.loadingMore && state.nextCursor === null && state.items.length > 0 && (
-            <Text className='kdy-gb-list__more'>没有更多了</Text>
+          {state.loadingMore && (
+            <Text className='kdy-gb-list__more'>正在加载更多…</Text>
           )}
+          {!state.loadingMore &&
+            state.nextCursor === null &&
+            state.items.length > 0 && (
+              <Text className='kdy-gb-list__more'>没有更多了</Text>
+            )}
         </View>
       )}
 
       {state.error !== null && state.status === 'ready' && (
         <Text className='kdy-gb-list__soft-error'>
-          后台刷新失败：{state.error}（已继续展示缓存数据，契约 §8 静默降级）
+          暂时无法刷新：{state.error}，已为你保留上次的内容。
         </Text>
       )}
 
