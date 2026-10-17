@@ -316,6 +316,72 @@ delete from "ClientEvent" where "createdAt" < now() - interval '30 days';
 > `apps/miniapp/src/app.tsx` 里不调用 `container.telemetry.installGlobalHandlers()`
 > （错误边界仍会兜住白屏，只是不再上报）。
 
+### 5.6 内容举报与治理（**上线前必读**）
+
+只要小程序里有用户发布的内容（跳蚤 / 跑腿 / 搭子 / 失物 / 论坛），微信就要求平台
+提供举报入口并处理举报。代码已就位，**运维侧还需要有人定期看队列**。
+
+举报 → 落 `ContentReport` 表 → 打一条 `WARN` 日志（前缀 `[moderation]`）。
+六个可举报对象：`flea-item` / `errand-task` / `buddy-group` / `lost-found-item` /
+`forum-post` / `forum-reply`；七个原因：诈骗 / 违法违规 / 色情低俗 / 侮辱谩骂 /
+泄露隐私 / 垃圾广告 / 其它。
+
+设计上**刻意不自动下架**：自动下架等于给任何人一个「凑三个人就能删掉你的帖子」的按钮，
+而本仓库还没有申诉流程。所以阈值（3 个**不同的人**）只做两件事：
+把该对象的全部举报记录标成 `escalated`，并打一条带 ⚠️ 的 WARN 日志。
+**下架是人工复核后的动作**（见下面的 SQL）。
+
+#### 每天看一次队列（约 1 分钟）
+
+```bash
+# 1) 日志里直接搜关键字（云托管控制台 → 日志检索）
+#    [moderation]            —— 全部举报
+#    [moderation] ⚠️          —— 只看到达阈值、需要优先处理的
+
+# 2) 或者查库：待处理队列（已升级的排前面，再按时间）
+psql "$DATABASE_URL" -c "
+  select created_at, escalated, target_type, left(target_title, 24) as title,
+         reason, left(coalesce(detail, ''), 40) as detail, target_id
+  from \"ContentReport\"
+  order by escalated desc, created_at desc
+  limit 50;"
+
+# 3) 某一个对象被几个人举报过（判断是不是有人在刷）
+psql "$DATABASE_URL" -c "
+  select count(distinct \"reporterId\") as reporters, count(*) as reports
+  from \"ContentReport\" where \"targetType\" = 'flea-item' and \"targetId\" = '<id>';"
+```
+
+#### 决定下架时（人工复核之后）
+
+各模块的列表查询都过滤 `status`，所以把状态改成**不在白名单里的值**即可让内容从列表消失：
+
+```sql
+update "FleaItem"      set status = 'removed' where id = '<id>';  -- 跳蚤
+update "ErrandTask"    set status = 'removed' where id = '<id>';  -- 跑腿
+update "BuddyGroup"    set status = 'removed' where id = '<id>';  -- 搭子
+update "LostFoundItem" set status = 'removed' where id = '<id>';  -- 失物
+update "ForumPost"     set status = 'removed' where id = '<id>';  -- 论坛帖
+update "ForumReply"    set status = 'removed' where id = '<id>';  -- 论坛回复
+```
+
+> ⚠️ **这条 SQL 的真实效果**：内容会立刻从所有列表消失，但**按 id 直接打开的详情页仍可访问**
+> （详情是「按 id 查一条」，没有再校验状态）。彻底阻断请**删除该行**，
+> 或按模块补一条状态校验（已记入第 9 节）。
+> 说完限制，也要说清为什么先这样：**没有举报入口**是提审层面的硬伤，
+> 「下架后直链仍可见」是可以接受的次生问题，而它被写在文档里而不是被藏起来。
+
+#### 保留策略
+
+举报记录是**证据**，不要按月清理（与 `ClientEvent` 相反）。
+建议：已处理且超过 12 个月的记录，先导出归档再删除。**不要在无人复核前批量删**。
+
+#### 为什么没有后台管理界面
+
+本仓库还没有管理员鉴权（`User` 上没有角色位）。一个「任何登录用户都能读到全站举报队列
+（含举报人 ID 与被举报内容）」的接口是明确的信息泄露 —— 所以举报**只写不读**
+（仅 `GET /reports/mine` 供举报人自己查看）。要做管理后台，先做角色与鉴权。
+
 ---
 
 ## 6. 数据库迁移（独立的发布步骤）
@@ -400,6 +466,16 @@ curl -sS -X POST "$BASE/api/v1/telemetry/client-events" \
   -H 'content-type: application/json' \
   -d '{"kind":"error","message":"验收自检","platform":"curl","appVersion":"0.0.0"}'
 # → 然后在日志里搜 [client:error]，在库里查 ClientEvent 表，两处都应该有这条
+
+# 8) 举报链路（需要用两个账号：不能举报自己）
+#    8a. 用 A 的 token 发一条跳蚤，拿到 itemId
+#    8b. 用 B 的 token 举报它 → 期望 201
+curl -sS -X POST "$BASE/api/v1/reports" \
+  -H "authorization: Bearer <B 的 accessToken>" -H 'content-type: application/json' \
+  -d '{"targetType":"flea-item","targetId":"<itemId>","reason":"fraud"}'
+#    8c. 同一个 B 再举报一次 → 期望 409（去重生效）
+#    8d. 日志里应出现 [moderation] 开头的一行
+curl -sS "$BASE/api/v1/reports/mine" -H "authorization: Bearer <B 的 accessToken>"
 ```
 
 | 检查项 | 期望 | 不通过的常见原因 |
@@ -410,6 +486,8 @@ curl -sS -X POST "$BASE/api/v1/telemetry/client-events" \
 | 未登录写接口 | `{"ok":false,"error":{"code":"UNAUTHENTICATED"}}` | 说明鉴权链路正常；返回 500 则要看日志 |
 | 日志里的 traceId | 与响应头 `X-KedaYa-Trace` 一致 | 便于把用户报错精确对到一条请求 |
 | 遥测写入 | 库里有 `ClientEvent` 行 | 迁移没跑（该表由 `20261017072546_telemetry_client_events` 创建） |
+| 举报写入 | 201 且库里有 `ContentReport` 行 | 迁移没跑（该表由 `20261017074007_content_reports` 创建） |
+| 重复举报 | 409 `CONFLICT` | 返回 201 说明唯一索引没建上（迁移没跑全） |
 
 ---
 
@@ -443,6 +521,9 @@ curl -sS -X POST "$BASE/api/v1/telemetry/client-events" \
 | 客户端遥测写入 | **已实现并实测**（匿名单条上报 → 库中 `/redacted/` 生效、超长截断、未知 kind 归类、限流 30/分钟/IP 精确命中） | — |
 | 客户端遥测的**真实崩溃采集** | **未验证**（本机无法在真机上触发一次崩溃并观察上报） | 真机（或开发者工具 vConsole）里制造一次 `undefined is not a function`，确认 5.5 节的两个入口（日志 / `ClientEvent` 表）都能看到 |
 | 错误边界（`KdyErrorBoundary`）的实际兜底效果 | **未验证**（需要真机渲染异常才能看到兜底页） | 临时在某个页面里 `throw new Error()`，确认出现「这个页面没能打开」而不是白屏，且「重试 / 返回首页」都能点 |
+| 举报链路（后端） | **已实现并实测**（自举报 400 / 未登录 401 / 未知类型与原因 400 / 不存在的内容 404 / 重复举报 409 / 三个不同的人举报触发 `escalated` + ⚠️ 日志） | — | 
+| 举报链路（小程序端） | **未验证**（需要真机/开发者工具里点一遍） | 导入 `apps/miniapp/dist`，在跳蚤详情点「举报这条内容」→ 选原因 → 提交 → 确认出现「已收到你的举报」，并且重进详情页显示「你已举报…处理中」 |
+| 下架后的详情直链 | **已知限制**（不阻断） | 见 5.6 的说明：列表会立刻消失，但按 id 直接打开的详情页仍可访问；要彻底阻断需删除该行 |
 
 ---
 
@@ -586,6 +667,8 @@ node -e '
 | 页面白屏（不是 mock/域名问题） | 看兜底页在不在。若连兜底页都没有，说明错误发生在 `KdyErrorBoundary` 之外（App 启动阶段）—— 查 `app.tsx` 的 `bootstrapSync` 与容器装配 |
 | 库里 `ClientEvent` 表长得飞快 | 没配保留策略。按 5.5 节的 SQL 加一条每天执行的清理任务（30 天） |
 | 用户报「点进去就崩」但日志里什么都没有 | 先确认构建用的是最新包（错误边界上报要在新包里）；再把用户的 traceId 拿去日志检索。老版本客户端（还没有上报）不会有任何记录 |
+| 举报提交报 400「不支持举报这类内容」 | 客户端与服务端的 `targetType` 白名单漂移了 —— 两边各有一份常量，改一处必须改另一处（服务端 `modules/reports/domain`） |
+| 举报队列里出现大量同一对象的记录 | 正常现象（这正是升级信号）；若同一人反复刷，靠 `@@unique(reporterId,targetType,targetId)` 已经卡住了，多的那条会 409 |
 
 ---
 

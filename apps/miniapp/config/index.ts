@@ -85,6 +85,26 @@ const baseConfig: UserConfigExport<'webpack5'> = {
    * 它会 unshift 进 script rule 的 include 列表。
    */
   mini: {
+    /**
+     * ⚠️ 这段别名**不能删**（删了 `build:weapp` 会在引入 Taroify `Popup` 时直接编译失败）。
+     *
+     * 原因：Taro 给小程序端设的别名是 `react-dom$` / `react-dom/client$` → `@tarojs/react`
+     * （见 `@tarojs/plugin-framework-react` 的 `setAlias`）。别名值是**裸包名**，
+     * 于是 webpack 会**从引用方所在目录**去解析它。
+     * 在本仓库（npm workspaces）里，Taroify 的 `react-transition-group` 被提升到了
+     * **根 `node_modules`**，而根目录下没有 `@tarojs/react`（它只装在 `apps/miniapp`）。
+     * 结果：`react-transition-group` 里那一句 `react-dom` 解析失败 →
+     * `Module not found: @tarojs/react`，整个构建挂掉。
+     *
+     * 修法是把别名换成**绝对路径**：绝对路径不依赖引用方位置，
+     * 根目录下、workspace 包里的代码都能解析到同一份。
+     * （`react$` 不需要处理 —— Taro 用的是 `resolveSync` 的结果，本来就是绝对路径。）
+     */
+    webpackChain(chain: Chain) {
+      const taroReact = require.resolve('@tarojs/react')
+      chain.resolve.alias.set('react-dom$', taroReact)
+      chain.resolve.alias.set('react-dom/client$', taroReact)
+    },
     // compile 是平台配置，放在顶层会被 runner 忽略。
     compile: {
       include: [path.resolve(__dirname, '..', '..', '..', 'packages')],

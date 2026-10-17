@@ -21,7 +21,7 @@ import {
 } from '../../../../domain/models/errand'
 import type { ErrandAction, UpdateErrandTaskInput } from '../../../../domain/models/errand'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyReportEntry, KdyTag } from '../../../components'
 import type { KdyTagTone } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
@@ -425,6 +425,13 @@ export default function ErrandDetailPage() {
       )}
 
       {detail.error !== null && <Text className='kdy-errand-detail__error'>{detail.error}</Text>}
+
+      <KdyReportEntry
+        targetType='errand-task'
+        targetId={task.id}
+        targetTitle={task.title}
+        selfOwned={viewerId !== null && task.requesterId === viewerId}
+      />
 
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。悬赏由同学间自行结算，平台不参与资金往来。

@@ -200,10 +200,13 @@ flowchart TB
 原创吉祥物空态插画（**ADR 0005：不得使用宝可梦素材**）→ 深色模式（令牌已支持）→ 对比度与无障碍。
 每个页面按清单过一遍，逐页截图对比。
 
-### R6 · 上线准备
+### R6 · 上线准备 —— 🔶 主要项已完成（2026-10-17，见第 8 节）
 
 分包细化与按需注入 → 图片懒加载与 CDN → 错误上报与性能埋点 →
 审核材料（类目、截图、隐私说明、域名白名单）→ 压测与容量评估。
+
+已完成：分包、错误上报、错误边界、内容举报（审核硬性要求）、审核/运维文档。
+未完成：图片懒加载、压测脚本、性能埋点、业务页分享入口。
 
 ---
 
@@ -334,4 +337,87 @@ npm run typecheck -w @kedaya/web && npm run test -w @kedaya/web && npm run lint 
   `media.service.spec.ts` 15 项；小程序端新增 `domain/models/__tests__/media.test.ts`（16 项）、
   `application/media/__tests__/mediaUseCases.test.ts`（13 项）、`mockMediaRepository.test.ts`（4 项）。
 
+---
 
+## 8. 本轮记录（R6 · 2026-10-17）
+
+R6 的目标是「上线准备」。按「**能让人真正使用**」这条线排优先级：
+先补**出问题能看见、用户看不到白屏**（否则上线等于闭眼开车），再补**审核硬性要求**（举报），
+最后才是体积与性能的约束。
+
+### 8.1 客户端可观测性 + 错误边界
+
+- **后端**：`POST /api/v1/telemetry/client-events`（匿名可调用 —— 崩溃最常发生在登录前），
+  新表 `ClientEvent`（迁移 `20261017072546`）。服务端做安全边界：
+  `kind` 白名单、入库前脱敏（Bearer / JWT / accessToken / password / 邮箱 / 手机号）、
+  超长截断（按码点）、按来源 30 条/分钟限流。**只写不读**（没有管理员鉴权就不加裸读接口）。
+- **小程序**：`platform/telemetry.ts`（去重 / 会话上限 / 客户端截断 / 上报绝不抛错）、
+  `KdyErrorBoundary`（任何渲染异常退化为「重试 / 返回首页」，`onAppRoute` 自动复位）、
+  全局钩子接 `onError` / `onUnhandledRejection` / `onPageNotFound`
+  （这三类错误在 React 树之外，不挂钩子就只存在于用户手机上）。
+- **只报服务端故障**：`request.ts` 的 `onServerError` 仅在 `code === 'INTERNAL'` 时回调。
+  断网 / 校验失败 / 401 一律不报 —— 噪声淹没真故障比缺少数据更糟。
+- 遥测**不是**用户可见模块，因此**没有**加进 `@kedaya/contracts` 的 `MODULES`
+  （那 19 个被契约 §4 冻结，加一个会同时打破 `apps/web` 的交付断言与首页宫格）。
+
+### 8.2 分包
+
+- 六个生活模块 + 宿舍矛盾各成一个子包（共 19 页）。
+- **刻意留在主包**：4 个 tabBar 页（微信强制）、`auth/*`（任何入口都可能跳登录，
+  分包会让「点登录先等下载」）、`profile/*`（与 tabBar 的 `profile` 同根，拆开违规）、
+  `agent`（全局悬浮球）、`identity` / `schedule` / `campusCard` / `legal/*`。
+- **预下载只在「发现」页 + Wi-Fi**：首页是最没意图的入口，
+  在 4G 上替用户下七个模块是拿流量换可能用不到的顺滑。
+- `routes.test.ts` 升级为四方一致性：`pages` + `subPackages` 展开后必须恰好等于 `PAGE_PATHS`、
+  tabBar 页必须在主包、子包 root 不嵌套、`preloadRule` 只指向真实子包且必须是 `wifi`。
+
+### 8.3 体积测量更正（重要）
+
+之前几轮用 `du -sh` 报「1.6 / 1.7 MB」是**错的** —— `du` 按 4 KB 块对齐统计，
+几百个小文件会虚高约 45%。改成**按文件字节求和**后：
+
+| | 分包前 | 分包后 | 上限 |
+| --- | --- | --- | --- |
+| 主包 | 1183 KB | **1045 KB** | 2048 KB |
+
+`docs/deploy.md` §10.1 给了一条可复制的自检命令（按字节求和并打印主包大小），上线前跑一次。
+后来加举报弹层（Taroify `Popup` 依赖 `react-transition-group`）多了 32 KB，
+仍在余量内。
+
+顺带修掉一个**会让构建直接失败**的坑：Taro 给小程序端设的 `react-dom$` 别名是裸包名
+`@tarojs/react`，而 npm workspaces 把 Taroify 的 `react-transition-group` 提升到了根
+`node_modules`，根目录下没有 `@tarojs/react` → `Module not found`。
+修法是把别名换成绝对路径（`apps/miniapp/config/index.ts` 的 `mini.webpackChain`）。
+
+### 8.4 内容举报（审核硬性要求）
+
+- 后端 `POST /api/v1/reports` + `GET /api/v1/reports/mine`，新表 `ContentReport`
+  （迁移 `20261017074007`）。六个可举报对象、七个原因（白名单）、
+  `@@unique(reporterId, targetType, targetId)` 去重、不能举报自己。
+- **刻意不自动下架**：阈值（3 个**不同的人**）只做打标 + `[moderation]` WARN 日志，
+  下架是人工复核后的 SQL。自动下架等于给任何人一个「凑三个人就能删帖」的按钮。
+- 小程序：`KdyReportEntry`（一行接入，自己的内容不渲染）、`KdyReportSheet`、
+  `useReportEntry`（会话缓存「我举报过什么」，列表里连看十条只发一次请求）；
+  论坛**每条回复**也能单独举报（回复是最常被用来骂人的地方）。
+- 409 被用例层翻译成「你之前已经举报过了」的成功回执 ——
+  否则用户会怀疑自己第一次到底提交成功没有。
+- 运维流程（每天看一次队列、下架的 SQL 及其**真实局限**）写在 `docs/deploy.md` §5.6。
+
+### 8.5 实测
+
+- 遥测：含 token / 邮箱 / 手机号的上报 → 库里为 `<redacted>`；900 字符 → 落库 500 + `…`；
+  未知 `kind` → `error`；限流精确命中（窗口内先有 2 条，之后 35 连发只过 28 条 = 30）。
+- 举报：自举报 400 / 未登录 401 / 未知类型与原因 400 / 不存在的内容 404 / 重复 409 /
+  三个不同的人举报 → `escalated=true` 且历史记录一并打标 + ⚠️ 日志。
+- 门禁：api 44x 测试 + lint、miniapp 486 测试 + lint、`build:weapp` 成功（主包 1045 KB）。
+
+### 8.6 未完成 / 主动推迟
+
+- **真机验证**：错误边界、崩溃上报、举报弹层、分包跳转体验都**没有在真机上点过**
+  （本机微信开发者工具服务端口关闭）→ `docs/deploy.md` §9 逐条列了自测步骤。
+- **压测与容量评估**：未做（无真实环境）。
+- **性能埋点**：只做了错误上报，页面耗时/接口耗时埋点推迟（当前瓶颈更可能是接口，
+  而不是客户端渲染，先不上昂贵的埋点）。
+- **下架后的详情直链**：已知限制（列表消失、直链仍可打开），见 §5.6 的说明。
+- **分享**：`platform/share.ts` 已有能力封装，但业务详情页还没接
+  `open-type='share'` 按钮（微信要求分享必须由用户点击触发）。

@@ -16,7 +16,17 @@ import {
 } from '../../../../domain/models/forum'
 import type { ForumPost, ForumPostAction } from '../../../../domain/models/forum'
 import { navigateTo, redirectTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyImageGallery, KdyTag } from '../../../components'
+import {
+  KdyButton,
+  KdyCard,
+  KdyChip,
+  KdyEmpty,
+  KdyField,
+  KdyImageGallery,
+  KdyReportEntry,
+  KdyReportSheet,
+  KdyTag,
+} from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -56,6 +66,8 @@ export default function ForumDetailPage() {
   const [replyAnonymous, setReplyAnonymous] = useState(false)
   const [replyError, setReplyError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
+  /** 正在举报的回复（null = 未打开举报弹层）。回复是最常见的举报对象，所以逐条可举报。 */
+  const [reportReply, setReportReply] = useState<{ id: string; body: string } | null>(null)
 
   useDidShow(() => {
     if (id !== null) void forum.detail.load(id)
@@ -282,7 +294,19 @@ export default function ForumDetailPage() {
                 <View className='kdy-forum-detail__reply' key={view.id}>
                   <View className='kdy-forum-detail__reply-head'>
                     <Text className='kdy-forum-detail__reply-author'>{view.authorLabel}</Text>
-                    <Text className='kdy-forum-detail__reply-time'>{view.timeLabel}</Text>
+                    <View className='kdy-forum-detail__reply-meta'>
+                      <Text className='kdy-forum-detail__reply-time'>{view.timeLabel}</Text>
+                      {reply.authorId === viewerId ? null : (
+                        <Text
+                          className='kdy-forum-detail__reply-report'
+                          onClick={() => {
+                            setReportReply({ id: reply.id, body: reply.body })
+                          }}
+                        >
+                          举报
+                        </Text>
+                      )}
+                    </View>
                   </View>
                   <Text className='kdy-forum-detail__reply-body'>{view.body}</Text>
                 </View>
@@ -355,6 +379,23 @@ export default function ForumDetailPage() {
       )}
 
       {detail.error !== null && <Text className='kdy-forum-detail__error'>{detail.error}</Text>}
+
+      <KdyReportSheet
+        open={reportReply !== null}
+        onClose={() => {
+          setReportReply(null)
+        }}
+        targetType='forum-reply'
+        targetId={reportReply?.id ?? ''}
+        targetTitle={reportReply?.body.slice(0, 40)}
+      />
+
+      <KdyReportEntry
+        targetType='forum-post'
+        targetId={post.id}
+        targetTitle={post.title}
+        selfOwned={viewerId !== null && post.authorId === viewerId}
+      />
 
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。匿名不等于免责，请友善交流，请勿发布违法或侵权内容。

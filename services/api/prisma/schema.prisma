@@ -756,3 +756,40 @@ model ClientEvent {
   @@index([kind, createdAt])
   @@index([userId, createdAt])
 }
+
+/// 治理 · 内容举报（UGC 合规底线：必须有举报入口，且必须能被处理）
+///
+/// 设计取舍（详见 modules/reports/domain/reports.domain.ts）：
+///   · **举报不直接下架** —— 自动下架等于给任何人一个"凑三个人就能删帖"的按钮；
+///     这里只做记录 / 去重 / 阈值升级，下架留在人工复核后（docs/deploy.md 给了 SQL）。
+///   · `targetTitle` 存**举报那一刻的快照**：内容之后被作者删掉，
+///     复核时仍然知道当初举报的是什么。
+///   · `targetAuthorId` 是给复核用的（"同一个人被举报几次"是最有用的排序信号），
+///     刻意不建外键：内容作者注销账号不该连带抹掉举报记录。
+///   · `escalated` 是**阈值打标**，不是状态机 —— 值班的人按它排序即可。
+model ContentReport {
+  id             String   @id @default(cuid())
+  /// flea-item | errand-task | buddy-group | lost-found-item | forum-post | forum-reply
+  targetType     String
+  targetId       String
+  targetTitle    String
+  /// 内容作者；匿名帖为 null
+  targetAuthorId String?
+  /// 举报人。**刻意不建外键**：注销账号不该抹掉举报记录
+  /// （那等于给"举报完就注销"留了一条让证据消失的路）。
+  reporterId     String
+  /// illegal | porn | harassment | fraud | privacy | spam | other
+  reason         String
+  detail         String?
+  /// 同一对象被 ≥ REPORT_ESCALATION_THRESHOLD 个不同的人举报后置 true
+  escalated      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  /// 同一个人对同一对象只能举报一次（重复举报会被 409 挡掉）
+  @@unique([reporterId, targetType, targetId])
+  /// 复核队列的主查询：按对象聚合 + 按时间倒序
+  @@index([targetType, targetId])
+  /// 我举报过的（客户端用来显示"已举报"）
+  @@index([reporterId, createdAt])
+  @@index([escalated, createdAt])
+}

@@ -269,6 +269,25 @@ npm run build:weapp -w @kedaya/miniapp
 本地怎么开、真实对象存储怎么配、上线前必做的验收：见 `docs/local-development.md` §4.0
 与 `docs/deploy.md` §5.4。
 
+## 6.3 内容举报（`reports`）
+
+五个详情页底部都有「举报这条内容」（跳蚤 / 跑腿 / 搭子 / 失物 / 论坛帖），
+论坛的**每条回复**也能单独举报 —— 回复恰恰是最常被用来骂人的地方。
+
+- **不是走形式**：没有举报入口的 UGC 小程序提审会被驳回，但更重要的是
+  「被骚扰的用户唯一的出路是卸载」这件事本身就是产品缺陷。
+- **举报入口在合规上没有死角**：抽成 `<KdyReportEntry>` 一行，
+  并且自己的内容不显示入口（服务端会拒绝自举报 —— 让用户点一个必然失败的按钮是死路）。
+- **已举报过就改文案**而不是让用户再点一次：进详情页会查一次「我举报过没有」
+  （走用例层会话缓存，列表里连看十条只发一次请求），提交成功后立刻本地记下。
+- **409 不是错误**：服务端对重复举报返回 409，用例层把它翻译成
+  「你之前已经举报过了」的成功回执 —— 否则用户会怀疑自己第一次到底提交成功没有。
+- **举报不会自动下架**：阈值（3 个不同的人）只用来打标 + 打日志，
+  下架是人工复核后的动作。理由见 `services/api/src/modules/reports/domain/reports.domain.ts`
+  顶部注释（自动下架是可以被武器化的），运维流程见 `docs/deploy.md` §5.6。
+- mock 模式**真的能用**：内存里去重 + 阈值升级，演示时能把
+  「举报 → 已举报 → 已加急」整条走完，不会到上线才发现入口点了没反应。
+
 ---
 
 ## 7. 测试
@@ -295,6 +314,10 @@ npm run test -w @kedaya/miniapp
 | `src/app/__tests__/campusUseCases.test.ts` | 校园三件套 + 可达鸭的高可用：缓存 hydrate、**刷新失败不清空**、`needsBinding` 与网络错误分流、解绑清明文、agent 失败也落带重试的消息 |
 | `src/application/notification/__tests__/notificationUseCases.test.ts` | 站内信：link 白名单（未知页面降级为不可点）、未读数只在真正变化时通知、拉取失败保留旧值、未登录归零、markAllRead 幂等 |
 | `src/application/groupbuy/__tests__/createGroupBuy.test.ts` | 发起拼单：客户端校验与服务端同规则、归属只认会话（未登录不发请求）、空说明传 `null`、成功后作废列表缓存 |
+| `src/application/report/__tests__/reportUseCases.test.ts` | 举报：原因白名单与顺序、`mine` 缓存（失败不缓存）、409 翻译成「已举报过」、换设备时如实报错、非 409 错误透传 |
+| `src/data/repositories/__tests__/mockReportRepository.test.ts` | mock 举报与后端语义一致（去重 409、阈值升级、返回副本） |
+| `src/platform/__tests__/telemetry.test.ts` | 上报器：去重上限、会话总量上限、客户端截断、上报失败不影响主流程、全局钩子幂等 |
+| `src/data/api/__tests__/request.test.ts`（新增用例） | `onServerError` 只在 `INTERNAL` 时回调（断网 / 校验失败 / 401 一律不报，避免噪声淹没真故障） |
 
 ---
 
@@ -325,6 +348,12 @@ npm run test -w @kedaya/miniapp
   详情页宫格（点击进微信原生大图预览）+ 列表缩略图；
   服务端**剥离 EXIF GPS**（契约 A2.5）并拒绝外链地址。
   存储适配器三选一：`disabled`（默认，客户端隐藏入口）/ `local`（开发）/ `s3`（COS·OSS·MinIO·R2）
+- **内容举报**（跳蚤 / 跑腿 / 搭子 / 失物 / 论坛帖 + 论坛的每条回复）：
+  原因白名单 + 可选补充说明 + 已举报状态；服务端去重（重复 409 被翻译成「你之前已经举报过了」）、
+  **不自动下架**（阈值只打标 + 打日志，下架是人工复核动作，见 `docs/deploy.md` §5.6）
+- **高可用基建**：分包（主包 1013 KB / 上限 2048 KB）、页面级错误边界
+  （任何渲染异常退化为可重试的说明页，不白屏）、客户端崩溃上报
+  （只报服务端故障，脱敏 + 截断 + 去重 + 会话限量，代码见 `src/platform/telemetry.ts`）
 - **我的资产**（`profile/assets`）：内联「我发起的 / 我参与的」拼单 + 其余模块入口
 - **法务页**：用户协议 + 隐私政策（`presentation/content/legal.ts` 是唯一真相来源，
   「我的 → 关于」与隐私与数据页共用同一份文案，不重复维护）

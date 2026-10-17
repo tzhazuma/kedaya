@@ -80,6 +80,21 @@
   font-size: $kdy-font-size-xs;
 }
 
+/* 时间 + 举报同一行右侧；举报刻意做得不显眼（低强调、够大能点到） */
+.kdy-forum-detail__reply-meta {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-3;
+  flex-shrink: 0;
+}
+
+.kdy-forum-detail__reply-report {
+  min-height: 44px;
+  padding: $kdy-space-2 0;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
 .kdy-forum-detail__reply-body {
   display: block;
   margin-top: $kdy-space-1;

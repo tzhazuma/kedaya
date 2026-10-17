@@ -14,6 +14,8 @@
  *      （报错会让客户端"静默丢日志"，那就白做了）。
  */
 
+import { truncateByCodePoint } from '../../../common/text/truncate';
+
 /** 客户端事件类型（白名单；新增类型必须同时改服务端与 `apps/miniapp` 的 reporter） */
 export const CLIENT_EVENT_KINDS = [
   /** 未捕获的 JS 异常（`Taro.onError`） */
@@ -82,11 +84,14 @@ export function redactSecrets(text: string): string {
   return output;
 }
 
-/** 按长度截断（按码点截，避免把代理对切成两半产生乱码） */
-export function truncate(text: string, max: number): string {
-  const points = [...text];
-  return points.length <= max ? text : `${points.slice(0, max).join('')}…`;
-}
+/**
+ * 按长度截断（实现见 `common/text/truncate.ts` —— 与 reports 共用同一份，
+ * 避免其中一处哪天被改成会切坏代理对的写法）。
+ *
+ * 这里用 `const` 别名而不是 `export ... from`：后者**不会**创建本地绑定，
+ * 而本文件内部多处要用它。
+ */
+export const truncate = truncateByCodePoint;
 
 /** 归一化后的、可以安全落库的客户端事件 */
 export interface NormalizedClientEvent {

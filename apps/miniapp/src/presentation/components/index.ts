@@ -41,3 +41,9 @@ export type { KdyImageGalleryProps, KdyImageThumbProps } from './KdyImageGallery
 
 export { KdyErrorBoundary, resetErrorBoundary } from './KdyErrorBoundary'
 export type { KdyErrorBoundaryProps } from './KdyErrorBoundary'
+
+export { KdyReportSheet } from './KdyReportSheet'
+export type { KdyReportSheetProps } from './KdyReportSheet'
+
+export { KdyReportEntry } from './KdyReportEntry'
+export type { KdyReportEntryProps } from './KdyReportEntry'

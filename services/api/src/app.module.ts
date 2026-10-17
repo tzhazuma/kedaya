@@ -18,6 +18,7 @@ import { ProfileModule } from './modules/profile/profile.module';
 import { AgentModule } from './modules/agent/agent.module';
 import { NotificationModule } from './modules/notifications/notifications.module';
 import { TelemetryModule } from './modules/telemetry/telemetry.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 // 契约 §4.1 业务模块（14）
 import { GroupbuyModule } from './modules/groupbuy/groupbuy.module';
@@ -60,8 +61,9 @@ import { WildlifeModule } from './modules/wildlife/wildlife.module';
     ComplianceModule,
     MediaModule,
 
-    // 运维旁路（不属于用户可见模块，故意不进 @kedaya/contracts 的 MODULES）
+    // 运维/治理旁路（不属于用户可见模块，故意不进 @kedaya/contracts 的 MODULES）
     TelemetryModule,
+    ReportsModule,
 
     // 19 个业务/基础模块
     AuthModule,

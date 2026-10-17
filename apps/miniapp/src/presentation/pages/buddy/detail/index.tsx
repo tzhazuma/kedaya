@@ -17,7 +17,7 @@ import {
 } from '../../../../domain/models/buddy'
 import type { BuddyAction } from '../../../../domain/models/buddy'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyEmpty, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyEmpty, KdyReportEntry, KdyTag } from '../../../components'
 import type { KdyTagTone } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
@@ -262,6 +262,13 @@ export default function BuddyDetailPage() {
       )}
 
       {detail.error !== null && <Text className='kdy-buddy-detail__error'>{detail.error}</Text>}
+
+      <KdyReportEntry
+        targetType='buddy-group'
+        targetId={group.id}
+        targetTitle={group.title}
+        selfOwned={viewerId !== null && group.ownerId === viewerId}
+      />
 
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。线下见面请优先选择人多明亮的公共场所。

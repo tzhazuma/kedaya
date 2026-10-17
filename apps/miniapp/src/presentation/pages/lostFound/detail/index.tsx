@@ -18,7 +18,7 @@ import {
 } from '../../../../domain/models/lostFound'
 import type { LostFoundAction, LostFoundItem } from '../../../../domain/models/lostFound'
 import { navigateTo, redirectTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyEmpty, KdyField, KdyImageGallery, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyEmpty, KdyField, KdyImageGallery, KdyReportEntry, KdyTag } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -331,6 +331,13 @@ export default function LostFoundDetailPage() {
       )}
 
       {detail.error !== null && <Text className='kdy-lost-detail__error'>{detail.error}</Text>}
+
+      <KdyReportEntry
+        targetType='lost-found-item'
+        targetId={item.id}
+        targetTitle={item.title}
+        selfOwned={viewerId !== null && item.reporterId === viewerId}
+      />
 
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。领取前请与失主核对物品细节，谨防冒领。

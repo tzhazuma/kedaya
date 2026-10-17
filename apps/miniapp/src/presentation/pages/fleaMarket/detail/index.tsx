@@ -20,7 +20,7 @@ import {
 } from '../../../../domain/models/fleaMarket'
 import type { FleaAction } from '../../../../domain/models/fleaMarket'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyImageGallery, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyImageGallery, KdyReportEntry, KdyTag } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -295,6 +295,13 @@ export default function FleaMarketDetailPage() {
           面交前请再确认物品状态；平台不参与资金往来，因此也没有退款流程。
         </Text>
       </KdyCard>
+
+      <KdyReportEntry
+        targetType='flea-item'
+        targetId={item.id}
+        targetTitle={item.title}
+        selfOwned={viewerId !== null && item.sellerId === viewerId}
+      />
 
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。

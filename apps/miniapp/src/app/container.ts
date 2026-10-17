@@ -33,7 +33,9 @@ import type { PrivacyUseCase } from '../application/privacy/privacyUseCases'
 import { createAgentUseCase } from '../application/agent/agentUseCases'
 import type { AgentUseCase } from '../application/agent/agentUseCases'
 import { createMediaUseCases } from '../application/media/mediaUseCases'
+import { createReportUseCases } from '../application/report/reportUseCases'
 import type { MediaUseCases } from '../application/media/mediaUseCases'
+import type { ReportUseCases } from '../application/report/reportUseCases'
 import { createApiClient, createAuthRefresher, createTaroHttpPort, createTracePort } from '../data/api'
 import type { ApiClient } from '../data/api'
 import { createHttpGroupBuyRepository } from '../data/repositories/httpGroupBuyRepository'
@@ -63,7 +65,9 @@ import { createMockCampusRepositories } from '../data/repositories/mockCampusRep
 import { createMockPrivacyRepository } from '../data/repositories/mockPrivacyRepository'
 import { createMockAgentRepository } from '../data/repositories/mockAgentRepository'
 import { createHttpMediaRepository } from '../data/repositories/httpMediaRepository'
+import { createHttpReportRepository } from '../data/repositories/httpReportRepository'
 import { createMockMediaRepository } from '../data/repositories/mockMediaRepository'
+import { createMockReportRepository } from '../data/repositories/mockReportRepository'
 import { createHttpTelemetryRepository } from '../data/repositories/httpTelemetryRepository'
 import { createConsoleTelemetryRepository } from '../data/repositories/consoleTelemetryRepository'
 import { mockNow } from '../data/mock/fixtures'
@@ -81,6 +85,7 @@ import { createTaroStorage } from '../data/storage/taroStorage'
 import type { AuthRepository } from '../domain/ports/authRepository'
 import type { AvatarPickerPort, ImagePickerPort } from '../domain/ports/mediaPort'
 import type { MediaRepository } from '../domain/ports/mediaRepository'
+import type { ReportRepository } from '../domain/ports/reportRepository'
 import type { WechatCodePort } from '../domain/ports/wechatPort'
 import type { CachePort } from '../domain/ports/cachePort'
 import type { ClockPort } from '../domain/ports/clockPort'
@@ -151,6 +156,7 @@ export interface AppContainer {
   /** 相册选图（平台能力：`chooseMedia` → 逐张压缩后的 data URL） */
   imagePicker: ImagePickerPort
   mediaRepository: MediaRepository
+  reportRepository: ReportRepository
   telemetryRepository: TelemetryRepository
   /** 客户端遥测上报器（错误边界 / 全局错误钩子 / 服务端故障都走它） */
   telemetry: TelemetryReporter
@@ -189,6 +195,7 @@ export interface AppContainer {
     privacy: PrivacyUseCase
     agent: AgentUseCase
     media: MediaUseCases
+    report: ReportUseCases
   }
 }
 
@@ -201,6 +208,7 @@ export interface ContainerOverrides {
   avatarPicker?: AvatarPickerPort
   imagePicker?: ImagePickerPort
   mediaRepository?: MediaRepository
+  reportRepository?: ReportRepository
   telemetryRepository?: TelemetryRepository
   telemetry?: TelemetryReporter
   env?: Partial<AppEnv>
@@ -310,6 +318,17 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       : createHttpMediaRepository(apiClient))
 
   const media = createMediaUseCases({ repository: mediaRepository, picker: imagePicker })
+
+  /**
+   * 举报仓储：mock 模式同样**真的能用**（内存里去重 + 阈值升级），
+   * 这样演示时能把「举报 → 已举报 → 已加急」整条走完，
+   * 而不是上线才发现举报入口点了没反应。
+   */
+  const reportRepository: ReportRepository =
+    overrides.reportRepository ??
+    (env.useMock ? createMockReportRepository() : createHttpReportRepository(apiClient))
+
+  const report = createReportUseCases({ repository: reportRepository })
 
   const session = createSessionUseCase(sessionStore, { now: clock.now })
   const auth = createAuthAccountUseCase({
@@ -510,6 +529,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     avatarPicker,
     imagePicker,
     mediaRepository,
+    reportRepository,
     telemetryRepository,
     telemetry,
     groupBuyRepository,
@@ -546,6 +566,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       privacy,
       agent,
       media,
+      report,
     },
   }
 }
