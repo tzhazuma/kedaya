@@ -19,7 +19,8 @@ abstract interface class FaqPort {
   ///
   /// **幂等**：同一个 [voterId] 重复调用只会计数一次。重复调用返回
   /// `FaqHelpfulResult.counted == false`（不是失败）。
-  Future<Result<FaqHelpfulResult>> markHelpful(String articleId, {required String voterId});
+  Future<Result<FaqHelpfulResult>> markHelpful(String articleId,
+      {required String voterId});
 
   /// `GET /api/v1/faq/tickets` —— 「我的工单」。
   Future<Result<Page<FaqTicket>>> listMyTickets({String? cursor, int limit});

@@ -16,7 +16,8 @@ class HomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AuthSession? session = ref.watch(sessionControllerProvider).valueOrNull;
+    final AuthSession? session =
+        ref.watch(sessionControllerProvider).valueOrNull;
     return Scaffold(
       appBar: AppBar(
         title: const Text('可达鸭'),

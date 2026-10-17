@@ -32,15 +32,14 @@ import '../../../domain/ports/webview_port.dart';
 /// 我的绑定列表（`GET /techpie/links`，只含元数据）。
 final techpieLinksControllerProvider =
     AsyncNotifierProvider<TechpieLinksController, List<TechpieLink>>(
-      TechpieLinksController.new,
-    );
+  TechpieLinksController.new,
+);
 
 final class TechpieLinksController extends AsyncNotifier<List<TechpieLink>> {
   @override
   Future<List<TechpieLink>> build() async {
-    final Result<List<TechpieLink>> result = await ref
-        .watch(techpieRepositoryProvider)
-        .listLinks();
+    final Result<List<TechpieLink>> result =
+        await ref.watch(techpieRepositoryProvider).listLinks();
     // 失败抛 ApiException；`CAMPUS_BINDING_REQUIRED` 与 `UNAUTHENTICATED`
     // 是两个不同的错误码，presentation 层据此给出两种不同的引导。
     return result.unwrap;
@@ -105,10 +104,10 @@ final campusCapabilitiesProvider = FutureProvider<List<CampusCapability>>((
   // 交给客户端按绑定情况推导（否则整页会退化成一片"状态未知"）。
   final Map<String, CampusCapabilityState> serverStates =
       <String, CampusCapabilityState>{
-        for (final CampusCapability capability in catalog)
-          if (capability.state != CampusCapabilityState.unknown)
-            capability.id: capability.state,
-      };
+    for (final CampusCapability capability in catalog)
+      if (capability.state != CampusCapabilityState.unknown)
+        capability.id: capability.state,
+  };
 
   return resolveCampusCapabilities(
     catalog: catalog,
@@ -147,8 +146,8 @@ final class CampusCardSnapshot {
 /// 校园卡控制器（第二级 · **独立 OPENID 通道**）。
 final campusCardControllerProvider =
     AsyncNotifierProvider<CampusCardController, CampusCardSnapshot>(
-      CampusCardController.new,
-    );
+  CampusCardController.new,
+);
 
 final class CampusCardController extends AsyncNotifier<CampusCardSnapshot> {
   @override
@@ -161,7 +160,8 @@ final class CampusCardController extends AsyncNotifier<CampusCardSnapshot> {
       return CampusCardSnapshot(link: link);
     }
     final CampusCardAccount account = (await port.account()).unwrap;
-    final Page<CampusCardTransaction> page = (await port.listTransactions()).unwrap;
+    final Page<CampusCardTransaction> page =
+        (await port.listTransactions()).unwrap;
     return CampusCardSnapshot(
       link: link,
       account: account,
@@ -178,7 +178,8 @@ final class CampusCardController extends AsyncNotifier<CampusCardSnapshot> {
 
   /// 用 OPENID 开通（mock 运行时由页面提供一个模拟值；真实运行时的 OPENID
   /// 必须来自 eCard 官方授权流程，见 README 的"未实现"清单）。
-  Future<void> connect({required String openId, String channel = 'wechat'}) async {
+  Future<void> connect(
+      {required String openId, String channel = 'wechat'}) async {
     final CampusCardPort port = ref.read(campusCardRepositoryProvider);
     requireOk(await port.connect(openId: openId, channel: channel));
     await refresh();
@@ -195,7 +196,8 @@ final class CampusCardController extends AsyncNotifier<CampusCardSnapshot> {
     final CampusCardLink link = (await port.linkStatus()).unwrap;
     if (!link.state.isUsable) return CampusCardSnapshot(link: link);
     final CampusCardAccount account = (await port.account()).unwrap;
-    final Page<CampusCardTransaction> page = (await port.listTransactions()).unwrap;
+    final Page<CampusCardTransaction> page =
+        (await port.listTransactions()).unwrap;
     return CampusCardSnapshot(
       link: link,
       account: account,
@@ -205,12 +207,12 @@ final class CampusCardController extends AsyncNotifier<CampusCardSnapshot> {
 }
 
 /// 付款码：`autoDispose` —— **离开页面即丢弃**，因此它不可能被长期缓存。
-final campusPaymentCodeProvider = FutureProvider.autoDispose<CampusPaymentCode>((
+final campusPaymentCodeProvider =
+    FutureProvider.autoDispose<CampusPaymentCode>((
   ref,
 ) async {
-  final Result<CampusPaymentCode> result = await ref
-      .watch(campusCardRepositoryProvider)
-      .paymentCode();
+  final Result<CampusPaymentCode> result =
+      await ref.watch(campusCardRepositoryProvider).paymentCode();
   return result.unwrap;
 });
 
@@ -254,7 +256,8 @@ final class TechpieActions {
     final TechpieLink link = (await port.bind(
       platform,
       credential: credential,
-    )).unwrap;
+    ))
+        .unwrap;
     onLinksMutated();
     return link;
   }
@@ -339,7 +342,8 @@ final class TechpieWebViewLauncher {
       );
     }
 
-    final Result<WebViewHandoff> redeemed = await port.redeemWebViewTicket(ticket);
+    final Result<WebViewHandoff> redeemed =
+        await port.redeemWebViewTicket(ticket);
     final WebViewHandoff? handoff = redeemed.valueOrNull;
     if (handoff == null) {
       return WebViewLaunchOutcome(
@@ -371,7 +375,7 @@ final class TechpieWebViewLauncher {
 ///
 /// 与 `Result.unwrap` 的区别只是**可读性**：这里调用方并不需要那个 `Unit` 值，
 /// 用一个具名函数表达"我只关心它有没有失败"，比 `x.unwrap;` 这样的裸表达式清楚。
-void requireOk(Result<Unit> result) {
+void requireOk<T>(Result<T> result) {
   if (result.isErr) {
     throw ApiException(result.errorOrNull!, traceId: result.traceIdOrNull);
   }

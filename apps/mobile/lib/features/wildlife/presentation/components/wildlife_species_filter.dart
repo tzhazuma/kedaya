@@ -46,12 +46,14 @@ class WildlifeSpeciesFilterBar extends StatelessWidget {
                     Text(item.displayName),
                     if (item.isProtected) ...<Widget>[
                       const SizedBox(width: KedaYaTokens.space1),
-                      Icon(Icons.shield_outlined, size: 13, color: colors.danger),
+                      Icon(Icons.shield_outlined,
+                          size: 13, color: colors.danger),
                     ],
                   ],
                 ),
                 selected: selectedSpeciesId == item.id,
-                onSelected: (bool selected) => onSelected(selected ? item.id : null),
+                onSelected: (bool selected) =>
+                    onSelected(selected ? item.id : null),
               ),
             ),
         ],
@@ -80,53 +82,57 @@ class WildlifeSpeciesPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final KedaYaColors colors = context.kedayaColors;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        for (final WildlifeSpecies item in species)
-          RadioListTile<String>(
-            value: item.id,
-            groupValue: selectedSpeciesId,
-            onChanged: (String? value) {
-              if (value != null) onSelected(value);
-            },
-            contentPadding: EdgeInsets.zero,
-            dense: true,
-            title: Row(
-              children: <Widget>[
-                Text(
-                  item.displayName,
-                  style: TextStyle(
-                    fontSize: KedaYaTokens.fontSizeSm,
-                    color: colors.text,
-                    fontWeight: item.id == suggestionId
-                        ? KedaYaTokens.fontWeightSemibold
-                        : KedaYaTokens.fontWeightRegular,
-                  ),
-                ),
-                if (item.isProtected) ...<Widget>[
-                  const SizedBox(width: KedaYaTokens.space1),
-                  Icon(Icons.shield_outlined, size: 14, color: colors.danger),
-                ],
-                if (item.id == suggestionId) ...<Widget>[
-                  const SizedBox(width: KedaYaTokens.space2),
+    return RadioGroup<String>(
+      groupValue: selectedSpeciesId,
+      onChanged: (String? value) {
+        if (value != null) onSelected(value);
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          for (final WildlifeSpecies item in species)
+            RadioListTile<String>(
+              value: item.id,
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              title: Row(
+                children: <Widget>[
                   Text(
-                    '自动建议',
-                    style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.info),
+                    item.displayName,
+                    style: TextStyle(
+                      fontSize: KedaYaTokens.fontSizeSm,
+                      color: colors.text,
+                      fontWeight: item.id == suggestionId
+                          ? KedaYaTokens.fontWeightSemibold
+                          : KedaYaTokens.fontWeightRegular,
+                    ),
                   ),
+                  if (item.isProtected) ...<Widget>[
+                    const SizedBox(width: KedaYaTokens.space1),
+                    Icon(Icons.shield_outlined, size: 14, color: colors.danger),
+                  ],
+                  if (item.id == suggestionId) ...<Widget>[
+                    const SizedBox(width: KedaYaTokens.space2),
+                    Text(
+                      '自动建议',
+                      style: TextStyle(
+                          fontSize: KedaYaTokens.fontSizeXs,
+                          color: colors.info),
+                    ),
+                  ],
                 ],
-              ],
-            ),
-            subtitle: Text(
-              '${item.scientificName} · ${item.defaultFeedingPolicy.label}'
-              '${item.isNestingSensitive ? ' · 繁殖期敏感' : ''}',
-              style: TextStyle(
-                fontSize: KedaYaTokens.fontSizeXs,
-                color: colors.textMuted,
+              ),
+              subtitle: Text(
+                '${item.scientificName} · ${item.defaultFeedingPolicy.label}'
+                '${item.isNestingSensitive ? ' · 繁殖期敏感' : ''}',
+                style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs,
+                  color: colors.textMuted,
+                ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -34,7 +34,8 @@ class WildlifeSightingsPage extends ConsumerWidget {
     );
     final String? speciesId = ref.watch(wildlifeSpeciesFilterProvider);
     final List<WildlifeSpecies> species =
-        ref.watch(wildlifeSpeciesProvider).valueOrNull ?? const <WildlifeSpecies>[];
+        ref.watch(wildlifeSpeciesProvider).valueOrNull ??
+            const <WildlifeSpecies>[];
     final MockControls? mockControls = ref.watch(mockControlsProvider);
 
     return Scaffold(
@@ -44,7 +45,8 @@ class WildlifeSightingsPage extends ConsumerWidget {
           if (mockControls != null)
             MockStateMenu(
               controls: mockControls,
-              onChanged: () => ref.invalidate(wildlifeSightingListControllerProvider),
+              onChanged: () =>
+                  ref.invalidate(wildlifeSightingListControllerProvider),
             ),
           IconButton(
             tooltip: '刷新',
@@ -72,23 +74,25 @@ class WildlifeSightingsPage extends ConsumerWidget {
                 emptyDescription: '换个物种筛选，或者成为第一个上报的人。',
                 loadingMessage: '正在加载观测记录…',
                 onRetry: controller.refresh,
-                builder: (BuildContext context, WildlifeSightingListState state) =>
-                    ListView.separated(
-                      padding: const EdgeInsets.all(KedaYaTokens.space4),
-                      itemCount: state.sightings.length + 1,
-                      separatorBuilder: (BuildContext context, int index) =>
-                          const SizedBox(height: KedaYaTokens.space3),
-                      itemBuilder: (BuildContext context, int index) {
-                        if (index == state.sightings.length) {
-                          return _ListFooter(state: state, controller: controller);
-                        }
-                        final WildlifeSighting sighting = state.sightings[index];
-                        return WildlifeSightingCard(
-                          sighting: sighting,
-                          onTap: () => context.push('/wildlife/sightings/${sighting.id}'),
-                        );
-                      },
-                    ),
+                builder:
+                    (BuildContext context, WildlifeSightingListState state) =>
+                        ListView.separated(
+                  padding: const EdgeInsets.all(KedaYaTokens.space4),
+                  itemCount: state.sightings.length + 1,
+                  separatorBuilder: (BuildContext context, int index) =>
+                      const SizedBox(height: KedaYaTokens.space3),
+                  itemBuilder: (BuildContext context, int index) {
+                    if (index == state.sightings.length) {
+                      return _ListFooter(state: state, controller: controller);
+                    }
+                    final WildlifeSighting sighting = state.sightings[index];
+                    return WildlifeSightingCard(
+                      sighting: sighting,
+                      onTap: () =>
+                          context.push('/wildlife/sightings/${sighting.id}'),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -115,7 +119,8 @@ class _ListFooter extends StatelessWidget {
             Text(
               '加载更多失败：${state.loadMoreError}',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
             ),
             const SizedBox(height: KedaYaTokens.space2),
             OutlinedButton(
@@ -148,7 +153,8 @@ class _ListFooter extends StatelessWidget {
       child: Center(
         child: Text(
           state.total == null ? '没有更多了' : '共 ${state.total} 条 · 没有更多了',
-          style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+          style: TextStyle(
+              fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
         ),
       ),
     );

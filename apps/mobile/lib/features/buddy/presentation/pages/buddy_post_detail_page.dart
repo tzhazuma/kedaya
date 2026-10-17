@@ -29,7 +29,8 @@ class BuddyPostDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AsyncValue<BuddyPost> post = ref.watch(buddyPostProvider(postId));
-    final String? myUserId = ref.watch(sessionControllerProvider).valueOrNull?.user.userId;
+    final String? myUserId =
+        ref.watch(sessionControllerProvider).valueOrNull?.user.userId;
 
     return Scaffold(
       appBar: AppBar(
@@ -162,15 +163,15 @@ class _CreatorSection extends ConsumerWidget {
               child: OutlinedButton.icon(
                 onPressed: post.status.canBeClosed
                     ? () => unawaited(
-                        _runAction(context, () async {
-                          await actions.closePost(post.id);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('活动已关闭')),
-                            );
-                          }
-                        }),
-                      )
+                          _runAction(context, () async {
+                            await actions.closePost(post.id);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('活动已关闭')),
+                              );
+                            }
+                          }),
+                        )
                     : null,
                 icon: const Icon(Icons.lock_outline, size: 18),
                 label: Text(
@@ -204,7 +205,8 @@ class _CreatorSection extends ConsumerWidget {
           emptyTitle: '还没有人申请',
           emptyDescription: '把链接分享给同学，或者等推荐把人带来。',
           onRetry: () => ref.invalidate(buddyPostApplicationsProvider(post.id)),
-          builder: (BuildContext context, List<BuddyApplication> items) => Column(
+          builder: (BuildContext context, List<BuddyApplication> items) =>
+              Column(
             children: <Widget>[
               for (final BuddyApplication application in items) ...<Widget>[
                 BuddyApplicationTile(
@@ -256,9 +258,11 @@ class _ApplicantSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final KedaYaColors colors = context.kedayaColors;
-    final AsyncValue<List<BuddyApplication>> mine = ref.watch(buddyMyApplicationsProvider);
+    final AsyncValue<List<BuddyApplication>> mine =
+        ref.watch(buddyMyApplicationsProvider);
     final BuddyActions actions = ref.read(buddyActionsProvider);
-    final List<BuddyApplication> items = mine.valueOrNull ?? const <BuddyApplication>[];
+    final List<BuddyApplication> items =
+        mine.valueOrNull ?? const <BuddyApplication>[];
     final BuddyApplication? application = _find(items, post.id, myUserId);
 
     return Column(
@@ -284,7 +288,8 @@ class _ApplicantSection extends ConsumerWidget {
                     color: colors.text,
                   ),
                 ),
-                if (application.status == BuddyApplicationStatus.accepted) ...<Widget>[
+                if (application.status ==
+                    BuddyApplicationStatus.accepted) ...<Widget>[
                   const SizedBox(height: KedaYaTokens.space1),
                   Text(
                     '已加入。联系方式会通过站内通知交换（规格 §6.2）。',
@@ -294,7 +299,8 @@ class _ApplicantSection extends ConsumerWidget {
                     ),
                   ),
                 ],
-                if (application.status == BuddyApplicationStatus.rejected) ...<Widget>[
+                if (application.status ==
+                    BuddyApplicationStatus.rejected) ...<Widget>[
                   const SizedBox(height: KedaYaTokens.space1),
                   Text(
                     '发起人没有接受这次申请（不会给出理由）。',
@@ -377,7 +383,7 @@ class _ApplicantSection extends ConsumerWidget {
     final String? message = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      builder: (BuildContext sheetContext) => const _JoinSheet(),
+      builder: (BuildContext sheetContext) => _JoinSheet(postId: post.id),
     );
     if (message == null || !context.mounted) return;
     await _runAction(
@@ -394,7 +400,9 @@ class _ApplicantSection extends ConsumerWidget {
 
 /// 申请留言输入（可选，≤200 字，且**不允许**写联系方式 —— 规格 §6.2/§6.4）。
 class _JoinSheet extends StatefulWidget {
-  const _JoinSheet();
+  const _JoinSheet({required this.postId});
+
+  final String postId;
 
   @override
   State<_JoinSheet> createState() => _JoinSheetState();
@@ -413,7 +421,8 @@ class _JoinSheetState extends State<_JoinSheet> {
   Widget build(BuildContext context) {
     final KedaYaColors colors = context.kedayaColors;
     final String message = _controller.text;
-    final String? error = BuddyJoinCommand(message: message).messageError;
+    final String? error =
+        BuddyJoinCommand(postId: widget.postId, message: message).messageError;
 
     return SafeArea(
       child: Padding(
@@ -492,11 +501,13 @@ class _JoinSheetState extends State<_JoinSheet> {
 }
 
 /// 统一的动作包装：失败时把 `ApiException` 的**用户可读文案**弹出来。
-Future<void> _runAction(BuildContext context, Future<void> Function() action) async {
+Future<void> _runAction(
+    BuildContext context, Future<void> Function() action) async {
   try {
     await action();
   } on Object catch (error) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('$error')));
   }
 }

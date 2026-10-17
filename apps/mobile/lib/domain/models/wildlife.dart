@@ -98,7 +98,8 @@ enum WildlifeModerationStatus {
   /// wire 比较**忽略大小写**（`services/api` 的取值大小写不统一，见
   /// `json_read.dart` 的 `wireEquals` 说明）。
   static WildlifeModerationStatus fromWire(String wire) {
-    for (final WildlifeModerationStatus status in WildlifeModerationStatus.values) {
+    for (final WildlifeModerationStatus status
+        in WildlifeModerationStatus.values) {
       if (wireEquals(status.wire, wire)) return status;
     }
     return WildlifeModerationStatus.unknown;
@@ -128,23 +129,26 @@ final class WildlifeSpecies {
     this.externalIds = const <String, Object?>{},
   });
 
-  factory WildlifeSpecies.fromJson(Map<String, Object?> json) => WildlifeSpecies(
-    id: readString(json, 'id'),
-    scientificName: readStringOr(json, 'scientificName', ''),
-    commonNameZh: readStringOr(json, 'commonNameZh', ''),
-    defaultFeedingPolicy: FeedingPolicy.fromWire(
-      readStringOr(json, 'defaultFeedingPolicy', 'discouraged'),
-    ),
-    commonNameEn: readStringOrNull(json, 'commonNameEn'),
-    taxonRank: TaxonRank.fromWire(readStringOr(json, 'taxonRank', 'species')),
-    parentId: readStringOrNull(json, 'parentId'),
-    isProtected: readBoolOr(json, 'isProtected', false),
-    isNestingSensitive: readBoolOr(json, 'isNestingSensitive', false),
-    nestingMonths: _readIntList(json, 'nestingMonths'),
-    iconUrl: readStringOrNull(json, 'iconUrl'),
-    isActive: readBoolOr(json, 'isActive', true),
-    externalIds: readMapOrNull(json, 'externalIds') ?? const <String, Object?>{},
-  );
+  factory WildlifeSpecies.fromJson(Map<String, Object?> json) =>
+      WildlifeSpecies(
+        id: readString(json, 'id'),
+        scientificName: readStringOr(json, 'scientificName', ''),
+        commonNameZh: readStringOr(json, 'commonNameZh', ''),
+        defaultFeedingPolicy: FeedingPolicy.fromWire(
+          readStringOr(json, 'defaultFeedingPolicy', 'discouraged'),
+        ),
+        commonNameEn: readStringOrNull(json, 'commonNameEn'),
+        taxonRank:
+            TaxonRank.fromWire(readStringOr(json, 'taxonRank', 'species')),
+        parentId: readStringOrNull(json, 'parentId'),
+        isProtected: readBoolOr(json, 'isProtected', false),
+        isNestingSensitive: readBoolOr(json, 'isNestingSensitive', false),
+        nestingMonths: _readIntList(json, 'nestingMonths'),
+        iconUrl: readStringOrNull(json, 'iconUrl'),
+        isActive: readBoolOr(json, 'isActive', true),
+        externalIds:
+            readMapOrNull(json, 'externalIds') ?? const <String, Object?>{},
+      );
 
   final String id;
 
@@ -173,28 +177,30 @@ final class WildlifeSpecies {
   final Map<String, Object?> externalIds;
 
   /// 展示名：中文名优先，退化到学名。
-  String get displayName => commonNameZh.isNotEmpty ? commonNameZh : scientificName;
+  String get displayName =>
+      commonNameZh.isNotEmpty ? commonNameZh : scientificName;
 
   /// [month]（1–12）是否落在该物种的繁殖月内（规格 §9.4）。
-  bool isNestingInMonth(int month) => isNestingSensitive && nestingMonths.contains(month);
+  bool isNestingInMonth(int month) =>
+      isNestingSensitive && nestingMonths.contains(month);
 
   String get protectionLabel => isProtected ? '保护物种' : '非保护物种';
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'scientificName': scientificName,
-    'commonNameZh': commonNameZh,
-    'commonNameEn': commonNameEn,
-    'taxonRank': taxonRank.wire,
-    'parentId': parentId,
-    'isProtected': isProtected,
-    'isNestingSensitive': isNestingSensitive,
-    'nestingMonths': nestingMonths,
-    'defaultFeedingPolicy': defaultFeedingPolicy.wire,
-    'iconUrl': iconUrl,
-    'isActive': isActive,
-    'externalIds': externalIds,
-  };
+        'id': id,
+        'scientificName': scientificName,
+        'commonNameZh': commonNameZh,
+        'commonNameEn': commonNameEn,
+        'taxonRank': taxonRank.wire,
+        'parentId': parentId,
+        'isProtected': isProtected,
+        'isNestingSensitive': isNestingSensitive,
+        'nestingMonths': nestingMonths,
+        'defaultFeedingPolicy': defaultFeedingPolicy.wire,
+        'iconUrl': iconUrl,
+        'isActive': isActive,
+        'externalIds': externalIds,
+      };
 
   @override
   bool operator ==(Object other) => other is WildlifeSpecies && other.id == id;
@@ -283,27 +289,29 @@ final class WildlifeZone {
   }
 
   /// 该点是否落在区域内（校园尺度用平面距离即可）。
-  bool covers(Wgs84Point point, {CampusProjection projection = CampusProjection.campus}) =>
+  bool covers(Wgs84Point point,
+          {CampusProjection projection = CampusProjection.campus}) =>
       projection.metersBetween(center, point) <= radiusM;
 
   /// 到区域中心的距离（米）。
   double distanceToMeters(
     Wgs84Point point, {
     CampusProjection projection = CampusProjection.campus,
-  }) => projection.metersBetween(center, point);
+  }) =>
+      projection.metersBetween(center, point);
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'name': name,
-    'species': speciesIds,
-    'geo': <String, Object?>{...center.toJson(), 'radiusM': radiusM},
-    'feedingPolicy': feedingPolicy.wire,
-    'note': note,
-    'fuzzRadiusM': fuzzRadiusM,
-    'isSensitive': isSensitive,
-    'noticeText': noticeText,
-    'sortOrder': sortOrder,
-  };
+        'id': id,
+        'name': name,
+        'species': speciesIds,
+        'geo': <String, Object?>{...center.toJson(), 'radiusM': radiusM},
+        'feedingPolicy': feedingPolicy.wire,
+        'note': note,
+        'fuzzRadiusM': fuzzRadiusM,
+        'isSensitive': isSensitive,
+        'noticeText': noticeText,
+        'sortOrder': sortOrder,
+      };
 
   @override
   bool operator ==(Object other) => other is WildlifeZone && other.id == id;
@@ -341,27 +349,28 @@ final class WildlifeSpot {
   });
 
   factory WildlifeSpot.fromJson(Map<String, Object?> json) => WildlifeSpot(
-    id: readString(json, 'id'),
-    speciesId: readStringOr(json, 'speciesId', ''),
-    centroid: Wgs84Point.fromJson(readMap(json, 'centroid')),
-    radiusM: readIntOr(json, 'radiusM', 0),
-    sightingCount: readIntOr(json, 'sightingCount', 0),
-    firstSeenAt: readDateTime(json, 'firstSeenAt'),
-    lastSeenAt: readDateTime(json, 'lastSeenAt'),
-    computedAt: readDateTime(json, 'computedAt'),
-    speciesNameZh: readStringOrNull(json, 'speciesNameZh'),
-    zoneId: readStringOrNull(json, 'zoneId'),
-    distinctReporters: readIntOr(json, 'distinctReporters', 0),
-    hourHistogram: _normalizeHourHistogram(_readIntList(json, 'hourHistogram')),
-    confidence: readDoubleOr(json, 'confidence', 0),
-    algorithmVersion: readStringOr(json, 'algorithmVersion', ''),
-    isAggregated: readBoolOr(json, 'isAggregated', true),
-    aggregationDelayHours: readIntOr(
-      json,
-      'aggregationDelayHours',
-      defaultAggregationDelayHours,
-    ),
-  );
+        id: readString(json, 'id'),
+        speciesId: readStringOr(json, 'speciesId', ''),
+        centroid: Wgs84Point.fromJson(readMap(json, 'centroid')),
+        radiusM: readIntOr(json, 'radiusM', 0),
+        sightingCount: readIntOr(json, 'sightingCount', 0),
+        firstSeenAt: readDateTime(json, 'firstSeenAt'),
+        lastSeenAt: readDateTime(json, 'lastSeenAt'),
+        computedAt: readDateTime(json, 'computedAt'),
+        speciesNameZh: readStringOrNull(json, 'speciesNameZh'),
+        zoneId: readStringOrNull(json, 'zoneId'),
+        distinctReporters: readIntOr(json, 'distinctReporters', 0),
+        hourHistogram:
+            _normalizeHourHistogram(_readIntList(json, 'hourHistogram')),
+        confidence: readDoubleOr(json, 'confidence', 0),
+        algorithmVersion: readStringOr(json, 'algorithmVersion', ''),
+        isAggregated: readBoolOr(json, 'isAggregated', true),
+        aggregationDelayHours: readIntOr(
+          json,
+          'aggregationDelayHours',
+          defaultAggregationDelayHours,
+        ),
+      );
 
   final String id;
   final String speciesId;
@@ -429,23 +438,23 @@ final class WildlifeSpot {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'speciesId': speciesId,
-    'speciesNameZh': speciesNameZh,
-    'zoneId': zoneId,
-    'centroid': centroid.toJson(),
-    'radiusM': radiusM,
-    'sightingCount': sightingCount,
-    'distinctReporters': distinctReporters,
-    'firstSeenAt': isoUtc(firstSeenAt),
-    'lastSeenAt': isoUtc(lastSeenAt),
-    'hourHistogram': hourHistogram,
-    'confidence': confidence,
-    'algorithmVersion': algorithmVersion,
-    'computedAt': isoUtc(computedAt),
-    'isAggregated': isAggregated,
-    'aggregationDelayHours': aggregationDelayHours,
-  };
+        'id': id,
+        'speciesId': speciesId,
+        'speciesNameZh': speciesNameZh,
+        'zoneId': zoneId,
+        'centroid': centroid.toJson(),
+        'radiusM': radiusM,
+        'sightingCount': sightingCount,
+        'distinctReporters': distinctReporters,
+        'firstSeenAt': isoUtc(firstSeenAt),
+        'lastSeenAt': isoUtc(lastSeenAt),
+        'hourHistogram': hourHistogram,
+        'confidence': confidence,
+        'algorithmVersion': algorithmVersion,
+        'computedAt': isoUtc(computedAt),
+        'isAggregated': isAggregated,
+        'aggregationDelayHours': aggregationDelayHours,
+      };
 
   @override
   bool operator ==(Object other) => other is WildlifeSpot && other.id == id;
@@ -472,16 +481,18 @@ final class WildlifeIndividual {
     this.isActive = true,
   });
 
-  factory WildlifeIndividual.fromJson(Map<String, Object?> json) => WildlifeIndividual(
-    id: readString(json, 'id'),
-    name: readStringOr(json, 'name', ''),
-    speciesId: readStringOr(json, 'speciesId', ''),
-    speciesNameZh: readStringOrNull(json, 'speciesNameZh'),
-    description: readStringOrNull(json, 'description'),
-    coverPhotoUrl: readStringOrNull(json, 'coverPhotoUrl'),
-    status: WildlifeModerationStatus.fromWire(readStringOr(json, 'status', 'PENDING')),
-    isActive: readBoolOr(json, 'isActive', true),
-  );
+  factory WildlifeIndividual.fromJson(Map<String, Object?> json) =>
+      WildlifeIndividual(
+        id: readString(json, 'id'),
+        name: readStringOr(json, 'name', ''),
+        speciesId: readStringOr(json, 'speciesId', ''),
+        speciesNameZh: readStringOrNull(json, 'speciesNameZh'),
+        description: readStringOrNull(json, 'description'),
+        coverPhotoUrl: readStringOrNull(json, 'coverPhotoUrl'),
+        status: WildlifeModerationStatus.fromWire(
+            readStringOr(json, 'status', 'PENDING')),
+        isActive: readBoolOr(json, 'isActive', true),
+      );
 
   /// 个体名（≤24 字），如「大橘」「鹅鹅」。
   final String name;
@@ -498,18 +509,19 @@ final class WildlifeIndividual {
   bool get isPublic => status.isPublic && isActive;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'name': name,
-    'speciesId': speciesId,
-    'speciesNameZh': speciesNameZh,
-    'description': description,
-    'coverPhotoUrl': coverPhotoUrl,
-    'status': status.wire,
-    'isActive': isActive,
-  };
+        'id': id,
+        'name': name,
+        'speciesId': speciesId,
+        'speciesNameZh': speciesNameZh,
+        'description': description,
+        'coverPhotoUrl': coverPhotoUrl,
+        'status': status.wire,
+        'isActive': isActive,
+      };
 
   @override
-  bool operator ==(Object other) => other is WildlifeIndividual && other.id == id;
+  bool operator ==(Object other) =>
+      other is WildlifeIndividual && other.id == id;
 
   @override
   int get hashCode => id.hashCode;
@@ -572,16 +584,19 @@ final class CampusBasemap {
       affine: BasemapAffine.fromCoefficients(
         rawAffine is List<Object?> ? rawAffine : const <Object?>[],
       ),
-      calibrationRmsePx: readDoubleOr(json, 'calibrationRmsePx', double.infinity),
+      calibrationRmsePx:
+          readDoubleOr(json, 'calibrationRmsePx', double.infinity),
       controlPointCount: readIntOr(json, 'controlPointCount', 0),
       attribution: readStringOr(json, 'attribution', ''),
-      license: BasemapLicense.fromWire(readStringOr(json, 'license', 'original')),
+      license:
+          BasemapLicense.fromWire(readStringOr(json, 'license', 'original')),
     );
   }
 
   /// 规格 §1.4 的 CI 规则编号（`details.reason` 风格）。
   static const String rmseTooHigh = 'BASEMAP_RMSE_TOO_HIGH';
-  static const String controlPointsInsufficient = 'BASEMAP_CONTROL_POINTS_INSUFFICIENT';
+  static const String controlPointsInsufficient =
+      'BASEMAP_CONTROL_POINTS_INSUFFICIENT';
   static const String attributionRequired = 'BASEMAP_ATTRIBUTION_REQUIRED';
   static const String licenseUnknown = 'BASEMAP_LICENSE_UNKNOWN';
   static const String sizeInvalid = 'BASEMAP_SIZE_INVALID';
@@ -639,20 +654,22 @@ final class CampusBasemap {
   bool get isRenderable => validate().isEmpty;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'version': version,
-    'imageUrl': imageUrl,
-    'widthPx': widthPx,
-    'heightPx': heightPx,
-    'affine': affine.coefficients,
-    'calibrationRmsePx': calibrationRmsePx,
-    'controlPointCount': controlPointCount,
-    'attribution': attribution,
-    'license': license.wire,
-  };
+        'version': version,
+        'imageUrl': imageUrl,
+        'widthPx': widthPx,
+        'heightPx': heightPx,
+        'affine': affine.coefficients,
+        'calibrationRmsePx': calibrationRmsePx,
+        'controlPointCount': controlPointCount,
+        'attribution': attribution,
+        'license': license.wire,
+      };
 
   @override
   bool operator ==(Object other) =>
-      other is CampusBasemap && other.version == version && other.imageUrl == imageUrl;
+      other is CampusBasemap &&
+      other.version == version &&
+      other.imageUrl == imageUrl;
 
   @override
   int get hashCode => Object.hash(version, imageUrl);
@@ -683,11 +700,11 @@ final class WildlifeSpotQuery {
   final int limit;
 
   Map<String, Object?> toQuery() => <String, Object?>{
-    ...PageQuery(cursor: cursor, limit: limit).toQuery(),
-    if (speciesId != null && speciesId!.isNotEmpty) 'species': speciesId,
-    if (zoneId != null && zoneId!.isNotEmpty) 'zoneId': zoneId,
-    'minConfidence': minConfidence,
-  };
+        ...PageQuery(cursor: cursor, limit: limit).toQuery(),
+        if (speciesId != null && speciesId!.isNotEmpty) 'species': speciesId,
+        if (zoneId != null && zoneId!.isNotEmpty) 'zoneId': zoneId,
+        'minConfidence': minConfidence,
+      };
 
   WildlifeSpotQuery copyWith({
     String? speciesId,
@@ -695,13 +712,14 @@ final class WildlifeSpotQuery {
     double? minConfidence,
     String? cursor,
     int? limit,
-  }) => WildlifeSpotQuery(
-    speciesId: speciesId ?? this.speciesId,
-    zoneId: zoneId ?? this.zoneId,
-    minConfidence: minConfidence ?? this.minConfidence,
-    cursor: cursor ?? this.cursor,
-    limit: limit ?? this.limit,
-  );
+  }) =>
+      WildlifeSpotQuery(
+        speciesId: speciesId ?? this.speciesId,
+        zoneId: zoneId ?? this.zoneId,
+        minConfidence: minConfidence ?? this.minConfidence,
+        cursor: cursor ?? this.cursor,
+        limit: limit ?? this.limit,
+      );
 }
 
 /// 找出包含该点的区域；命中多个时取**半径最小**的那个（最具体的区域）。
@@ -724,7 +742,8 @@ WildlifeZone? zoneContaining(
 /// 上科大所在时区的月份（规格 §9.4 的 `monthInShanghai`）。
 ///
 /// 本端不引时区库：东八区是固定偏移（无夏令时），因此直接加 8 小时后取月份。
-int shanghaiMonth(DateTime at) => at.toUtc().add(const Duration(hours: 8)).month;
+int shanghaiMonth(DateTime at) =>
+    at.toUtc().add(const Duration(hours: 8)).month;
 
 /// 伦理提示的精简版（规格 §8.2：**≤5 条，每条 ≤20 字**）。
 ///
@@ -755,13 +774,14 @@ List<String> _readSpeciesIds(Map<String, Object?> json) {
 }
 
 /// 读取 `List<int>`（容忍字符串数字；非数字元素丢弃）。
-List<int> _readIntList(Map<String, Object?> json, String key) => readListOrEmpty(json, key)
-    .map((Object? value) => value is int ? value : int.tryParse('$value'))
-    .whereType<int>()
-    .toList(growable: false);
+List<int> _readIntList(Map<String, Object?> json, String key) =>
+    readListOrEmpty(json, key)
+        .map((Object? value) => value is int ? value : int.tryParse('$value'))
+        .whereType<int>()
+        .toList(growable: false);
 
 /// 把直方图规范为恰好 24 项（后端多给/少给都不至于让 UI 崩）。
 List<int> _normalizeHourHistogram(List<int> raw) => <int>[
-  for (int hour = 0; hour < 24; hour++)
-    if (hour < raw.length) raw[hour] else 0,
-];
+      for (int hour = 0; hour < 24; hour++)
+        if (hour < raw.length) raw[hour] else 0,
+    ];

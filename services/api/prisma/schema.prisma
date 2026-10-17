@@ -69,6 +69,13 @@ model User {
   forumPosts           ForumPost[]
   forumReplies         ForumReply[]
 
+  /// 联系方式交换（U8）。交换的是**读取权限**，不是联系方式副本。
+  contactEntries          ContactEntry[]
+  contactRequestsSent     ContactExchangeRequest[] @relation("ContactExchangeRequester")
+  contactRequestsReceived ContactExchangeRequest[] @relation("ContactExchangeAddressee")
+  contactAuditsAsActor    ContactAccessAudit[] @relation("ContactAuditActor")
+  contactAuditsAsSubject  ContactAccessAudit[] @relation("ContactAuditSubject")
+
   @@index([createdAt])
 }
 
@@ -1488,4 +1495,120 @@ model ContentReport {
   /// 我举报过的（客户端用来显示"已举报"）
   @@index([reporterId, createdAt])
   @@index([escalated, createdAt])
+}
+
+/* ================================================================== *
+ * 2.11 contact-exchange 域（联系方式交换 · U8）
+ *
+ * 设计要点见 packages/contracts/src/contact-exchange.ts 与模块 README：
+ *   · 交换的是「读取权限」，不复制联系方式 —— 撤销立即生效；
+ *   · 明文只以 AES-256-GCM 密文落库，密钥 CONTACT_EXCHANGE_ENC_KEY 无默认值；
+ *   · 条目默认 `shared = false`，必须用户显式授权；
+ *   · 审计只存条目 id / 类型 / 时间，不存 value 或密文。
+ * ================================================================== */
+
+/// 联系方式交换 · 可交换条目（U8）
+///
+/// 访问域：contact-exchange
+/// 硬规则：
+///   1. `valueCipher` 是 AES-256-GCM 密文，**绝不明文落库**；
+///   2. `valueFingerprint` 是带密钥的 HMAC-SHA256，只用于同一用户去重；
+///      之所以不是裸 SHA-256：手机号是低熵输入，裸哈希可被彩虹表反查；
+///   3. `shared` 默认 false —— 新建条目默认不参与任何交换（最小暴露）。
+model ContactEntry {
+  id               String   @id @default(cuid())
+  userId           String
+  /// wechat | phone | email | qq（契约见 @kedaya/contracts 的 CONTACT_KINDS）
+  kind             String
+  /// 用户自定义标签（如「常用」「工作号」），可为空
+  label            String?
+  /// AES-256-GCM 密文：`v1.<iv>.<tag>.<ciphertext>`，永不出现在响应里
+  valueCipher      String
+  /// HMAC-SHA256 指纹（hex），只用于去重；不可逆
+  valueFingerprint String
+  /// 是否授权给交换对象。默认 false；每次读取都以该列为准。
+  shared           Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 同一用户同一类型下不允许完全相同的值（不同写法在入库前会被规范化）
+  @@unique([userId, kind, valueFingerprint])
+  @@index([userId, createdAt])
+  @@index([userId, shared])
+  @@map("ContactEntry")
+}
+
+/// 联系方式交换 · 申请 / 协议（U8）
+///
+/// 访问域：contact-exchange
+/// 状态机：PENDING → ACCEPTED → REVOKED；PENDING → REJECTED / EXPIRED。
+///
+/// `pairKey` 是排序后的 `minUserId:maxUserId`。迁移里有一条**部分唯一索引**
+/// （`WHERE status IN ('PENDING','ACCEPTED')`），保证同一对用户最多一条活跃申请。
+/// Prisma schema 无法表达部分索引，因此它只存在于手写迁移里 —— 这是刻意的：
+/// 并发下由数据库兜底，应用层的"先查再写"只负责给出友好错误。
+model ContactExchangeRequest {
+  id            String    @id @default(cuid())
+  requesterId   String
+  addresseeId   String
+  /// 无序用户对的稳定键（只含 id，不含任何联系方式）
+  pairKey       String
+  /// PENDING | ACCEPTED | REJECTED | REVOKED | EXPIRED
+  status        String    @default("PENDING")
+  /// buddy | groupbuy | errand | flea-market | lost-found | facility
+  contextModule String
+  /// 上下文对象 id（如 BuddyPost.id），可为空
+  contextId     String?
+  /// 申请附言。**禁止包含联系方式**（应用层检测），且只保存文本，不保存任何联系方式
+  message       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  /// PENDING 的有效期；ACCEPTED 不自动过期，只能撤销
+  expiresAt     DateTime
+  respondedAt   DateTime?
+  revokedAt     DateTime?
+  revokedBy     String?
+
+  requester User @relation("ContactExchangeRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee User @relation("ContactExchangeAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  audits ContactAccessAudit[]
+
+  @@index([requesterId, createdAt])
+  @@index([addresseeId, createdAt])
+  @@index([pairKey, createdAt])
+  @@index([status, expiresAt])
+  @@map("ContactExchangeRequest")
+}
+
+/// 联系方式交换 · 查看审计（U8）
+///
+/// 访问域：contact-exchange（只追加；用户只能查与自己相关的方向）
+/// **硬规则：本表不含 value、密文、指纹、脱敏值** —— 只有条目 id 与类型。
+/// 这是"审计本身不能变成第二个泄漏面"的结构性保证。
+model ContactAccessAudit {
+  id         String   @id @default(cuid())
+  /// 谁看的
+  actorId    String
+  /// 看了谁的联系方式
+  subjectId  String
+  requestId  String
+  /// view_contacts（当前唯一动作）
+  action     String   @default("view_contacts")
+  /// 被查看的条目 id 列表。**不是**联系方式。
+  entryIds   String[]
+  /// 被查看的条目类型（wechat/phone/email/qq）
+  entryKinds String[]
+  at         DateTime @default(now())
+
+  actor   User                   @relation("ContactAuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  subject User                   @relation("ContactAuditSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+  request ContactExchangeRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([subjectId, at])
+  @@index([actorId, at])
+  @@index([requestId, at])
+  @@map("ContactAccessAudit")
 }

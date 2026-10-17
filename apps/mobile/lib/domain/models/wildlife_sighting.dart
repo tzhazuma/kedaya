@@ -120,8 +120,9 @@ final class WildlifeValidationResult {
 
   String? get firstMessage => issues.isEmpty ? null : issues.first.message;
 
-  List<String> get reasons =>
-      issues.map((WildlifeValidationIssue issue) => issue.reason).toList(growable: false);
+  List<String> get reasons => issues
+      .map((WildlifeValidationIssue issue) => issue.reason)
+      .toList(growable: false);
 
   bool has(String reason) =>
       issues.any((WildlifeValidationIssue issue) => issue.reason == reason);
@@ -139,7 +140,9 @@ bool looksLikeImage(List<int> bytes) => sniffMimeType(bytes) != null;
 /// 按文件头返回真实 MIME；不认识返回 null。
 String? sniffMimeType(List<int> bytes) {
   if (bytes.length < 12) return null;
-  if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) return 'image/jpeg';
+  if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+    return 'image/jpeg';
+  }
   if (bytes[0] == 0x89 &&
       bytes[1] == 0x50 &&
       bytes[2] == 0x4E &&
@@ -201,7 +204,8 @@ final class UploadWildlifeMediaCommand {
     final List<WildlifeValidationIssue> issues = <WildlifeValidationIssue>[];
     if (bytes.isEmpty) {
       issues.add(
-        const WildlifeValidationIssue(reasonMediaUnsupportedType, '图片内容为空，请重新选择'),
+        const WildlifeValidationIssue(
+            reasonMediaUnsupportedType, '图片内容为空，请重新选择'),
       );
     } else if (byteSize > maxMediaBytes) {
       issues.add(
@@ -236,7 +240,8 @@ final class UploadWildlifeMediaCommand {
   }
 
   @override
-  String toString() => 'UploadWildlifeMediaCommand($clientPhotoId, $byteSize bytes)';
+  String toString() =>
+      'UploadWildlifeMediaCommand($clientPhotoId, $byteSize bytes)';
 }
 
 /// 上传结果（规格 §4.1 响应：`{ mediaId, thumbUrl, widthPx, heightPx, sha256 }`）。
@@ -254,16 +259,16 @@ final class WildlifeMedia {
   });
 
   factory WildlifeMedia.fromJson(Map<String, Object?> json) => WildlifeMedia(
-    mediaId: readStringOr(json, 'mediaId', readStringOr(json, 'id', '')),
-    thumbUrl: readStringOrNull(json, 'thumbUrl'),
-    url: readStringOrNull(json, 'url'),
-    widthPx: readIntOrNull(json, 'widthPx'),
-    heightPx: readIntOrNull(json, 'heightPx'),
-    byteSize: readIntOrNull(json, 'byteSize'),
-    mimeType: readStringOrNull(json, 'mimeType'),
-    sha256: readStringOrNull(json, 'sha256'),
-    clientPhotoId: readStringOrNull(json, 'clientPhotoId'),
-  );
+        mediaId: readStringOr(json, 'mediaId', readStringOr(json, 'id', '')),
+        thumbUrl: readStringOrNull(json, 'thumbUrl'),
+        url: readStringOrNull(json, 'url'),
+        widthPx: readIntOrNull(json, 'widthPx'),
+        heightPx: readIntOrNull(json, 'heightPx'),
+        byteSize: readIntOrNull(json, 'byteSize'),
+        mimeType: readStringOrNull(json, 'mimeType'),
+        sha256: readStringOrNull(json, 'sha256'),
+        clientPhotoId: readStringOrNull(json, 'clientPhotoId'),
+      );
 
   final String mediaId;
   final String? thumbUrl;
@@ -280,19 +285,20 @@ final class WildlifeMedia {
   final String? clientPhotoId;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'mediaId': mediaId,
-    'thumbUrl': thumbUrl,
-    'url': url,
-    'widthPx': widthPx,
-    'heightPx': heightPx,
-    'byteSize': byteSize,
-    'mimeType': mimeType,
-    'sha256': sha256,
-    'clientPhotoId': clientPhotoId,
-  };
+        'mediaId': mediaId,
+        'thumbUrl': thumbUrl,
+        'url': url,
+        'widthPx': widthPx,
+        'heightPx': heightPx,
+        'byteSize': byteSize,
+        'mimeType': mimeType,
+        'sha256': sha256,
+        'clientPhotoId': clientPhotoId,
+      };
 
   @override
-  bool operator ==(Object other) => other is WildlifeMedia && other.mediaId == mediaId;
+  bool operator ==(Object other) =>
+      other is WildlifeMedia && other.mediaId == mediaId;
 
   @override
   int get hashCode => mediaId.hashCode;
@@ -339,9 +345,11 @@ final class WildlifeSighting {
     return WildlifeSighting(
       id: readString(json, 'id'),
       speciesId: readStringOr(json, 'species', ''),
-      status: WildlifeModerationStatus.fromWire(readStringOr(json, 'status', 'PENDING')),
+      status: WildlifeModerationStatus.fromWire(
+          readStringOr(json, 'status', 'PENDING')),
       observedAt: readDateTime(json, 'observedAt'),
-      createdAt: readDateTimeOrNull(json, 'createdAt') ?? readDateTime(json, 'observedAt'),
+      createdAt: readDateTimeOrNull(json, 'createdAt') ??
+          readDateTime(json, 'observedAt'),
       geo: geo == null ? null : Wgs84Point.fromJson(geo),
       observedAtFuzzed: readDateTimeOrNull(json, 'observedAtFuzzed'),
       speciesNameZh: readStringOrNull(json, 'speciesNameZh'),
@@ -354,7 +362,8 @@ final class WildlifeSighting {
       individualName: readStringOrNull(json, 'individualName'),
       autoSpeciesId: readStringOrNull(json, 'autoSpeciesId'),
       autoConfidence: readDoubleOrNull(json, 'autoConfidence'),
-      classifiedBy: ClassifiedBy.fromWire(readStringOr(json, 'classifiedBy', 'manual')),
+      classifiedBy:
+          ClassifiedBy.fromWire(readStringOr(json, 'classifiedBy', 'manual')),
       correctedFromSpeciesId: readStringOrNull(json, 'correctedFromSpeciesId'),
       note: readStringOrNull(json, 'note'),
       reporterDisplayName: readStringOrNull(json, 'reporterDisplayName'),
@@ -436,29 +445,30 @@ final class WildlifeSighting {
   Duration get reportingDelay => createdAt.difference(observedAt);
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'species': speciesId,
-    'speciesNameZh': speciesNameZh,
-    'status': status.wire,
-    // geo 为 null 时**不写该键**：宁可缺字段，也不要让下游把 null 当坐标。
-    if (geo != null) 'geo': geo!.toJson(),
-    'observedAt': isoUtc(observedAt),
-    'observedAtFuzzed': observedAtFuzzed == null ? null : isoUtc(observedAtFuzzed!),
-    'createdAt': isoUtc(createdAt),
-    'zoneId': zoneId,
-    'zoneName': zoneName,
-    'photoUrls': photoUrls,
-    'healthConcern': healthConcern,
-    'isAnonymous': isAnonymous,
-    'individualId': individualId,
-    'individualName': individualName,
-    'autoSpeciesId': autoSpeciesId,
-    'autoConfidence': autoConfidence,
-    'classifiedBy': classifiedBy.wire,
-    'correctedFromSpeciesId': correctedFromSpeciesId,
-    'note': note,
-    'reporterDisplayName': reporterDisplayName,
-  };
+        'id': id,
+        'species': speciesId,
+        'speciesNameZh': speciesNameZh,
+        'status': status.wire,
+        // geo 为 null 时**不写该键**：宁可缺字段，也不要让下游把 null 当坐标。
+        if (geo != null) 'geo': geo!.toJson(),
+        'observedAt': isoUtc(observedAt),
+        'observedAtFuzzed':
+            observedAtFuzzed == null ? null : isoUtc(observedAtFuzzed!),
+        'createdAt': isoUtc(createdAt),
+        'zoneId': zoneId,
+        'zoneName': zoneName,
+        'photoUrls': photoUrls,
+        'healthConcern': healthConcern,
+        'isAnonymous': isAnonymous,
+        'individualId': individualId,
+        'individualName': individualName,
+        'autoSpeciesId': autoSpeciesId,
+        'autoConfidence': autoConfidence,
+        'classifiedBy': classifiedBy.wire,
+        'correctedFromSpeciesId': correctedFromSpeciesId,
+        'note': note,
+        'reporterDisplayName': reporterDisplayName,
+      };
 
   @override
   bool operator ==(Object other) => other is WildlifeSighting && other.id == id;
@@ -495,29 +505,31 @@ final class WildlifeSighting {
     String? correctedFromSpeciesId,
     String? note,
     String? reporterDisplayName,
-  }) => WildlifeSighting(
-    id: id ?? this.id,
-    speciesId: speciesId ?? this.speciesId,
-    speciesNameZh: speciesNameZh ?? this.speciesNameZh,
-    status: status ?? this.status,
-    geo: geo ?? this.geo,
-    observedAt: observedAt ?? this.observedAt,
-    observedAtFuzzed: observedAtFuzzed ?? this.observedAtFuzzed,
-    createdAt: createdAt ?? this.createdAt,
-    zoneId: zoneId ?? this.zoneId,
-    zoneName: zoneName ?? this.zoneName,
-    photoUrls: photoUrls ?? this.photoUrls,
-    healthConcern: healthConcern ?? this.healthConcern,
-    isAnonymous: isAnonymous ?? this.isAnonymous,
-    individualId: individualId ?? this.individualId,
-    individualName: individualName ?? this.individualName,
-    autoSpeciesId: autoSpeciesId ?? this.autoSpeciesId,
-    autoConfidence: autoConfidence ?? this.autoConfidence,
-    classifiedBy: classifiedBy ?? this.classifiedBy,
-    correctedFromSpeciesId: correctedFromSpeciesId ?? this.correctedFromSpeciesId,
-    note: note ?? this.note,
-    reporterDisplayName: reporterDisplayName ?? this.reporterDisplayName,
-  );
+  }) =>
+      WildlifeSighting(
+        id: id ?? this.id,
+        speciesId: speciesId ?? this.speciesId,
+        speciesNameZh: speciesNameZh ?? this.speciesNameZh,
+        status: status ?? this.status,
+        geo: geo ?? this.geo,
+        observedAt: observedAt ?? this.observedAt,
+        observedAtFuzzed: observedAtFuzzed ?? this.observedAtFuzzed,
+        createdAt: createdAt ?? this.createdAt,
+        zoneId: zoneId ?? this.zoneId,
+        zoneName: zoneName ?? this.zoneName,
+        photoUrls: photoUrls ?? this.photoUrls,
+        healthConcern: healthConcern ?? this.healthConcern,
+        isAnonymous: isAnonymous ?? this.isAnonymous,
+        individualId: individualId ?? this.individualId,
+        individualName: individualName ?? this.individualName,
+        autoSpeciesId: autoSpeciesId ?? this.autoSpeciesId,
+        autoConfidence: autoConfidence ?? this.autoConfidence,
+        classifiedBy: classifiedBy ?? this.classifiedBy,
+        correctedFromSpeciesId:
+            correctedFromSpeciesId ?? this.correctedFromSpeciesId,
+        note: note ?? this.note,
+        reporterDisplayName: reporterDisplayName ?? this.reporterDisplayName,
+      );
 }
 
 /// 观测列表查询（规格 §10.1 #9：游标分页，**仅 PUBLISHED**）。
@@ -540,11 +552,11 @@ final class WildlifeSightingQuery {
   final int limit;
 
   Map<String, Object?> toQuery() => <String, Object?>{
-    ...PageQuery(cursor: cursor, limit: limit).toQuery(),
-    if (speciesId != null && speciesId!.isNotEmpty) 'species': speciesId,
-    if (zoneId != null && zoneId!.isNotEmpty) 'zoneId': zoneId,
-    if (healthConcernOnly) 'healthConcern': true,
-  };
+        ...PageQuery(cursor: cursor, limit: limit).toQuery(),
+        if (speciesId != null && speciesId!.isNotEmpty) 'species': speciesId,
+        if (zoneId != null && zoneId!.isNotEmpty) 'zoneId': zoneId,
+        if (healthConcernOnly) 'healthConcern': true,
+      };
 
   WildlifeSightingQuery copyWith({
     String? speciesId,
@@ -552,13 +564,14 @@ final class WildlifeSightingQuery {
     bool? healthConcernOnly,
     String? cursor,
     int? limit,
-  }) => WildlifeSightingQuery(
-    speciesId: speciesId ?? this.speciesId,
-    zoneId: zoneId ?? this.zoneId,
-    healthConcernOnly: healthConcernOnly ?? this.healthConcernOnly,
-    cursor: cursor ?? this.cursor,
-    limit: limit ?? this.limit,
-  );
+  }) =>
+      WildlifeSightingQuery(
+        speciesId: speciesId ?? this.speciesId,
+        zoneId: zoneId ?? this.zoneId,
+        healthConcernOnly: healthConcernOnly ?? this.healthConcernOnly,
+        cursor: cursor ?? this.cursor,
+        limit: limit ?? this.limit,
+      );
 }
 
 /// 上报草稿（`POST /api/v1/wildlife/items` 的请求体，规格 §10.3）。
@@ -697,21 +710,21 @@ final class WildlifeSightingDraft {
   /// `ethicsAcknowledged` **恒为 true**：草稿本身不合法时 `toJson()` 不该被调用
   /// （调用方必须先过 [validate]），这里不提供"悄悄不带确认"的写法。
   Map<String, Object?> toJson() => <String, Object?>{
-    'species': speciesId,
-    'observedAt': isoUtc(observedAt),
-    'geo': geo.toJson(),
-    if (geoAccuracyM != null) 'geoAccuracyM': geoAccuracyM,
-    'zoneId': zoneId,
-    'mediaIds': mediaIds,
-    'healthConcern': healthConcern,
-    'individualId': individualId,
-    'note': note,
-    'isAnonymous': isAnonymous,
-    'autoSpeciesId': autoSpeciesId,
-    'autoConfidence': autoConfidence,
-    'classifiedBy': classifiedBy.wire,
-    'ethicsAcknowledged': true,
-  };
+        'species': speciesId,
+        'observedAt': isoUtc(observedAt),
+        'geo': geo.toJson(),
+        if (geoAccuracyM != null) 'geoAccuracyM': geoAccuracyM,
+        'zoneId': zoneId,
+        'mediaIds': mediaIds,
+        'healthConcern': healthConcern,
+        'individualId': individualId,
+        'note': note,
+        'isAnonymous': isAnonymous,
+        'autoSpeciesId': autoSpeciesId,
+        'autoConfidence': autoConfidence,
+        'classifiedBy': classifiedBy.wire,
+        'ethicsAcknowledged': true,
+      };
 
   WildlifeSightingDraft copyWith({
     String? speciesId,
@@ -728,22 +741,23 @@ final class WildlifeSightingDraft {
     double? autoConfidence,
     ClassifiedBy? classifiedBy,
     bool? ethicsAcknowledged,
-  }) => WildlifeSightingDraft(
-    speciesId: speciesId ?? this.speciesId,
-    observedAt: observedAt ?? this.observedAt,
-    geo: geo ?? this.geo,
-    geoAccuracyM: geoAccuracyM ?? this.geoAccuracyM,
-    zoneId: zoneId ?? this.zoneId,
-    mediaIds: mediaIds ?? this.mediaIds,
-    healthConcern: healthConcern ?? this.healthConcern,
-    individualId: individualId ?? this.individualId,
-    note: note ?? this.note,
-    isAnonymous: isAnonymous ?? this.isAnonymous,
-    autoSpeciesId: autoSpeciesId ?? this.autoSpeciesId,
-    autoConfidence: autoConfidence ?? this.autoConfidence,
-    classifiedBy: classifiedBy ?? this.classifiedBy,
-    ethicsAcknowledged: ethicsAcknowledged ?? this.ethicsAcknowledged,
-  );
+  }) =>
+      WildlifeSightingDraft(
+        speciesId: speciesId ?? this.speciesId,
+        observedAt: observedAt ?? this.observedAt,
+        geo: geo ?? this.geo,
+        geoAccuracyM: geoAccuracyM ?? this.geoAccuracyM,
+        zoneId: zoneId ?? this.zoneId,
+        mediaIds: mediaIds ?? this.mediaIds,
+        healthConcern: healthConcern ?? this.healthConcern,
+        individualId: individualId ?? this.individualId,
+        note: note ?? this.note,
+        isAnonymous: isAnonymous ?? this.isAnonymous,
+        autoSpeciesId: autoSpeciesId ?? this.autoSpeciesId,
+        autoConfidence: autoConfidence ?? this.autoConfidence,
+        classifiedBy: classifiedBy ?? this.classifiedBy,
+        ethicsAcknowledged: ethicsAcknowledged ?? this.ethicsAcknowledged,
+      );
 
   @override
   String toString() =>
@@ -761,9 +775,9 @@ final class WildlifeClassifyRequest {
   final int topK;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'mediaId': mediaId,
-    'topK': topK,
-  };
+        'mediaId': mediaId,
+        'topK': topK,
+      };
 }
 
 /// 一条分类建议（规格 §5.3）。
@@ -777,7 +791,8 @@ final class WildlifeClassifySuggestion {
 
   factory WildlifeClassifySuggestion.fromJson(Map<String, Object?> json) =>
       WildlifeClassifySuggestion(
-        speciesId: readStringOr(json, 'speciesId', readStringOr(json, 'id', '')),
+        speciesId:
+            readStringOr(json, 'speciesId', readStringOr(json, 'id', '')),
         confidence: readDoubleOr(json, 'confidence', 0),
         speciesNameZh: readStringOrNull(json, 'speciesNameZh'),
         serverPreselected: readBoolOrNull(json, 'preselected'),
@@ -800,7 +815,8 @@ final class WildlifeClassifySuggestion {
   /// 也就是说，即使服务端出错（低置信度却给了 `preselected: true`），
   /// 客户端也不会替用户做决定（规格 §11.6 T44）。
   bool get shouldPreselect =>
-      confidence >= classifyPreselectMinConfidence && (serverPreselected ?? true);
+      confidence >= classifyPreselectMinConfidence &&
+      (serverPreselected ?? true);
 
   /// 规格 §5.5 的三档文案。
   String get confidenceLabel {
@@ -817,11 +833,11 @@ final class WildlifeClassifySuggestion {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'speciesId': speciesId,
-    'speciesNameZh': speciesNameZh,
-    'confidence': confidence,
-    if (serverPreselected != null) 'preselected': serverPreselected,
-  };
+        'speciesId': speciesId,
+        'speciesNameZh': speciesNameZh,
+        'confidence': confidence,
+        if (serverPreselected != null) 'preselected': serverPreselected,
+      };
 
   @override
   String toString() =>
@@ -844,7 +860,8 @@ final class WildlifeClassifyResult {
         : readListOrEmpty(json, 'suggestions');
     final List<WildlifeClassifySuggestion> items = <WildlifeClassifySuggestion>[
       for (final Object? item in raw)
-        if (item is Map<String, Object?>) WildlifeClassifySuggestion.fromJson(item),
+        if (item is Map<String, Object?>)
+          WildlifeClassifySuggestion.fromJson(item),
     ];
     return WildlifeClassifyResult(
       items: items,
@@ -861,7 +878,8 @@ final class WildlifeClassifyResult {
 
   /// 按置信度降序（服务端应已排序，客户端再排一次保证 UI 稳定）。
   List<WildlifeClassifySuggestion> get sortedByConfidence {
-    final List<WildlifeClassifySuggestion> sorted = <WildlifeClassifySuggestion>[...items];
+    final List<WildlifeClassifySuggestion> sorted =
+        <WildlifeClassifySuggestion>[...items];
     sorted.sort(
       (WildlifeClassifySuggestion a, WildlifeClassifySuggestion b) =>
           b.confidence.compareTo(a.confidence),
@@ -882,18 +900,18 @@ final class WildlifeClassifyResult {
   }
 
   /// 降级说明（规格 §5.2：无能力时静默降级到手动）。
-  String get fallbackNotice =>
-      available ? '' : '自动识别暂不可用，请手动选择物种（不影响上报）';
+  String get fallbackNotice => available ? '' : '自动识别暂不可用，请手动选择物种（不影响上报）';
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'available': available,
-    'items': items
-        .map((WildlifeClassifySuggestion item) => item.toJson())
-        .toList(growable: false),
-  };
+        'available': available,
+        'items': items
+            .map((WildlifeClassifySuggestion item) => item.toJson())
+            .toList(growable: false),
+      };
 
   @override
-  String toString() => 'WildlifeClassifyResult(available=$available, n=${items.length})';
+  String toString() =>
+      'WildlifeClassifyResult(available=$available, n=${items.length})';
 }
 
 /// 创建命名个体（`POST /api/v1/wildlife/individuals`，规格 §2.8 / R6）。
@@ -915,7 +933,8 @@ final class CreateWildlifeIndividualCommand {
     final String trimmed = name.trim();
     if (trimmed.isEmpty) {
       issues.add(
-        const WildlifeValidationIssue(reasonIndividualNameInvalid, '请给这只动物起个名字'),
+        const WildlifeValidationIssue(
+            reasonIndividualNameInvalid, '请给这只动物起个名字'),
       );
     } else if (trimmed.length > maxIndividualNameLength) {
       issues.add(
@@ -934,9 +953,9 @@ final class CreateWildlifeIndividualCommand {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'name': name.trim(),
-    'speciesId': speciesId,
-    'description': description,
-    'coverPhotoUrl': coverPhotoUrl,
-  };
+        'name': name.trim(),
+        'speciesId': speciesId,
+        'description': description,
+        'coverPhotoUrl': coverPhotoUrl,
+      };
 }

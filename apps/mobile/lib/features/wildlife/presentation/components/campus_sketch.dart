@@ -32,12 +32,12 @@ class CampusSketch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => CustomPaint(
-    size: Size(widthPx, heightPx),
-    painter: _CampusSketchPainter(
-      colors: context.kedayaColors,
-      showLabels: showLabels,
-    ),
-  );
+        size: Size(widthPx, heightPx),
+        painter: _CampusSketchPainter(
+          colors: context.kedayaColors,
+          showLabels: showLabels,
+        ),
+      );
 }
 
 /// 一栋建筑（示意位置，**非测绘精度**）。
@@ -122,7 +122,8 @@ class _CampusSketchPainter extends CustomPainter {
     }
 
     // 水面
-    canvas.drawOval(_lake, Paint()..color = colors.info.withValues(alpha: 0.22));
+    canvas.drawOval(
+        _lake, Paint()..color = colors.info.withValues(alpha: 0.22));
 
     // 步道
     final Paint path = Paint()
@@ -164,7 +165,8 @@ class _CampusSketchPainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    painter.paint(canvas, center - Offset(painter.width / 2, painter.height / 2));
+    painter.paint(
+        canvas, center - Offset(painter.width / 2, painter.height / 2));
   }
 
   @override

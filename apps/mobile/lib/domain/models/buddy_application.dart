@@ -62,14 +62,14 @@ bool canTransitionBuddyApplication(
 ) {
   if (from == to) return false;
   return switch (from) {
-    BuddyApplicationStatus.pending =>
-      to == BuddyApplicationStatus.accepted ||
-          to == BuddyApplicationStatus.rejected ||
-          to == BuddyApplicationStatus.withdrawn,
+    BuddyApplicationStatus.pending => to == BuddyApplicationStatus.accepted ||
+        to == BuddyApplicationStatus.rejected ||
+        to == BuddyApplicationStatus.withdrawn,
     BuddyApplicationStatus.withdrawn => to == BuddyApplicationStatus.pending,
     BuddyApplicationStatus.accepted ||
     BuddyApplicationStatus.rejected ||
-    BuddyApplicationStatus.unknown => false,
+    BuddyApplicationStatus.unknown =>
+      false,
   };
 }
 
@@ -114,17 +114,19 @@ final class BuddyApplication {
     this.decidedBy,
   });
 
-  factory BuddyApplication.fromJson(Map<String, Object?> json) => BuddyApplication(
-    id: readString(json, 'id'),
-    postId: readString(json, 'postId'),
-    applicantId: readString(json, 'applicantId'),
-    applicantName: readStringOrNull(json, 'applicantName'),
-    message: readStringOrNull(json, 'message'),
-    status: BuddyApplicationStatus.fromWire(readStringOr(json, 'status', 'PENDING')),
-    createdAt: readDateTime(json, 'createdAt'),
-    decidedAt: readDateTimeOrNull(json, 'decidedAt'),
-    decidedBy: readStringOrNull(json, 'decidedBy'),
-  );
+  factory BuddyApplication.fromJson(Map<String, Object?> json) =>
+      BuddyApplication(
+        id: readString(json, 'id'),
+        postId: readString(json, 'postId'),
+        applicantId: readString(json, 'applicantId'),
+        applicantName: readStringOrNull(json, 'applicantName'),
+        message: readStringOrNull(json, 'message'),
+        status: BuddyApplicationStatus.fromWire(
+            readStringOr(json, 'status', 'PENDING')),
+        createdAt: readDateTime(json, 'createdAt'),
+        decidedAt: readDateTimeOrNull(json, 'decidedAt'),
+        decidedBy: readStringOrNull(json, 'decidedBy'),
+      );
 
   final String id;
   final String postId;
@@ -145,8 +147,9 @@ final class BuddyApplication {
   /// 审批人，**必须**等于 `post.creatorId`（规格 §2.4）。
   final String? decidedBy;
 
-  String get displayName =>
-      (applicantName != null && applicantName!.isNotEmpty) ? applicantName! : applicantId;
+  String get displayName => (applicantName != null && applicantName!.isNotEmpty)
+      ? applicantName!
+      : applicantId;
 
   bool get isPending => status.isPending;
 
@@ -154,16 +157,16 @@ final class BuddyApplication {
   bool isFrom(String userId) => applicantId == userId;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'postId': postId,
-    'applicantId': applicantId,
-    'applicantName': applicantName,
-    'message': message,
-    'status': status.wire,
-    'createdAt': isoUtc(createdAt),
-    'decidedAt': decidedAt == null ? null : isoUtc(decidedAt!),
-    'decidedBy': decidedBy,
-  };
+        'id': id,
+        'postId': postId,
+        'applicantId': applicantId,
+        'applicantName': applicantName,
+        'message': message,
+        'status': status.wire,
+        'createdAt': isoUtc(createdAt),
+        'decidedAt': decidedAt == null ? null : isoUtc(decidedAt!),
+        'decidedBy': decidedBy,
+      };
 
   BuddyApplication copyWith({
     String? id,
@@ -175,17 +178,18 @@ final class BuddyApplication {
     DateTime? createdAt,
     DateTime? decidedAt,
     String? decidedBy,
-  }) => BuddyApplication(
-    id: id ?? this.id,
-    postId: postId ?? this.postId,
-    applicantId: applicantId ?? this.applicantId,
-    applicantName: applicantName ?? this.applicantName,
-    message: message ?? this.message,
-    status: status ?? this.status,
-    createdAt: createdAt ?? this.createdAt,
-    decidedAt: decidedAt ?? this.decidedAt,
-    decidedBy: decidedBy ?? this.decidedBy,
-  );
+  }) =>
+      BuddyApplication(
+        id: id ?? this.id,
+        postId: postId ?? this.postId,
+        applicantId: applicantId ?? this.applicantId,
+        applicantName: applicantName ?? this.applicantName,
+        message: message ?? this.message,
+        status: status ?? this.status,
+        createdAt: createdAt ?? this.createdAt,
+        decidedAt: decidedAt ?? this.decidedAt,
+        decidedBy: decidedBy ?? this.decidedBy,
+      );
 
   @override
   bool operator ==(Object other) => other is BuddyApplication && other.id == id;
@@ -227,8 +231,10 @@ final class BuddyJoinCommand {
 
   /// `postId` 在**路径**里，请求体只有 `message`。
   Map<String, Object?> toJson() => <String, Object?>{
-    'message': (message == null || message!.trim().isEmpty) ? null : message!.trim(),
-  };
+        'message': (message == null || message!.trim().isEmpty)
+            ? null
+            : message!.trim(),
+      };
 }
 
 /// 审批命令（`POST /api/v1/buddy/items/:id/decide`，规格 §5.6）。
@@ -245,7 +251,7 @@ final class BuddyDecideCommand {
 
   /// `postId` 在路径里，请求体是 `{ applicationId, decision }`。
   Map<String, Object?> toJson() => <String, Object?>{
-    'applicationId': applicationId,
-    'decision': decision.wire,
-  };
+        'applicationId': applicationId,
+        'decision': decision.wire,
+      };
 }

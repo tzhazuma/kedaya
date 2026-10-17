@@ -32,71 +32,76 @@ final class RemoteTechpieRepository implements TechpiePort {
 
   @override
   Future<Result<List<TechpieLink>>> listLinks() => _api.send<List<TechpieLink>>(
-    const ApiRequest(path: _links, method: ApiMethod.get),
-    (Object? data) => _decodeList<TechpieLink>(data, 'techpie links', TechpieLink.fromJson),
-  );
+        const ApiRequest(path: _links, method: ApiMethod.get),
+        (Object? data) => _decodeList<TechpieLink>(
+            data, 'techpie links', TechpieLink.fromJson),
+      );
 
   @override
   Future<Result<TechpieLink>> bind(
     CampusPlatform platform, {
     required BindCredential credential,
-  }) => _api.send<TechpieLink>(
-    ApiRequest(
-      path: _links,
-      method: ApiMethod.post,
-      // credential 只在这里出现一次；网络层不打印请求体（规格 §10.3）。
-      body: <String, Object?>{
-        'platform': platform.wire,
-        'credential': credential.toWire(),
-      },
-      idempotencyKey: newIdempotencyKey(),
-    ),
-    (Object? data) => TechpieLink.fromJson(requireJsonMap(data, what: 'techpie link')),
-  );
+  }) =>
+      _api.send<TechpieLink>(
+        ApiRequest(
+          path: _links,
+          method: ApiMethod.post,
+          // credential 只在这里出现一次；网络层不打印请求体（规格 §10.3）。
+          body: <String, Object?>{
+            'platform': platform.wire,
+            'credential': credential.toWire(),
+          },
+          idempotencyKey: newIdempotencyKey(),
+        ),
+        (Object? data) =>
+            TechpieLink.fromJson(requireJsonMap(data, what: 'techpie link')),
+      );
 
   @override
   Future<Result<Unit>> unbind(String linkId) => _api.sendVoid(
-    ApiRequest(path: '$_links/$linkId', method: ApiMethod.delete),
-  );
+        ApiRequest(path: '$_links/$linkId', method: ApiMethod.delete),
+      );
 
   @override
   Future<Result<TechpieLink>> renew(String linkId) => _api.send<TechpieLink>(
-    ApiRequest(
-      path: '$_links/$linkId/renew',
-      method: ApiMethod.post,
-      idempotencyKey: newIdempotencyKey(),
-    ),
-    (Object? data) => TechpieLink.fromJson(requireJsonMap(data, what: 'techpie link')),
-  );
+        ApiRequest(
+          path: '$_links/$linkId/renew',
+          method: ApiMethod.post,
+          idempotencyKey: newIdempotencyKey(),
+        ),
+        (Object? data) =>
+            TechpieLink.fromJson(requireJsonMap(data, what: 'techpie link')),
+      );
 
   @override
   Future<Result<List<CampusCapability>>> listCapabilities() =>
       _api.send<List<CampusCapability>>(
         const ApiRequest(path: '$_base/capabilities', method: ApiMethod.get),
-        (Object? data) =>
-            _decodeList<CampusCapability>(data, 'techpie capabilities', CampusCapability.fromJson),
+        (Object? data) => _decodeList<CampusCapability>(
+            data, 'techpie capabilities', CampusCapability.fromJson),
       );
 
   @override
   Future<Result<WebViewTicket>> createWebViewSession({
     CampusPlatform? platform,
     required String targetUrl,
-  }) => _api.send<WebViewTicket>(
-    ApiRequest(
-      path: _webviewSessions,
-      method: ApiMethod.post,
-      // 不传 `platform` 时服务端**不要求绑定**（Phase 0 的 W4 直连）。
-      body: <String, Object?>{
-        if (platform != null) 'platform': platform.wire,
-        'targetUrl': targetUrl,
-      },
-      idempotencyKey: newIdempotencyKey(),
-    ),
-    (Object? data) => WebViewTicket.fromJson(
-      requireJsonMap(data, what: 'techpie webview ticket'),
-      platform: platform,
-    ),
-  );
+  }) =>
+      _api.send<WebViewTicket>(
+        ApiRequest(
+          path: _webviewSessions,
+          method: ApiMethod.post,
+          // 不传 `platform` 时服务端**不要求绑定**（Phase 0 的 W4 直连）。
+          body: <String, Object?>{
+            if (platform != null) 'platform': platform.wire,
+            'targetUrl': targetUrl,
+          },
+          idempotencyKey: newIdempotencyKey(),
+        ),
+        (Object? data) => WebViewTicket.fromJson(
+          requireJsonMap(data, what: 'techpie webview ticket'),
+          platform: platform,
+        ),
+      );
 
   @override
   Future<Result<WebViewHandoff>> redeemWebViewTicket(WebViewTicket ticket) {
@@ -112,7 +117,8 @@ final class RemoteTechpieRepository implements TechpiePort {
         requireJsonMap(data, what: 'techpie webview handoff'),
         targetUrl: ticket.targetUrl,
         // Phase 0 的 W4 直连会返回 `expiresAt: null` → 用票据时效兜底。
-        fallbackExpiresAt: requestedAt.add(Duration(seconds: ticket.expiresInSec)),
+        fallbackExpiresAt:
+            requestedAt.add(Duration(seconds: ticket.expiresInSec)),
       ),
     );
   }
@@ -125,7 +131,10 @@ final class RemoteTechpieRepository implements TechpiePort {
     T Function(Map<String, Object?> item) decode,
   ) {
     if (data is List<Object?>) {
-      return data.whereType<Map<String, Object?>>().map(decode).toList(growable: false);
+      return data
+          .whereType<Map<String, Object?>>()
+          .map(decode)
+          .toList(growable: false);
     }
     final Map<String, Object?> map = requireJsonMap(data, what: what);
     // 契约 §6.1 的分页集合是 `{ items, nextCursor }`；有界字典常直接返回数组。

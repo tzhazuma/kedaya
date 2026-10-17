@@ -40,7 +40,9 @@ import {
  * 大写平台 + `CampusBinding` 表的实现 —— 后者**没有** `getBinding()`，
  * 一旦解析到它，「已登录但未绑定」就会以 TypeError 收场（HTTP 500，
  * 而契约 §11.4 I4 要求 409）。这条由 `test/techpie-http.spec.ts` 的 P0-4 钉死：
- * 守卫的依赖必须在**每个**用到它的模块里都能解析到同一份实现。
+ * 守卫的依赖必须在**每个**用到它的模块里都能解析到同一份实现
+ * （P0-4 的"已绑定 → 放行"分支会往 `TechpieLink` 表里造一行，
+ * 只有解析到 techpie 侧的 `CampusSessionService` 才会命中）。
  */
 export type GuardPlatform = CampusPlatform;
 
@@ -76,13 +78,16 @@ export class CampusBindingGuard implements CanActivate {
 
     // §11.20-C：平台是统一枚举，`GuardPlatform` 就是 techpie 的 `CampusPlatform`，
     // 不需要（也不应该）在这里做边界转型 —— 转型会把"写错平台名"变成运行时静默放行。
+    //
+    // ⚠️ 只调 techpie 的 `getBinding()`（状态查询），**不用** auth 的 `acquireSession()`
+    // —— 后者会解密出会话明文，而守卫只需要一个布尔判断，不该把凭证拉进请求路径。
     const binding = await this.campusSession.getBinding(userId, platform);
     // §11.19-A：可用状态是 ACTIVE（旧拼法 LINKED 已作废）。
     // 判定只走 `isActiveLinkStatus` 一处，避免 `=== 'LINKED'` 散落各处。
     if (!binding || !isActiveLinkStatus(binding.status)) {
       throw new CampusBindingRequiredError(`请先绑定校园系统（${platform}）后再使用该功能`, {
         provider: platform,
-        status: binding?.status ?? 'UNBOUND',
+        status: 'UNBOUND',
         // 机器可读：这不是认证问题，客户端应**跳绑定引导页**而不是跳登录页
         next: 'GO_BIND',
       });

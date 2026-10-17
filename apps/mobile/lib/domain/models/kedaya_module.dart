@@ -73,8 +73,10 @@ final class KedayaModule {
   final String route;
 
   /// 生成 API 路径，例: `path(['items', '123']) -> 'groupbuy/items/123'`。
-  String path([Iterable<Object> segments = const <Object>[]]) =>
-      <String>[route, ...segments.map((Object segment) => '$segment')].join('/');
+  String path([Iterable<Object> segments = const <Object>[]]) => <String>[
+        route,
+        ...segments.map((Object segment) => '$segment')
+      ].join('/');
 
   @override
   String toString() => 'KedayaModule($id, ${sensitivity.wire})';
@@ -310,23 +312,27 @@ KedayaModule? moduleById(String id) => _byId[id];
 
 /// 需要二次同意的模块（契约 §9）。注意 `auth` / `campus-card` 虽然是 high，
 /// 但**不设同意门** —— 登录/开卡这个行为本身就是同意。
-List<KedayaModule> consentModules() =>
-    kedayaModules.where((KedayaModule module) => module.requiresConsent).toList(growable: false);
+List<KedayaModule> consentModules() => kedayaModules
+    .where((KedayaModule module) => module.requiresConsent)
+    .toList(growable: false);
 
 /// 高敏感模块（high + critical）。
-List<KedayaModule> sensitiveModules() =>
-    kedayaModules.where((KedayaModule module) => module.sensitivity.isSensitive).toList(
+List<KedayaModule> sensitiveModules() => kedayaModules
+    .where((KedayaModule module) => module.sensitivity.isSensitive)
+    .toList(
       growable: false,
     );
 
 /// 未注册的 id 返回 false（与 `requiresConsent()` 的 TS 实现一致）。
 bool moduleRequiresConsent(String id) => _byId[id]?.requiresConsent ?? false;
 
-bool moduleIsSensitive(String id) => _byId[id]?.sensitivity.isSensitive ?? false;
+bool moduleIsSensitive(String id) =>
+    _byId[id]?.sensitivity.isSensitive ?? false;
 
 /// 生成 API 路径，例: `modulePath('groupbuy', 'items', '123') -> 'groupbuy/items/123'`。
 String modulePath(String id, [Iterable<Object> segments = const <Object>[]]) {
   final KedayaModule? module = _byId[id];
   final String base = module?.route ?? id;
-  return <String>[base, ...segments.map((Object segment) => '$segment')].join('/');
+  return <String>[base, ...segments.map((Object segment) => '$segment')]
+      .join('/');
 }

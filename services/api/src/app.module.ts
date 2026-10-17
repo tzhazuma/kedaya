@@ -34,9 +34,14 @@ import { WellbeingModule } from './modules/wellbeing/wellbeing.module';
 import { FaqModule } from './modules/faq/faq.module';
 import { TechpieModule } from './modules/techpie/techpie.module';
 import { WildlifeModule } from './modules/wildlife/wildlife.module';
+// 跨模块隐私基础设施（不是契约 §4 的用户可见模块）：U8 联系方式交换
+import { ContactExchangeModule } from './modules/contact-exchange/contact-exchange.module';
 
 /**
- * 应用根模块 —— 契约 §4 的 **20 个模块全部装配**（v1.2 §11.10-C 新增 `facility`）。
+ * 应用根模块 —— 契约 §4 的 **20 个模块全部装配**（v1.2 §11.10-C 新增 `facility`），
+ * 另加一个**非用户可见**的跨模块隐私基础设施 `contact-exchange`（U8 联系方式交换）。
+ * 后者刻意不进 `@kedaya/contracts` 的 `MODULES`：它没有首页宫格，也不改变
+ * 三端"20 个模块"的交付状态断言。
  *
  * 三个全局提供者（契约 §6.1 的统一约定都靠它们落地）：
  *   APP_PIPE       ZodValidationPipe   —— 全站唯一校验入口
@@ -84,8 +89,14 @@ import { WildlifeModule } from './modules/wildlife/wildlife.module';
     FaqModule,
     TechpieModule,
     WildlifeModule,
+    // 联系方式交换（U8）：跨模块隐私基础设施，路由 /contact-exchange
+    ContactExchangeModule,
   ],
   providers: [
+    // TraceMiddleware 必须**显式提供**：虽然它由 `configure(consumer)` 挂载，
+    // 但 `app.get(TraceMiddleware)` 是装配测试的核对点 —— 一个只被 `apply()`
+    // 引用、却没进 providers 的类，在新版 Nest 里取不到实例（DI 容器里没有它）。
+    TraceMiddleware,
     /*
      * ⚠️ 必须是 `useValue`，**不能**是 `useClass`。
      *

@@ -14,7 +14,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
-    "clean": "rm -rf dist .temp .swc"
+    "clean": "rm -rf dist .temp .swc",
+    "verify:weapp": "node scripts/verify-weapp-build.cjs",
+    "publish:weapp": "node scripts/publish-weapp.cjs",
+    "test:scripts": "node --test scripts/publish-weapp.test.cjs"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.0",

@@ -56,20 +56,23 @@ void main() {
     Set<CampusPlatform> usablePlatforms = const <CampusPlatform>{},
     Map<String, CampusCapabilityState> serverStates =
         const <String, CampusCapabilityState>{},
-  }) => resolveCampusCapabilities(
-    catalog: catalog,
-    signedIn: signedIn,
-    usablePlatforms: usablePlatforms,
-    serverStates: serverStates,
-  );
+  }) =>
+      resolveCampusCapabilities(
+        catalog: catalog,
+        signedIn: signedIn,
+        usablePlatforms: usablePlatforms,
+        serverStates: serverStates,
+      );
 
   CampusCapabilityState stateOf(List<CampusCapability> items, String id) =>
       items.firstWhere((CampusCapability item) => item.id == id).state;
 
   group('CAMPUS_BINDING_REQUIRED 与 UNAUTHENTICATED 是两种不同状态', () {
     test('枚举值 / wire / 语义 / 出路四条都不同', () {
-      const CampusCapabilityState binding = CampusCapabilityState.bindingRequired;
-      const CampusCapabilityState anonymous = CampusCapabilityState.unauthenticated;
+      const CampusCapabilityState binding =
+          CampusCapabilityState.bindingRequired;
+      const CampusCapabilityState anonymous =
+          CampusCapabilityState.unauthenticated;
 
       expect(binding == anonymous, isFalse);
       expect(binding.wire, 'CAMPUS_BINDING_REQUIRED');
@@ -90,15 +93,19 @@ void main() {
 
     test('已登录但未绑定 → CAMPUS_BINDING_REQUIRED（不是 UNAUTHENTICATED）', () {
       final List<CampusCapability> items = resolve(signedIn: true);
-      expect(stateOf(items, 'campus-card.balance'), CampusCapabilityState.bindingRequired);
-      expect(stateOf(items, 'techpie.webview'), CampusCapabilityState.bindingRequired);
+      expect(stateOf(items, 'campus-card.balance'),
+          CampusCapabilityState.bindingRequired);
+      expect(stateOf(items, 'techpie.webview'),
+          CampusCapabilityState.bindingRequired);
       expect(stateOf(items, 'campus-card.balance').needsSignIn, isFalse);
     });
 
     test('未登录 → UNAUTHENTICATED（即使同时也没绑定）', () {
       final List<CampusCapability> items = resolve(signedIn: false);
-      expect(stateOf(items, 'campus-card.balance'), CampusCapabilityState.unauthenticated);
-      expect(stateOf(items, 'techpie.webview'), CampusCapabilityState.unauthenticated);
+      expect(stateOf(items, 'campus-card.balance'),
+          CampusCapabilityState.unauthenticated);
+      expect(stateOf(items, 'techpie.webview'),
+          CampusCapabilityState.unauthenticated);
       expect(stateOf(items, 'campus-card.balance').needsBinding, isFalse);
     });
 
@@ -115,7 +122,8 @@ void main() {
         CampusCapabilityState.fromErrorCode(ApiErrorCode.upstreamUnavailable),
         CampusCapabilityState.upstreamUnavailable,
       );
-      expect(CampusCapabilityState.fromErrorCode(ApiErrorCode.notFound), isNull);
+      expect(
+          CampusCapabilityState.fromErrorCode(ApiErrorCode.notFound), isNull);
     });
 
     test('F3（R4）：CONFLICT + RENEW_NOT_SUPPORTED → UNSUPPORTED，而不是普通冲突', () {
@@ -133,7 +141,8 @@ void main() {
         CampusCapabilityState.unsupported,
       );
       expect(CampusCapabilityState.fromApiError(plainConflict), isNull);
-      expect(CampusCapabilityState.reasonOf(unsupported), 'RENEW_NOT_SUPPORTED');
+      expect(
+          CampusCapabilityState.reasonOf(unsupported), 'RENEW_NOT_SUPPORTED');
       // 非字符串的 details 不许抛异常。
       expect(
         CampusCapabilityState.reasonOf(
@@ -157,7 +166,8 @@ void main() {
           'schedule.timetable': CampusCapabilityState.available,
         },
       );
-      expect(stateOf(items, 'schedule.timetable'), CampusCapabilityState.notImplemented);
+      expect(stateOf(items, 'schedule.timetable'),
+          CampusCapabilityState.notImplemented);
       final CampusCapability timetable = items.firstWhere(
         (CampusCapability item) => item.id == 'schedule.timetable',
       );
@@ -171,9 +181,12 @@ void main() {
         signedIn: true,
         usablePlatforms: const <CampusPlatform>{CampusPlatform.cpdaily},
       );
-      expect(stateOf(items, 'techpie.webview'), CampusCapabilityState.available);
-      expect(stateOf(items, 'techpie.identity'), CampusCapabilityState.available);
-      expect(stateOf(items, 'campus-card.balance'), CampusCapabilityState.bindingRequired);
+      expect(
+          stateOf(items, 'techpie.webview'), CampusCapabilityState.available);
+      expect(
+          stateOf(items, 'techpie.identity'), CampusCapabilityState.available);
+      expect(stateOf(items, 'campus-card.balance'),
+          CampusCapabilityState.bindingRequired);
     });
 
     test('服务端显式状态优先；但"可用"而平台未绑定 → 降级为需绑定', () {
@@ -202,7 +215,8 @@ void main() {
 
     test('unknown 状态不等于可用（F7：状态未知与没有数据必须区分）', () {
       expect(CampusCapabilityState.unknown.isUsable, isFalse);
-      expect(CampusCapabilityState.fromWire('SOMETHING_NEW'), CampusCapabilityState.unknown);
+      expect(CampusCapabilityState.fromWire('SOMETHING_NEW'),
+          CampusCapabilityState.unknown);
       expect(CampusCapabilityState.unknown.guidance, contains('状态未知'));
     });
 

@@ -11,13 +11,14 @@ import '../../../domain/ports/wildlife_port.dart';
 
 /// 把 `Result` 的失败分支转成可抛的 [ApiException]（presentation 只认这个）。
 T _require<T>(Result<T> result) => switch (result) {
-  Ok<T>(:final T value) => value,
-  Err<T>(:final ApiError error, :final String? traceId) =>
-    throw ApiException(error, traceId: traceId),
-};
+      Ok<T>(:final T value) => value,
+      Err<T>(:final ApiError error, :final String? traceId) =>
+        throw ApiException(error, traceId: traceId),
+    };
 
 /// 物种筛选（地图页与观测列表**共用同一个筛选状态**）。
-final wildlifeSpeciesFilterProvider = NotifierProvider<WildlifeSpeciesFilter, String?>(
+final wildlifeSpeciesFilterProvider =
+    NotifierProvider<WildlifeSpeciesFilter, String?>(
   WildlifeSpeciesFilter.new,
 );
 
@@ -30,7 +31,8 @@ final class WildlifeSpeciesFilter extends Notifier<String?> {
 }
 
 /// 物种字典（筛选 chip 与上报表单共用）。
-final wildlifeSpeciesProvider = FutureProvider<List<WildlifeSpecies>>((ref) async {
+final wildlifeSpeciesProvider =
+    FutureProvider<List<WildlifeSpecies>>((ref) async {
   final WildlifePort port = ref.watch(wildlifeRepositoryProvider);
   return _require<List<WildlifeSpecies>>(await port.listSpecies());
 });
@@ -44,7 +46,8 @@ final wildlifeZonesProvider = FutureProvider<List<WildlifeZone>>((ref) async {
 /// 底图配置（详情页要画小地图时用；地图页自己从 [WildlifeMapController] 里拿）。
 final wildlifeBasemapProvider = FutureProvider<CampusBasemap>((ref) async {
   final WildlifePort port = ref.watch(wildlifeRepositoryProvider);
-  final CampusBasemap basemap = _require<CampusBasemap>(await port.getBasemap());
+  final CampusBasemap basemap =
+      _require<CampusBasemap>(await port.getBasemap());
   // 与地图页同一条守门规则：标定不合法就不画图（规格 §1.4）。
   if (!basemap.isRenderable) {
     throw ApiException(
@@ -99,15 +102,18 @@ final class WildlifeMapState {
   }
 
   /// 敏感区（只展示"这里有一个不公开坐标的区域"）。
-  List<WildlifeZone> get sensitiveZones =>
-      zones.where((WildlifeZone zone) => zone.isSensitive).toList(growable: false);
+  List<WildlifeZone> get sensitiveZones => zones
+      .where((WildlifeZone zone) => zone.isSensitive)
+      .toList(growable: false);
 
-  List<WildlifeZone> get publicZones =>
-      zones.where((WildlifeZone zone) => !zone.isSensitive).toList(growable: false);
+  List<WildlifeZone> get publicZones => zones
+      .where((WildlifeZone zone) => !zone.isSensitive)
+      .toList(growable: false);
 
   /// 底图署名（规格 §1.4：`odbl` 时必须有署名）。
-  String get basemapAttribution =>
-      basemap.attribution.trim().isEmpty ? '示意性自绘底图（P1，非测绘精度）' : basemap.attribution;
+  String get basemapAttribution => basemap.attribution.trim().isEmpty
+      ? '示意性自绘底图（P1，非测绘精度）'
+      : basemap.attribution;
 
   /// 规格 §8.1 E10：地图**不得**显示实时点位。
   String get aggregationNotice =>
@@ -121,8 +127,8 @@ final class WildlifeMapState {
 
 final wildlifeMapControllerProvider =
     AsyncNotifierProvider<WildlifeMapController, WildlifeMapState>(
-      WildlifeMapController.new,
-    );
+  WildlifeMapController.new,
+);
 
 final class WildlifeMapController extends AsyncNotifier<WildlifeMapState> {
   /// 叠加层一次取完（热点与轨迹都是数百级，规格 §10.7）。
@@ -145,7 +151,8 @@ final class WildlifeMapController extends AsyncNotifier<WildlifeMapState> {
   Future<WildlifeMapState> _fetch(String? speciesId) async {
     final WildlifePort port = ref.read(wildlifeRepositoryProvider);
 
-    final CampusBasemap basemap = _require<CampusBasemap>(await port.getBasemap());
+    final CampusBasemap basemap =
+        _require<CampusBasemap>(await port.getBasemap());
     // 规格 §1.4 的 CI 约束在客户端也校验一次：标定错了会让**所有**点位整体偏移，
     // 而这种错误看起来像"数据错了"。宁可整页报错，也不要画一张错图。
     if (!basemap.isRenderable) {
@@ -160,7 +167,8 @@ final class WildlifeMapController extends AsyncNotifier<WildlifeMapState> {
     final List<WildlifeSpecies> species = _require<List<WildlifeSpecies>>(
       await port.listSpecies(),
     );
-    final List<WildlifeZone> zones = _require<List<WildlifeZone>>(await port.listZones());
+    final List<WildlifeZone> zones =
+        _require<List<WildlifeZone>>(await port.listZones());
     final Page<WildlifeSpot> spots = _require<Page<WildlifeSpot>>(
       await port.listSpots(
         WildlifeSpotQuery(speciesId: speciesId, limit: spotLimit),
@@ -215,14 +223,16 @@ final class WildlifeSightingListState {
     bool? isLoadingMore,
     Object? loadMoreError,
     bool clearLoadMoreError = false,
-  }) => WildlifeSightingListState(
-    sightings: sightings ?? this.sightings,
-    speciesId: speciesId ?? this.speciesId,
-    nextCursor: nextCursor ?? this.nextCursor,
-    total: total ?? this.total,
-    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-    loadMoreError: clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
-  );
+  }) =>
+      WildlifeSightingListState(
+        sightings: sightings ?? this.sightings,
+        speciesId: speciesId ?? this.speciesId,
+        nextCursor: nextCursor ?? this.nextCursor,
+        total: total ?? this.total,
+        isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+        loadMoreError:
+            clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
+      );
 
   WildlifeSightingListState append(WildlifeSightingListState next) =>
       WildlifeSightingListState(
@@ -233,12 +243,13 @@ final class WildlifeSightingListState {
       );
 }
 
-final wildlifeSightingListControllerProvider =
-    AsyncNotifierProvider<WildlifeSightingListController, WildlifeSightingListState>(
-      WildlifeSightingListController.new,
-    );
+final wildlifeSightingListControllerProvider = AsyncNotifierProvider<
+    WildlifeSightingListController, WildlifeSightingListState>(
+  WildlifeSightingListController.new,
+);
 
-final class WildlifeSightingListController extends AsyncNotifier<WildlifeSightingListState> {
+final class WildlifeSightingListController
+    extends AsyncNotifier<WildlifeSightingListState> {
   static const int pageSize = 10;
 
   @override
@@ -251,7 +262,8 @@ final class WildlifeSightingListController extends AsyncNotifier<WildlifeSightin
     final String? speciesId = ref.read(wildlifeSpeciesFilterProvider);
     state = const AsyncLoading<WildlifeSightingListState>();
     state = await AsyncValue.guard<WildlifeSightingListState>(
-      () => _fetch(WildlifeSightingQuery(speciesId: speciesId, limit: pageSize)),
+      () =>
+          _fetch(WildlifeSightingQuery(speciesId: speciesId, limit: pageSize)),
     );
   }
 
@@ -293,7 +305,8 @@ final class WildlifeSightingListController extends AsyncNotifier<WildlifeSightin
 }
 
 /// 观测详情（按 id 取；未公开的记录对非上报人返回 404 → 空态）。
-final wildlifeSightingDetailProvider = FutureProvider.family<WildlifeSighting, String>((
+final wildlifeSightingDetailProvider =
+    FutureProvider.family<WildlifeSighting, String>((
   ref,
   String sightingId,
 ) async {
@@ -312,7 +325,8 @@ final wildlifeTracksProvider = FutureProvider<List<WildlifeTrack>>((ref) async {
 });
 
 /// 轨迹详情。
-final wildlifeTrackDetailProvider = FutureProvider.family<WildlifeTrack, String>((
+final wildlifeTrackDetailProvider =
+    FutureProvider.family<WildlifeTrack, String>((
   ref,
   String trackId,
 ) async {
@@ -321,7 +335,8 @@ final wildlifeTrackDetailProvider = FutureProvider.family<WildlifeTrack, String>
 });
 
 /// 某物种下已审核的命名个体（R6「也可以手动给个名字」）。
-final wildlifeIndividualsProvider = FutureProvider.family<List<WildlifeIndividual>, String?>((
+final wildlifeIndividualsProvider =
+    FutureProvider.family<List<WildlifeIndividual>, String?>((
   ref,
   String? speciesId,
 ) async {
@@ -344,6 +359,11 @@ final wildlifeActionsProvider = Provider<WildlifeActions>((ref) {
       ref.invalidate(wildlifeSightingListControllerProvider);
       ref.invalidate(wildlifeMapControllerProvider);
       ref.invalidate(wildlifeTracksProvider);
+      // 详情是 family provider：写操作后必须一并失效，否则撤回后详情仍读到缓存值
+      //（实测 `withdraw` 后详情仍返回已删除的记录）。
+      ref.invalidate(wildlifeSightingDetailProvider);
+      ref.invalidate(wildlifeTrackDetailProvider);
+      ref.invalidate(wildlifeZoneDetailProvider);
     },
   );
 });
@@ -357,7 +377,8 @@ final class WildlifeActions {
   final void Function() onMutated;
 
   /// 纠正物种（规格 §5.5 的纠正闭环：服务端会记录 `correctedFromSpeciesId`）。
-  Future<WildlifeSighting> correctSpecies(String id, {required String speciesId}) async {
+  Future<WildlifeSighting> correctSpecies(String id,
+      {required String speciesId}) async {
     final WildlifeSighting updated = _require<WildlifeSighting>(
       await port.correctSpecies(id, speciesId: speciesId),
     );

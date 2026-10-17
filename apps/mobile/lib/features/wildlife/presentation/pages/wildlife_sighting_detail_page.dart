@@ -36,7 +36,8 @@ class WildlifeSightingDetailPage extends ConsumerWidget {
       child: value.when(
         data: (WildlifeSighting sighting) => _SightingBody(sighting: sighting),
         loading: () => const KedaYaLoadingState(message: '正在加载观测详情…'),
-        error: (Object error, StackTrace stackTrace) => _buildError(context, ref, error),
+        error: (Object error, StackTrace stackTrace) =>
+            _buildError(context, ref, error),
       ),
     );
   }
@@ -66,7 +67,8 @@ class _SightingBody extends ConsumerWidget {
     final KedaYaColors colors = context.kedayaColors;
     final DateFormat dateFormat = DateFormat('yyyy-MM-dd HH:mm');
     final List<WildlifeSpecies> species =
-        ref.watch(wildlifeSpeciesProvider).valueOrNull ?? const <WildlifeSpecies>[];
+        ref.watch(wildlifeSpeciesProvider).valueOrNull ??
+            const <WildlifeSpecies>[];
 
     return ListView(
       padding: const EdgeInsets.all(KedaYaTokens.space4),
@@ -92,14 +94,16 @@ class _SightingBody extends ConsumerWidget {
           runSpacing: KedaYaTokens.space1,
           children: <Widget>[
             if (sighting.zoneName != null)
-              WildlifePill(text: sighting.zoneName!, icon: Icons.place_outlined),
+              WildlifePill(
+                  text: sighting.zoneName!, icon: Icons.place_outlined),
             if (sighting.individualName != null)
               WildlifePill(
                 text: '个体：${sighting.individualName!}',
                 icon: Icons.pets,
                 tone: colors.brandStrong,
               ),
-            WildlifePill(text: sighting.reporterLabel, icon: Icons.person_outline),
+            WildlifePill(
+                text: sighting.reporterLabel, icon: Icons.person_outline),
             if (sighting.isAnonymous)
               WildlifePill(text: '匿名上报', icon: Icons.visibility_off_outlined),
           ],
@@ -110,7 +114,9 @@ class _SightingBody extends ConsumerWidget {
         _InfoCard(
           title: '时间',
           children: <Widget>[
-            _InfoRow(label: '发现时间', value: dateFormat.format(sighting.observedAt.toLocal())),
+            _InfoRow(
+                label: '发现时间',
+                value: dateFormat.format(sighting.observedAt.toLocal())),
             _InfoRow(
               label: '上报时间',
               value: dateFormat.format(sighting.createdAt.toLocal()),
@@ -127,7 +133,8 @@ class _SightingBody extends ConsumerWidget {
             if (sighting.reportingDelay.inMinutes.abs() >= 30)
               _InfoRow(
                 label: '补录',
-                value: '发现到上报相隔 ${formatRelativeTime(sighting.createdAt, now: sighting.observedAt)}',
+                value:
+                    '发现到上报相隔 ${formatRelativeTime(sighting.createdAt, now: sighting.observedAt)}',
               ),
           ],
         ),
@@ -138,7 +145,8 @@ class _SightingBody extends ConsumerWidget {
           const SizedBox(height: KedaYaTokens.space3),
         ],
 
-        if (sighting.note != null && sighting.note!.trim().isNotEmpty) ...<Widget>[
+        if (sighting.note != null &&
+            sighting.note!.trim().isNotEmpty) ...<Widget>[
           _InfoCard(
             title: '备注',
             children: <Widget>[
@@ -174,17 +182,17 @@ class _SightingBody extends ConsumerWidget {
                       height: 120,
                       fit: BoxFit.cover,
                       // mock 运行时没有真实图片：加载失败就显示占位图标，**不报错**。
-                      errorBuilder:
-                          (BuildContext context, Object error, StackTrace? stackTrace) =>
-                              Container(
-                                width: 120,
-                                height: 120,
-                                color: colors.surfaceAlt,
-                                child: Icon(
-                                  Icons.image_not_supported_outlined,
-                                  color: colors.textMuted,
-                                ),
-                              ),
+                      errorBuilder: (BuildContext context, Object error,
+                              StackTrace? stackTrace) =>
+                          Container(
+                        width: 120,
+                        height: 120,
+                        color: colors.surfaceAlt,
+                        child: Icon(
+                          Icons.image_not_supported_outlined,
+                          color: colors.textMuted,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -238,8 +246,9 @@ class _SightingBody extends ConsumerWidget {
                 onPressed: species.isEmpty
                     ? null
                     : () => unawaited(
-                        _showCorrectSpeciesSheet(context, ref, sighting, species),
-                      ),
+                          _showCorrectSpeciesSheet(
+                              context, ref, sighting, species),
+                        ),
                 icon: const Icon(Icons.edit_outlined, size: 16),
                 label: const Text('纠正物种'),
               ),
@@ -247,7 +256,8 @@ class _SightingBody extends ConsumerWidget {
             const SizedBox(width: KedaYaTokens.space2),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () => unawaited(_confirmWithdraw(context, ref, sighting)),
+                onPressed: () =>
+                    unawaited(_confirmWithdraw(context, ref, sighting)),
                 icon: const Icon(Icons.delete_outline, size: 16),
                 label: const Text('撤回'),
               ),
@@ -273,54 +283,57 @@ class _SightingBody extends ConsumerWidget {
     WidgetRef ref,
     WildlifeSighting sighting,
     List<WildlifeSpecies> species,
-  ) => showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    builder: (BuildContext sheetContext) => SafeArea(
-      child: ListView(
-        shrinkWrap: true,
-        padding: const EdgeInsets.all(KedaYaTokens.space4),
-        children: <Widget>[
-          Text(
-            '纠正物种',
-            style: TextStyle(
-              fontSize: KedaYaTokens.fontSizeLg,
-              fontWeight: KedaYaTokens.fontWeightSemibold,
-              color: sheetContext.kedayaColors.text,
-            ),
+  ) =>
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (BuildContext sheetContext) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(KedaYaTokens.space4),
+            children: <Widget>[
+              Text(
+                '纠正物种',
+                style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeLg,
+                  fontWeight: KedaYaTokens.fontWeightSemibold,
+                  color: sheetContext.kedayaColors.text,
+                ),
+              ),
+              const SizedBox(height: KedaYaTokens.space2),
+              for (final WildlifeSpecies item in species)
+                ListTile(
+                  dense: true,
+                  title: Text(item.displayName),
+                  subtitle: Text(item.scientificName),
+                  trailing: item.id == sighting.speciesId
+                      ? const Icon(Icons.check, size: 18)
+                      : null,
+                  onTap: () async {
+                    Navigator.of(sheetContext).pop();
+                    final WildlifeActions actions =
+                        ref.read(wildlifeActionsProvider);
+                    try {
+                      await actions.correctSpecies(sighting.id,
+                          speciesId: item.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('已纠正为「${item.displayName}」')),
+                        );
+                      }
+                    } on Object catch (error) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text('$error')));
+                      }
+                    }
+                  },
+                ),
+            ],
           ),
-          const SizedBox(height: KedaYaTokens.space2),
-          for (final WildlifeSpecies item in species)
-            ListTile(
-              dense: true,
-              title: Text(item.displayName),
-              subtitle: Text(item.scientificName),
-              trailing: item.id == sighting.speciesId
-                  ? const Icon(Icons.check, size: 18)
-                  : null,
-              onTap: () async {
-                Navigator.of(sheetContext).pop();
-                final WildlifeActions actions = ref.read(wildlifeActionsProvider);
-                try {
-                  await actions.correctSpecies(sighting.id, speciesId: item.id);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('已纠正为「${item.displayName}」')),
-                    );
-                  }
-                } on Object catch (error) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('$error')));
-                  }
-                }
-              },
-            ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 
   Future<void> _confirmWithdraw(
     BuildContext context,
@@ -417,13 +430,15 @@ class _InfoRow extends StatelessWidget {
             width: 96,
             child: Text(
               label,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
             ),
           ),
         ],

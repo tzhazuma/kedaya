@@ -1,0 +1,4011 @@
+{
+  "_meta": {
+    "schemaVersion": "1.0.0",
+    "generatedAt": "2026-10-17T20:31:14+08:00",
+    "crs": "WGS84 / EPSG:4326（本文件所有经纬度均为 WGS84）",
+    "source": "OpenStreetMap",
+    "sourceUrl": "https://www.openstreetmap.org/relation/5390610",
+    "attribution": "© OpenStreetMap contributors",
+    "license": "ODbL-1.0",
+    "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "licenseNotice": "本文件是 OpenStreetMap 数据的衍生物，按 ODbL 1.0 提供：必须保留署名，衍生数据库同样按 ODbL 分发。",
+    "endpoint": "https://overpass-api.de/api/interpreter",
+    "nominatimQuery": "https://nominatim.openstreetmap.org/search?q=%E4%B8%8A%E6%B5%B7%E7%A7%91%E6%8A%80%E5%A4%A7%E5%AD%A6&format=jsonv2&limit=5&extratags=1&addressdetails=1",
+    "nominatimResult": {
+      "displayName": "上海科技大学（张江校区）, 393号, 华夏中路, 张江镇, 浦东新区, 上海市, 101201, 中国",
+      "center": {
+        "lat": 31.1794305,
+        "lng": 121.5902345
+      },
+      "bbox": {
+        "minLat": 31.175546,
+        "maxLat": 31.1830156,
+        "minLng": 121.5844916,
+        "maxLng": 121.5960882
+      }
+    },
+    "osmBaseTimestamp": "2026-10-17T11:03:51Z — 2026-10-17T11:19:01Z（各图层快照略有差异）",
+    "fetchedAt": "2026-10-17T19:07:00+08:00 — 2026-10-17T19:31:00+08:00",
+    "queries": [
+      {
+        "name": "relgeom",
+        "overpassQL": "[out:json][timeout:90];relation(5390610);out geom;"
+      },
+      {
+        "name": "bgeom",
+        "overpassQL": "[out:json][timeout:150];way[\"building\"](31.1750,121.5840,31.1836,121.5966);out tags geom;"
+      },
+      {
+        "name": "wgeom",
+        "overpassQL": "[out:json][timeout:150];(way[\"natural\"=\"water\"](31.1750,121.5840,31.1836,121.5966);way[\"waterway\"](31.1750,121.5840,31.1836,121.5966););out tags geom;"
+      },
+      {
+        "name": "lgeom",
+        "overpassQL": "[out:json][timeout:150];way[\"leisure\"](31.1750,121.5840,31.1836,121.5966);out tags geom;"
+      },
+      {
+        "name": "landgeom",
+        "overpassQL": "[out:json][timeout:120];way[\"landuse\"](31.1750,121.5840,31.1836,121.5966);out tags geom;"
+      },
+      {
+        "name": "highway",
+        "overpassQL": "[out:json][timeout:120];way[\"highway\"~\"^(footway|service|residential|unclassified|pedestrian|cycleway|path)$\"](31.1750,121.5840,31.1836,121.5966);out tags geom;"
+      },
+      {
+        "name": "amenity",
+        "overpassQL": "[out:json][timeout:120];nwr[\"amenity\"](31.1750,121.5840,31.1836,121.5966);out tags center;"
+      },
+      {
+        "name": "leisure",
+        "overpassQL": "[out:json][timeout:120];nwr[\"leisure\"](31.1750,121.5840,31.1836,121.5966);out tags center;"
+      },
+      {
+        "name": "water",
+        "overpassQL": "[out:json][timeout:120];(nwr[\"natural\"=\"water\"](31.1750,121.5840,31.1836,121.5966);way[\"waterway\"](31.1750,121.5840,31.1836,121.5966););out tags center;"
+      },
+      {
+        "name": "gates",
+        "overpassQL": "[out:json][timeout:120];(node[\"barrier\"~\"gate|entrance\"](31.1750,121.5840,31.1836,121.5966);node[\"entrance\"](31.1750,121.5840,31.1836,121.5966);way[\"barrier\"=\"gate\"](31.1750,121.5840,31.1836,121.5966););out tags center;"
+      },
+      {
+        "name": "metro",
+        "overpassQL": "[out:json][timeout:90];nwr[\"railway\"=\"station\"](31.16,121.56,31.22,121.63);out tags center;"
+      }
+    ],
+    "precision": {
+      "campusBoundary": "OSM relation 5390610 的多边形；面积与形状为 OSM 编辑成果，未与校方红线核对",
+      "poi": "OSM 节点/way 中心点；平面误差估计 3–15 m（依赖航拍描图与志愿编辑），未实测",
+      "locations": "25 个地点中，10 个为 high（直接命中 OSM 命名要素或由多栋宿舍几何中心导出）、7 个 medium（就近推断）、8 个 low（近似放置/未测绘）；见 locations[].confidence",
+      "projection": "WGS84 → 局部 ENU（原点 31.1795,121.591）→ 线性视口；校园尺度误差 < 0.1%"
+    },
+    "caveats": [
+      "OSM 的人工湖没有名称，图上只写「人工湖」，不臆造正式湖名。",
+      "一/二/三食堂与 OSM「餐饮中心 #1/#2/#3」的对应关系是推测。",
+      "教学楼 A/B/C 三栋在 OSM 只有一栋「教学中心」，A/B/C 为沿建筑长轴的近似标注。",
+      "「张江地铁站」在占位白名单里语义模糊；本数据取最近的中科路站（13 号线），不代表产品最终口径。",
+      "学校官网校园地图版权未确认：本数据集**没有**抓取或复制学校地图，未做逐点核对。"
+    ]
+  },
+  "campus": {
+    "osmType": "relation",
+    "osmId": 5390610,
+    "name": "上海科技大学（张江校区）",
+    "nameEn": "ShanghaiTech University (Zhangjiang Campus)",
+    "website": "https://www.shanghaitech.edu.cn/",
+    "center": {
+      "lat": 31.1785176,
+      "lng": 121.5909954
+    },
+    "bounds": {
+      "minlat": 31.175546,
+      "minlon": 121.5844916,
+      "maxlat": 31.1830156,
+      "maxlon": 121.5960882
+    },
+    "areaM2": 609167.4,
+    "outline": [
+      [
+        121.5881732,
+        31.1824489
+      ],
+      [
+        121.5885716,
+        31.1825172
+      ],
+      [
+        121.5886166,
+        31.1824786
+      ],
+      [
+        121.5886534,
+        31.1824793
+      ],
+      [
+        121.5889528,
+        31.1825399
+      ],
+      [
+        121.5891535,
+        31.1825699
+      ],
+      [
+        121.5891848,
+        31.1826271
+      ],
+      [
+        121.589824,
+        31.1827137
+      ],
+      [
+        121.5905767,
+        31.1827979
+      ],
+      [
+        121.5913598,
+        31.1828586
+      ],
+      [
+        121.5924993,
+        31.1829496
+      ],
+      [
+        121.5930146,
+        31.1829906
+      ],
+      [
+        121.59349,
+        31.1830098
+      ],
+      [
+        121.5937808,
+        31.1830156
+      ],
+      [
+        121.5940019,
+        31.1824298
+      ],
+      [
+        121.5947689,
+        31.181295
+      ],
+      [
+        121.5950206,
+        31.1808278
+      ],
+      [
+        121.5956331,
+        31.1796982
+      ],
+      [
+        121.5959286,
+        31.1791384
+      ],
+      [
+        121.5960387,
+        31.178794
+      ],
+      [
+        121.5960882,
+        31.1787002
+      ],
+      [
+        121.5957532,
+        31.1783372
+      ],
+      [
+        121.596023,
+        31.1777672
+      ],
+      [
+        121.5959515,
+        31.1776964
+      ],
+      [
+        121.595907,
+        31.1776523
+      ],
+      [
+        121.5957611,
+        31.177487
+      ],
+      [
+        121.5956571,
+        31.177347
+      ],
+      [
+        121.5954203,
+        31.1770083
+      ],
+      [
+        121.5953578,
+        31.1769405
+      ],
+      [
+        121.5952966,
+        31.176874
+      ],
+      [
+        121.5951303,
+        31.1767284
+      ],
+      [
+        121.5949731,
+        31.17662
+      ],
+      [
+        121.5947805,
+        31.1765152
+      ],
+      [
+        121.5946451,
+        31.1764588
+      ],
+      [
+        121.5945465,
+        31.1764177
+      ],
+      [
+        121.5943493,
+        31.1763591
+      ],
+      [
+        121.5943219,
+        31.1763538
+      ],
+      [
+        121.5941329,
+        31.1763176
+      ],
+      [
+        121.5939598,
+        31.1762911
+      ],
+      [
+        121.5937253,
+        31.1762551
+      ],
+      [
+        121.5934743,
+        31.1762212
+      ],
+      [
+        121.5934158,
+        31.1762133
+      ],
+      [
+        121.5931168,
+        31.1761892
+      ],
+      [
+        121.5929024,
+        31.1761833
+      ],
+      [
+        121.5927602,
+        31.1761794
+      ],
+      [
+        121.5924931,
+        31.1761714
+      ],
+      [
+        121.5924661,
+        31.1761695
+      ],
+      [
+        121.5924029,
+        31.1761651
+      ],
+      [
+        121.5923903,
+        31.1761642
+      ],
+      [
+        121.5922335,
+        31.1761533
+      ],
+      [
+        121.5920407,
+        31.1761297
+      ],
+      [
+        121.5919148,
+        31.1761143
+      ],
+      [
+        121.5908406,
+        31.1759296
+      ],
+      [
+        121.5908238,
+        31.175937
+      ],
+      [
+        121.5907898,
+        31.1759521
+      ],
+      [
+        121.5907522,
+        31.1760004
+      ],
+      [
+        121.5904763,
+        31.1759519
+      ],
+      [
+        121.5901992,
+        31.1759055
+      ],
+      [
+        121.5900977,
+        31.175796
+      ],
+      [
+        121.5900216,
+        31.1757851
+      ],
+      [
+        121.5890354,
+        31.1756435
+      ],
+      [
+        121.5884438,
+        31.1755586
+      ],
+      [
+        121.5882892,
+        31.175546
+      ],
+      [
+        121.5881862,
+        31.1755544
+      ],
+      [
+        121.5880946,
+        31.1755618
+      ],
+      [
+        121.5879293,
+        31.1756071
+      ],
+      [
+        121.5878931,
+        31.1756235
+      ],
+      [
+        121.5877764,
+        31.1756765
+      ],
+      [
+        121.5876528,
+        31.1757599
+      ],
+      [
+        121.5875602,
+        31.1758412
+      ],
+      [
+        121.5861008,
+        31.177594
+      ],
+      [
+        121.585829,
+        31.1779284
+      ],
+      [
+        121.5848366,
+        31.1791762
+      ],
+      [
+        121.5848974,
+        31.1792033
+      ],
+      [
+        121.5844916,
+        31.1796577
+      ],
+      [
+        121.585021,
+        31.1798083
+      ],
+      [
+        121.5850537,
+        31.1798176
+      ],
+      [
+        121.5853116,
+        31.1799019
+      ],
+      [
+        121.5864735,
+        31.1802817
+      ],
+      [
+        121.586552,
+        31.1803073
+      ],
+      [
+        121.5867018,
+        31.1803636
+      ],
+      [
+        121.5874,
+        31.1805374
+      ],
+      [
+        121.5881529,
+        31.1807176
+      ],
+      [
+        121.5887638,
+        31.1808368
+      ],
+      [
+        121.5887778,
+        31.1808395
+      ],
+      [
+        121.5888619,
+        31.1808661
+      ],
+      [
+        121.5889637,
+        31.180896
+      ],
+      [
+        121.5889583,
+        31.1809311
+      ],
+      [
+        121.5889499,
+        31.1809859
+      ],
+      [
+        121.5889433,
+        31.1810712
+      ],
+      [
+        121.588734,
+        31.1819951
+      ],
+      [
+        121.5883024,
+        31.1819116
+      ],
+      [
+        121.5881732,
+        31.1824489
+      ]
+    ]
+  },
+  "features": [
+    {
+      "id": "osm-way-833222334",
+      "osmType": "way",
+      "osmId": 833222334,
+      "name": null,
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "parking",
+      "lat": 31.1833008,
+      "lng": 121.5920331,
+      "tags": {
+        "amenity": "parking"
+      }
+    },
+    {
+      "id": "osm-node-3665756984",
+      "osmType": "node",
+      "osmId": 3665756984,
+      "name": null,
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "parking_entrance",
+      "lat": 31.1809535,
+      "lng": 121.5876408,
+      "tags": {
+        "amenity": "parking_entrance"
+      }
+    },
+    {
+      "id": "osm-node-3665849616",
+      "osmType": "node",
+      "osmId": 3665849616,
+      "name": null,
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "parking_entrance",
+      "lat": 31.1834199,
+      "lng": 121.5869188,
+      "tags": {
+        "amenity": "parking_entrance"
+      }
+    },
+    {
+      "id": "osm-node-5613186759",
+      "osmType": "node",
+      "osmId": 5613186759,
+      "name": null,
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "parking",
+      "lat": 31.1776209,
+      "lng": 121.5936646,
+      "tags": {
+        "amenity": "parking"
+      }
+    },
+    {
+      "id": "osm-node-5613538057",
+      "osmType": "node",
+      "osmId": 5613538057,
+      "name": null,
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "post_office",
+      "lat": 31.1775015,
+      "lng": 121.5952361,
+      "tags": {
+        "amenity": "post_office"
+      }
+    },
+    {
+      "id": "osm-node-7770708225",
+      "osmType": "node",
+      "osmId": 7770708225,
+      "name": null,
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "parking",
+      "lat": 31.1804062,
+      "lng": 121.5942785,
+      "tags": {
+        "amenity": "parking"
+      }
+    },
+    {
+      "id": "osm-node-12303933214",
+      "osmType": "node",
+      "osmId": 12303933214,
+      "name": null,
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "fountain",
+      "lat": 31.177196,
+      "lng": 121.5916945,
+      "tags": {
+        "amenity": "fountain"
+      }
+    },
+    {
+      "id": "osm-node-5613085121",
+      "osmType": "node",
+      "osmId": 5613085121,
+      "name": "上海科技大学医务室",
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "clinic",
+      "lat": 31.1806082,
+      "lng": 121.5924563,
+      "tags": {
+        "air_conditioning": "yes",
+        "amenity": "clinic",
+        "healthcare": "clinic",
+        "name": "上海科技大学医务室",
+        "name:zh": "上海科技大学医务室",
+        "name:zh-Hans": "上海科技大学医务室",
+        "name:zh-Hant": "上海科技大學醫務室",
+        "operator": "上海科技大学",
+        "operator:type": "government",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-relation-5390610",
+      "osmType": "relation",
+      "osmId": 5390610,
+      "name": "上海科技大学（张江校区）",
+      "nameEn": "ShanghaiTech University (Zhangjiang Campus)",
+      "category": "amenity",
+      "subtype": "university",
+      "lat": 31.1792808,
+      "lng": 121.5902899,
+      "tags": {
+        "addr:city": "Shanghai",
+        "addr:district": "Pudong",
+        "addr:housenumber": "393号",
+        "addr:postcode": "101201",
+        "addr:province": "Shanghai",
+        "addr:street": "华夏中路",
+        "amenity": "university",
+        "internet_access": "yes",
+        "internet_access:fee": "customers",
+        "internet_access:ssid": "ShanghaiTech",
+        "name": "上海科技大学（张江校区）",
+        "name:en": "ShanghaiTech University (Zhangjiang Campus)",
+        "name:zh": "上海科技大学（张江校区）",
+        "name:zh-Hans": "上海科技大学（张江校区）",
+        "name:zh-Hant": "上海科技大學（張江校區）",
+        "name:zh-Latn-pinyin": "Shànghǎi Kējì Dàxué",
+        "operator": "中国科学院",
+        "type": "multipolygon",
+        "website": "https://www.shanghaitech.edu.cn/",
+        "wheelchair": "yes",
+        "wikidata": "Q3817847",
+        "wikipedia": "zh:上海科技大学"
+      }
+    },
+    {
+      "id": "osm-node-5613521469",
+      "osmType": "node",
+      "osmId": 5613521469,
+      "name": "上海银行",
+      "nameEn": "Bank of Shanghai",
+      "category": "amenity",
+      "subtype": "bank",
+      "lat": 31.1807964,
+      "lng": 121.5945384,
+      "tags": {
+        "amenity": "bank",
+        "atm": "yes",
+        "brand": "上海银行",
+        "brand:en": "Bank of Shanghai",
+        "brand:wikidata": "Q4208351",
+        "brand:zh": "上海银行",
+        "name": "上海银行",
+        "name:en": "Bank of Shanghai",
+        "name:zh": "上海银行",
+        "operator": "上海银行"
+      }
+    },
+    {
+      "id": "osm-node-9184316656",
+      "osmType": "node",
+      "osmId": 9184316656,
+      "name": "丝路餐厅",
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "food_court",
+      "lat": 31.1804466,
+      "lng": 121.5929943,
+      "tags": {
+        "amenity": "food_court",
+        "internet_access": "yes",
+        "internet_access:fee": "customers",
+        "name": "丝路餐厅",
+        "name:zh": "丝路餐厅",
+        "name:zh-Hans": "丝路餐厅",
+        "name:zh-Hant": "絲路餐廳",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-relation-5390633",
+      "osmType": "relation",
+      "osmId": 5390633,
+      "name": "中国科学院上海高等研究院",
+      "nameEn": "Shanghai Advanced Research Institute, CAS",
+      "category": "amenity",
+      "subtype": "research_institute",
+      "lat": 31.1833312,
+      "lng": 121.585111,
+      "tags": {
+        "amenity": "research_institute",
+        "name": "中国科学院上海高等研究院",
+        "name:en": "Shanghai Advanced Research Institute, CAS",
+        "name:zh": "中国科学院上海高等研究院",
+        "name:zh-Hans": "中国科学院上海高等研究院",
+        "name:zh-Hant": "中國科學院上海高等研究院",
+        "short_name": "上海高研院",
+        "short_name:en": "SARI",
+        "type": "multipolygon"
+      }
+    },
+    {
+      "id": "osm-way-587663176",
+      "osmType": "way",
+      "osmId": 587663176,
+      "name": "国家蛋白质科学中心",
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "research_institute",
+      "lat": 31.1839407,
+      "lng": 121.5913369,
+      "tags": {
+        "amenity": "research_institute",
+        "name": "国家蛋白质科学中心",
+        "name:zh": "国家蛋白质科学中心",
+        "name:zh-Hans": "国家蛋白质科学中心",
+        "name:zh-Hant": "國家蛋白質科學中心"
+      }
+    },
+    {
+      "id": "osm-node-9184316657",
+      "osmType": "node",
+      "osmId": 9184316657,
+      "name": "尚科美食广场",
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "food_court",
+      "lat": 31.1794923,
+      "lng": 121.5927618,
+      "tags": {
+        "amenity": "food_court",
+        "internet_access": "yes",
+        "internet_access:fee": "customers",
+        "name": "尚科美食广场",
+        "name:zh": "尚科美食广场",
+        "name:zh-Hans": "尚科美食广场",
+        "name:zh-Hant": "尚科美食廣場",
+        "operator": "上海科技大学",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-node-13567104879",
+      "osmType": "node",
+      "osmId": 13567104879,
+      "name": "教职工食堂",
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "food_court",
+      "lat": 31.1784444,
+      "lng": 121.5922522,
+      "tags": {
+        "amenity": "food_court",
+        "internet_access": "yes",
+        "internet_access:fee": "customers",
+        "level": "2",
+        "name": "教职工食堂",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-node-9184316658",
+      "osmType": "node",
+      "osmId": 9184316658,
+      "name": "白玉兰餐厅",
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "food_court",
+      "lat": 31.1785475,
+      "lng": 121.5922741,
+      "tags": {
+        "amenity": "food_court",
+        "internet_access": "yes",
+        "internet_access:fee": "customers",
+        "level": "1",
+        "name": "白玉兰餐厅",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-node-5613200354",
+      "osmType": "node",
+      "osmId": 5613200354,
+      "name": "科大咖啡馆",
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "cafe",
+      "lat": 31.1807609,
+      "lng": 121.5931634,
+      "tags": {
+        "air_conditioning": "yes",
+        "amenity": "cafe",
+        "internet_access": "yes",
+        "internet_access:fee": "customers",
+        "name": "科大咖啡馆",
+        "name:zh": "科大咖啡馆",
+        "name:zh-Hans": "科大咖啡馆",
+        "name:zh-Hant": "科大咖啡館",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-1436405232",
+      "osmType": "way",
+      "osmId": 1436405232,
+      "name": "筑桥实验小学",
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "school",
+      "lat": 31.1836807,
+      "lng": 121.5957659,
+      "tags": {
+        "amenity": "school",
+        "name": "筑桥实验小学"
+      }
+    },
+    {
+      "id": "osm-node-12303933213",
+      "osmType": "node",
+      "osmId": 12303933213,
+      "name": "肯德基",
+      "nameEn": "KFC",
+      "category": "amenity",
+      "subtype": "fast_food",
+      "lat": 31.1797536,
+      "lng": 121.5928461,
+      "tags": {
+        "amenity": "fast_food",
+        "brand": "肯德基",
+        "brand:en": "KFC",
+        "brand:wikidata": "Q524757",
+        "brand:zh": "肯德基",
+        "cuisine": "chicken",
+        "name": "肯德基",
+        "name:en": "KFC",
+        "name:zh": "肯德基",
+        "takeaway": "yes"
+      }
+    },
+    {
+      "id": "osm-node-13566597659",
+      "osmType": "node",
+      "osmId": 13566597659,
+      "name": "西餐厅",
+      "nameEn": null,
+      "category": "amenity",
+      "subtype": "restaurant",
+      "lat": 31.179708,
+      "lng": 121.5928299,
+      "tags": {
+        "amenity": "restaurant",
+        "cuisine": "american",
+        "name": "西餐厅"
+      }
+    },
+    {
+      "id": "osm-way-587638229",
+      "osmType": "way",
+      "osmId": 587638229,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1806195,
+      "lng": 121.5923691,
+      "tags": {
+        "building": "university",
+        "building:levels": "3",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587653793",
+      "osmType": "way",
+      "osmId": 587653793,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "roof",
+      "lat": 31.1775882,
+      "lng": 121.5900226,
+      "tags": {
+        "building": "roof",
+        "layer": "1",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587691940",
+      "osmType": "way",
+      "osmId": 587691940,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1786776,
+      "lng": 121.5907843,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-832289383",
+      "osmType": "way",
+      "osmId": 832289383,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1803972,
+      "lng": 121.5924554,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-832336712",
+      "osmType": "way",
+      "osmId": 832336712,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "roof",
+      "lat": 31.1778923,
+      "lng": 121.5915289,
+      "tags": {
+        "building": "roof",
+        "layer": "1",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-832336714",
+      "osmType": "way",
+      "osmId": 832336714,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "roof",
+      "lat": 31.1792716,
+      "lng": 121.5908615,
+      "tags": {
+        "building": "roof",
+        "layer": "1",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-832336715",
+      "osmType": "way",
+      "osmId": 832336715,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "roof",
+      "lat": 31.1792594,
+      "lng": 121.5896187,
+      "tags": {
+        "building": "roof",
+        "layer": "1",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-832336719",
+      "osmType": "way",
+      "osmId": 832336719,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "roof",
+      "lat": 31.1787196,
+      "lng": 121.5883123,
+      "tags": {
+        "building": "roof",
+        "layer": "1",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-832336735",
+      "osmType": "way",
+      "osmId": 832336735,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "roof",
+      "lat": 31.1795268,
+      "lng": 121.5859468,
+      "tags": {
+        "building": "roof",
+        "layer": "1",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833235572",
+      "osmType": "way",
+      "osmId": 833235572,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1801665,
+      "lng": 121.5906298,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833235574",
+      "osmType": "way",
+      "osmId": 833235574,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1799618,
+      "lng": 121.589977,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833235575",
+      "osmType": "way",
+      "osmId": 833235575,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1783601,
+      "lng": 121.59029,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833243646",
+      "osmType": "way",
+      "osmId": 833243646,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1781169,
+      "lng": 121.5894374,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833243647",
+      "osmType": "way",
+      "osmId": 833243647,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.17827,
+      "lng": 121.5891992,
+      "tags": {
+        "building": "university",
+        "layer": "100",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833243648",
+      "osmType": "way",
+      "osmId": 833243648,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.178147,
+      "lng": 121.5889612,
+      "tags": {
+        "building": "university",
+        "layer": "100",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833243649",
+      "osmType": "way",
+      "osmId": 833243649,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1782238,
+      "lng": 121.5890706,
+      "tags": {
+        "building": "university",
+        "building:levels": "5",
+        "layer": "1",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833243650",
+      "osmType": "way",
+      "osmId": 833243650,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1787827,
+      "lng": 121.588642,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833243660",
+      "osmType": "way",
+      "osmId": 833243660,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1770308,
+      "lng": 121.5924161,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833244886",
+      "osmType": "way",
+      "osmId": 833244886,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1816994,
+      "lng": 121.5901741,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278176",
+      "osmType": "way",
+      "osmId": 833278176,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1806919,
+      "lng": 121.59435,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278177",
+      "osmType": "way",
+      "osmId": 833278177,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1806811,
+      "lng": 121.5944135,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278178",
+      "osmType": "way",
+      "osmId": 833278178,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1807086,
+      "lng": 121.5935067,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278179",
+      "osmType": "way",
+      "osmId": 833278179,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1807017,
+      "lng": 121.5939358,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278180",
+      "osmType": "way",
+      "osmId": 833278180,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.179714,
+      "lng": 121.5940632,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278181",
+      "osmType": "way",
+      "osmId": 833278181,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1801482,
+      "lng": 121.5941718,
+      "tags": {
+        "building": "dormitory",
+        "layer": "1",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278182",
+      "osmType": "way",
+      "osmId": 833278182,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1792819,
+      "lng": 121.5939,
+      "tags": {
+        "building": "dormitory",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278183",
+      "osmType": "way",
+      "osmId": 833278183,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1800764,
+      "lng": 121.5934877,
+      "tags": {
+        "building": "dormitory",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278184",
+      "osmType": "way",
+      "osmId": 833278184,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1796376,
+      "lng": 121.5933274,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278185",
+      "osmType": "way",
+      "osmId": 833278185,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1792081,
+      "lng": 121.5931523,
+      "tags": {
+        "building": "dormitory",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278186",
+      "osmType": "way",
+      "osmId": 833278186,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1794713,
+      "lng": 121.5920289,
+      "tags": {
+        "building": "university",
+        "layer": "2",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278187",
+      "osmType": "way",
+      "osmId": 833278187,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1798294,
+      "lng": 121.5921684,
+      "tags": {
+        "building": "university",
+        "layer": "2",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278188",
+      "osmType": "way",
+      "osmId": 833278188,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1801928,
+      "lng": 121.592311,
+      "tags": {
+        "building": "university",
+        "layer": "2",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833278190",
+      "osmType": "way",
+      "osmId": 833278190,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1786322,
+      "lng": 121.5917296,
+      "tags": {
+        "building": "university",
+        "layer": "2",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833279598",
+      "osmType": "way",
+      "osmId": 833279598,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "roof",
+      "lat": 31.1791204,
+      "lng": 121.5922493,
+      "tags": {
+        "building": "roof",
+        "layer": "1",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833281366",
+      "osmType": "way",
+      "osmId": 833281366,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1790257,
+      "lng": 121.59186,
+      "tags": {
+        "building": "university",
+        "layer": "2",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833305475",
+      "osmType": "way",
+      "osmId": 833305475,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1776511,
+      "lng": 121.5923408,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833305476",
+      "osmType": "way",
+      "osmId": 833305476,
+      "name": null,
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1773681,
+      "lng": 121.5890299,
+      "tags": {
+        "building": "university",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587651681",
+      "osmType": "way",
+      "osmId": 587651681,
+      "name": "一号教授公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "apartments",
+      "lat": 31.1774642,
+      "lng": 121.5934732,
+      "tags": {
+        "building": "apartments",
+        "layer": "1",
+        "name": "一号教授公寓",
+        "name:zh": "一号教授公寓",
+        "name:zh-Hans": "一号教授公寓",
+        "name:zh-Hant": "一號教授公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587651676",
+      "osmType": "way",
+      "osmId": 587651676,
+      "name": "七号学生公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1780693,
+      "lng": 121.5935876,
+      "tags": {
+        "building": "dormitory",
+        "name": "七号学生公寓",
+        "name:zh": "七号学生公寓",
+        "name:zh-Hans": "七号学生公寓",
+        "name:zh-Hant": "七號學生公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587651639",
+      "osmType": "way",
+      "osmId": 587651639,
+      "name": "三号学生公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1796733,
+      "lng": 121.5931704,
+      "tags": {
+        "building": "dormitory",
+        "layer": "1",
+        "name": "三号学生公寓",
+        "name:zh": "三号学生公寓",
+        "name:zh-Hans": "三号学生公寓",
+        "name:zh-Hant": "三號學生公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587651690",
+      "osmType": "way",
+      "osmId": 587651690,
+      "name": "三号教授公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "apartments",
+      "lat": 31.1774241,
+      "lng": 121.5951941,
+      "tags": {
+        "building": "apartments",
+        "name": "三号教授公寓",
+        "name:zh": "三号教授公寓",
+        "name:zh-Hans": "三号教授公寓",
+        "name:zh-Hant": "三號教授公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-832289365",
+      "osmType": "way",
+      "osmId": 832289365,
+      "name": "上海张江海科雅乐轩酒店",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "yes",
+      "lat": 31.182476,
+      "lng": 121.5932178,
+      "tags": {
+        "air_conditioning": "yes",
+        "brand": "万豪",
+        "building": "yes",
+        "internet_access": "yes",
+        "internet_access:fee": "customers",
+        "name": "上海张江海科雅乐轩酒店",
+        "name:zh": "上海张江海科雅乐轩酒店",
+        "name:zh-Hans": "上海张江海科雅乐轩酒店",
+        "name:zh-Hant": "上海張江海科雅樂軒飯店",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "tourism": "hotel",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587638225",
+      "osmType": "way",
+      "osmId": 587638225,
+      "name": "上海科技大学 iHuman 研究所 · 免疫化学研究所",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "yes",
+      "lat": 31.1822434,
+      "lng": 121.5904078,
+      "tags": {
+        "air_conditioning": "yes",
+        "building": "yes",
+        "internet_access": "yes",
+        "internet_access:fee": "customers",
+        "loc_name": "人字楼",
+        "name": "上海科技大学 iHuman 研究所 · 免疫化学研究所",
+        "name:zh": "上海科技大学 iHuman 研究所 · 免疫化学研究所",
+        "name:zh-Hans": "上海科技大学 iHuman 研究所 · 免疫化学研究所",
+        "name:zh-Hant": "上海科技大學iHuman研究所·免疫化學研究所",
+        "office": "research",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-832289363",
+      "osmType": "way",
+      "osmId": 832289363,
+      "name": "上海科技大学会议中心",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1822027,
+      "lng": 121.5933742,
+      "tags": {
+        "building": "university",
+        "name": "上海科技大学会议中心",
+        "name:zh": "上海科技大学会议中心",
+        "name:zh-Hans": "上海科技大学会议中心",
+        "name:zh-Hant": "上海科技大學會議中心",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587691936",
+      "osmType": "way",
+      "osmId": 587691936,
+      "name": "上海科技大学体育馆",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "yes",
+      "lat": 31.1786671,
+      "lng": 121.5938098,
+      "tags": {
+        "building": "yes",
+        "internet_access": "yes",
+        "internet_access:fee": "customers",
+        "leisure": "fitness_centre",
+        "name": "上海科技大学体育馆"
+      }
+    },
+    {
+      "id": "osm-way-1480634994",
+      "osmType": "way",
+      "osmId": 1480634994,
+      "name": "上海科技大学博士公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1800954,
+      "lng": 121.5951121,
+      "tags": {
+        "building": "dormitory",
+        "name": "上海科技大学博士公寓",
+        "operator": "上海科技大学"
+      }
+    },
+    {
+      "id": "osm-way-832289398",
+      "osmType": "way",
+      "osmId": 832289398,
+      "name": "上海科技大学图书馆",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "yes",
+      "lat": 31.1773981,
+      "lng": 121.5923408,
+      "tags": {
+        "amenity": "library",
+        "building": "yes",
+        "internet_access": "yes",
+        "internet_access:fee": "customers",
+        "name": "上海科技大学图书馆",
+        "name:zh": "上海科技大学图书馆",
+        "name:zh-Hans": "上海科技大学图书馆",
+        "name:zh-Hant": "上海科技大學圖書館",
+        "opening_hours": "Mo-Su 07:30-23:00",
+        "operator": "上海科技大学",
+        "operator:type": "government"
+      }
+    },
+    {
+      "id": "osm-way-542603582",
+      "osmType": "way",
+      "osmId": 542603582,
+      "name": "上海科技大学教学中心",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1777189,
+      "lng": 121.5909274,
+      "tags": {
+        "building": "university",
+        "name": "上海科技大学教学中心",
+        "name:zh": "上海科技大学教学中心",
+        "name:zh-Hans": "上海科技大学教学中心",
+        "name:zh-Hant": "上海科技大學教學中心",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-461639463",
+      "osmType": "way",
+      "osmId": 461639463,
+      "name": "上海科技大学行政中心",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "school",
+      "lat": 31.1773933,
+      "lng": 121.5891213,
+      "tags": {
+        "building": "school",
+        "building:levels": "4",
+        "name": "上海科技大学行政中心",
+        "name:zh": "上海科技大学行政中心",
+        "name:zh-Hans": "上海科技大学行政中心",
+        "name:zh-Hant": "上海科技大學行政中心",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587641175",
+      "osmType": "way",
+      "osmId": 587641175,
+      "name": "九号学生公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1797123,
+      "lng": 121.5941371,
+      "tags": {
+        "building": "dormitory",
+        "building:levels": "13",
+        "loc_name": "大道书院",
+        "name": "九号学生公寓",
+        "name:zh": "九号学生公寓",
+        "name:zh-Hans": "九号学生公寓",
+        "name:zh-Hant": "九號學生公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587651642",
+      "osmType": "way",
+      "osmId": 587651642,
+      "name": "二号学生公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1801071,
+      "lng": 121.5933373,
+      "tags": {
+        "building": "dormitory",
+        "layer": "1",
+        "name": "二号学生公寓",
+        "name:zh": "二号学生公寓",
+        "name:zh-Hans": "二号学生公寓",
+        "name:zh-Hant": "二號學生公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587651685",
+      "osmType": "way",
+      "osmId": 587651685,
+      "name": "二号教授公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "apartments",
+      "lat": 31.1773633,
+      "lng": 121.5943838,
+      "tags": {
+        "building": "apartments",
+        "name": "二号教授公寓",
+        "name:zh": "二号教授公寓",
+        "name:zh-Hans": "二号教授公寓",
+        "name:zh-Hant": "二號教授公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587651669",
+      "osmType": "way",
+      "osmId": 587651669,
+      "name": "五号学生公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1786072,
+      "lng": 121.5927734,
+      "tags": {
+        "building": "dormitory",
+        "name": "五号学生公寓",
+        "name:zh": "五号学生公寓",
+        "name:zh-Hans": "五号学生公寓",
+        "name:zh-Hant": "五號學生公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587651687",
+      "osmType": "way",
+      "osmId": 587651687,
+      "name": "五号教授公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "apartments",
+      "lat": 31.1768734,
+      "lng": 121.5940835,
+      "tags": {
+        "building": "apartments",
+        "name": "五号教授公寓",
+        "name:zh": "五号教授公寓",
+        "name:zh-Hans": "五号教授公寓",
+        "name:zh-Hant": "五號教授公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587643566",
+      "osmType": "way",
+      "osmId": 587643566,
+      "name": "人文科学研究院 / 创意与艺术学院（西楼）",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.178732,
+      "lng": 121.5892745,
+      "tags": {
+        "building": "university",
+        "building:levels": "5",
+        "name": "人文科学研究院 / 创意与艺术学院（西楼）",
+        "name:zh": "人文科学研究院 / 创意与艺术学院（西楼）",
+        "name:zh-Hans": "人文科学研究院 / 创意与艺术学院（西楼）",
+        "name:zh-Hant": "人文科學研究院 / 創意與藝術學院（西樓）",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587641185",
+      "osmType": "way",
+      "osmId": 587641185,
+      "name": "信息科学与技术学院 #1",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1797812,
+      "lng": 121.5905293,
+      "tags": {
+        "building": "university",
+        "name": "信息科学与技术学院 #1",
+        "name:zh": "信息科学与技术学院 #1",
+        "name:zh-Hans": "信息科学与技术学院 #1",
+        "name:zh-Hant": "資訊科學與技術學院 #1",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-1478821768",
+      "osmType": "way",
+      "osmId": 1478821768,
+      "name": "信息科学与技术学院 #2",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1803726,
+      "lng": 121.5901525,
+      "tags": {
+        "building": "university",
+        "name": "信息科学与技术学院 #2"
+      }
+    },
+    {
+      "id": "osm-way-1478821767",
+      "osmType": "way",
+      "osmId": 1478821767,
+      "name": "信息科学与技术学院 #3",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1805537,
+      "lng": 121.5912477,
+      "tags": {
+        "building": "university",
+        "name": "信息科学与技术学院 #3"
+      }
+    },
+    {
+      "id": "osm-way-587641176",
+      "osmType": "way",
+      "osmId": 587641176,
+      "name": "八号学生公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1792819,
+      "lng": 121.5939718,
+      "tags": {
+        "building": "dormitory",
+        "building:levels": "13",
+        "loc_name": "科道书院",
+        "name": "八号学生公寓",
+        "name:zh": "八号学生公寓",
+        "name:zh-Hans": "八号学生公寓",
+        "name:zh-Hant": "八號學生公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587691938",
+      "osmType": "way",
+      "osmId": 587691938,
+      "name": "六号学生公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1781698,
+      "lng": 121.5926154,
+      "tags": {
+        "building": "dormitory",
+        "layer": "1",
+        "name": "六号学生公寓",
+        "name:zh": "六号学生公寓",
+        "name:zh-Hans": "六号学生公寓",
+        "name:zh-Hant": "六號學生公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587651692",
+      "osmType": "way",
+      "osmId": 587651692,
+      "name": "六号教授公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "apartments",
+      "lat": 31.1769182,
+      "lng": 121.5948979,
+      "tags": {
+        "building": "apartments",
+        "name": "六号教授公寓",
+        "name:zh": "六号教授公寓",
+        "name:zh-Hans": "六号教授公寓",
+        "name:zh-Hant": "六號教授公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-508053661",
+      "osmType": "way",
+      "osmId": 508053661,
+      "name": "创业与管理学院",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1787237,
+      "lng": 121.5906064,
+      "tags": {
+        "building": "university",
+        "name": "创业与管理学院",
+        "name:zh": "创业与管理学院",
+        "name:zh-Hans": "创业与管理学院",
+        "name:zh-Hant": "創業與管理學院",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587643567",
+      "osmType": "way",
+      "osmId": 587643567,
+      "name": "创意与艺术学院",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1788667,
+      "lng": 121.5888672,
+      "tags": {
+        "building": "university",
+        "building:levels": "5",
+        "name": "创意与艺术学院",
+        "name:zh": "创意与艺术学院（北楼）",
+        "name:zh-Hans": "创意与艺术学院（北楼）",
+        "name:zh-Hant": "創意與藝術學院（北樓）",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587643568",
+      "osmType": "way",
+      "osmId": 587643568,
+      "name": "创意与艺术学院",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1784746,
+      "lng": 121.5886278,
+      "tags": {
+        "building": "university",
+        "building:levels": "5",
+        "name": "创意与艺术学院",
+        "name:zh": "创意与艺术学院（西楼）",
+        "name:zh-Hans": "创意与艺术学院（西楼）",
+        "name:zh-Hant": "創意與藝術學院（西樓）",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587641174",
+      "osmType": "way",
+      "osmId": 587641174,
+      "name": "十号学生公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1801481,
+      "lng": 121.5942417,
+      "tags": {
+        "building": "dormitory",
+        "building:levels": "13",
+        "loc_name": "上道书院",
+        "name": "十号学生公寓",
+        "name:zh": "十号学生公寓",
+        "name:zh-Hans": "十号学生公寓",
+        "name:zh-Hant": "十號學生公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587651637",
+      "osmType": "way",
+      "osmId": 587651637,
+      "name": "四号学生公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "dormitory",
+      "lat": 31.1792386,
+      "lng": 121.5930034,
+      "tags": {
+        "building": "dormitory",
+        "layer": "1",
+        "name": "四号学生公寓",
+        "name:zh": "四号学生公寓",
+        "name:zh-Hans": "四号学生公寓",
+        "name:zh-Hant": "四號學生公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587651683",
+      "osmType": "way",
+      "osmId": 587651683,
+      "name": "四号教授公寓",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "apartments",
+      "lat": 31.1769351,
+      "lng": 121.5931858,
+      "tags": {
+        "building": "apartments",
+        "name": "四号教授公寓",
+        "name:zh": "四号教授公寓",
+        "name:zh-Hans": "四号教授公寓",
+        "name:zh-Hant": "四號教授公寓",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587638227",
+      "osmType": "way",
+      "osmId": 587638227,
+      "name": "学生科创中心（H2楼）",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1788028,
+      "lng": 121.591707,
+      "tags": {
+        "building": "university",
+        "name": "学生科创中心（H2楼）",
+        "name:zh": "学生科创中心（H2楼）",
+        "name:zh-Hans": "学生科创中心（H2楼）",
+        "name:zh-Hant": "學生科創中心（H2樓）",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587638226",
+      "osmType": "way",
+      "osmId": 587638226,
+      "name": "报告厅",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1782115,
+      "lng": 121.5914937,
+      "tags": {
+        "building": "university",
+        "building:levels": "1",
+        "name": "报告厅",
+        "name:zh": "报告厅",
+        "name:zh-Hans": "报告厅",
+        "name:zh-Hant": "報告廳",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587643565",
+      "osmType": "way",
+      "osmId": 587643565,
+      "name": "数学科学研究所",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1779409,
+      "lng": 121.5890593,
+      "tags": {
+        "building": "university",
+        "building:levels": "5",
+        "name": "数学科学研究所",
+        "name:zh": "数学科学研究所 / 创意与艺术学院（南楼）",
+        "name:zh-Hans": "数学科学研究所 / 创意与艺术学院（南楼）",
+        "name:zh-Hant": "數學科學研究所 / 創意與藝術學院（南樓）",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-461639469",
+      "osmType": "way",
+      "osmId": 461639469,
+      "name": "校史馆",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "school",
+      "lat": 31.1787208,
+      "lng": 121.5897572,
+      "tags": {
+        "building": "school",
+        "building:levels": "2",
+        "name": "校史馆",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587638228",
+      "osmType": "way",
+      "osmId": 587638228,
+      "name": "校园服务中心（H1楼）",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1797867,
+      "lng": 121.5921362,
+      "tags": {
+        "building": "university",
+        "building:levels": "3",
+        "name": "校园服务中心（H1楼）",
+        "name:zh": "校园服务中心（H1楼）",
+        "name:zh-Hans": "校园服务中心（H1楼）",
+        "name:zh-Hant": "校園服務中心（H1樓）",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-833243658",
+      "osmType": "way",
+      "osmId": 833243658,
+      "name": "物质塔",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "yes",
+      "lat": 31.1764991,
+      "lng": 121.5920087,
+      "tags": {
+        "building": "yes",
+        "man_made": "tower",
+        "name": "物质塔",
+        "name:zh": "物质塔",
+        "name:zh-Hans": "物质塔",
+        "name:zh-Hant": "物質塔",
+        "official_name": "上海科技大学景观塔",
+        "tower:type": "observation"
+      }
+    },
+    {
+      "id": "osm-way-508053663",
+      "osmType": "way",
+      "osmId": 508053663,
+      "name": "物质科学与技术学院",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1795879,
+      "lng": 121.5891026,
+      "tags": {
+        "building": "university",
+        "building:levels": "5",
+        "name": "物质科学与技术学院",
+        "name:zh": "物质科学与技术学院 #4",
+        "name:zh-Hans": "物质科学与技术学院 #4",
+        "name:zh-Hant": "物質科學與技術學院 #4",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-1478815731",
+      "osmType": "way",
+      "osmId": 1478815731,
+      "name": "物质科学与技术学院 #1",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1801423,
+      "lng": 121.5886704,
+      "tags": {
+        "building": "university",
+        "name": "物质科学与技术学院 #1"
+      }
+    },
+    {
+      "id": "osm-way-1478815730",
+      "osmType": "way",
+      "osmId": 1478815730,
+      "name": "物质科学与技术学院 #2",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1799216,
+      "lng": 121.5876421,
+      "tags": {
+        "building": "university",
+        "layer": "0",
+        "name": "物质科学与技术学院 #2"
+      }
+    },
+    {
+      "id": "osm-way-1478815729",
+      "osmType": "way",
+      "osmId": 1478815729,
+      "name": "物质科学与技术学院 #3",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1797015,
+      "lng": 121.5867713,
+      "tags": {
+        "building": "university",
+        "name": "物质科学与技术学院 #3"
+      }
+    },
+    {
+      "id": "osm-way-1478815732",
+      "osmType": "way",
+      "osmId": 1478815732,
+      "name": "物质科学与技术学院 #5",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1793429,
+      "lng": 121.58863,
+      "tags": {
+        "building": "university",
+        "name": "物质科学与技术学院 #5"
+      }
+    },
+    {
+      "id": "osm-way-1478815734",
+      "osmType": "way",
+      "osmId": 1478815734,
+      "name": "物质科学与技术学院 #6",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1794296,
+      "lng": 121.5878741,
+      "tags": {
+        "building": "university",
+        "name": "物质科学与技术学院 #6"
+      }
+    },
+    {
+      "id": "osm-way-1478815735",
+      "osmType": "way",
+      "osmId": 1478815735,
+      "name": "物质科学与技术学院 #7",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1791008,
+      "lng": 121.5871441,
+      "tags": {
+        "building": "university",
+        "name": "物质科学与技术学院 #7"
+      }
+    },
+    {
+      "id": "osm-way-1478815733",
+      "osmType": "way",
+      "osmId": 1478815733,
+      "name": "物质科学与技术学院 #8",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1788804,
+      "lng": 121.5878625,
+      "tags": {
+        "building": "university",
+        "name": "物质科学与技术学院 #8"
+      }
+    },
+    {
+      "id": "osm-way-587691935",
+      "osmType": "way",
+      "osmId": 587691935,
+      "name": "生命医学与工程学院",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.179972,
+      "lng": 121.5912243,
+      "tags": {
+        "building": "university",
+        "name": "生命医学与工程学院",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-587638224",
+      "osmType": "way",
+      "osmId": 587638224,
+      "name": "生命科学与技术学院",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "university",
+      "lat": 31.1817988,
+      "lng": 121.5901764,
+      "tags": {
+        "building": "university",
+        "loc_name": "L楼",
+        "name": "生命科学与技术学院",
+        "name:zh": "生命科学与技术学院",
+        "name:zh-Hans": "生命科学与技术学院",
+        "name:zh-Hant": "生命科學與技術學院",
+        "operator": "上海科技大学",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-way-1478884442",
+      "osmType": "way",
+      "osmId": 1478884442,
+      "name": "餐饮中心 #1",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "yes",
+      "lat": 31.1802804,
+      "lng": 121.5930591,
+      "tags": {
+        "amenity": "food_court",
+        "building": "yes",
+        "name": "餐饮中心 #1",
+        "operator": "上海科技大学"
+      }
+    },
+    {
+      "id": "osm-way-1478884443",
+      "osmType": "way",
+      "osmId": 1478884443,
+      "name": "餐饮中心 #2",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "yes",
+      "lat": 31.1794731,
+      "lng": 121.5927473,
+      "tags": {
+        "amenity": "food_court",
+        "building": "yes",
+        "name": "餐饮中心 #2"
+      }
+    },
+    {
+      "id": "osm-way-587651665",
+      "osmType": "way",
+      "osmId": 587651665,
+      "name": "餐饮中心 #3",
+      "nameEn": null,
+      "category": "building",
+      "subtype": "yes",
+      "lat": 31.1785256,
+      "lng": 121.5923317,
+      "tags": {
+        "air_conditioning": "yes",
+        "amenity": "restaurant",
+        "building": "yes",
+        "layer": "2",
+        "name": "餐饮中心 #3",
+        "smoking": "no",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "id": "osm-node-2801777821",
+      "osmType": "node",
+      "osmId": 2801777821,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1826051,
+      "lng": 121.5886094,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-2803209400",
+      "osmType": "node",
+      "osmId": 2803209400,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1830899,
+      "lng": 121.5923928,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-2973327656",
+      "osmType": "node",
+      "osmId": 2973327656,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1810029,
+      "lng": 121.5948272,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-2973327659",
+      "osmType": "node",
+      "osmId": 2973327659,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1811334,
+      "lng": 121.5947954,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-3665756973",
+      "osmType": "node",
+      "osmId": 3665756973,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1804276,
+      "lng": 121.5865915,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-3665757014",
+      "osmType": "node",
+      "osmId": 3665757014,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1818044,
+      "lng": 121.5858252,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-3665849573",
+      "osmType": "node",
+      "osmId": 3665849573,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1826455,
+      "lng": 121.5854454,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-4373627493",
+      "osmType": "node",
+      "osmId": 4373627493,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1793092,
+      "lng": 121.5845966,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-5613106855",
+      "osmType": "node",
+      "osmId": 5613106855,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1773778,
+      "lng": 121.5957745,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-5613123708",
+      "osmType": "node",
+      "osmId": 5613123708,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1808161,
+      "lng": 121.5947066,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-5613155485",
+      "osmType": "node",
+      "osmId": 5613155485,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1827191,
+      "lng": 121.5911863,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-5614539024",
+      "osmType": "node",
+      "osmId": 5614539024,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1828985,
+      "lng": 121.5902974,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-7770448946",
+      "osmType": "node",
+      "osmId": 7770448946,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.182668,
+      "lng": 121.5889664,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-7770708202",
+      "osmType": "node",
+      "osmId": 7770708202,
+      "name": null,
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1820302,
+      "lng": 121.5924532,
+      "tags": {
+        "barrier": "gate"
+      }
+    },
+    {
+      "id": "osm-node-4571133482",
+      "osmType": "node",
+      "osmId": 4571133482,
+      "name": "正门",
+      "nameEn": null,
+      "category": "gate",
+      "subtype": "gate",
+      "lat": 31.1759519,
+      "lng": 121.5904763,
+      "tags": {
+        "barrier": "gate",
+        "loc_name": "信息门",
+        "name": "正门",
+        "name:zh": "正门",
+        "name:zh-Hans": "正门",
+        "name:zh-Hant": "正門",
+        "operator": "上海科技大学"
+      }
+    },
+    {
+      "id": "osm-way-439689518",
+      "osmType": "way",
+      "osmId": 439689518,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "meadow",
+      "lat": 31.1767688,
+      "lng": 121.5902847,
+      "tags": {
+        "landuse": "meadow"
+      }
+    },
+    {
+      "id": "osm-way-587641184",
+      "osmType": "way",
+      "osmId": 587641184,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.1779196,
+      "lng": 121.5880624,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587643562",
+      "osmType": "way",
+      "osmId": 587643562,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.1785814,
+      "lng": 121.5909357,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587643573",
+      "osmType": "way",
+      "osmId": 587643573,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.178551,
+      "lng": 121.5872473,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587643574",
+      "osmType": "way",
+      "osmId": 587643574,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.1767683,
+      "lng": 121.5886707,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587646026",
+      "osmType": "way",
+      "osmId": 587646026,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.176343,
+      "lng": 121.5941132,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587651703",
+      "osmType": "way",
+      "osmId": 587651703,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "forest",
+      "lat": 31.1810901,
+      "lng": 121.5902749,
+      "tags": {
+        "landuse": "forest"
+      }
+    },
+    {
+      "id": "osm-way-587653790",
+      "osmType": "way",
+      "osmId": 587653790,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "construction",
+      "lat": 31.1816265,
+      "lng": 121.589028,
+      "tags": {
+        "landuse": "construction"
+      }
+    },
+    {
+      "id": "osm-way-587653791",
+      "osmType": "way",
+      "osmId": 587653791,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "grass",
+      "lat": 31.1799321,
+      "lng": 121.5894612,
+      "tags": {
+        "landuse": "grass"
+      }
+    },
+    {
+      "id": "osm-way-587653792",
+      "osmType": "way",
+      "osmId": 587653792,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "grass",
+      "lat": 31.1784964,
+      "lng": 121.5898311,
+      "tags": {
+        "landuse": "grass"
+      }
+    },
+    {
+      "id": "osm-way-587660431",
+      "osmType": "way",
+      "osmId": 587660431,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.1806644,
+      "lng": 121.5906647,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587660432",
+      "osmType": "way",
+      "osmId": 587660432,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.1808363,
+      "lng": 121.5923961,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587660433",
+      "osmType": "way",
+      "osmId": 587660433,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.1801477,
+      "lng": 121.5877591,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587660435",
+      "osmType": "way",
+      "osmId": 587660435,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.1776916,
+      "lng": 121.5892185,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587662293",
+      "osmType": "way",
+      "osmId": 587662293,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.1797612,
+      "lng": 121.5955872,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587693585",
+      "osmType": "way",
+      "osmId": 587693585,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.1795827,
+      "lng": 121.5859624,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587693586",
+      "osmType": "way",
+      "osmId": 587693586,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.1778033,
+      "lng": 121.5942232,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587693587",
+      "osmType": "way",
+      "osmId": 587693587,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "forest",
+      "lat": 31.177821,
+      "lng": 121.5951998,
+      "tags": {
+        "landuse": "forest"
+      }
+    },
+    {
+      "id": "osm-way-587693589",
+      "osmType": "way",
+      "osmId": 587693589,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "forest",
+      "lat": 31.1785268,
+      "lng": 121.5956088,
+      "tags": {
+        "landuse": "forest"
+      }
+    },
+    {
+      "id": "osm-way-587788874",
+      "osmType": "way",
+      "osmId": 587788874,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.18137,
+      "lng": 121.5925151,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587788876",
+      "osmType": "way",
+      "osmId": 587788876,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.1814763,
+      "lng": 121.5931697,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587789228",
+      "osmType": "way",
+      "osmId": 587789228,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.1813121,
+      "lng": 121.5918248,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587789230",
+      "osmType": "way",
+      "osmId": 587789230,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "recreation_ground",
+      "lat": 31.1795832,
+      "lng": 121.5912912,
+      "tags": {
+        "landuse": "recreation_ground"
+      }
+    },
+    {
+      "id": "osm-way-587789232",
+      "osmType": "way",
+      "osmId": 587789232,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "grass",
+      "lat": 31.1786491,
+      "lng": 121.5889686,
+      "tags": {
+        "landuse": "grass"
+      }
+    },
+    {
+      "id": "osm-way-832289380",
+      "osmType": "way",
+      "osmId": 832289380,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "grass",
+      "lat": 31.1823661,
+      "lng": 121.5920469,
+      "tags": {
+        "landuse": "grass"
+      }
+    },
+    {
+      "id": "osm-way-832336727",
+      "osmType": "way",
+      "osmId": 832336727,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "forest",
+      "lat": 31.1811929,
+      "lng": 121.5910554,
+      "tags": {
+        "landuse": "forest"
+      }
+    },
+    {
+      "id": "osm-way-832336728",
+      "osmType": "way",
+      "osmId": 832336728,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "forest",
+      "lat": 31.180627,
+      "lng": 121.5919136,
+      "tags": {
+        "landuse": "forest"
+      }
+    },
+    {
+      "id": "osm-way-832336729",
+      "osmType": "way",
+      "osmId": 832336729,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "forest",
+      "lat": 31.1816938,
+      "lng": 121.5922422,
+      "tags": {
+        "landuse": "forest"
+      }
+    },
+    {
+      "id": "osm-way-832499520",
+      "osmType": "way",
+      "osmId": 832499520,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "forest",
+      "lat": 31.1791349,
+      "lng": 121.5948032,
+      "tags": {
+        "landuse": "forest"
+      }
+    },
+    {
+      "id": "osm-way-833243651",
+      "osmType": "way",
+      "osmId": 833243651,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "grass",
+      "lat": 31.1777477,
+      "lng": 121.5898627,
+      "tags": {
+        "landuse": "grass"
+      }
+    },
+    {
+      "id": "osm-way-833243653",
+      "osmType": "way",
+      "osmId": 833243653,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "grass",
+      "lat": 31.1778055,
+      "lng": 121.5901862,
+      "tags": {
+        "landuse": "grass"
+      }
+    },
+    {
+      "id": "osm-way-833279599",
+      "osmType": "way",
+      "osmId": 833279599,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "grass",
+      "lat": 31.1790084,
+      "lng": 121.5926309,
+      "tags": {
+        "landuse": "grass"
+      }
+    },
+    {
+      "id": "osm-way-833279600",
+      "osmType": "way",
+      "osmId": 833279600,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "grass",
+      "lat": 31.1789629,
+      "lng": 121.5931088,
+      "tags": {
+        "landuse": "grass"
+      }
+    },
+    {
+      "id": "osm-way-833279601",
+      "osmType": "way",
+      "osmId": 833279601,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "grass",
+      "lat": 31.1787969,
+      "lng": 121.5930411,
+      "tags": {
+        "landuse": "grass"
+      }
+    },
+    {
+      "id": "osm-way-1478822994",
+      "osmType": "way",
+      "osmId": 1478822994,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "grass",
+      "lat": 31.17683,
+      "lng": 121.5900496,
+      "tags": {
+        "landuse": "grass"
+      }
+    },
+    {
+      "id": "osm-way-1478822995",
+      "osmType": "way",
+      "osmId": 1478822995,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "forest",
+      "lat": 31.176925,
+      "lng": 121.5909314,
+      "tags": {
+        "landuse": "forest"
+      }
+    },
+    {
+      "id": "osm-way-1478822996",
+      "osmType": "way",
+      "osmId": 1478822996,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "forest",
+      "lat": 31.1763996,
+      "lng": 121.5897059,
+      "tags": {
+        "landuse": "forest"
+      }
+    },
+    {
+      "id": "osm-way-1536273816",
+      "osmType": "way",
+      "osmId": 1536273816,
+      "name": null,
+      "nameEn": null,
+      "category": "landuse",
+      "subtype": "construction",
+      "lat": 31.1774485,
+      "lng": 121.5867856,
+      "tags": {
+        "landuse": "construction"
+      }
+    },
+    {
+      "id": "osm-way-832289360",
+      "osmType": "way",
+      "osmId": 832289360,
+      "name": null,
+      "nameEn": null,
+      "category": "leisure",
+      "subtype": "track",
+      "lat": 31.1784881,
+      "lng": 121.5951987,
+      "tags": {
+        "area": "yes",
+        "leisure": "track",
+        "sport": "running"
+      }
+    },
+    {
+      "id": "osm-way-832289379",
+      "osmType": "way",
+      "osmId": 832289379,
+      "name": null,
+      "nameEn": null,
+      "category": "leisure",
+      "subtype": "pitch",
+      "lat": 31.1816748,
+      "lng": 121.5918228,
+      "tags": {
+        "access": "private",
+        "leisure": "pitch",
+        "sport": "tennis"
+      }
+    },
+    {
+      "id": "osm-way-832325471",
+      "osmType": "way",
+      "osmId": 832325471,
+      "name": null,
+      "nameEn": null,
+      "category": "leisure",
+      "subtype": "playground",
+      "lat": 31.1765924,
+      "lng": 121.5934191,
+      "tags": {
+        "leisure": "playground",
+        "operator": "上海科技大学"
+      }
+    },
+    {
+      "id": "osm-way-832325472",
+      "osmType": "way",
+      "osmId": 832325472,
+      "name": null,
+      "nameEn": null,
+      "category": "leisure",
+      "subtype": "track",
+      "lat": 31.1767257,
+      "lng": 121.5932129,
+      "tags": {
+        "leisure": "track",
+        "sport": "running"
+      }
+    },
+    {
+      "id": "osm-way-832325473",
+      "osmType": "way",
+      "osmId": 832325473,
+      "name": null,
+      "nameEn": null,
+      "category": "leisure",
+      "subtype": "track",
+      "lat": 31.1765869,
+      "lng": 121.5934266,
+      "tags": {
+        "leisure": "track",
+        "sport": "running"
+      }
+    },
+    {
+      "id": "osm-way-832685905",
+      "osmType": "way",
+      "osmId": 832685905,
+      "name": null,
+      "nameEn": null,
+      "category": "leisure",
+      "subtype": "track",
+      "lat": 31.1784966,
+      "lng": 121.5947532,
+      "tags": {
+        "leisure": "track",
+        "sport": "running"
+      }
+    },
+    {
+      "id": "osm-way-832685906",
+      "osmType": "way",
+      "osmId": 832685906,
+      "name": null,
+      "nameEn": null,
+      "category": "leisure",
+      "subtype": "track",
+      "lat": 31.1784936,
+      "lng": 121.5951893,
+      "tags": {
+        "leisure": "track",
+        "sport": "running"
+      }
+    },
+    {
+      "id": "osm-way-832289364",
+      "osmType": "way",
+      "osmId": 832289364,
+      "name": "上海科技大学游泳馆",
+      "nameEn": null,
+      "category": "leisure",
+      "subtype": "sports_centre",
+      "lat": 31.1819873,
+      "lng": 121.59286,
+      "tags": {
+        "access": "private",
+        "leisure": "sports_centre",
+        "name": "上海科技大学游泳馆",
+        "name:zh": "上海科技大学游泳馆",
+        "name:zh-Hans": "上海科技大学游泳馆",
+        "name:zh-Hant": "上海科技大學游泳館",
+        "operator": "上海科技大学",
+        "operator:type": "government",
+        "sport": "swimming"
+      }
+    },
+    {
+      "id": "osm-way-659461032",
+      "osmType": "way",
+      "osmId": 659461032,
+      "name": "中科路",
+      "nameEn": "Zhongke Road",
+      "category": "transit",
+      "subtype": "station",
+      "lat": 31.1810277,
+      "lng": 121.5975394,
+      "tags": {
+        "covered": "yes",
+        "internet_access": "wlan",
+        "name": "中科路",
+        "name:en": "Zhongke Road",
+        "name:zh": "中科路",
+        "network": "上海地铁",
+        "note": "Line 13",
+        "public_transport": "station",
+        "railway": "station",
+        "station": "subway",
+        "subway": "yes",
+        "wikidata": "Q21017029"
+      }
+    },
+    {
+      "id": "osm-way-460592049",
+      "osmType": "way",
+      "osmId": 460592049,
+      "name": "华夏中路",
+      "nameEn": "Middle Huaxia Road",
+      "category": "transit",
+      "subtype": "station",
+      "lat": 31.1780284,
+      "lng": 121.5789171,
+      "tags": {
+        "building": "transportation",
+        "name": "华夏中路",
+        "name:en": "Middle Huaxia Road",
+        "network": "上海地铁",
+        "public_transport": "station",
+        "railway": "station",
+        "station": "subway",
+        "subway": "yes"
+      }
+    },
+    {
+      "id": "osm-node-12519546106",
+      "osmType": "node",
+      "osmId": 12519546106,
+      "name": "学林路",
+      "nameEn": "Xuelin Road",
+      "category": "transit",
+      "subtype": "station",
+      "lat": 31.1860407,
+      "lng": 121.6088323,
+      "tags": {
+        "name": "学林路",
+        "name:en": "Xuelin Road",
+        "name:zh": "学林路",
+        "network": "上海地铁",
+        "public_transport": "station",
+        "railway": "station",
+        "station": "subway",
+        "subway": "yes"
+      }
+    },
+    {
+      "id": "osm-way-659461025",
+      "osmType": "way",
+      "osmId": 659461025,
+      "name": "张江路",
+      "nameEn": "Zhangjiang Road",
+      "category": "transit",
+      "subtype": "station",
+      "lat": 31.1915332,
+      "lng": 121.6269441,
+      "tags": {
+        "covered": "yes",
+        "internet_access": "wlan",
+        "name": "张江路",
+        "name:en": "Zhangjiang Road",
+        "name:zh": "张江路",
+        "network": "上海地铁",
+        "note": "Line 13",
+        "public_transport": "station",
+        "railway": "station",
+        "station": "subway",
+        "subway": "yes",
+        "wikidata": "Q11067357"
+      }
+    },
+    {
+      "id": "osm-node-470637744",
+      "osmType": "node",
+      "osmId": 470637744,
+      "name": "张江高科",
+      "nameEn": "Zhangjiang Hi-Tech Park",
+      "category": "transit",
+      "subtype": "station",
+      "lat": 31.2039914,
+      "lng": 121.5833523,
+      "tags": {
+        "name": "张江高科",
+        "name:en": "Zhangjiang Hi-Tech Park",
+        "network": "上海地铁",
+        "public_transport": "station",
+        "railway": "station",
+        "station": "subway",
+        "subway": "yes",
+        "wheelchair": "no",
+        "wikidata": "Q1074052"
+      }
+    },
+    {
+      "id": "osm-way-461639461",
+      "osmType": "way",
+      "osmId": 461639461,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "stream",
+      "lat": 31.1776515,
+      "lng": 121.5879204,
+      "tags": {
+        "waterway": "stream"
+      }
+    },
+    {
+      "id": "osm-way-461639466",
+      "osmType": "way",
+      "osmId": 461639466,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "stream",
+      "lat": 31.177036,
+      "lng": 121.5933987,
+      "tags": {
+        "waterway": "stream"
+      }
+    },
+    {
+      "id": "osm-way-461639470",
+      "osmType": "way",
+      "osmId": 461639470,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "stream",
+      "lat": 31.1772178,
+      "lng": 121.5902614,
+      "tags": {
+        "waterway": "stream"
+      }
+    },
+    {
+      "id": "osm-way-587653789",
+      "osmType": "way",
+      "osmId": 587653789,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "water",
+      "lat": 31.182469,
+      "lng": 121.5888091,
+      "tags": {
+        "natural": "water",
+        "water": "basin"
+      }
+    },
+    {
+      "id": "osm-way-587788873",
+      "osmType": "way",
+      "osmId": 587788873,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "water",
+      "lat": 31.1811926,
+      "lng": 121.5895064,
+      "tags": {
+        "natural": "water",
+        "water": "basin"
+      }
+    },
+    {
+      "id": "osm-way-832289399",
+      "osmType": "way",
+      "osmId": 832289399,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "water",
+      "lat": 31.1773805,
+      "lng": 121.5921025,
+      "tags": {
+        "natural": "water",
+        "water": "pond"
+      }
+    },
+    {
+      "id": "osm-way-832289412",
+      "osmType": "way",
+      "osmId": 832289412,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "water",
+      "lat": 31.17665,
+      "lng": 121.5922961,
+      "tags": {
+        "natural": "water",
+        "water": "pond"
+      }
+    },
+    {
+      "id": "osm-way-832325486",
+      "osmType": "way",
+      "osmId": 832325486,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "stream",
+      "lat": 31.1793165,
+      "lng": 121.5930948,
+      "tags": {
+        "loc_name": "生命河",
+        "waterway": "stream"
+      }
+    },
+    {
+      "id": "osm-way-833243652",
+      "osmType": "way",
+      "osmId": 833243652,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "water",
+      "lat": 31.1777693,
+      "lng": 121.590014,
+      "tags": {
+        "natural": "water"
+      }
+    },
+    {
+      "id": "osm-way-833243655",
+      "osmType": "way",
+      "osmId": 833243655,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "water",
+      "lat": 31.1774208,
+      "lng": 121.5901104,
+      "tags": {
+        "natural": "water"
+      }
+    },
+    {
+      "id": "osm-way-833305478",
+      "osmType": "way",
+      "osmId": 833305478,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "water",
+      "lat": 31.1775573,
+      "lng": 121.5900755,
+      "tags": {
+        "natural": "water"
+      }
+    },
+    {
+      "id": "osm-way-835405576",
+      "osmType": "way",
+      "osmId": 835405576,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "water",
+      "lat": 31.1789031,
+      "lng": 121.5864946,
+      "tags": {
+        "natural": "water",
+        "water": "pond"
+      }
+    },
+    {
+      "id": "osm-way-835405577",
+      "osmType": "way",
+      "osmId": 835405577,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "water",
+      "lat": 31.1781193,
+      "lng": 121.5871998,
+      "tags": {
+        "natural": "water",
+        "water": "pond"
+      }
+    },
+    {
+      "id": "osm-way-1331222450",
+      "osmType": "way",
+      "osmId": 1331222450,
+      "name": null,
+      "nameEn": null,
+      "category": "water",
+      "subtype": "stream",
+      "lat": 31.1773691,
+      "lng": 121.5929613,
+      "tags": {
+        "waterway": "stream"
+      }
+    }
+  ],
+  "locations": [
+    {
+      "key": "library",
+      "label": "图书馆",
+      "lat": 31.177398,
+      "lng": 121.592341,
+      "confidence": "high",
+      "evidenceKind": "osm-named",
+      "osmIds": [
+        832289398
+      ],
+      "evidence": "OSM way 832289398「上海科技大学图书馆」中心点"
+    },
+    {
+      "key": "canteen-1",
+      "label": "一食堂",
+      "lat": 31.18028,
+      "lng": 121.593059,
+      "confidence": "medium",
+      "evidenceKind": "osm-inferred",
+      "osmIds": [
+        1478884442
+      ],
+      "evidence": "OSM「餐饮中心 #1」（food_court）。OSM 未把序号与「一/二/三」对应，按 #1→一、#2→二、#3→三 推测"
+    },
+    {
+      "key": "canteen-2",
+      "label": "二食堂",
+      "lat": 31.179473,
+      "lng": 121.592747,
+      "confidence": "medium",
+      "evidenceKind": "osm-inferred",
+      "osmIds": [
+        1478884443
+      ],
+      "evidence": "OSM「餐饮中心 #2」（food_court）；序号到中文名的映射为推测"
+    },
+    {
+      "key": "canteen-3",
+      "label": "三食堂",
+      "lat": 31.178526,
+      "lng": 121.592332,
+      "confidence": "medium",
+      "evidenceKind": "osm-inferred",
+      "osmIds": [
+        587651665
+      ],
+      "evidence": "OSM「餐饮中心 #3」（food_court）；序号到中文名的映射为推测"
+    },
+    {
+      "key": "gym",
+      "label": "体育馆",
+      "lat": 31.178667,
+      "lng": 121.59381,
+      "confidence": "high",
+      "evidenceKind": "osm-named",
+      "osmIds": [
+        587691936
+      ],
+      "evidence": "OSM「上海科技大学体育馆」（leisure=fitness_centre）"
+    },
+    {
+      "key": "badminton-hall",
+      "label": "羽毛球馆",
+      "lat": 31.1788,
+      "lng": 121.59413,
+      "confidence": "low",
+      "evidenceKind": "approximate",
+      "osmIds": [],
+      "evidence": "OSM 未单独测绘羽毛球馆；按通常与体育馆同址，放在体育馆东侧约 25 m（推测）"
+    },
+    {
+      "key": "swimming-pool",
+      "label": "游泳馆",
+      "lat": 31.182029,
+      "lng": 121.592869,
+      "confidence": "high",
+      "evidenceKind": "osm-named",
+      "osmIds": [
+        832289364
+      ],
+      "evidence": "OSM「上海科技大学游泳馆」（leisure=sports_centre, sport=swimming）"
+    },
+    {
+      "key": "track-field",
+      "label": "田径场",
+      "lat": 31.17849,
+      "lng": 121.595232,
+      "confidence": "medium",
+      "evidenceKind": "osm-inferred",
+      "osmIds": [
+        832685906
+      ],
+      "evidence": "OSM leisure=track, sport=running 的东侧跑道；未命名，按校园唯一标准田径场推测"
+    },
+    {
+      "key": "basketball-court",
+      "label": "篮球场",
+      "lat": 31.1782,
+      "lng": 121.5946,
+      "confidence": "low",
+      "evidenceKind": "approximate",
+      "osmIds": [],
+      "evidence": "OSM 无 sport=basketball 要素；按体育馆东南侧运动场地近似放置（推测）"
+    },
+    {
+      "key": "tennis-court",
+      "label": "网球场",
+      "lat": 31.181699,
+      "lng": 121.591759,
+      "confidence": "medium",
+      "evidenceKind": "osm-inferred",
+      "osmIds": [
+        832289379
+      ],
+      "evidence": "OSM leisure=pitch, sport=tennis；未命名，按位置与场地类型对应"
+    },
+    {
+      "key": "fitness-room",
+      "label": "健身房",
+      "lat": 31.17865,
+      "lng": 121.59388,
+      "confidence": "low",
+      "evidenceKind": "approximate",
+      "osmIds": [],
+      "evidence": "OSM 无独立要素；按位于体育馆内/同址处理（推测）"
+    },
+    {
+      "key": "teaching-a",
+      "label": "教学楼A",
+      "lat": 31.177736,
+      "lng": 121.59062,
+      "confidence": "low",
+      "evidenceKind": "approximate",
+      "osmIds": [
+        542603582
+      ],
+      "evidence": "OSM「上海科技大学教学中心」是一整栋长条建筑（约 110 m）；A/B/C 三栋未分别标注，沿建筑长轴等距近似"
+    },
+    {
+      "key": "teaching-b",
+      "label": "教学楼B",
+      "lat": 31.177736,
+      "lng": 121.590927,
+      "confidence": "low",
+      "evidenceKind": "approximate",
+      "osmIds": [
+        542603582
+      ],
+      "evidence": "同上：教学中心中段近似位置（推测）"
+    },
+    {
+      "key": "teaching-c",
+      "label": "教学楼C",
+      "lat": 31.177736,
+      "lng": 121.591235,
+      "confidence": "low",
+      "evidenceKind": "approximate",
+      "osmIds": [
+        542603582
+      ],
+      "evidence": "同上：教学中心东段近似位置（推测）"
+    },
+    {
+      "key": "student-center",
+      "label": "学生活动中心",
+      "lat": 31.179787,
+      "lng": 121.592136,
+      "confidence": "low",
+      "evidenceKind": "osm-inferred",
+      "osmIds": [
+        587638228
+      ],
+      "evidence": "OSM「校园服务中心（H1楼）」；「学生活动中心」在 OSM 无同名要素，H1/H2 二者取其一为推测"
+    },
+    {
+      "key": "academic-exchange-center",
+      "label": "学术交流中心",
+      "lat": 31.182203,
+      "lng": 121.593374,
+      "confidence": "medium",
+      "evidenceKind": "osm-inferred",
+      "osmIds": [
+        832289363
+      ],
+      "evidence": "OSM「上海科技大学会议中心」；与「学术交流中心」名称不同但功能最接近，属推测"
+    },
+    {
+      "key": "school-entrepreneurship",
+      "label": "创管学院",
+      "lat": 31.178724,
+      "lng": 121.590606,
+      "confidence": "high",
+      "evidenceKind": "osm-named",
+      "osmIds": [
+        508053661
+      ],
+      "evidence": "OSM「创业与管理学院」"
+    },
+    {
+      "key": "school-information",
+      "label": "信息学院",
+      "lat": 31.179781,
+      "lng": 121.590529,
+      "confidence": "high",
+      "evidenceKind": "osm-named",
+      "osmIds": [
+        587641185
+      ],
+      "evidence": "OSM「信息科学与技术学院 #1」（#1/#2/#3 三栋，取 #1 作为学院代表点）"
+    },
+    {
+      "key": "school-physical",
+      "label": "物质学院",
+      "lat": 31.179588,
+      "lng": 121.589103,
+      "confidence": "high",
+      "evidenceKind": "osm-named",
+      "osmIds": [
+        508053663
+      ],
+      "evidence": "OSM「物质科学与技术学院」（另有 #1–#8 多栋，取主楼）"
+    },
+    {
+      "key": "school-life",
+      "label": "生命学院",
+      "lat": 31.181799,
+      "lng": 121.590176,
+      "confidence": "high",
+      "evidenceKind": "osm-named",
+      "osmIds": [
+        587638224
+      ],
+      "evidence": "OSM「生命科学与技术学院」"
+    },
+    {
+      "key": "dorm-area",
+      "label": "宿舍区",
+      "lat": 31.179416,
+      "lng": 121.593619,
+      "confidence": "high",
+      "evidenceKind": "osm-derived",
+      "osmIds": [
+        587641174,
+        587641175,
+        587641176,
+        587651637,
+        587651639,
+        587651642,
+        587651669,
+        587651676,
+        587691938,
+        1480634994
+      ],
+      "evidence": "OSM 学生公寓（building=dormitory）10 栋 + 博士公寓的几何中心；区域而非单栋"
+    },
+    {
+      "key": "lakeside-lawn",
+      "label": "湖畔草坪",
+      "lat": 31.17685,
+      "lng": 121.5911,
+      "confidence": "medium",
+      "evidenceKind": "osm-derived",
+      "osmIds": [
+        832289399,
+        832289412
+      ],
+      "evidence": "OSM 两个相邻无名水面（合计 7,632 m²）西侧的草地（landuse=grass, 12,440 m²）；「湖畔草坪」非 OSM 名称，按位置推测"
+    },
+    {
+      "key": "cafe",
+      "label": "咖啡厅",
+      "lat": 31.180761,
+      "lng": 121.593163,
+      "confidence": "high",
+      "evidenceKind": "osm-named",
+      "osmIds": [
+        5613200354
+      ],
+      "evidence": "OSM node 5613200354「科大咖啡馆」（amenity=cafe）"
+    },
+    {
+      "key": "campus-gate",
+      "label": "校门口",
+      "lat": 31.175952,
+      "lng": 121.590476,
+      "confidence": "high",
+      "evidenceKind": "osm-named",
+      "osmIds": [
+        4571133482
+      ],
+      "evidence": "OSM node 4571133482「正门」（barrier=gate），位于华夏中路一侧"
+    },
+    {
+      "key": "zhangjiang-metro",
+      "label": "张江地铁站",
+      "lat": 31.181028,
+      "lng": 121.597539,
+      "confidence": "low",
+      "evidenceKind": "off-campus-inferred",
+      "osmIds": [
+        659461032
+      ],
+      "evidence": "OSM「中科路站」（上海地铁 13 号线）是距校园最近的车站（约 0.9 km）。「张江地铁站」在占位白名单里语义模糊，也可能指张江高科站（2 号线，约 2.9 km 北）；此处为推测"
+    }
+  ],
+  "counts": {
+    "amenity": 20,
+    "building": 86,
+    "gate": 15,
+    "landuse": 38,
+    "leisure": 8,
+    "transit": 5,
+    "water": 14,
+    "locations": 25,
+    "libraries": 1,
+    "dormitories": 14,
+    "waterBodies": 14
+  }
+}

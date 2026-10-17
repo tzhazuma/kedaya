@@ -179,9 +179,11 @@ final class AppRuntime {
   final List<Future<void> Function()> _disposers;
 
   /// mock 运行时：零网络、零平台插件，`git clone` 后直接可跑（契约 §7 硬规则 4）。
-  factory AppRuntime.mock({Duration latency = const Duration(milliseconds: 250)}) {
+  factory AppRuntime.mock(
+      {Duration latency = const Duration(milliseconds: 250)}) {
     final MockControls controls = MockControls(latency: latency);
-    final MockAuthRepository auth = MockAuthRepository(controls: MockControls(latency: latency));
+    final MockAuthRepository auth =
+        MockAuthRepository(controls: MockControls(latency: latency));
     final MockCampusSessionRepository campus = MockCampusSessionRepository(
       controls: MockControls(latency: latency),
     );
@@ -265,7 +267,8 @@ final class AppRuntime {
       credentials: credentials,
       cache: cache,
     );
-    final RemoteConsentRepository consent = RemoteConsentRepository(api: api, cache: cache);
+    final RemoteConsentRepository consent =
+        RemoteConsentRepository(api: api, cache: cache);
     final RemoteWellbeingRepository wellbeing = RemoteWellbeingRepository(api);
     final LocalNotificationPort notifications = LocalNotificationPort();
 

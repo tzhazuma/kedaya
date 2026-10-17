@@ -27,7 +27,7 @@ import '../domain/ports/location_port.dart';
 /// 绝不依赖默认值）。返回类型只有 [Wgs84Point]，因此"忘了指定坐标系"写不出来。
 final class MethodChannelLocation implements LocationPort {
   const MethodChannelLocation({MethodChannel channel = _defaultChannel})
-    : _channel = channel;
+      : _channel = channel;
 
   static const MethodChannel _defaultChannel = MethodChannel('kedaya/location');
 
@@ -36,7 +36,8 @@ final class MethodChannelLocation implements LocationPort {
   @override
   Future<LocationPermission> permissionStatus() async {
     try {
-      return _parsePermission(await _channel.invokeMethod<String>('permissionStatus'));
+      return _parsePermission(
+          await _channel.invokeMethod<String>('permissionStatus'));
     } on MissingPluginException {
       return LocationPermission.unsupported;
     } on PlatformException {
@@ -47,7 +48,8 @@ final class MethodChannelLocation implements LocationPort {
   @override
   Future<LocationPermission> requestPermission() async {
     try {
-      return _parsePermission(await _channel.invokeMethod<String>('requestPermission'));
+      return _parsePermission(
+          await _channel.invokeMethod<String>('requestPermission'));
     } on MissingPluginException {
       return LocationPermission.unsupported;
     } on PlatformException {
@@ -58,8 +60,8 @@ final class MethodChannelLocation implements LocationPort {
   @override
   Future<LocationFix?> currentFix() async {
     try {
-      final Map<Object?, Object?>? raw = await _channel
-          .invokeMethod<Map<Object?, Object?>>('currentFix');
+      final Map<Object?, Object?>? raw =
+          await _channel.invokeMethod<Map<Object?, Object?>>('currentFix');
       if (raw == null) return null;
       final Object? lat = raw['lat'];
       final Object? lng = raw['lng'];
@@ -77,10 +79,10 @@ final class MethodChannelLocation implements LocationPort {
   }
 
   LocationPermission _parsePermission(String? wire) => switch (wire) {
-    'granted' => LocationPermission.granted,
-    'denied' => LocationPermission.denied,
-    'permanently_denied' => LocationPermission.permanentlyDenied,
-    'unsupported' => LocationPermission.unsupported,
-    _ => LocationPermission.unknown,
-  };
+        'granted' => LocationPermission.granted,
+        'denied' => LocationPermission.denied,
+        'permanently_denied' => LocationPermission.permanentlyDenied,
+        'unsupported' => LocationPermission.unsupported,
+        _ => LocationPermission.unknown,
+      };
 }

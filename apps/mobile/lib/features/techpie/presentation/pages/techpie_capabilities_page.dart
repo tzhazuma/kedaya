@@ -52,7 +52,8 @@ class TechpieCapabilitiesPage extends ConsumerWidget {
             '如果刚才是解析失败，请重试（规格 §10.1 的 F7：状态未知与没有数据必须区分）。',
         loadingMessage: '正在读取能力清单…',
         onRetry: () => ref.invalidate(campusCapabilitiesProvider),
-        builder: (BuildContext context, List<CampusCapability> items) => ListView(
+        builder: (BuildContext context, List<CampusCapability> items) =>
+            ListView(
           padding: const EdgeInsets.all(KedaYaTokens.space4),
           children: <Widget>[
             _CapabilitySummary(items: items),
@@ -82,13 +83,12 @@ class _CapabilitySummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final KedaYaColors colors = context.kedayaColors;
-    final int usable = items.where((CampusCapability item) => item.isUsable).length;
-    final int needBinding = items
-        .where((CampusCapability item) => item.needsBinding)
-        .length;
-    final int needSignIn = items
-        .where((CampusCapability item) => item.needsSignIn)
-        .length;
+    final int usable =
+        items.where((CampusCapability item) => item.isUsable).length;
+    final int needBinding =
+        items.where((CampusCapability item) => item.needsBinding).length;
+    final int needSignIn =
+        items.where((CampusCapability item) => item.needsSignIn).length;
     final int notImplemented = items
         .where((CampusCapability item) => !item.phase.isImplemented)
         .length;

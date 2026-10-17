@@ -25,13 +25,17 @@ final class FaqFilter {
 
   bool get isSearching => keyword.trim().isNotEmpty;
 
-  FaqFilter withCategory(String? next) => FaqFilter(category: next, keyword: keyword);
+  FaqFilter withCategory(String? next) =>
+      FaqFilter(category: next, keyword: keyword);
 
-  FaqFilter withKeyword(String next) => FaqFilter(category: category, keyword: next);
+  FaqFilter withKeyword(String next) =>
+      FaqFilter(category: category, keyword: next);
 
   @override
   bool operator ==(Object other) =>
-      other is FaqFilter && other.category == category && other.keyword == keyword;
+      other is FaqFilter &&
+      other.category == category &&
+      other.keyword == keyword;
 
   @override
   int get hashCode => Object.hash(category, keyword);
@@ -49,7 +53,8 @@ final faqDeviceVoterIdProvider = Provider<String>((ref) {
   final LocalCachePort cache = ref.watch(localCacheProvider);
   final Object? stored = cache.readJson(faqDeviceVoterCacheKey);
   if (stored is String && stored.isNotEmpty) return stored;
-  final String generated = 'dev-${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}';
+  final String generated =
+      'dev-${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}';
   unawaited(cache.writeJson(faqDeviceVoterCacheKey, generated));
   return generated;
 });
@@ -59,7 +64,8 @@ final faqDeviceVoterIdProvider = Provider<String>((ref) {
 /// 已登录 → `u:<userId>`；未登录 → `d:<deviceId>`（契约 §2.8：检索无需登录）。
 /// 两种前缀不会混淆，因此未登录时投的票不会被算到之后登录的某个人头上。
 final faqVoterProvider = Provider<String>((ref) {
-  final String? userId = ref.watch(sessionControllerProvider).valueOrNull?.user.userId;
+  final String? userId =
+      ref.watch(sessionControllerProvider).valueOrNull?.user.userId;
   final String deviceId = ref.watch(faqDeviceVoterIdProvider);
   return FaqVoter.resolve(userId: userId, deviceId: deviceId).key;
 });
@@ -118,23 +124,26 @@ final class FaqListState {
     bool? isLoadingMore,
     Object? loadMoreError,
     bool clearLoadMoreError = false,
-  }) => FaqListState(
-    articles: articles ?? this.articles,
-    nextCursor: nextCursor ?? this.nextCursor,
-    total: total ?? this.total,
-    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-    loadMoreError: clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
-  );
+  }) =>
+      FaqListState(
+        articles: articles ?? this.articles,
+        nextCursor: nextCursor ?? this.nextCursor,
+        total: total ?? this.total,
+        isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+        loadMoreError:
+            clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
+      );
 
   FaqListState append(FaqListState next) => FaqListState(
-    articles: <FaqArticle>[...articles, ...next.articles],
-    nextCursor: next.nextCursor,
-    total: next.total ?? total,
-  );
+        articles: <FaqArticle>[...articles, ...next.articles],
+        nextCursor: next.nextCursor,
+        total: next.total ?? total,
+      );
 }
 
 /// 文章列表控制器（分类 / 搜索变化即重新加载，因此三态会自然回到 loading）。
-final faqListControllerProvider = AsyncNotifierProvider<FaqListController, FaqListState>(
+final faqListControllerProvider =
+    AsyncNotifierProvider<FaqListController, FaqListState>(
   FaqListController.new,
 );
 
@@ -145,7 +154,8 @@ final class FaqListController extends AsyncNotifier<FaqListState> {
   Future<FaqListState> build() {
     final FaqFilter filter = ref.watch(faqFilterProvider);
     return _fetch(
-      FaqQuery(category: filter.category, keyword: filter.keyword, limit: pageSize),
+      FaqQuery(
+          category: filter.category, keyword: filter.keyword, limit: pageSize),
     );
   }
 
@@ -154,7 +164,10 @@ final class FaqListController extends AsyncNotifier<FaqListState> {
     state = const AsyncLoading<FaqListState>();
     state = await AsyncValue.guard<FaqListState>(
       () => _fetch(
-        FaqQuery(category: filter.category, keyword: filter.keyword, limit: pageSize),
+        FaqQuery(
+            category: filter.category,
+            keyword: filter.keyword,
+            limit: pageSize),
       ),
     );
   }
@@ -188,10 +201,10 @@ final class FaqListController extends AsyncNotifier<FaqListState> {
     final Result<Page<FaqArticle>> result = await port.listArticles(query);
     return switch (result) {
       Ok<Page<FaqArticle>>(:final Page<FaqArticle> value) => FaqListState(
-        articles: value.items,
-        nextCursor: value.nextCursor,
-        total: value.total,
-      ),
+          articles: value.items,
+          nextCursor: value.nextCursor,
+          total: value.total,
+        ),
       Err<Page<FaqArticle>>(:final ApiError error, :final String? traceId) =>
         throw ApiException(error, traceId: traceId),
     };
@@ -207,7 +220,8 @@ final class FaqListController extends AsyncNotifier<FaqListState> {
 /// 只存 `int` 而不是整篇 `FaqArticle`：`services/api` 的 helpful 端点
 /// 只回 `{ id, helpfulCount, counted }`，不回整篇文章。
 final faqHelpfulOverridesProvider =
-    NotifierProvider<FaqHelpfulOverrides, Map<String, int>>(FaqHelpfulOverrides.new);
+    NotifierProvider<FaqHelpfulOverrides, Map<String, int>>(
+        FaqHelpfulOverrides.new);
 
 final class FaqHelpfulOverrides extends Notifier<Map<String, int>> {
   @override
@@ -279,8 +293,8 @@ final class FaqTicketListState {
 
 final faqTicketsControllerProvider =
     AsyncNotifierProvider<FaqTicketsController, FaqTicketListState>(
-      FaqTicketsController.new,
-    );
+  FaqTicketsController.new,
+);
 
 final class FaqTicketsController extends AsyncNotifier<FaqTicketListState> {
   static const int pageSize = 20;
@@ -295,12 +309,13 @@ final class FaqTicketsController extends AsyncNotifier<FaqTicketListState> {
 
   Future<FaqTicketListState> _fetch() async {
     final FaqPort port = ref.read(faqRepositoryProvider);
-    final Result<Page<FaqTicket>> result = await port.listMyTickets(limit: pageSize);
+    final Result<Page<FaqTicket>> result =
+        await port.listMyTickets(limit: pageSize);
     return switch (result) {
       Ok<Page<FaqTicket>>(:final Page<FaqTicket> value) => FaqTicketListState(
-        tickets: value.items,
-        total: value.total,
-      ),
+          tickets: value.items,
+          total: value.total,
+        ),
       Err<Page<FaqTicket>>(:final ApiError error, :final String? traceId) =>
         throw ApiException(error, traceId: traceId),
     };

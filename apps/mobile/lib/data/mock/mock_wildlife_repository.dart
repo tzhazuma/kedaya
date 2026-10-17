@@ -46,26 +46,31 @@ final class MockWildlifeRepository implements WildlifePort {
     this.classifierEnabled = false,
     this.classifierForcedConfidence,
     CampusProjection projection = CampusProjection.campus,
-  }) : controls = controls ?? MockControls(),
-       _projection = projection,
-       _now = now ?? DateTime.now(),
-       _basemap = basemap ?? mockCampusBasemap,
-       _ownSightingIds = <String>{...(ownSightingIds ?? mockOwnSightingIds)},
-       _speciesById = <String, WildlifeSpecies>{
-         for (final WildlifeSpecies item in species ?? mockWildlifeSpecies) item.id: item,
-       },
-       _zones = <String, WildlifeZone>{
-         for (final WildlifeZone zone in zones ?? mockWildlifeZones) zone.id: zone,
-       },
-       _spots = <WildlifeSpot>[...(spots ?? mockWildlifeSpots)],
-       _tracks = <WildlifeTrack>[...(tracks ?? mockWildlifeTracks)],
-       _sightings = <String, WildlifeSighting>{
-         for (final WildlifeSighting item in sightings ?? mockWildlifeSightings) item.id: item,
-       },
-       _individuals = <String, WildlifeIndividual>{
-         for (final WildlifeIndividual item in individuals ?? mockWildlifeIndividuals)
-           item.id: item,
-       };
+  })  : controls = controls ?? MockControls(),
+        _projection = projection,
+        _now = now ?? DateTime.now(),
+        _basemap = basemap ?? mockCampusBasemap,
+        _ownSightingIds = <String>{...(ownSightingIds ?? mockOwnSightingIds)},
+        _speciesById = <String, WildlifeSpecies>{
+          for (final WildlifeSpecies item in species ?? mockWildlifeSpecies)
+            item.id: item,
+        },
+        _zones = <String, WildlifeZone>{
+          for (final WildlifeZone zone in zones ?? mockWildlifeZones)
+            zone.id: zone,
+        },
+        _spots = <WildlifeSpot>[...(spots ?? mockWildlifeSpots)],
+        _tracks = <WildlifeTrack>[...(tracks ?? mockWildlifeTracks)],
+        _sightings = <String, WildlifeSighting>{
+          for (final WildlifeSighting item
+              in sightings ?? mockWildlifeSightings)
+            item.id: item,
+        },
+        _individuals = <String, WildlifeIndividual>{
+          for (final WildlifeIndividual item
+              in individuals ?? mockWildlifeIndividuals)
+            item.id: item,
+        };
 
   /// 可在运行时切换延迟与故障（UI 三态演示 / 测试注入）。
   final MockControls controls;
@@ -125,15 +130,21 @@ final class MockWildlifeRepository implements WildlifePort {
   @override
   Future<Result<CampusBasemap>> getBasemap() async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<CampusBasemap>();
+    if (controls.failure != null) {
+      return controls.failureResult<CampusBasemap>();
+    }
     return Ok<CampusBasemap>(_basemap);
   }
 
   @override
   Future<Result<List<WildlifeSpecies>>> listSpecies() async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<List<WildlifeSpecies>>();
-    if (controls.emptyResults) return Ok<List<WildlifeSpecies>>(const <WildlifeSpecies>[]);
+    if (controls.failure != null) {
+      return controls.failureResult<List<WildlifeSpecies>>();
+    }
+    if (controls.emptyResults) {
+      return Ok<List<WildlifeSpecies>>(const <WildlifeSpecies>[]);
+    }
     return Ok<List<WildlifeSpecies>>(
       _speciesById.values.toList(growable: false),
     );
@@ -142,8 +153,12 @@ final class MockWildlifeRepository implements WildlifePort {
   @override
   Future<Result<List<WildlifeZone>>> listZones() async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<List<WildlifeZone>>();
-    if (controls.emptyResults) return Ok<List<WildlifeZone>>(const <WildlifeZone>[]);
+    if (controls.failure != null) {
+      return controls.failureResult<List<WildlifeZone>>();
+    }
+    if (controls.emptyResults) {
+      return Ok<List<WildlifeZone>>(const <WildlifeZone>[]);
+    }
     final List<WildlifeZone> zones = _zones.values.toList(growable: false);
     zones.sort((WildlifeZone a, WildlifeZone b) {
       final int byOrder = a.sortOrder.compareTo(b.sortOrder);
@@ -164,9 +179,12 @@ final class MockWildlifeRepository implements WildlifePort {
   @override
   Future<Result<Page<WildlifeSpot>>> listSpots(WildlifeSpotQuery query) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<Page<WildlifeSpot>>();
+    if (controls.failure != null) {
+      return controls.failureResult<Page<WildlifeSpot>>();
+    }
     if (controls.emptyResults) {
-      return Ok<Page<WildlifeSpot>>(const Page<WildlifeSpot>(items: <WildlifeSpot>[], total: 0));
+      return Ok<Page<WildlifeSpot>>(
+          const Page<WildlifeSpot>(items: <WildlifeSpot>[], total: 0));
     }
 
     final List<WildlifeSpot> all = <WildlifeSpot>[
@@ -175,18 +193,25 @@ final class MockWildlifeRepository implements WildlifePort {
             (query.speciesId == null ||
                 query.speciesId!.isEmpty ||
                 spot.speciesId == query.speciesId) &&
-            (query.zoneId == null || query.zoneId!.isEmpty || spot.zoneId == query.zoneId) &&
+            (query.zoneId == null ||
+                query.zoneId!.isEmpty ||
+                spot.zoneId == query.zoneId) &&
             spot.confidence >= query.minConfidence)
           spot,
     ];
-    all.sort((WildlifeSpot a, WildlifeSpot b) => b.lastSeenAt.compareTo(a.lastSeenAt));
-    return Ok<Page<WildlifeSpot>>(_page<WildlifeSpot>(all, query.cursor, query.limit));
+    all.sort((WildlifeSpot a, WildlifeSpot b) =>
+        b.lastSeenAt.compareTo(a.lastSeenAt));
+    return Ok<Page<WildlifeSpot>>(
+        _page<WildlifeSpot>(all, query.cursor, query.limit));
   }
 
   @override
-  Future<Result<Page<WildlifeTrack>>> listTracks(WildlifeTrackQuery query) async {
+  Future<Result<Page<WildlifeTrack>>> listTracks(
+      WildlifeTrackQuery query) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<Page<WildlifeTrack>>();
+    if (controls.failure != null) {
+      return controls.failureResult<Page<WildlifeTrack>>();
+    }
     if (controls.emptyResults) {
       return Ok<Page<WildlifeTrack>>(
         const Page<WildlifeTrack>(items: <WildlifeTrack>[], total: 0),
@@ -203,14 +228,18 @@ final class MockWildlifeRepository implements WildlifePort {
                 track.individualId == query.individualId))
           track,
     ];
-    all.sort((WildlifeTrack a, WildlifeTrack b) => b.spanEndAt.compareTo(a.spanEndAt));
-    return Ok<Page<WildlifeTrack>>(_page<WildlifeTrack>(all, query.cursor, query.limit));
+    all.sort((WildlifeTrack a, WildlifeTrack b) =>
+        b.spanEndAt.compareTo(a.spanEndAt));
+    return Ok<Page<WildlifeTrack>>(
+        _page<WildlifeTrack>(all, query.cursor, query.limit));
   }
 
   @override
   Future<Result<WildlifeTrack>> getTrack(String id) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<WildlifeTrack>();
+    if (controls.failure != null) {
+      return controls.failureResult<WildlifeTrack>();
+    }
     for (final WildlifeTrack track in _tracks) {
       if (track.id == id) return Ok<WildlifeTrack>(track);
     }
@@ -218,7 +247,8 @@ final class MockWildlifeRepository implements WildlifePort {
   }
 
   @override
-  Future<Result<List<WildlifeIndividual>>> listIndividuals({String? speciesId}) async {
+  Future<Result<List<WildlifeIndividual>>> listIndividuals(
+      {String? speciesId}) async {
     await controls.simulate();
     if (controls.failure != null) {
       return controls.failureResult<List<WildlifeIndividual>>();
@@ -230,10 +260,13 @@ final class MockWildlifeRepository implements WildlifePort {
     final List<WildlifeIndividual> all = <WildlifeIndividual>[
       for (final WildlifeIndividual item in _individuals.values)
         if (item.isPublic &&
-            (speciesId == null || speciesId.isEmpty || item.speciesId == speciesId))
+            (speciesId == null ||
+                speciesId.isEmpty ||
+                item.speciesId == speciesId))
           item,
     ];
-    all.sort((WildlifeIndividual a, WildlifeIndividual b) => a.name.compareTo(b.name));
+    all.sort((WildlifeIndividual a, WildlifeIndividual b) =>
+        a.name.compareTo(b.name));
     return Ok<List<WildlifeIndividual>>(all);
   }
 
@@ -258,7 +291,9 @@ final class MockWildlifeRepository implements WildlifePort {
             (query.speciesId == null ||
                 query.speciesId!.isEmpty ||
                 sighting.speciesId == query.speciesId) &&
-            (query.zoneId == null || query.zoneId!.isEmpty || sighting.zoneId == query.zoneId) &&
+            (query.zoneId == null ||
+                query.zoneId!.isEmpty ||
+                sighting.zoneId == query.zoneId) &&
             (!query.healthConcernOnly || sighting.healthConcern))
           sighting,
     ];
@@ -270,7 +305,9 @@ final class MockWildlifeRepository implements WildlifePort {
   @override
   Future<Result<WildlifeSighting>> getSighting(String id) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<WildlifeSighting>();
+    if (controls.failure != null) {
+      return controls.failureResult<WildlifeSighting>();
+    }
     final WildlifeSighting? sighting = _sightings[id];
     if (sighting == null) return _notFound<WildlifeSighting>('该观测不存在或已下架');
     // 未公开的记录对**非上报人**按 NOT_FOUND 处理（规格 §9.1 A3：不区分，
@@ -284,9 +321,12 @@ final class MockWildlifeRepository implements WildlifePort {
   // --------------------------------------------------------------- 写端点
 
   @override
-  Future<Result<WildlifeMedia>> uploadMedia(UploadWildlifeMediaCommand command) async {
+  Future<Result<WildlifeMedia>> uploadMedia(
+      UploadWildlifeMediaCommand command) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<WildlifeMedia>();
+    if (controls.failure != null) {
+      return controls.failureResult<WildlifeMedia>();
+    }
 
     final WildlifeValidationResult validation = command.validate();
     if (validation.isInvalid) {
@@ -324,9 +364,12 @@ final class MockWildlifeRepository implements WildlifePort {
   }
 
   @override
-  Future<Result<WildlifeSighting>> createSighting(WildlifeSightingDraft draft) async {
+  Future<Result<WildlifeSighting>> createSighting(
+      WildlifeSightingDraft draft) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<WildlifeSighting>();
+    if (controls.failure != null) {
+      return controls.failureResult<WildlifeSighting>();
+    }
 
     final WildlifeValidationResult validation = draft.validate(
       now: _now,
@@ -400,7 +443,8 @@ final class MockWildlifeRepository implements WildlifePort {
   }
 
   @override
-  Future<Result<WildlifeClassifyResult>> classify(WildlifeClassifyRequest request) async {
+  Future<Result<WildlifeClassifyResult>> classify(
+      WildlifeClassifyRequest request) async {
     await controls.simulate();
     if (controls.failure != null) {
       return controls.failureResult<WildlifeClassifyResult>();
@@ -409,7 +453,8 @@ final class MockWildlifeRepository implements WildlifePort {
     if (!classifierEnabled) {
       return Ok<WildlifeClassifyResult>(WildlifeClassifyResult.unavailable);
     }
-    final List<WildlifeSpecies> candidates = _speciesById.values.toList(growable: false);
+    final List<WildlifeSpecies> candidates =
+        _speciesById.values.toList(growable: false);
     if (candidates.isEmpty) {
       return Ok<WildlifeClassifyResult>(WildlifeClassifyResult.unavailable);
     }
@@ -446,7 +491,9 @@ final class MockWildlifeRepository implements WildlifePort {
     required String speciesId,
   }) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<WildlifeSighting>();
+    if (controls.failure != null) {
+      return controls.failureResult<WildlifeSighting>();
+    }
 
     final WildlifeSighting? current = _sightings[id];
     if (current == null || !_ownSightingIds.contains(id)) {
@@ -537,9 +584,11 @@ final class MockWildlifeRepository implements WildlifePort {
   // ------------------------------------------------------------------ 内部
 
   List<WildlifeSighting> _sortedSightings() {
-    final List<WildlifeSighting> all = _sightings.values.toList(growable: false);
+    final List<WildlifeSighting> all =
+        _sightings.values.toList(growable: false);
     all.sort(
-      (WildlifeSighting a, WildlifeSighting b) => b.observedAt.compareTo(a.observedAt),
+      (WildlifeSighting a, WildlifeSighting b) =>
+          b.observedAt.compareTo(a.observedAt),
     );
     return all;
   }
@@ -582,7 +631,8 @@ final class MockWildlifeRepository implements WildlifePort {
   String _thumbUrlFor(String mediaId) {
     for (final WildlifeMedia media in _mediaByClientId.values) {
       if (media.mediaId == mediaId) {
-        return media.thumbUrl ?? 'https://cdn.kedaya.local/wildlife/mock/$mediaId/thumb.webp';
+        return media.thumbUrl ??
+            'https://cdn.kedaya.local/wildlife/mock/$mediaId/thumb.webp';
       }
     }
     return 'https://cdn.kedaya.local/wildlife/mock/$mediaId/thumb.webp';
@@ -590,7 +640,8 @@ final class MockWildlifeRepository implements WildlifePort {
 
   Page<T> _page<T>(List<T> all, String? cursor, int limit) {
     final int start = _parseCursor(cursor);
-    final int size = limit < 1 ? 1 : (limit > maxPageSize ? maxPageSize : limit);
+    final int size =
+        limit < 1 ? 1 : (limit > maxPageSize ? maxPageSize : limit);
     final List<T> window = all.skip(start).take(size).toList(growable: false);
     final int consumed = start + window.length;
     return Page<T>(
@@ -608,9 +659,9 @@ final class MockWildlifeRepository implements WildlifePort {
   }
 
   Err<T> _notFound<T>(String message) => Err<T>(
-    ApiError(code: ApiErrorCode.notFound, message: message),
-    traceId: MockControls.traceId,
-  );
+        ApiError(code: ApiErrorCode.notFound, message: message),
+        traceId: MockControls.traceId,
+      );
 
   /// FNV-1a 32 位指纹（**不是** sha256，见 [uploadMedia] 的注释）。
   String _fingerprint(List<int> bytes) {

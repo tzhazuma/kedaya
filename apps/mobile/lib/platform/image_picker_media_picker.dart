@@ -18,7 +18,8 @@ import '../domain/ports/media_picker_port.dart';
 /// 任何异常（用户取消 / 相册权限被拒 / 插件缺失）都收敛为**空列表** ——
 /// 取消不是错误，不该弹错（端口契约，见 `MediaPickerPort`）。
 final class ImagePickerMediaPicker implements MediaPickerPort {
-  ImagePickerMediaPicker({ImagePicker? picker}) : _picker = picker ?? ImagePicker();
+  ImagePickerMediaPicker({ImagePicker? picker})
+      : _picker = picker ?? ImagePicker();
 
   final ImagePicker _picker;
 

@@ -15,13 +15,16 @@ import 'package:kedaya/features/wildlife/application/wildlife_providers.dart';
 void main() {
   ProviderContainer containerWith(MockWildlifeRepository repository) {
     final ProviderContainer container = ProviderContainer(
-      overrides: <Override>[wildlifeRepositoryProvider.overrideWithValue(repository)],
+      overrides: <Override>[
+        wildlifeRepositoryProvider.overrideWithValue(repository)
+      ],
     );
     addTearDown(container.dispose);
     return container;
   }
 
-  MockWildlifeRepository buildRepository({MockControls? controls, CampusBasemap? basemap}) =>
+  MockWildlifeRepository buildRepository(
+          {MockControls? controls, CampusBasemap? basemap}) =>
       MockWildlifeRepository(
         controls: controls ?? MockControls(latency: Duration.zero),
         now: mockNow,
@@ -50,8 +53,10 @@ void main() {
   });
 
   test('empty：空结果时 isEmpty 为 true（UI 渲染空态）', () async {
-    final MockControls controls = MockControls(latency: Duration.zero)..emptyResults = true;
-    final ProviderContainer container = containerWith(buildRepository(controls: controls));
+    final MockControls controls = MockControls(latency: Duration.zero)
+      ..emptyResults = true;
+    final ProviderContainer container =
+        containerWith(buildRepository(controls: controls));
 
     final WildlifeMapState state = await container.read(
       wildlifeMapControllerProvider.future,
@@ -65,7 +70,8 @@ void main() {
   test('error：上游故障抛出 ApiException（UI 渲染错误态）', () async {
     final MockControls controls = MockControls(latency: Duration.zero)
       ..failureMode = MockFailureMode.upstreamUnavailable;
-    final ProviderContainer container = containerWith(buildRepository(controls: controls));
+    final ProviderContainer container =
+        containerWith(buildRepository(controls: controls));
 
     await expectLater(
       container.read(wildlifeMapControllerProvider.future),
@@ -78,10 +84,13 @@ void main() {
 
   test('物种筛选会重新加载，并且只保留该物种的热点与轨迹', () async {
     final ProviderContainer container = containerWith(buildRepository());
-    final WildlifeMapState all = await container.read(wildlifeMapControllerProvider.future);
+    final WildlifeMapState all =
+        await container.read(wildlifeMapControllerProvider.future);
     expect(all.spots, hasLength(3));
 
-    container.read(wildlifeSpeciesFilterProvider.notifier).select(mockSpeciesSwan);
+    container
+        .read(wildlifeSpeciesFilterProvider.notifier)
+        .select(mockSpeciesSwan);
     final WildlifeMapState filtered = await container.read(
       wildlifeMapControllerProvider.future,
     );
@@ -92,7 +101,8 @@ void main() {
 
     // 切回全部。
     container.read(wildlifeSpeciesFilterProvider.notifier).select(null);
-    final WildlifeMapState back = await container.read(wildlifeMapControllerProvider.future);
+    final WildlifeMapState back =
+        await container.read(wildlifeMapControllerProvider.future);
     expect(back.spots, hasLength(3));
     expect(back.selectedSpecies, isNull);
   });
@@ -119,7 +129,8 @@ void main() {
     final ApiException error =
         container.read(wildlifeMapControllerProvider).error! as ApiException;
     expect(error.error.message, contains(CampusBasemap.rmseTooHigh));
-    expect(error.error.message, contains(CampusBasemap.controlPointsInsufficient));
+    expect(
+        error.error.message, contains(CampusBasemap.controlPointsInsufficient));
   });
 
   test('refresh 后仍是数据态', () async {
@@ -133,14 +144,17 @@ void main() {
     final ProviderContainer container = containerWith(buildRepository());
     expect(await container.read(wildlifeSpeciesProvider.future), hasLength(7));
     expect(await container.read(wildlifeZonesProvider.future), hasLength(4));
-    expect((await container.read(wildlifeBasemapProvider.future)).isRenderable, isTrue);
+    expect((await container.read(wildlifeBasemapProvider.future)).isRenderable,
+        isTrue);
     expect(await container.read(wildlifeTracksProvider.future), hasLength(2));
     expect(
-      (await container.read(wildlifeZoneDetailProvider(mockZoneLake).future)).name,
+      (await container.read(wildlifeZoneDetailProvider(mockZoneLake).future))
+          .name,
       contains('人工湖'),
     );
     expect(
-      (await container.read(wildlifeTrackDetailProvider('wt-lake-swan').future)).isInferred,
+      (await container.read(wildlifeTrackDetailProvider('wt-lake-swan').future))
+          .isInferred,
       isTrue,
     );
     expect(

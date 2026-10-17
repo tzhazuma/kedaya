@@ -20,41 +20,45 @@ void main() {
 
   ProviderContainer containerWith(MockBuddyRepository repository) {
     final ProviderContainer container = ProviderContainer(
-      overrides: <Override>[buddyRepositoryProvider.overrideWithValue(repository)],
+      overrides: <Override>[
+        buddyRepositoryProvider.overrideWithValue(repository)
+      ],
     );
     addTearDown(container.dispose);
     return container;
   }
 
   /// 默认资料 = fixtures 那份 + **打开匹配开关**（否则走的是「按时间排序」降级路径）。
-  BuddyProfile matchingProfile() => mockBuddyProfile().copyWith(matchEnabled: true);
+  BuddyProfile matchingProfile() =>
+      mockBuddyProfile().copyWith(matchEnabled: true);
 
   MockBuddyRepository repo({
     MockControls? controls,
     BuddyProfile? profile,
     List<BuddyPost>? posts,
-  }) => MockBuddyRepository(
-    controls: controls ?? MockControls(latency: Duration.zero),
-    clock: () => fixedNow,
-    profile: profile ?? matchingProfile(),
-    posts: posts,
-  );
+  }) =>
+      MockBuddyRepository(
+        controls: controls ?? MockControls(latency: Duration.zero),
+        clock: () => fixedNow,
+        profile: profile ?? matchingProfile(),
+        posts: posts,
+      );
 
   List<BuddyPost> seedPosts(int count) => <BuddyPost>[
-    for (int i = 0; i < count; i++)
-      BuddyPost(
-        id: 'bp-seed-$i',
-        activity: BuddyActivity.sport,
-        title: '活动 $i',
-        location: '体育馆',
-        startsAt: buddyShanghaiInstant(fixedNow, dayOffset: 2, hour: 19)
-            .add(Duration(minutes: i * 5)),
-        durationMin: 60,
-        capacity: 4,
-        creator: const BuddyCreator(id: 'u-2001', nickname: '鸭鸭一号'),
-        createdAt: fixedNow,
-      ),
-  ];
+        for (int i = 0; i < count; i++)
+          BuddyPost(
+            id: 'bp-seed-$i',
+            activity: BuddyActivity.sport,
+            title: '活动 $i',
+            location: '体育馆',
+            startsAt: buddyShanghaiInstant(fixedNow, dayOffset: 2, hour: 19)
+                .add(Duration(minutes: i * 5)),
+            durationMin: 60,
+            capacity: 4,
+            creator: const BuddyCreator(id: 'u-2001', nickname: '鸭鸭一号'),
+            createdAt: fixedNow,
+          ),
+      ];
 
   Future<BuddyRecommendState> settle(ProviderContainer container) async {
     for (int i = 0; i < 50; i++) {
@@ -71,7 +75,8 @@ void main() {
     test('loading -> data：每条推荐都带非空理由与 matchMode', () async {
       final ProviderContainer container = containerWith(repo());
 
-      expect(container.read(buddyRecommendControllerProvider).isLoading, isTrue);
+      expect(
+          container.read(buddyRecommendControllerProvider).isLoading, isTrue);
 
       final BuddyRecommendState state = await container.read(
         buddyRecommendControllerProvider.future,
@@ -87,7 +92,8 @@ void main() {
     test('empty：空结果 → isEmpty（UI 渲染空态）', () async {
       final MockControls controls = MockControls(latency: Duration.zero)
         ..emptyResults = true;
-      final ProviderContainer container = containerWith(repo(controls: controls));
+      final ProviderContainer container =
+          containerWith(repo(controls: controls));
 
       final BuddyRecommendState state = await container.read(
         buddyRecommendControllerProvider.future,
@@ -99,14 +105,17 @@ void main() {
     test('error：上游故障抛出 ApiException', () async {
       final MockControls controls = MockControls(latency: Duration.zero)
         ..failureMode = MockFailureMode.upstreamUnavailable;
-      final ProviderContainer container = containerWith(repo(controls: controls));
+      final ProviderContainer container =
+          containerWith(repo(controls: controls));
 
       await expectLater(
         container.read(buddyRecommendControllerProvider.future),
         throwsA(isA<ApiException>()),
       );
       expect(
-        (container.read(buddyRecommendControllerProvider).error! as ApiException).code,
+        (container.read(buddyRecommendControllerProvider).error!
+                as ApiException)
+            .code,
         ApiErrorCode.upstreamUnavailable,
       );
     });
@@ -120,12 +129,15 @@ void main() {
       );
       expect(sport.section, BuddySection.sport);
 
-      container.read(buddySectionFilterProvider.notifier).select(BuddySection.academic);
+      container
+          .read(buddySectionFilterProvider.notifier)
+          .select(BuddySection.academic);
       final BuddyRecommendState academic = await settle(container);
       expect(academic.section, BuddySection.academic);
       expect(
         academic.items.every(
-          (BuddyRecommendation item) => item.post.section == BuddySection.academic,
+          (BuddyRecommendation item) =>
+              item.post.section == BuddySection.academic,
         ),
         isTrue,
       );
@@ -144,13 +156,17 @@ void main() {
       expect(state.hasMore, isTrue);
 
       controls.failureMode = MockFailureMode.upstreamUnavailable;
-      await container.read(buddyRecommendControllerProvider.notifier).loadMore();
+      await container
+          .read(buddyRecommendControllerProvider.notifier)
+          .loadMore();
       state = container.read(buddyRecommendControllerProvider).requireValue;
       expect(state.items, hasLength(10));
       expect(state.loadMoreError, isA<ApiException>());
 
       controls.failureMode = MockFailureMode.none;
-      await container.read(buddyRecommendControllerProvider.notifier).loadMore();
+      await container
+          .read(buddyRecommendControllerProvider.notifier)
+          .loadMore();
       state = container.read(buddyRecommendControllerProvider).requireValue;
       expect(state.items, hasLength(12));
       expect(state.hasMore, isFalse);
@@ -173,9 +189,11 @@ void main() {
         ),
         isTrue,
       );
-      expect(before.items.every((BuddyRecommendation item) => item.score == 0), isTrue);
+      expect(before.items.every((BuddyRecommendation item) => item.score == 0),
+          isTrue);
 
-      final BuddyProfile profile = await container.read(buddyProfileProvider.future);
+      final BuddyProfile profile =
+          await container.read(buddyProfileProvider.future);
       await container
           .read(buddyActionsProvider)
           .saveProfile(profile.copyWith(matchEnabled: true));
@@ -203,19 +221,21 @@ void main() {
       expect(before.items.first.post.id, 'bp-1010');
 
       await container.read(buddyActionsProvider).submitFeedback(
-        BuddyMatchFeedback(
-          userId: buddyMockCurrentUserId,
-          targetPostId: 'bp-1010',
-          section: BuddySection.sport,
-          action: BuddyMatchFeedbackAction.dislike,
-          createdAt: fixedNow,
-        ),
-      );
+            BuddyMatchFeedback(
+              userId: buddyMockCurrentUserId,
+              targetPostId: 'bp-1010',
+              section: BuddySection.sport,
+              action: BuddyMatchFeedbackAction.dislike,
+              createdAt: fixedNow,
+            ),
+          );
 
       await container.read(buddyRecommendControllerProvider.notifier).refresh();
-      final BuddyRecommendState after = container.read(
-        buddyRecommendControllerProvider,
-      ).requireValue;
+      final BuddyRecommendState after = container
+          .read(
+            buddyRecommendControllerProvider,
+          )
+          .requireValue;
       expect(after.items.first.score, lessThan(beforeScore));
       expect(after.items.first.score, closeTo(0.45, 1e-9));
     });

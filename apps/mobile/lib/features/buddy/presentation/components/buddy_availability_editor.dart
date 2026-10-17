@@ -114,7 +114,8 @@ class BuddyAvailabilityEditor extends StatelessWidget {
   }
 
   Future<void> _addSlot(BuildContext context) async {
-    final List<AvailabilitySlot>? added = await showDialog<List<AvailabilitySlot>>(
+    final List<AvailabilitySlot>? added =
+        await showDialog<List<AvailabilitySlot>>(
       context: context,
       builder: (BuildContext dialogContext) => const _AddSlotDialog(),
     );
@@ -175,7 +176,8 @@ class _AddSlotDialogState extends State<_AddSlotDialog> {
           children: <Widget>[
             Text(
               '星期',
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
             ),
             const SizedBox(height: KedaYaTokens.space1),
             Wrap(
@@ -192,7 +194,8 @@ class _AddSlotDialogState extends State<_AddSlotDialog> {
                     side: BorderSide(color: colors.border),
                     labelStyle: TextStyle(
                       fontSize: KedaYaTokens.fontSizeXs,
-                      color: _dow == dow ? colors.brandStrong : colors.textMuted,
+                      color:
+                          _dow == dow ? colors.brandStrong : colors.textMuted,
                     ),
                   ),
               ],
@@ -244,9 +247,8 @@ class _AddSlotDialogState extends State<_AddSlotDialog> {
           child: const Text('取消'),
         ),
         FilledButton(
-          onPressed: parts.isEmpty
-              ? null
-              : () => Navigator.of(context).pop(parts),
+          onPressed:
+              parts.isEmpty ? null : () => Navigator.of(context).pop(parts),
           child: const Text('添加'),
         ),
       ],

@@ -21,14 +21,16 @@ class WildlifeTrackDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<WildlifeTrack> value = ref.watch(wildlifeTrackDetailProvider(trackId));
+    final AsyncValue<WildlifeTrack> value =
+        ref.watch(wildlifeTrackDetailProvider(trackId));
     return KedaYaPageScaffold(
       title: '推断轨迹',
       padding: EdgeInsets.zero,
       child: value.when(
         data: (WildlifeTrack track) => _TrackBody(track: track),
         loading: () => const KedaYaLoadingState(message: '正在加载轨迹…'),
-        error: (Object error, StackTrace stackTrace) => _buildError(context, ref, error),
+        error: (Object error, StackTrace stackTrace) =>
+            _buildError(context, ref, error),
       ),
     );
   }
@@ -57,7 +59,8 @@ class _TrackBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final KedaYaColors colors = context.kedayaColors;
     final DateFormat dateFormat = DateFormat('yyyy-MM-dd HH:mm');
-    final AsyncValue<CampusBasemap> basemap = ref.watch(wildlifeBasemapProvider);
+    final AsyncValue<CampusBasemap> basemap =
+        ref.watch(wildlifeBasemapProvider);
 
     return ListView(
       padding: const EdgeInsets.all(KedaYaTokens.space4),
@@ -83,10 +86,14 @@ class _TrackBody extends ConsumerWidget {
           spacing: KedaYaTokens.space2,
           runSpacing: KedaYaTokens.space1,
           children: <Widget>[
-            WildlifePill(text: '方法：${track.methodLabel}', icon: Icons.hub_outlined),
-            WildlifePill(text: '可信度：${track.confidenceLabel}', icon: Icons.insights),
-            WildlifePill(text: '${track.path.length} 个途经点', icon: Icons.timeline),
-            WildlifePill(text: '约 ${track.totalDistanceM} m', icon: Icons.straighten),
+            WildlifePill(
+                text: '方法：${track.methodLabel}', icon: Icons.hub_outlined),
+            WildlifePill(
+                text: '可信度：${track.confidenceLabel}', icon: Icons.insights),
+            WildlifePill(
+                text: '${track.path.length} 个途经点', icon: Icons.timeline),
+            WildlifePill(
+                text: '约 ${track.totalDistanceM} m', icon: Icons.straighten),
             if (track.hasNamedIndividual)
               WildlifePill(
                 text: '个体：${track.individualName!}',
@@ -103,7 +110,8 @@ class _TrackBody extends ConsumerWidget {
             child: AspectRatio(
               aspectRatio: basemap.requireValue.heightPx <= 0
                   ? 10 / 7
-                  : basemap.requireValue.widthPx / basemap.requireValue.heightPx,
+                  : basemap.requireValue.widthPx /
+                      basemap.requireValue.heightPx,
               child: WildlifeMapCanvas(
                 basemap: basemap.requireValue,
                 tracks: <WildlifeTrack>[track],
@@ -119,7 +127,8 @@ class _TrackBody extends ConsumerWidget {
             ),
             child: Text(
               '这条轨迹的点太少，画不出折线（我们不会为了好看而补点）。',
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.textMuted),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeSm, color: colors.textMuted),
             ),
           ),
         const SizedBox(height: KedaYaTokens.space4),
@@ -168,13 +177,15 @@ class _TrackBody extends ConsumerWidget {
               Text(
                 '时间跨度：${dateFormat.format(track.spanStartAt.toLocal())} → '
                 '${dateFormat.format(track.spanEndAt.toLocal())}',
-                style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+                style: TextStyle(
+                    fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
               ),
               const SizedBox(height: KedaYaTokens.space1),
               Text(
                 '算法版本：${track.method.wire} · 计算结果时间 '
                 '${dateFormat.format(track.computedAt.toLocal())}',
-                style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+                style: TextStyle(
+                    fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
               ),
             ],
           ),

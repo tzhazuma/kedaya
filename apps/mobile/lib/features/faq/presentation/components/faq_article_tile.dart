@@ -40,7 +40,8 @@ class FaqArticleTile extends ConsumerWidget {
           padding: const EdgeInsets.only(top: KedaYaTokens.space1),
           child: Text(
             '$helpfulCount 人觉得有用',
-            style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+            style: TextStyle(
+                fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
           ),
         ),
         childrenPadding: const EdgeInsets.fromLTRB(

@@ -24,9 +24,8 @@ class WildlifeZoneCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final KedaYaColors colors = context.kedayaColors;
-    final String notice = showFullNotice
-        ? (zone.noticeText ?? '').trim()
-        : zone.noticeSummary;
+    final String notice =
+        showFullNotice ? (zone.noticeText ?? '').trim() : zone.noticeSummary;
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -83,7 +82,8 @@ class WildlifeZoneCard extends StatelessWidget {
                   ),
                 ),
               ],
-              if (zone.note != null && zone.note!.trim().isNotEmpty) ...<Widget>[
+              if (zone.note != null &&
+                  zone.note!.trim().isNotEmpty) ...<Widget>[
                 const SizedBox(height: KedaYaTokens.space2),
                 Text(
                   zone.note!,
@@ -155,7 +155,8 @@ class WildlifeSightingCard extends StatelessWidget {
                     icon: Icons.schedule,
                   ),
                   if (sighting.zoneName != null)
-                    WildlifePill(text: sighting.zoneName!, icon: Icons.place_outlined),
+                    WildlifePill(
+                        text: sighting.zoneName!, icon: Icons.place_outlined),
                   if (sighting.individualName != null)
                     WildlifePill(
                       text: sighting.individualName!,
@@ -175,10 +176,12 @@ class WildlifeSightingCard extends StatelessWidget {
                       tone: colors.info,
                     ),
                   if (sighting.isAnonymous)
-                    WildlifePill(text: '匿名', icon: Icons.visibility_off_outlined),
+                    WildlifePill(
+                        text: '匿名', icon: Icons.visibility_off_outlined),
                 ],
               ),
-              if (sighting.note != null && sighting.note!.trim().isNotEmpty) ...<Widget>[
+              if (sighting.note != null &&
+                  sighting.note!.trim().isNotEmpty) ...<Widget>[
                 const SizedBox(height: KedaYaTokens.space3),
                 Text(
                   sighting.note!,
@@ -262,7 +265,8 @@ class WildlifeTrackCard extends StatelessWidget {
                     text: '${track.sightingCount} 次上报',
                     icon: Icons.upload_outlined,
                   ),
-                  WildlifePill(text: track.methodLabel, icon: Icons.hub_outlined),
+                  WildlifePill(
+                      text: track.methodLabel, icon: Icons.hub_outlined),
                 ],
               ),
               const SizedBox(height: KedaYaTokens.space3),

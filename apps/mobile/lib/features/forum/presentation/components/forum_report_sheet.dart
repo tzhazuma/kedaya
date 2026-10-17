@@ -13,18 +13,20 @@ Future<void> showForumReportSheet(
   BuildContext context, {
   required ForumReportTargetType targetType,
   required String targetId,
-}) => showModalBottomSheet<void>(
-  context: context,
-  isScrollControlled: true,
-  builder: (BuildContext context) =>
-      ForumReportSheet(targetType: targetType, targetId: targetId),
-);
+}) =>
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) =>
+          ForumReportSheet(targetType: targetType, targetId: targetId),
+    );
 
 /// 举报底部弹层：选理由 + 可选补充说明 + 是否匿名。
 ///
 /// **默认匿名**：举报是维权/治理行为，默认不暴露举报人（契约 §2.4 允许匿名）。
 class ForumReportSheet extends ConsumerStatefulWidget {
-  const ForumReportSheet({required this.targetType, required this.targetId, super.key});
+  const ForumReportSheet(
+      {required this.targetType, required this.targetId, super.key});
 
   final ForumReportTargetType targetType;
   final String targetId;
@@ -92,7 +94,9 @@ class _ForumReportSheetState extends ConsumerState<ForumReportSheet> {
                     side: BorderSide(color: colors.border),
                     labelStyle: TextStyle(
                       fontSize: KedaYaTokens.fontSizeSm,
-                      color: _reason == reason ? colors.brandStrong : colors.textMuted,
+                      color: _reason == reason
+                          ? colors.brandStrong
+                          : colors.textMuted,
                     ),
                     onSelected: (bool _) => setState(() => _reason = reason),
                   ),
@@ -103,7 +107,8 @@ class _ForumReportSheetState extends ConsumerState<ForumReportSheet> {
               controller: _note,
               maxLines: 3,
               maxLength: 500,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
               decoration: InputDecoration(
                 labelText: '补充说明（可选）',
                 labelStyle: TextStyle(color: colors.textMuted),
@@ -128,7 +133,8 @@ class _ForumReportSheetState extends ConsumerState<ForumReportSheet> {
               const SizedBox(height: KedaYaTokens.space2),
               Text(
                 _error!,
-                style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
+                style: TextStyle(
+                    fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
               ),
             ],
             const SizedBox(height: KedaYaTokens.space3),
@@ -160,9 +166,7 @@ class _ForumReportSheetState extends ConsumerState<ForumReportSheet> {
       _error = null;
     });
     try {
-      await ref
-          .read(forumActionsProvider)
-          .report(
+      await ref.read(forumActionsProvider).report(
             CreateForumReportCommand(
               targetType: widget.targetType,
               targetId: widget.targetId,

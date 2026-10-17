@@ -13,10 +13,16 @@ import { createHash, randomInt, scryptSync, timingSafeEqual } from 'node:crypto'
  */
 
 /** 验证码用途（数据库里以字符串存储） */
-export type VerificationPurpose = 'register' | 'reset-password' | 'change-password' | 'bind-email';
+export type VerificationPurpose =
+  | 'register'
+  | 'login'
+  | 'reset-password'
+  | 'change-password'
+  | 'bind-email';
 
 export const VERIFICATION_PURPOSES: readonly VerificationPurpose[] = [
   'register',
+  'login',
   'reset-password',
   'change-password',
   'bind-email',
@@ -68,6 +74,39 @@ export function verifyCode(
   const actual = Buffer.from(hashCode(target, purpose, code), 'base64');
   if (expected.length !== actual.length || expected.length === 0) return false;
   return timingSafeEqual(expected, actual);
+}
+
+/**
+ * 允许注册/登录的**校园邮箱域名**。
+ *
+ * ⚠️ 这是可达鸭的身份根基：平台只服务上海科技大学的师生，
+ * 放开成任意邮箱会让「校内身份」这个前提失效 ——
+ * 任何人都能用 `a@gmail.com` 注册，而所有"仅本校可见"的功能都建立在身份可信之上。
+ *
+ * 两个域名分别对应：教职工/院系邮箱（`shanghaitech.edu.cn`）与
+ * 学生邮箱（`stu.shanghaitech.edu.cn`）。子域**按后缀精确匹配**，
+ * 不做通配 —— `evil-shanghaitech.edu.cn` 是另一个域名，不是子域。
+ */
+export const CAMPUS_EMAIL_DOMAINS: readonly string[] = [
+  'shanghaitech.edu.cn',
+  'stu.shanghaitech.edu.cn',
+];
+
+/**
+ * 是否为校园邮箱。
+ *
+ * 判定用 `===` 或 `.endsWith('.' + domain)`，**不是** `includes` ——
+ * 后者会把 `a@notshanghaitech.edu.cn.evil.com` 判为真。
+ */
+export function isCampusEmail(email: string): boolean {
+  // ⚠️ 必须先做格式校验。只查域名的话，`'a b@shanghaitech.edu.cn'`
+  // （含空格）会被判为合法 —— 因为域名部分确实匹配。格式错的一律拒绝。
+  if (!isEmailLike(email)) return false;
+  const value = normalizeEmail(email);
+  const at = value.lastIndexOf('@');
+  if (at <= 0 || at === value.length - 1) return false;
+  const domain = value.slice(at + 1);
+  return CAMPUS_EMAIL_DOMAINS.some((d) => domain === d || domain.endsWith(`.${d}`));
 }
 
 /** 规范化邮箱：小写 + 去空白（账号唯一性以规范化结果为准） */

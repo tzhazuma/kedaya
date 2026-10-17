@@ -48,26 +48,29 @@ final class BuddyListState {
     bool? isLoadingMore,
     Object? loadMoreError,
     bool clearLoadMoreError = false,
-  }) => BuddyListState(
-    posts: posts ?? this.posts,
-    section: section ?? this.section,
-    nextCursor: nextCursor ?? this.nextCursor,
-    total: total ?? this.total,
-    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-    loadMoreError: clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
-  );
+  }) =>
+      BuddyListState(
+        posts: posts ?? this.posts,
+        section: section ?? this.section,
+        nextCursor: nextCursor ?? this.nextCursor,
+        total: total ?? this.total,
+        isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+        loadMoreError:
+            clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
+      );
 
   /// 追加下一页（游标分页）。
   BuddyListState append(BuddyListState next) => BuddyListState(
-    posts: <BuddyPost>[...posts, ...next.posts],
-    section: next.section,
-    nextCursor: next.nextCursor,
-    total: next.total ?? total,
-  );
+        posts: <BuddyPost>[...posts, ...next.posts],
+        section: next.section,
+        nextCursor: next.nextCursor,
+        total: next.total ?? total,
+      );
 }
 
 /// 三板块分栏的选中项（列表页与推荐页共用）。
-final buddySectionFilterProvider = NotifierProvider<BuddySectionFilter, BuddySection>(
+final buddySectionFilterProvider =
+    NotifierProvider<BuddySectionFilter, BuddySection>(
   BuddySectionFilter.new,
 );
 
@@ -84,7 +87,8 @@ final class BuddySectionFilter extends Notifier<BuddySection> {
 
 /// 活动列表控制器（application 层：编排用例，不含 IO）。
 final buddyListControllerProvider =
-    AsyncNotifierProvider<BuddyListController, BuddyListState>(BuddyListController.new);
+    AsyncNotifierProvider<BuddyListController, BuddyListState>(
+        BuddyListController.new);
 
 final class BuddyListController extends AsyncNotifier<BuddyListState> {
   static const int pageSize = 10;
@@ -132,11 +136,11 @@ final class BuddyListController extends AsyncNotifier<BuddyListState> {
     final Result<Page<BuddyPost>> result = await port.listPosts(query);
     return switch (result) {
       Ok<Page<BuddyPost>>(:final Page<BuddyPost> value) => BuddyListState(
-        posts: value.items,
-        section: query.section ?? BuddySection.sport,
-        nextCursor: value.nextCursor,
-        total: value.total,
-      ),
+          posts: value.items,
+          section: query.section ?? BuddySection.sport,
+          nextCursor: value.nextCursor,
+          total: value.total,
+        ),
       Err<Page<BuddyPost>>(:final ApiError error, :final String? traceId) =>
         throw ApiException(error, traceId: traceId),
     };
@@ -169,29 +173,37 @@ final buddyProfileProvider = FutureProvider<BuddyProfile>((ref) async {
 });
 
 /// 我作为**申请人**的申请列表（`GET /buddy/applications`）。
-final buddyMyApplicationsProvider = FutureProvider<List<BuddyApplication>>((ref) async {
+final buddyMyApplicationsProvider =
+    FutureProvider<List<BuddyApplication>>((ref) async {
   final BuddyPort port = ref.watch(buddyRepositoryProvider);
   final Result<List<BuddyApplication>> result = await port.listApplications();
   return switch (result) {
     Ok<List<BuddyApplication>>(:final List<BuddyApplication> value) => value,
-    Err<List<BuddyApplication>>(:final ApiError error, :final String? traceId) =>
+    Err<List<BuddyApplication>>(
+      :final ApiError error,
+      :final String? traceId
+    ) =>
       throw ApiException(error, traceId: traceId),
   };
 });
 
 /// 某个帖子收到的申请（**仅发起人**可见，规格 §6.1）。
 final buddyPostApplicationsProvider =
-    FutureProvider.family<List<BuddyApplication>, String>((ref, String postId) async {
-      final BuddyPort port = ref.watch(buddyRepositoryProvider);
-      final Result<List<BuddyApplication>> result = await port.listApplications(
-        postId: postId,
-      );
-      return switch (result) {
-        Ok<List<BuddyApplication>>(:final List<BuddyApplication> value) => value,
-        Err<List<BuddyApplication>>(:final ApiError error, :final String? traceId) =>
-          throw ApiException(error, traceId: traceId),
-      };
-    });
+    FutureProvider.family<List<BuddyApplication>, String>(
+        (ref, String postId) async {
+  final BuddyPort port = ref.watch(buddyRepositoryProvider);
+  final Result<List<BuddyApplication>> result = await port.listApplications(
+    postId: postId,
+  );
+  return switch (result) {
+    Ok<List<BuddyApplication>>(:final List<BuddyApplication> value) => value,
+    Err<List<BuddyApplication>>(
+      :final ApiError error,
+      :final String? traceId
+    ) =>
+      throw ApiException(error, traceId: traceId),
+  };
+});
 
 // ------------------------------------------------------------------ 推荐
 
@@ -228,38 +240,46 @@ final class BuddyRecommendState {
     bool? isLoadingMore,
     Object? loadMoreError,
     bool clearLoadMoreError = false,
-  }) => BuddyRecommendState(
-    items: items ?? this.items,
-    matchMode: matchMode ?? this.matchMode,
-    section: section ?? this.section,
-    nextCursor: nextCursor ?? this.nextCursor,
-    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-    loadMoreError: clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
-  );
+  }) =>
+      BuddyRecommendState(
+        items: items ?? this.items,
+        matchMode: matchMode ?? this.matchMode,
+        section: section ?? this.section,
+        nextCursor: nextCursor ?? this.nextCursor,
+        isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+        loadMoreError:
+            clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
+      );
 
   BuddyRecommendState append(BuddyRecommendState next) => BuddyRecommendState(
-    items: <BuddyRecommendation>[...items, ...next.items],
-    matchMode: next.matchMode,
-    section: next.section,
-    nextCursor: next.nextCursor,
-  );
+        items: <BuddyRecommendation>[...items, ...next.items],
+        matchMode: next.matchMode,
+        section: next.section,
+        nextCursor: next.nextCursor,
+      );
 }
 
 /// 推荐控制器。
 final buddyRecommendControllerProvider =
     AsyncNotifierProvider<BuddyRecommendController, BuddyRecommendState>(
-      BuddyRecommendController.new,
-    );
+  BuddyRecommendController.new,
+);
 
-final class BuddyRecommendController extends AsyncNotifier<BuddyRecommendState> {
+final class BuddyRecommendController
+    extends AsyncNotifier<BuddyRecommendState> {
   static const int pageSize = 10;
 
   @override
   Future<BuddyRecommendState> build() {
     final BuddySection section = ref.watch(buddySectionFilterProvider);
-    // 匹配资料变化（例如刚打开匹配开关）时自动重新推荐。
+    // 匹配资料变化（例如刚打开匹配开关）时自动重新推荐 —— 由
+    // `buddyActionsProvider.onProfileMutated` 显式失效本 provider 完成。
+    //
+    // ⚠️ 这里**不能** `ref.watch(buddyProfileProvider)`：那会让本 AsyncNotifier
+    // 在 profile 这个 FutureProvider 仍为 loading 时一直停在 loading
+    // （实测 8 个推荐用例全部 30s 超时）。资料变化走显式失效，不建立阻塞依赖。
+    //
     // 规格 §5.7：未开启匹配资料时**不报错**，而是返回 rule 模式 + 「按时间排序」。
-    ref.watch(buddyProfileProvider);
     return _fetch(BuddyRecommendQuery(section: section, limit: pageSize));
   }
 
@@ -376,21 +396,24 @@ final class BuddyActions {
 
   /// 申请加入（**不**占名额，规格 §5.5）。
   Future<BuddyApplication> join(BuddyJoinCommand command) async {
-    final BuddyApplication application = _requireSuccess(await port.join(command));
+    final BuddyApplication application =
+        _requireSuccess(await port.join(command));
     onApplicationsMutated(command.postId);
     return application;
   }
 
   /// 撤回申请。
   Future<BuddyApplication> leave(String postId) async {
-    final BuddyApplication application = _requireSuccess(await port.leave(postId));
+    final BuddyApplication application =
+        _requireSuccess(await port.leave(postId));
     onApplicationsMutated(postId);
     return application;
   }
 
   /// 发起人审批。
   Future<BuddyApplication> decide(BuddyDecideCommand command) async {
-    final BuddyApplication application = _requireSuccess(await port.decide(command));
+    final BuddyApplication application =
+        _requireSuccess(await port.decide(command));
     onApplicationsMutated(command.postId);
     return application;
   }
@@ -408,7 +431,8 @@ final class BuddyActions {
   /// 用户以为"我点了一下就把内容弄没了"（与 `forum` 的举报同理）。
   /// 下一次进入推荐页时自然反映（服务端会 `DEL` 缓存，规格 §5.8）。
   Future<BuddyMatchFeedback> submitFeedback(BuddyMatchFeedback feedback) async {
-    final Result<BuddyMatchFeedback> result = await port.submitFeedback(feedback);
+    final Result<BuddyMatchFeedback> result =
+        await port.submitFeedback(feedback);
     final BuddyMatchFeedback? stored = result.valueOrNull;
     if (stored == null) {
       throw ApiException(result.errorOrNull!, traceId: result.traceIdOrNull);
@@ -418,7 +442,8 @@ final class BuddyActions {
 
   /// 保存匹配资料（`PUT`，整体替换）。
   Future<BuddyProfile> saveProfile(BuddyProfile profile) async {
-    final BuddyProfile saved = _requireSuccess(await port.saveMyProfile(profile));
+    final BuddyProfile saved =
+        _requireSuccess(await port.saveMyProfile(profile));
     onProfileMutated();
     return saved;
   }

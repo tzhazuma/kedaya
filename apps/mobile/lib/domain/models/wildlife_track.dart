@@ -68,7 +68,8 @@ final class WildlifeTrack {
       path: path,
       spanStartAt: readDateTime(json, 'spanStartAt'),
       spanEndAt: readDateTime(json, 'spanEndAt'),
-      computedAt: readDateTimeOrNull(json, 'computedAt') ?? readDateTime(json, 'spanEndAt'),
+      computedAt: readDateTimeOrNull(json, 'computedAt') ??
+          readDateTime(json, 'spanEndAt'),
       speciesNameZh: readStringOrNull(json, 'speciesNameZh'),
       individualId: readStringOrNull(json, 'individualId'),
       individualName: readStringOrNull(json, 'individualName'),
@@ -76,7 +77,8 @@ final class WildlifeTrack {
       // 服务端没给长度时由折线现算 —— 避免 UI 显示 0 米。
       totalDistanceM: distance > 0 ? distance : polylineLengthMeters(path),
       sightingCount: readIntOr(json, 'sightingCount', 0),
-      method: TrackMethod.fromWire(readStringOr(json, 'method', 'dbscan-chain')),
+      method:
+          TrackMethod.fromWire(readStringOr(json, 'method', 'dbscan-chain')),
       confidence: readDoubleOr(json, 'confidence', 0),
       disclaimer: readStringOr(json, 'disclaimer', ''),
     );
@@ -137,15 +139,13 @@ final class WildlifeTrack {
   }
 
   /// 含上报条数的完整说明（规格 §10.5 的示例文案）。
-  String get fullDisclaimer =>
-      '$inferredDisclaimer（基于 $sightingCount 次上报推断）';
+  String get fullDisclaimer => '$inferredDisclaimer（基于 $sightingCount 次上报推断）';
 
   bool get hasNamedIndividual =>
       individualName != null && individualName!.trim().isNotEmpty;
 
-  String get displayName => hasNamedIndividual
-      ? individualName!
-      : (speciesNameZh ?? speciesId);
+  String get displayName =>
+      hasNamedIndividual ? individualName! : (speciesNameZh ?? speciesId);
 
   int get segmentCount => path.length < 2 ? 0 : path.length - 1;
 
@@ -164,29 +164,29 @@ final class WildlifeTrack {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'speciesId': speciesId,
-    'speciesNameZh': speciesNameZh,
-    'individualId': individualId,
-    'individualName': individualName,
-    'spotIds': spotIds,
-    'path': <String, Object?>{
-      'type': 'LineString',
-      // GeoJSON 是 [lng, lat]，别写反（见 parseGeoJsonLineString）。
-      'coordinates': path
-          .map((Wgs84Point point) => <double>[point.lng, point.lat])
-          .toList(growable: false),
-    },
-    'totalDistanceM': totalDistanceM,
-    'spanStartAt': isoUtc(spanStartAt),
-    'spanEndAt': isoUtc(spanEndAt),
-    'sightingCount': sightingCount,
-    'method': method.wire,
-    'confidence': confidence,
-    'isInferred': isInferred,
-    'disclaimer': inferredDisclaimer,
-    'computedAt': isoUtc(computedAt),
-  };
+        'id': id,
+        'speciesId': speciesId,
+        'speciesNameZh': speciesNameZh,
+        'individualId': individualId,
+        'individualName': individualName,
+        'spotIds': spotIds,
+        'path': <String, Object?>{
+          'type': 'LineString',
+          // GeoJSON 是 [lng, lat]，别写反（见 parseGeoJsonLineString）。
+          'coordinates': path
+              .map((Wgs84Point point) => <double>[point.lng, point.lat])
+              .toList(growable: false),
+        },
+        'totalDistanceM': totalDistanceM,
+        'spanStartAt': isoUtc(spanStartAt),
+        'spanEndAt': isoUtc(spanEndAt),
+        'sightingCount': sightingCount,
+        'method': method.wire,
+        'confidence': confidence,
+        'isInferred': isInferred,
+        'disclaimer': inferredDisclaimer,
+        'computedAt': isoUtc(computedAt),
+      };
 
   @override
   bool operator ==(Object other) => other is WildlifeTrack && other.id == id;
@@ -214,22 +214,24 @@ final class WildlifeTrackQuery {
   final int limit;
 
   Map<String, Object?> toQuery() => <String, Object?>{
-    ...PageQuery(cursor: cursor, limit: limit).toQuery(),
-    if (speciesId != null && speciesId!.isNotEmpty) 'species': speciesId,
-    if (individualId != null && individualId!.isNotEmpty) 'individualId': individualId,
-  };
+        ...PageQuery(cursor: cursor, limit: limit).toQuery(),
+        if (speciesId != null && speciesId!.isNotEmpty) 'species': speciesId,
+        if (individualId != null && individualId!.isNotEmpty)
+          'individualId': individualId,
+      };
 
   WildlifeTrackQuery copyWith({
     String? speciesId,
     String? individualId,
     String? cursor,
     int? limit,
-  }) => WildlifeTrackQuery(
-    speciesId: speciesId ?? this.speciesId,
-    individualId: individualId ?? this.individualId,
-    cursor: cursor ?? this.cursor,
-    limit: limit ?? this.limit,
-  );
+  }) =>
+      WildlifeTrackQuery(
+        speciesId: speciesId ?? this.speciesId,
+        individualId: individualId ?? this.individualId,
+        cursor: cursor ?? this.cursor,
+        limit: limit ?? this.limit,
+      );
 }
 
 /// GeoJSON `LineString` → WGS84 点串。

@@ -47,6 +47,8 @@ export type UpdateSchemaMatchesDomain = AssertAssignable<UpdateScheduleCourseInp
 // 契约 §5 硬规则 3 / 不变式 I4：课表是**校园能力**，需要第二级绑定。
 // 未登录 → 401 UNAUTHENTICATED；**已登录但未绑定 → 409 CAMPUS_BINDING_REQUIRED**（不是 401）。
 // 顺序不能反：AuthGuard 必须先解出身份，CampusBindingGuard 才有 userId 可用。
+// 曾用 `OptionalAuthGuard`（未登录也放行）：那会让「未登录」与「未绑定」两种状态
+// **无法区分**，而它们对用户的出路完全不同（去登录 / 去绑定）。
 @UseGuards(AuthGuard, CampusBindingGuard)
 @RequireCampusBinding('cpdaily')
 @ApiBearerAuth()

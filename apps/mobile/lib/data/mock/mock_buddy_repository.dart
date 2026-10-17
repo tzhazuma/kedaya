@@ -66,15 +66,15 @@ final class MockBuddyRepository implements BuddyPort {
     required this.currentUserName,
     required this.currentUserGender,
     required this.creatorGenders,
-  }) : _posts = <String, BuddyPost>{
-         for (final BuddyPost post in posts) post.id: post,
-       },
-       _applications = <String, BuddyApplication>{
-         for (final BuddyApplication application in applications)
-           application.id: application,
-       },
-       _creatorProfiles = Map<String, BuddyProfile>.of(creatorProfiles),
-       _profile = profile;
+  })  : _posts = <String, BuddyPost>{
+          for (final BuddyPost post in posts) post.id: post,
+        },
+        _applications = <String, BuddyApplication>{
+          for (final BuddyApplication application in applications)
+            application.id: application,
+        },
+        _creatorProfiles = Map<String, BuddyProfile>.of(creatorProfiles),
+        _profile = profile;
 
   /// 当前登录用户 id。真实实现里它来自 JWT（由服务端决定）。
   final String currentUserId;
@@ -102,7 +102,8 @@ final class MockBuddyRepository implements BuddyPort {
   final Map<String, BuddyProfile> _creatorProfiles;
 
   /// 我对每个 (postId, section) 的反馈（`@@unique([userId, targetPostId, section])`）。
-  final Map<String, BuddyMatchFeedback> _feedbacks = <String, BuddyMatchFeedback>{};
+  final Map<String, BuddyMatchFeedback> _feedbacks =
+      <String, BuddyMatchFeedback>{};
 
   BuddyProfile? _profile;
 
@@ -114,7 +115,8 @@ final class MockBuddyRepository implements BuddyPort {
   // ------------------------------------------------------------ 测试观测点
 
   /// 供测试断言内部状态（不参与 UI）。
-  List<BuddyPost> snapshotPosts() => List<BuddyPost>.unmodifiable(_posts.values);
+  List<BuddyPost> snapshotPosts() =>
+      List<BuddyPost>.unmodifiable(_posts.values);
 
   List<BuddyApplication> snapshotApplications() =>
       List<BuddyApplication>.unmodifiable(_applications.values);
@@ -168,9 +170,12 @@ final class MockBuddyRepository implements BuddyPort {
   @override
   Future<Result<Page<BuddyPost>>> listPosts(BuddyPostQuery query) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<Page<BuddyPost>>();
+    if (controls.failure != null) {
+      return controls.failureResult<Page<BuddyPost>>();
+    }
     if (controls.emptyResults) {
-      return Ok<Page<BuddyPost>>(const Page<BuddyPost>(items: <BuddyPost>[], total: 0));
+      return Ok<Page<BuddyPost>>(
+          const Page<BuddyPost>(items: <BuddyPost>[], total: 0));
     }
 
     // 规格 §5.9 的列表条件逐字：`status: 'OPEN'` + `startsAt > startsAfter ?? now`
@@ -183,7 +188,8 @@ final class MockBuddyRepository implements BuddyPort {
 
     final BuddySection? section = query.section;
     if (section != null && section.isMatchable) {
-      candidates = candidates.where((BuddyPost post) => post.section == section);
+      candidates =
+          candidates.where((BuddyPost post) => post.section == section);
     }
     if (query.activities.isNotEmpty) {
       candidates = candidates.where(
@@ -201,7 +207,8 @@ final class MockBuddyRepository implements BuddyPort {
 
     final List<BuddyPost> window = _afterCursor(all, query.sort, query.cursor);
     final int limit = _clampLimit(query.limit, maxBuddyPageSize);
-    final List<BuddyPost> pageItems = window.take(limit).toList(growable: false);
+    final List<BuddyPost> pageItems =
+        window.take(limit).toList(growable: false);
     final bool hasMore = window.length > pageItems.length;
     return Ok<Page<BuddyPost>>(
       Page<BuddyPost>(
@@ -224,7 +231,8 @@ final class MockBuddyRepository implements BuddyPort {
     final BuddyPost? post = _posts[id];
     if (post == null) return _notFoundPost<BuddyPost>();
     // 已取消的活动对**非发起人**等同"不存在"（不泄露"它存在但被取消了"）。
-    if (post.status == BuddyPostStatus.cancelled && !post.isCreatedBy(currentUserId)) {
+    if (post.status == BuddyPostStatus.cancelled &&
+        !post.isCreatedBy(currentUserId)) {
       return _notFoundPost<BuddyPost>();
     }
     return Ok<BuddyPost>(post);
@@ -244,7 +252,8 @@ final class MockBuddyRepository implements BuddyPort {
       );
     }
     final String? description = command.description?.trim();
-    if (description != null && description.runes.length > buddyDescriptionMaxLength) {
+    if (description != null &&
+        description.runes.length > buddyDescriptionMaxLength) {
       return _validation<BuddyPost>(
         '说明请控制在 $buddyDescriptionMaxLength 字以内',
         'description',
@@ -262,7 +271,8 @@ final class MockBuddyRepository implements BuddyPort {
     if (!command.startsAt.toUtc().isAfter(_now)) {
       return _validation<BuddyPost>('开始时间必须晚于当前时间', 'startsAt');
     }
-    if (command.capacity < buddyCapacityMin || command.capacity > buddyCapacityMax) {
+    if (command.capacity < buddyCapacityMin ||
+        command.capacity > buddyCapacityMax) {
       return _validation<BuddyPost>(
         '人数请填 $buddyCapacityMin–$buddyCapacityMax 人',
         'capacity',
@@ -350,7 +360,9 @@ final class MockBuddyRepository implements BuddyPort {
   @override
   Future<Result<BuddyApplication>> join(BuddyJoinCommand command) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<BuddyApplication>();
+    if (controls.failure != null) {
+      return controls.failureResult<BuddyApplication>();
+    }
 
     final String? messageError = command.messageError;
     if (messageError != null) {
@@ -429,7 +441,9 @@ final class MockBuddyRepository implements BuddyPort {
       postId: post.id,
       applicantId: currentUserId,
       applicantName: currentUserName,
-      message: (trimmedMessage == null || trimmedMessage.isEmpty) ? null : trimmedMessage,
+      message: (trimmedMessage == null || trimmedMessage.isEmpty)
+          ? null
+          : trimmedMessage,
       status: BuddyApplicationStatus.pending,
       createdAt: _now,
     );
@@ -441,7 +455,9 @@ final class MockBuddyRepository implements BuddyPort {
   @override
   Future<Result<BuddyApplication>> leave(String postId) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<BuddyApplication>();
+    if (controls.failure != null) {
+      return controls.failureResult<BuddyApplication>();
+    }
 
     final BuddyApplication? existing = _applicationOf(postId, currentUserId);
     if (existing == null) return _notFoundApplication<BuddyApplication>();
@@ -472,7 +488,9 @@ final class MockBuddyRepository implements BuddyPort {
   @override
   Future<Result<BuddyApplication>> decide(BuddyDecideCommand command) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<BuddyApplication>();
+    if (controls.failure != null) {
+      return controls.failureResult<BuddyApplication>();
+    }
 
     final BuddyPost? post = _posts[command.postId];
     if (post == null) return _notFoundApplication<BuddyApplication>();
@@ -493,7 +511,8 @@ final class MockBuddyRepository implements BuddyPort {
         reason: 'APPLICATION_NOT_PENDING',
       );
     }
-    if (!canTransitionBuddyApplication(application.status, command.decision.targetStatus)) {
+    if (!canTransitionBuddyApplication(
+        application.status, command.decision.targetStatus)) {
       return _fail<BuddyApplication>(
         ApiErrorCode.conflict,
         '该申请不能转移到「${command.decision.targetStatus.label}」',
@@ -526,7 +545,8 @@ final class MockBuddyRepository implements BuddyPort {
   }
 
   @override
-  Future<Result<List<BuddyApplication>>> listApplications({String? postId}) async {
+  Future<Result<List<BuddyApplication>>> listApplications(
+      {String? postId}) async {
     await controls.simulate();
     if (controls.failure != null) {
       return controls.failureResult<List<BuddyApplication>>();
@@ -555,7 +575,8 @@ final class MockBuddyRepository implements BuddyPort {
         .where((BuddyApplication item) => item.postId == postId)
         .toList(growable: false)
       ..sort(
-        (BuddyApplication a, BuddyApplication b) => a.createdAt.compareTo(b.createdAt),
+        (BuddyApplication a, BuddyApplication b) =>
+            a.createdAt.compareTo(b.createdAt),
       );
     return Ok<List<BuddyApplication>>(received);
   }
@@ -563,7 +584,8 @@ final class MockBuddyRepository implements BuddyPort {
   // ------------------------------------------------------------ 推荐与反馈
 
   @override
-  Future<Result<BuddyRecommendationPage>> recommend(BuddyRecommendQuery query) async {
+  Future<Result<BuddyRecommendationPage>> recommend(
+      BuddyRecommendQuery query) async {
     await controls.simulate();
     if (controls.failure != null) {
       return controls.failureResult<BuddyRecommendationPage>();
@@ -637,7 +659,8 @@ final class MockBuddyRepository implements BuddyPort {
         .toList(growable: false);
 
     final List<BuddyMatchFeedback> sectionFeedbacks = _feedbacks.values
-        .where((BuddyMatchFeedback feedback) => feedback.section == query.section)
+        .where(
+            (BuddyMatchFeedback feedback) => feedback.section == query.section)
         .toList(growable: false);
     final Map<String, double> adjustments = buddyFeedbackAdjustment(
       sectionFeedbacks,
@@ -645,8 +668,8 @@ final class MockBuddyRepository implements BuddyPort {
     );
 
     final List<BuddyRecommendation> scored = candidates.map((BuddyPost post) {
-      final BuddyProfile creatorProfile =
-          _creatorProfiles[post.creator.id] ?? BuddyProfile.empty(post.creator.id);
+      final BuddyProfile creatorProfile = _creatorProfiles[post.creator.id] ??
+          BuddyProfile.empty(post.creator.id);
       final BuddyRuleScore rule = buddyRuleScoreFor(
         section: query.section,
         post: post,
@@ -673,28 +696,37 @@ final class MockBuddyRepository implements BuddyPort {
     });
 
     final ({String key, String id})? cursor = _decodeCursor(query.cursor);
-    final List<BuddyRecommendation> afterCursor = cursor == null
+    // 游标必须携带**完整排序键**，不能只带 score + id：
+    //   - 同分时排序键是 `startsAt`（升序），而 id 是任意字符串；
+    //   - 只比较 id 的字典序会把 `bp-seed-10` 排到 `bp-seed-9` 前面，
+    //     导致第二页被整页跳过（实测 12 条只返回 10 条）。
+    final ({double score, DateTime startsAt, String id})? decoded =
+        cursor == null ? null : _decodeRecommendCursor(cursor);
+    final List<BuddyRecommendation> afterCursor = decoded == null
         ? scored
         : scored.where((BuddyRecommendation item) {
-            final String key = item.score.toStringAsFixed(6);
-            final int cmp = key.compareTo(cursor.key);
-            return cmp < 0 || (cmp == 0 && item.post.id.compareTo(cursor.id) > 0);
+            final ({double score, DateTime startsAt, String id}) sortKey =
+                _recommendCursorKey(item);
+            if (sortKey.score != decoded.score) {
+              // 分高者在前：游标之后 = 分数更小。
+              return sortKey.score < decoded.score;
+            }
+            if (sortKey.startsAt != decoded.startsAt) {
+              return sortKey.startsAt.isAfter(decoded.startsAt);
+            }
+            return sortKey.id.compareTo(decoded.id) > 0;
           }).toList(growable: false);
 
     final int limit = _clampLimit(query.limit, maxBuddyRecommendLimit);
-    final List<BuddyRecommendation> pageItems = afterCursor
-        .take(limit)
-        .toList(growable: false);
+    final List<BuddyRecommendation> pageItems =
+        afterCursor.take(limit).toList(growable: false);
     final bool hasMore = afterCursor.length > pageItems.length;
     return Ok<BuddyRecommendationPage>(
       BuddyRecommendationPage(
         items: pageItems,
         matchMode: BuddyMatchMode.rule,
         nextCursor: hasMore && pageItems.isNotEmpty
-            ? _encodeCursor(
-                pageItems.last.score.toStringAsFixed(6),
-                pageItems.last.post.id,
-              )
+            ? _encodeRecommendCursor(pageItems.last)
             : null,
       ),
     );
@@ -705,7 +737,9 @@ final class MockBuddyRepository implements BuddyPort {
     BuddyMatchFeedback feedback,
   ) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<BuddyMatchFeedback>();
+    if (controls.failure != null) {
+      return controls.failureResult<BuddyMatchFeedback>();
+    }
 
     final BuddyPost? post = _posts[feedback.targetPostId];
     if (post == null) return _notFoundPost<BuddyMatchFeedback>();
@@ -724,7 +758,9 @@ final class MockBuddyRepository implements BuddyPort {
       createdAt: _now,
     );
     // UPSERT：`@@unique([userId, targetPostId, section])`（规格 §2.5 / §3.6 D11）。
-    _feedbacks[_feedbackKey(stored.userId, stored.targetPostId, stored.section)] = stored;
+    _feedbacks[
+            _feedbackKey(stored.userId, stored.targetPostId, stored.section)] =
+        stored;
     return Ok<BuddyMatchFeedback>(stored);
   }
 
@@ -736,7 +772,8 @@ final class MockBuddyRepository implements BuddyPort {
   /// 我在 [postId] 上的申请（唯一约束保证至多一条）。
   BuddyApplication? _applicationOf(String postId, String applicantId) {
     for (final BuddyApplication application in _applications.values) {
-      if (application.postId == postId && application.applicantId == applicantId) {
+      if (application.postId == postId &&
+          application.applicantId == applicantId) {
         return application;
       }
     }
@@ -751,10 +788,8 @@ final class MockBuddyRepository implements BuddyPort {
     if (creator == null) return null;
     return switch (post.genderPreference) {
       BuddyGenderPreference.any => null,
-      BuddyGenderPreference.same =>
-        creator == mine ? null : '这个活动限同性参加',
-      BuddyGenderPreference.other =>
-        creator != mine ? null : '这个活动限异性参加',
+      BuddyGenderPreference.same => creator == mine ? null : '这个活动限同性参加',
+      BuddyGenderPreference.other => creator != mine ? null : '这个活动限异性参加',
     };
   }
 
@@ -778,13 +813,14 @@ final class MockBuddyRepository implements BuddyPort {
     if (profile.availability.isEmpty) return true;
     final int? duration = post.durationMin;
     if (duration == null) return true;
-    return buddyOverlapsAvailability(profile.availability, post.startsAt, duration);
+    return buddyOverlapsAvailability(
+        profile.availability, post.startsAt, duration);
   }
 
   DateTime _sortKeyOf(BuddyPost post, BuddyPostSort sort) =>
       sort == BuddyPostSort.startsAtAsc
-      ? post.startsAt.toUtc()
-      : (post.createdAt ?? post.startsAt).toUtc();
+          ? post.startsAt.toUtc()
+          : (post.createdAt ?? post.startsAt).toUtc();
 
   /// 游标里的排序键：**定宽 20 位十进制微秒**。
   ///
@@ -835,11 +871,48 @@ final class MockBuddyRepository implements BuddyPort {
       final String raw = utf8.decode(base64Url.decode(cursor));
       final int separator = raw.lastIndexOf('|');
       if (separator <= 0) return null;
-      return (key: raw.substring(0, separator), id: raw.substring(separator + 1));
+      return (
+        key: raw.substring(0, separator),
+        id: raw.substring(separator + 1)
+      );
     } on Object {
       // 损坏 / 被客户端篡改的游标：忽略它（等价于第一页），不抛异常。
       return null;
     }
+  }
+
+  ({double score, DateTime startsAt, String id}) _recommendCursorKey(
+    BuddyRecommendation item,
+  ) =>
+      (
+        score: item.score,
+        startsAt: item.post.startsAt.toUtc(),
+        id: item.post.id,
+      );
+
+  String _encodeRecommendCursor(BuddyRecommendation item) {
+    final ({double score, DateTime startsAt, String id}) key =
+        _recommendCursorKey(item);
+    return _encodeCursor(
+      '${key.score.toStringAsFixed(6)}|${key.startsAt.microsecondsSinceEpoch}',
+      key.id,
+    );
+  }
+
+  /// 损坏 / 旧格式游标 → null（等价于第一页），与 [_decodeCursor] 的容错一致。
+  ({double score, DateTime startsAt, String id})? _decodeRecommendCursor(
+    ({String key, String id}) cursor,
+  ) {
+    final List<String> parts = cursor.key.split('|');
+    if (parts.length != 2) return null;
+    final double? score = double.tryParse(parts[0]);
+    final int? micros = int.tryParse(parts[1]);
+    if (score == null || micros == null) return null;
+    return (
+      score: score,
+      startsAt: DateTime.fromMicrosecondsSinceEpoch(micros, isUtc: true),
+      id: cursor.id,
+    );
   }
 
   int _clampLimit(int limit, int max) {
@@ -847,25 +920,26 @@ final class MockBuddyRepository implements BuddyPort {
     return limit > max ? max : limit;
   }
 
-  Err<T> _fail<T>(ApiErrorCode code, String message, {String? reason}) => Err<T>(
-    ApiError(
-      code: code,
-      message: message,
-      details: reason == null ? null : <String, Object?>{'reason': reason},
-    ),
-    traceId: MockControls.traceId,
-  );
+  Err<T> _fail<T>(ApiErrorCode code, String message, {String? reason}) =>
+      Err<T>(
+        ApiError(
+          code: code,
+          message: message,
+          details: reason == null ? null : <String, Object?>{'reason': reason},
+        ),
+        traceId: MockControls.traceId,
+      );
 
   Err<T> _validation<T>(String message, String reason) =>
       _fail<T>(ApiErrorCode.validationFailed, message, reason: reason);
 
   Err<T> _notFoundPost<T>() => _fail<T>(
-    ApiErrorCode.notFound,
-    '该活动不存在或不可见',
-  );
+        ApiErrorCode.notFound,
+        '该活动不存在或不可见',
+      );
 
   Err<T> _notFoundApplication<T>() => _fail<T>(
-    ApiErrorCode.notFound,
-    '该申请不存在或不可见',
-  );
+        ApiErrorCode.notFound,
+        '该申请不存在或不可见',
+      );
 }

@@ -59,7 +59,8 @@ abstract interface class WildlifePort {
   );
 
   /// `GET /api/v1/wildlife/items` —— 观测记录（游标分页，**仅 PUBLISHED**）。
-  Future<Result<Page<WildlifeSighting>>> listSightings(WildlifeSightingQuery query);
+  Future<Result<Page<WildlifeSighting>>> listSightings(
+      WildlifeSightingQuery query);
 
   /// `GET /api/v1/wildlife/items/:id`。
   ///
@@ -80,12 +81,14 @@ abstract interface class WildlifePort {
   ///
   /// 无能力时返回**空数组**（不是 5xx，规格 §11.6 T43），
   /// 客户端据此静默降级到手动选择（§5.2）。
-  Future<Result<WildlifeClassifyResult>> classify(WildlifeClassifyRequest request);
+  Future<Result<WildlifeClassifyResult>> classify(
+      WildlifeClassifyRequest request);
 
   /// `PATCH /api/v1/wildlife/items/:id` —— 纠正物种（JSON Merge Patch）。
   ///
   /// 服务端记录 `correctedFromSpeciesId` 形成标注样本（规格 §5.5 的闭环）。
-  Future<Result<WildlifeSighting>> correctSpecies(String id, {required String speciesId});
+  Future<Result<WildlifeSighting>> correctSpecies(String id,
+      {required String speciesId});
 
   /// `DELETE /api/v1/wildlife/items/:id` —— 撤回自己的上报（软删）。
   Future<Result<Unit>> deleteSighting(String id);

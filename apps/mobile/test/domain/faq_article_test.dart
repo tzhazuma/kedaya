@@ -11,15 +11,16 @@ void main() {
     FaqArticleStatus status = FaqArticleStatus.published,
     int helpfulCount = 10,
     List<String> tags = const <String>['登录'],
-  }) => FaqArticle(
-    id: id,
-    question: question,
-    answer: answer,
-    category: category,
-    status: status,
-    helpfulCount: helpfulCount,
-    tags: tags,
-  );
+  }) =>
+      FaqArticle(
+        id: id,
+        question: question,
+        answer: answer,
+        category: category,
+        status: status,
+        helpfulCount: helpfulCount,
+        tags: tags,
+      );
 
   group('FaqArticle', () {
     test('解析：字段齐全，未知状态收敛为 unknown 且不可见', () {
@@ -93,7 +94,8 @@ void main() {
 
   group('FaqQuery', () {
     test('查询串收敛：空分类丢弃，关键词去空白，limit 收敛', () {
-      expect(const FaqQuery(category: '', limit: 999).toQuery(), <String, Object?>{
+      expect(
+          const FaqQuery(category: '', limit: 999).toQuery(), <String, Object?>{
         'limit': 100,
       });
 
@@ -112,7 +114,8 @@ void main() {
 
     test('值相等语义（Riverpod 依赖变更检测依赖它）', () {
       expect(const FaqQuery(keyword: 'a'), const FaqQuery(keyword: 'a'));
-      expect(const FaqQuery(keyword: 'a') == const FaqQuery(keyword: 'b'), isFalse);
+      expect(const FaqQuery(keyword: 'a') == const FaqQuery(keyword: 'b'),
+          isFalse);
     });
   });
 
@@ -183,7 +186,8 @@ void main() {
     });
 
     test('FaqTicketDraft.isValid 汇总两个字段，toCommand 去空白', () {
-      const FaqTicketDraft invalid = FaqTicketDraft(contact: '13800138000', question: '');
+      const FaqTicketDraft invalid =
+          FaqTicketDraft(contact: '13800138000', question: '');
       expect(invalid.isValid, isFalse);
 
       const FaqTicketDraft valid = FaqTicketDraft(

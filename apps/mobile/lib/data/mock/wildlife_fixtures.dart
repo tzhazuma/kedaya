@@ -16,7 +16,6 @@ import '../../domain/models/wildlife_sighting.dart';
 import '../../domain/models/wildlife_track.dart';
 import 'mock_fixtures.dart';
 
-
 /// mock 物种 id（真实环境是 ULID；mock 用可读 id，便于断言）。
 const String mockSpeciesCat = 'sp-cat';
 const String mockSpeciesSwan = 'sp-swan';
@@ -95,8 +94,7 @@ const List<WildlifeSpecies> mockWildlifeSpecies = <WildlifeSpecies>[
 ];
 
 /// 黑天鹅告示位文案（规格 §8.3 的**草案**，未经校方或社团审核）。
-const String mockSwanNotice =
-    '黑天鹅是校园的重要成员，也是校方管理的动物。请勿投喂（面包、零食等人类食物会损害它们的健康）。'
+const String mockSwanNotice = '黑天鹅是校园的重要成员，也是校方管理的动物。请勿投喂（面包、零食等人类食物会损害它们的健康）。'
     '请勿追撵、捕捉或近距离惊扰。繁殖期请勿靠近巢区，也请勿在平台上公开巢穴位置。'
     '发现受伤或异常，请在平台上标记「疑似受伤」，我们会通知社团处理。';
 
@@ -118,7 +116,11 @@ final List<WildlifeZone> mockWildlifeZones = <WildlifeZone>[
     name: '人工湖（黑天鹅水域）',
     center: const Wgs84Point(lat: 31.17720, lng: 121.59130),
     radiusM: 120,
-    speciesIds: const <String>[mockSpeciesSwan, mockSpeciesDuck, mockSpeciesEgret],
+    speciesIds: const <String>[
+      mockSpeciesSwan,
+      mockSpeciesDuck,
+      mockSpeciesEgret
+    ],
     feedingPolicy: FeedingPolicy.forbidden,
     note: '黑天鹅与绿头鸭的主要活动水域，繁殖期（3–6 月）请勿靠近岸边巢区。',
     noticeText: mockSwanNotice,
@@ -164,8 +166,30 @@ final List<WildlifeSpot> mockWildlifeSpots = <WildlifeSpot>[
     lastSeenAt: mockNow.subtract(const Duration(days: 1)),
     computedAt: mockNow.subtract(const Duration(hours: 26)),
     hourHistogram: const <int>[
-      0, 0, 0, 0, 0, 0, 2, 5, 8, 4, 1, 0,
-      0, 0, 0, 0, 0, 3, 7, 9, 5, 2, 0, 0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2,
+      5,
+      8,
+      4,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      3,
+      7,
+      9,
+      5,
+      2,
+      0,
+      0,
     ],
     confidence: 0.72,
     algorithmVersion: 'dbscan-v1',
@@ -183,8 +207,30 @@ final List<WildlifeSpot> mockWildlifeSpots = <WildlifeSpot>[
     lastSeenAt: mockNow.subtract(const Duration(hours: 20)),
     computedAt: mockNow.subtract(const Duration(hours: 30)),
     hourHistogram: const <int>[
-      0, 0, 0, 0, 0, 1, 3, 6, 9, 7, 4, 2,
-      1, 0, 0, 0, 2, 4, 6, 5, 3, 1, 0, 0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      3,
+      6,
+      9,
+      7,
+      4,
+      2,
+      1,
+      0,
+      0,
+      0,
+      2,
+      4,
+      6,
+      5,
+      3,
+      1,
+      0,
+      0,
     ],
     confidence: 0.81,
     algorithmVersion: 'dbscan-v1',
@@ -202,8 +248,30 @@ final List<WildlifeSpot> mockWildlifeSpots = <WildlifeSpot>[
     lastSeenAt: mockNow.subtract(const Duration(days: 2)),
     computedAt: mockNow.subtract(const Duration(hours: 26)),
     hourHistogram: const <int>[
-      0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 3,
-      8, 6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+      1,
+      0,
+      3,
+      8,
+      6,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
     ],
     confidence: 0.45,
     algorithmVersion: 'dbscan-v1',
@@ -221,8 +289,30 @@ final List<WildlifeSpot> mockWildlifeSpots = <WildlifeSpot>[
     lastSeenAt: mockNow.subtract(const Duration(days: 3)),
     computedAt: mockNow.subtract(const Duration(hours: 28)),
     hourHistogram: const <int>[
-      1, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+      1,
+      0,
+      0,
+      0,
     ],
     confidence: 0.5,
     algorithmVersion: 'dbscan-v1',
@@ -313,7 +403,9 @@ final List<WildlifeSighting> mockWildlifeSightings = <WildlifeSighting>[
     createdAt: mockNow.subtract(const Duration(hours: 2, minutes: 40)),
     zoneId: mockZoneLibraryLawn,
     zoneName: '图书馆后草坪',
-    photoUrls: const <String>['https://cdn.kedaya.local/wildlife/mock/wl-1001/thumb.webp'],
+    photoUrls: const <String>[
+      'https://cdn.kedaya.local/wildlife/mock/wl-1001/thumb.webp'
+    ],
     individualId: 'wi-daju',
     individualName: '大橘',
     note: '在草坪长椅下面，两只。',
@@ -330,7 +422,9 @@ final List<WildlifeSighting> mockWildlifeSightings = <WildlifeSighting>[
     createdAt: mockNow.subtract(const Duration(hours: 25)),
     zoneId: mockZoneLake,
     zoneName: '人工湖（黑天鹅水域）',
-    photoUrls: const <String>['https://cdn.kedaya.local/wildlife/mock/wl-1002/thumb.webp'],
+    photoUrls: const <String>[
+      'https://cdn.kedaya.local/wildlife/mock/wl-1002/thumb.webp'
+    ],
     individualId: 'wi-eer',
     individualName: '鹅鹅',
     reporterDisplayName: '湖边散步者',
@@ -408,7 +502,11 @@ final List<WildlifeSighting> mockWildlifeSightings = <WildlifeSighting>[
 ];
 
 /// mock 认为「是当前用户上报的」记录 id（用于验证"自己的待审核记录可见"）。
-const Set<String> mockOwnSightingIds = <String>{'wl-1001', 'wl-1003', 'wl-1007'};
+const Set<String> mockOwnSightingIds = <String>{
+  'wl-1001',
+  'wl-1003',
+  'wl-1007'
+};
 
 /// mock 底图配置。
 ///

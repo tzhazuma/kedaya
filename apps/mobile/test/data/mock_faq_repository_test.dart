@@ -10,12 +10,13 @@ import 'package:kedaya/domain/models/result.dart';
 
 /// `MockFaqRepository` 的行为测试：分类、检索、**「有用」幂等**、工单。
 void main() {
-  MockFaqRepository repo({MockControls? controls}) =>
-      MockFaqRepository(controls: controls ?? MockControls(latency: Duration.zero));
+  MockFaqRepository repo({MockControls? controls}) => MockFaqRepository(
+      controls: controls ?? MockControls(latency: Duration.zero));
 
   group('listCategories', () {
     test('返回 4 个分类，按 id 稳定排序', () async {
-      final List<FaqCategory> categories = (await repo().listCategories()).unwrap;
+      final List<FaqCategory> categories =
+          (await repo().listCategories()).unwrap;
 
       expect(
         categories.map((FaqCategory category) => category.id),
@@ -28,7 +29,8 @@ void main() {
     test('DRAFT 文章对普通用户不可见', () async {
       final Page<FaqArticle> page = (await repo().listArticles(
         const FaqQuery(limit: 50),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(page.total, 7, reason: '8 篇 fixture 中有 1 篇是 DRAFT');
       expect(
@@ -40,11 +42,13 @@ void main() {
     test('按分类筛选', () async {
       final Page<FaqArticle> page = (await repo().listArticles(
         const FaqQuery(category: 'fc-account', limit: 50),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(page.total, 3);
       expect(
-        page.items.every((FaqArticle article) => article.category == 'fc-account'),
+        page.items
+            .every((FaqArticle article) => article.category == 'fc-account'),
         isTrue,
       );
     });
@@ -52,26 +56,33 @@ void main() {
     test('关键词检索命中问题 / 答案 / 标签', () async {
       final Page<FaqArticle> anon = (await repo().listArticles(
         const FaqQuery(keyword: '匿名', limit: 50),
-      )).unwrap;
-      expect(anon.items.map((FaqArticle article) => article.id), <String>['fa-1004']);
+      ))
+          .unwrap;
+      expect(anon.items.map((FaqArticle article) => article.id),
+          <String>['fa-1004']);
 
       // 命中答案里的词。
       final Page<FaqArticle> binding = (await repo().listArticles(
         const FaqQuery(keyword: 'CAMPUS_BINDING_REQUIRED', limit: 50),
-      )).unwrap;
-      expect(binding.items.map((FaqArticle article) => article.id), <String>['fa-1003']);
+      ))
+          .unwrap;
+      expect(binding.items.map((FaqArticle article) => article.id),
+          <String>['fa-1003']);
 
       // 命中标签。
       final Page<FaqArticle> ticketTag = (await repo().listArticles(
         const FaqQuery(keyword: '工单', limit: 50),
-      )).unwrap;
-      expect(ticketTag.items.map((FaqArticle article) => article.id), <String>['fa-1006']);
+      ))
+          .unwrap;
+      expect(ticketTag.items.map((FaqArticle article) => article.id),
+          <String>['fa-1006']);
     });
 
     test('搜索无结果 => 空页（不是错误）', () async {
       final Page<FaqArticle> page = (await repo().listArticles(
         const FaqQuery(keyword: 'zzz-不存在-zzz'),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(page.items, isEmpty);
       expect(page.total, 0);
@@ -82,19 +93,22 @@ void main() {
 
       final Page<FaqArticle> first = (await repository.listArticles(
         const FaqQuery(limit: 3),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(first.items, hasLength(3));
       expect(first.nextCursor, '3');
 
       final Page<FaqArticle> second = (await repository.listArticles(
         FaqQuery(cursor: first.nextCursor, limit: 3),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(second.items, hasLength(3));
       expect(second.nextCursor, '6');
 
       final Page<FaqArticle> third = (await repository.listArticles(
         FaqQuery(cursor: second.nextCursor, limit: 3),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(third.items, hasLength(1));
       expect(third.nextCursor, isNull);
     });
@@ -103,14 +117,16 @@ void main() {
   group('markHelpful：**幂等**（同一用户重复点只算一次）', () {
     test('第一次计入，第二次同一 voter 只返回 counted=false 且计数不变', () async {
       final MockFaqRepository repository = repo();
-      final int before = repository.snapshotArticles()
+      final int before = repository
+          .snapshotArticles()
           .firstWhere((FaqArticle article) => article.id == 'fa-1001')
           .helpfulCount;
 
       final FaqHelpfulResult first = (await repository.markHelpful(
         'fa-1001',
         voterId: 'u:u-1001',
-      )).unwrap;
+      ))
+          .unwrap;
       expect(first.counted, isTrue);
       expect(first.helpfulCount, before + 1);
       expect(first.alreadyVoted, isFalse);
@@ -118,7 +134,8 @@ void main() {
       final FaqHelpfulResult second = (await repository.markHelpful(
         'fa-1001',
         voterId: 'u:u-1001',
-      )).unwrap;
+      ))
+          .unwrap;
       expect(second.counted, isFalse, reason: '重复点击是幂等命中，不是失败');
       expect(second.alreadyVoted, isTrue);
       expect(second.helpfulCount, before + 1, reason: '计数不得再涨');
@@ -134,7 +151,8 @@ void main() {
       await repository.markHelpful('fa-1005', voterId: 'd:dev-abc');
 
       expect(repository.helpfulVoterCountFor('fa-1005'), 3);
-      final FaqArticle article = repository.snapshotArticles()
+      final FaqArticle article = repository
+          .snapshotArticles()
           .firstWhere((FaqArticle item) => item.id == 'fa-1005');
       expect(article.helpfulCount, 11 + 3, reason: 'fixture 里是 11');
     });
@@ -145,11 +163,13 @@ void main() {
       final FaqHelpfulResult device = (await repository.markHelpful(
         'fa-1002',
         voterId: FaqVoter.resolve(userId: null, deviceId: 'dev-abc').key,
-      )).unwrap;
+      ))
+          .unwrap;
       final FaqHelpfulResult user = (await repository.markHelpful(
         'fa-1002',
         voterId: FaqVoter.resolve(userId: 'u-1001', deviceId: 'dev-abc').key,
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(device.counted, isTrue);
       expect(user.counted, isTrue);
@@ -183,7 +203,8 @@ void main() {
         <String>['ft-3002', 'ft-3001', 'ft-3003'],
       );
       expect(
-        page.items.every((FaqTicket ticket) => ticket.userId == mockUser.userId),
+        page.items
+            .every((FaqTicket ticket) => ticket.userId == mockUser.userId),
         isTrue,
       );
     });
@@ -217,11 +238,13 @@ void main() {
 
       final Page<FaqTicket> page = (await repository.listMyTickets()).unwrap;
 
-      expect(page.items.map((FaqTicket ticket) => ticket.id), <String>['ft-mine']);
+      expect(
+          page.items.map((FaqTicket ticket) => ticket.id), <String>['ft-mine']);
     });
 
     test('游标分页', () async {
-      final Page<FaqTicket> first = (await repo().listMyTickets(limit: 2)).unwrap;
+      final Page<FaqTicket> first =
+          (await repo().listMyTickets(limit: 2)).unwrap;
 
       expect(first.items, hasLength(2));
       expect(first.nextCursor, '2');
@@ -230,7 +253,8 @@ void main() {
       final Page<FaqTicket> second = (await repo().listMyTickets(
         cursor: first.nextCursor,
         limit: 2,
-      )).unwrap;
+      ))
+          .unwrap;
       expect(second.items, hasLength(1));
       expect(second.nextCursor, isNull);
     });
@@ -262,14 +286,16 @@ void main() {
           contact: '  test@shanghaitech.edu.cn ',
           question: '  一个新问题  ',
         ),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(created.status, FaqTicketStatus.open);
       expect(created.userId, mockUser.userId);
       expect(created.contact, 'test@shanghaitech.edu.cn', reason: '提交时去空白');
       expect(created.question, '一个新问题');
 
-      final Page<FaqTicket> page = (await repository.listMyTickets(limit: 50)).unwrap;
+      final Page<FaqTicket> page =
+          (await repository.listMyTickets(limit: 50)).unwrap;
       expect(page.total, 4);
       expect(page.items.first.id, created.id, reason: '最新的排最前');
     });
@@ -302,7 +328,8 @@ void main() {
         ..emptyResults = true;
       final MockFaqRepository repository = repo(controls: controls);
 
-      expect((await repository.listArticles(const FaqQuery())).unwrap.items, isEmpty);
+      expect((await repository.listArticles(const FaqQuery())).unwrap.items,
+          isEmpty);
       expect((await repository.listMyTickets()).unwrap.items, isEmpty);
     });
   });

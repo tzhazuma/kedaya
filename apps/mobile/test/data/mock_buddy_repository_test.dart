@@ -25,15 +25,16 @@ void main() {
     List<BuddyApplication>? applications,
     String? currentUserGender,
     Map<String, String>? creatorGenders,
-  }) => MockBuddyRepository(
-    controls: controls ?? MockControls(latency: Duration.zero),
-    clock: () => fixedNow,
-    profile: profile,
-    posts: posts,
-    applications: applications,
-    currentUserGender: currentUserGender,
-    creatorGenders: creatorGenders,
-  );
+  }) =>
+      MockBuddyRepository(
+        controls: controls ?? MockControls(latency: Duration.zero),
+        clock: () => fixedNow,
+        profile: profile,
+        posts: posts,
+        applications: applications,
+        currentUserGender: currentUserGender,
+        creatorGenders: creatorGenders,
+      );
 
   String? reasonOf(Result<Object?> result) {
     final Object? details = result.errorOrNull?.details;
@@ -55,36 +56,47 @@ void main() {
     String creatorId = 'u-9999',
     int dayOffset = 1,
     int hour = 19,
-  }) => BuddyPost(
-    id: id,
-    activity: activity,
-    title: '自定义活动',
-    location: '体育馆',
-    startsAt: buddyShanghaiInstant(fixedNow, dayOffset: dayOffset, hour: hour),
-    durationMin: durationMin,
-    capacity: capacity,
-    joinedCount: joinedCount,
-    status: status,
-    minSkillLevel: minSkillLevel,
-    genderPreference: genderPreference,
-    tags: tags,
-    creator: BuddyCreator(id: creatorId, nickname: creatorId),
-    createdAt: fixedNow,
-  );
+  }) =>
+      BuddyPost(
+        id: id,
+        activity: activity,
+        title: '自定义活动',
+        location: '体育馆',
+        startsAt:
+            buddyShanghaiInstant(fixedNow, dayOffset: dayOffset, hour: hour),
+        durationMin: durationMin,
+        capacity: capacity,
+        joinedCount: joinedCount,
+        status: status,
+        minSkillLevel: minSkillLevel,
+        genderPreference: genderPreference,
+        tags: tags,
+        creator: BuddyCreator(id: creatorId, nickname: creatorId),
+        createdAt: fixedNow,
+      );
 
   group('listPosts：状态 / 板块 / 过滤 / 排序', () {
     test('只返回 OPEN 且未开始的活动，按 startsAt 升序', () async {
       final Page<BuddyPost> page = (await repo().listPosts(
         const BuddyPostQuery(limit: 50),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(
         page.items.map((BuddyPost post) => post.id),
-        <String>['bp-1003', 'bp-1002', 'bp-1001', 'bp-1006', 'bp-1005', 'bp-1010'],
+        <String>[
+          'bp-1003',
+          'bp-1002',
+          'bp-1001',
+          'bp-1006',
+          'bp-1005',
+          'bp-1010'
+        ],
       );
       expect(page.total, 6);
       // FULL / EXPIRED / CLOSED / CANCELLED 一律不在列表里（规格 §5.9）。
-      final Set<String> ids = page.items.map((BuddyPost post) => post.id).toSet();
+      final Set<String> ids =
+          page.items.map((BuddyPost post) => post.id).toSet();
       expect(ids, isNot(contains('bp-1004')));
       expect(ids, isNot(contains('bp-1007')));
       expect(ids, isNot(contains('bp-1008')));
@@ -92,16 +104,23 @@ void main() {
     });
 
     test('按板块筛选（三板块分栏）', () async {
-      Future<List<String>> idsFor(BuddySection section) async => (await repo().listPosts(
-        BuddyPostQuery(section: section, limit: 50),
-      )).unwrap.items.map((BuddyPost post) => post.id).toList();
+      Future<List<String>> idsFor(BuddySection section) async =>
+          (await repo().listPosts(
+            BuddyPostQuery(section: section, limit: 50),
+          ))
+              .unwrap
+              .items
+              .map((BuddyPost post) => post.id)
+              .toList();
 
-      expect(await idsFor(BuddySection.sport), <String>['bp-1001', 'bp-1006', 'bp-1010']);
+      expect(await idsFor(BuddySection.sport),
+          <String>['bp-1001', 'bp-1006', 'bp-1010']);
       expect(await idsFor(BuddySection.academic), <String>['bp-1002']);
       expect(await idsFor(BuddySection.daily), <String>['bp-1003', 'bp-1005']);
       // unknown 板块不是筛选条件（不做 dating）。
       expect(
-        (await repo().listPosts(const BuddyPostQuery(section: BuddySection.unknown, limit: 50)))
+        (await repo().listPosts(
+                const BuddyPostQuery(section: BuddySection.unknown, limit: 50)))
             .unwrap
             .total,
         6,
@@ -110,13 +129,17 @@ void main() {
 
     test('按 activity 与 tags 过滤（标签命中任一即返回）', () async {
       final Page<BuddyPost> byActivity = (await repo().listPosts(
-        const BuddyPostQuery(activities: <BuddyActivity>[BuddyActivity.game], limit: 50),
-      )).unwrap;
-      expect(byActivity.items.map((BuddyPost post) => post.id), <String>['bp-1006']);
+        const BuddyPostQuery(
+            activities: <BuddyActivity>[BuddyActivity.game], limit: 50),
+      ))
+          .unwrap;
+      expect(byActivity.items.map((BuddyPost post) => post.id),
+          <String>['bp-1006']);
 
       final Page<BuddyPost> byTag = (await repo().listPosts(
         const BuddyPostQuery(tags: <String>['hotpot'], limit: 50),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(byTag.items.map((BuddyPost post) => post.id), <String>['bp-1003']);
     });
 
@@ -126,8 +149,10 @@ void main() {
           startsAfter: fixedNow.add(const Duration(days: 3)),
           limit: 50,
         ),
-      )).unwrap;
-      expect(page.items.map((BuddyPost post) => post.id), <String>['bp-1005', 'bp-1010']);
+      ))
+          .unwrap;
+      expect(page.items.map((BuddyPost post) => post.id),
+          <String>['bp-1005', 'bp-1010']);
     });
 
     test('游标分页：不重不漏（契约 §11.10-E 的不透明复合游标）', () async {
@@ -138,7 +163,8 @@ void main() {
       do {
         final Page<BuddyPost> page = (await repository.listPosts(
           BuddyPostQuery(cursor: cursor, limit: 4),
-        )).unwrap;
+        ))
+            .unwrap;
         collected.addAll(page.items.map((BuddyPost post) => post.id));
         cursor = page.nextCursor;
         guard++;
@@ -158,15 +184,20 @@ void main() {
     test('游标对客户端不透明：损坏的游标被忽略（等价第一页），不抛异常', () async {
       final Page<BuddyPost> page = (await repo().listPosts(
         const BuddyPostQuery(cursor: 'not-a-valid-cursor!!', limit: 2),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(page.items, hasLength(2));
       expect(page.items.first.id, 'bp-1003');
     });
 
     test('limit 收敛到 1–100', () async {
-      expect((await repo().listPosts(const BuddyPostQuery(limit: 0))).unwrap.items, hasLength(1));
       expect(
-        (await repo().listPosts(const BuddyPostQuery(limit: 1000))).unwrap.items,
+          (await repo().listPosts(const BuddyPostQuery(limit: 0))).unwrap.items,
+          hasLength(1));
+      expect(
+        (await repo().listPosts(const BuddyPostQuery(limit: 1000)))
+            .unwrap
+            .items,
         hasLength(6),
       );
     });
@@ -174,8 +205,10 @@ void main() {
 
   group('getPost：可见性', () {
     test('已满 / 已过期可按 id 打开（不在列表里但详情可达）', () async {
-      expect((await repo().getPost('bp-1004')).unwrap.status, BuddyPostStatus.full);
-      expect((await repo().getPost('bp-1007')).unwrap.status, BuddyPostStatus.expired);
+      expect((await repo().getPost('bp-1004')).unwrap.status,
+          BuddyPostStatus.full);
+      expect((await repo().getPost('bp-1007')).unwrap.status,
+          BuddyPostStatus.expired);
     });
 
     test('已取消的活动：发起人可见，他人按 NOT_FOUND（不泄露"它存在"）', () async {
@@ -188,12 +221,14 @@ void main() {
         status: BuddyPostStatus.cancelled,
         creatorId: buddyMockCurrentUserId,
       );
-      final Result<BuddyPost> own = await repo(posts: <BuddyPost>[mine]).getPost('bp-mine');
+      final Result<BuddyPost> own =
+          await repo(posts: <BuddyPost>[mine]).getPost('bp-mine');
       expect(own.isOk, isTrue);
     });
 
     test('不存在 → NOT_FOUND', () async {
-      expect((await repo().getPost('bp-nope')).errorOrNull!.code, ApiErrorCode.notFound);
+      expect((await repo().getPost('bp-nope')).errorOrNull!.code,
+          ApiErrorCode.notFound);
     });
   });
 
@@ -201,21 +236,22 @@ void main() {
     CreateBuddyPostCommand command({
       String title = '周六下午羽毛球，缺 2 人',
       String? description,
-      String location = '体育馆 3 号场',
+      String location = '体育馆',
       DateTime? startsAt,
       int capacity = 4,
       int? durationMin = 120,
-      List<String> tags = const <String>['badminton', 'indoor'],
-    }) => CreateBuddyPostCommand(
-      activity: BuddyActivity.sport,
-      title: title,
-      description: description,
-      location: location,
-      startsAt: startsAt ?? fixedNow.add(const Duration(days: 2)),
-      capacity: capacity,
-      durationMin: durationMin,
-      tags: tags,
-    );
+      List<String> tags = const <String>['badminton', 'gym'],
+    }) =>
+        CreateBuddyPostCommand(
+          activity: BuddyActivity.sport,
+          title: title,
+          description: description,
+          location: location,
+          startsAt: startsAt ?? fixedNow.add(const Duration(days: 2)),
+          capacity: capacity,
+          durationMin: durationMin,
+          tags: tags,
+        );
 
     test('成功：joinedCount 初值 1（含发起人）、状态 OPEN、creator 是我', () async {
       final BuddyPost created = (await repo().createPost(command())).unwrap;
@@ -229,18 +265,21 @@ void main() {
     test('字段级校验逐条给出 details.reason（规格 §5.4）', () async {
       final MockBuddyRepository repository = repo();
 
-      expect(reasonOf(await repository.createPost(command(title: ' '))), 'title');
+      expect(
+          reasonOf(await repository.createPost(command(title: ' '))), 'title');
       expect(
         reasonOf(await repository.createPost(command(location: '月球基地'))),
         'UNKNOWN_LOCATION',
       );
-      expect(reasonOf(await repository.createPost(command(capacity: 1))), 'capacity');
+      expect(reasonOf(await repository.createPost(command(capacity: 1))),
+          'capacity');
       expect(
         reasonOf(await repository.createPost(command(durationMin: 5))),
         'durationMin',
       );
       expect(
-        reasonOf(await repository.createPost(command(tags: const <String>['quidditch']))),
+        reasonOf(await repository
+            .createPost(command(tags: const <String>['quidditch']))),
         'UNKNOWN_TAG:quidditch',
       );
       expect(
@@ -263,7 +302,8 @@ void main() {
       final MockBuddyRepository repository = repo();
       final BuddyApplication application = (await repository.join(
         const BuddyJoinCommand(postId: 'bp-1003', message: '一起？'),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(application.status, BuddyApplicationStatus.pending);
       expect(application.applicantId, buddyMockCurrentUserId);
@@ -283,42 +323,52 @@ void main() {
       // 规格 §5.5 的参考实现**先查 status 再查名额**，因此 FULL 帖报 POST_NOT_OPEN。
       // 这是规格自身的检查顺序，本端逐字对齐（并在 README §6 记录这个怪癖）。
       expect(
-        reasonOf(await repository.join(const BuddyJoinCommand(postId: 'bp-1004'))),
+        reasonOf(
+            await repository.join(const BuddyJoinCommand(postId: 'bp-1004'))),
         'POST_NOT_OPEN',
       );
       expect(
-        reasonOf(await repository.join(const BuddyJoinCommand(postId: 'bp-1008'))),
+        reasonOf(
+            await repository.join(const BuddyJoinCommand(postId: 'bp-1008'))),
         'POST_NOT_OPEN',
       );
       // `POST_FULL` 只在「状态还是 OPEN 但名额已满」这种不一致态下触发 ——
       // 它正是规格那段 `FOR UPDATE` 事务要防的情形。
       final MockBuddyRepository inconsistent = repo(
-        posts: <BuddyPost>[customPost(id: 'bp-over', capacity: 2, joinedCount: 2)],
+        posts: <BuddyPost>[
+          customPost(id: 'bp-over', capacity: 2, joinedCount: 2)
+        ],
       );
       expect(
-        reasonOf(await inconsistent.join(const BuddyJoinCommand(postId: 'bp-over'))),
+        reasonOf(
+            await inconsistent.join(const BuddyJoinCommand(postId: 'bp-over'))),
         'POST_FULL',
       );
       // bp-1001 上我有一条 ACCEPTED 申请。
       expect(
-        reasonOf(await repository.join(const BuddyJoinCommand(postId: 'bp-1001'))),
+        reasonOf(
+            await repository.join(const BuddyJoinCommand(postId: 'bp-1001'))),
         'ALREADY_APPLIED',
       );
-      expect((await repository.join(const BuddyJoinCommand(postId: 'bp-nope')))
-          .errorOrNull!
-          .code, ApiErrorCode.notFound);
+      expect(
+          (await repository.join(const BuddyJoinCommand(postId: 'bp-nope')))
+              .errorOrNull!
+              .code,
+          ApiErrorCode.notFound);
     });
 
     test('撤回后重新申请**复用同一行**（@@unique([postId, applicantId])）', () async {
       final MockBuddyRepository repository = repo();
       // bp-1006 上我原本有一条 PENDING 的 ba-2003。
-      final BuddyApplication withdrawn = (await repository.leave('bp-1006')).unwrap;
+      final BuddyApplication withdrawn =
+          (await repository.leave('bp-1006')).unwrap;
       expect(withdrawn.status, BuddyApplicationStatus.withdrawn);
       expect(withdrawn.id, 'ba-2003');
 
       final BuddyApplication again = (await repository.join(
         const BuddyJoinCommand(postId: 'bp-1006'),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(again.id, 'ba-2003', reason: '不是插新行，是更新回 PENDING');
       expect(again.status, BuddyApplicationStatus.pending);
       expect(
@@ -332,11 +382,13 @@ void main() {
 
     test('已接受 / 非待审批的申请不能撤回', () async {
       final MockBuddyRepository repository = repo();
-      final Result<BuddyApplication> accepted = await repository.leave('bp-1001');
+      final Result<BuddyApplication> accepted =
+          await repository.leave('bp-1001');
       expect(accepted.errorOrNull!.code, ApiErrorCode.conflict);
       expect(reasonOf(accepted), 'APPLICATION_NOT_PENDING');
 
-      expect((await repository.leave('bp-1003')).errorOrNull!.code, ApiErrorCode.notFound);
+      expect((await repository.leave('bp-1003')).errorOrNull!.code,
+          ApiErrorCode.notFound);
     });
 
     test('F5 性别准入（客户端不采集性别，这里是测试旋钮）', () async {
@@ -352,7 +404,8 @@ void main() {
         creatorGenders: <String, String>{'u-3001': 'female'},
       );
       expect(
-        (await compatible.join(const BuddyJoinCommand(postId: 'bp-gender'))).isOk,
+        (await compatible.join(const BuddyJoinCommand(postId: 'bp-gender')))
+            .isOk,
         isTrue,
       );
 
@@ -369,7 +422,10 @@ void main() {
 
       // 不传性别（客户端真实情况）→ 不做判定，不误伤。
       final MockBuddyRepository unknown = repo(posts: <BuddyPost>[sameGender]);
-      expect((await unknown.join(const BuddyJoinCommand(postId: 'bp-gender'))).isOk, isTrue);
+      expect(
+          (await unknown.join(const BuddyJoinCommand(postId: 'bp-gender')))
+              .isOk,
+          isTrue);
     });
 
     test('F6 运动水平低于 minSkillLevel → FORBIDDEN', () async {
@@ -396,7 +452,8 @@ void main() {
           applicationId: 'ba-2001',
           decision: BuddyDecision.accepted,
         ),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(decided.status, BuddyApplicationStatus.accepted);
       expect(decided.decidedBy, buddyMockCurrentUserId);
@@ -416,7 +473,8 @@ void main() {
           applicationId: 'ba-2001',
           decision: BuddyDecision.rejected,
         ),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(decided.status, BuddyApplicationStatus.rejected);
       expect((await repository.getPost('bp-1005')).unwrap.joinedCount, 1);
     });
@@ -481,7 +539,8 @@ void main() {
 
     test('close：仅发起人，且只在 OPEN / FULL 可关', () async {
       final MockBuddyRepository repository = repo();
-      expect((await repository.closePost('bp-1005')).unwrap.status, BuddyPostStatus.closed);
+      expect((await repository.closePost('bp-1005')).unwrap.status,
+          BuddyPostStatus.closed);
       // 已关闭的再关一次 → CONFLICT / POST_NOT_OPEN。
       expect(reasonOf(await repository.closePost('bp-1005')), 'POST_NOT_OPEN');
       // 别人的帖子 → FORBIDDEN（先判归属，再判状态）。
@@ -502,7 +561,8 @@ void main() {
 
   group('listApplications（规格 §6.1 可见性）', () {
     test('不带 postId = 我作为申请人的列表（按时间倒序）', () async {
-      final List<BuddyApplication> mine = (await repo().listApplications()).unwrap;
+      final List<BuddyApplication> mine =
+          (await repo().listApplications()).unwrap;
       expect(
         mine.map((BuddyApplication item) => item.id),
         <String>['ba-2003', 'ba-2002'],
@@ -512,12 +572,15 @@ void main() {
     test('带 postId = 我作为发起人收到的申请', () async {
       final List<BuddyApplication> received = (await repo().listApplications(
         postId: 'bp-1005',
-      )).unwrap;
-      expect(received.map((BuddyApplication item) => item.id), <String>['ba-2001']);
+      ))
+          .unwrap;
+      expect(received.map((BuddyApplication item) => item.id),
+          <String>['ba-2001']);
     });
 
     test('不是发起人 → FORBIDDEN（申请人列表对他人不可见）', () async {
-      final Result<List<BuddyApplication>> result = await repo().listApplications(
+      final Result<List<BuddyApplication>> result =
+          await repo().listApplications(
         postId: 'bp-1001',
       );
       expect(result.errorOrNull!.code, ApiErrorCode.forbidden);
@@ -529,19 +592,21 @@ void main() {
       String postId = 'bp-1001',
       BuddySection section = BuddySection.sport,
       BuddyMatchFeedbackAction action = BuddyMatchFeedbackAction.like,
-    }) => BuddyMatchFeedback(
-      userId: 'u-forged',
-      targetPostId: postId,
-      section: section,
-      action: action,
-      createdAt: fixedNow,
-    );
+    }) =>
+        BuddyMatchFeedback(
+          userId: 'u-forged',
+          targetPostId: postId,
+          section: section,
+          action: action,
+          createdAt: fixedNow,
+        );
 
     test('成功；反馈者由服务端决定（忽略入参里的 userId）', () async {
       final MockBuddyRepository repository = repo();
       final BuddyMatchFeedback stored = (await repository.submitFeedback(
         feedback(),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(stored.userId, buddyMockCurrentUserId);
       expect(stored.action, BuddyMatchFeedbackAction.like);
     });
@@ -600,7 +665,8 @@ void main() {
           interestTags: const <String>['badminton'],
           matchEnabled: true,
         ),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(saved.userId, buddyMockCurrentUserId, reason: 'userId 由服务端决定');
       expect(saved.isRecommendable, isTrue);
 
@@ -640,7 +706,8 @@ void main() {
         ..emptyResults = true;
       final Page<BuddyPost> page = (await repo(
         controls: controls,
-      ).listPosts(const BuddyPostQuery())).unwrap;
+      ).listPosts(const BuddyPostQuery()))
+          .unwrap;
       expect(page.items, isEmpty);
       expect(page.total, 0);
     });

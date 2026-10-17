@@ -61,8 +61,10 @@ class WildlifeMapCanvas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final KedaYaColors colors = context.kedayaColors;
-    final double width = basemap.widthPx <= 0 ? 1000 : basemap.widthPx.toDouble();
-    final double height = basemap.heightPx <= 0 ? 700 : basemap.heightPx.toDouble();
+    final double width =
+        basemap.widthPx <= 0 ? 1000 : basemap.widthPx.toDouble();
+    final double height =
+        basemap.heightPx <= 0 ? 700 : basemap.heightPx.toDouble();
 
     return InteractiveViewer(
       minScale: 1,
@@ -89,15 +91,15 @@ class WildlifeMapCanvas extends StatelessWidget {
                   basemap.imageUrl,
                   fit: BoxFit.fill,
                   // 加载失败（含 mock 运行时的离线环境）退回示意图，**不报错**。
-                  errorBuilder:
-                      (BuildContext context, Object error, StackTrace? stackTrace) =>
-                          const SizedBox.shrink(),
-                  loadingBuilder:
-                      (
-                        BuildContext context,
-                        Widget child,
-                        ImageChunkEvent? progress,
-                      ) => progress == null ? child : const SizedBox.shrink(),
+                  errorBuilder: (BuildContext context, Object error,
+                          StackTrace? stackTrace) =>
+                      const SizedBox.shrink(),
+                  loadingBuilder: (
+                    BuildContext context,
+                    Widget child,
+                    ImageChunkEvent? progress,
+                  ) =>
+                      progress == null ? child : const SizedBox.shrink(),
                 ),
               ),
             // ② 叠加层（区域圈 / 聚合热点 / 推断轨迹）。
@@ -126,7 +128,8 @@ class WildlifeMapCanvas extends StatelessWidget {
                       u: details.localPosition.dx,
                       v: details.localPosition.dy,
                     );
-                    onPickPoint!(basemap.affine.pointFor(pixel, projection: projection));
+                    onPickPoint!(
+                        basemap.affine.pointFor(pixel, projection: projection));
                   },
                 ),
               ),
@@ -200,8 +203,10 @@ class WildlifeOverlayPainter extends CustomPainter {
       if (radiusPx <= 0) continue;
 
       final Color tone = _feedingTone(zone.feedingPolicy);
-      final bool highlighted = highlightZoneId != null && highlightZoneId == zone.id;
-      canvas.drawCircle(offset, radiusPx, Paint()..color = tone.withValues(alpha: 0.10));
+      final bool highlighted =
+          highlightZoneId != null && highlightZoneId == zone.id;
+      canvas.drawCircle(
+          offset, radiusPx, Paint()..color = tone.withValues(alpha: 0.10));
       canvas.drawCircle(
         offset,
         radiusPx,
@@ -248,7 +253,8 @@ class WildlifeOverlayPainter extends CustomPainter {
       if (!track.isDrawable) continue;
       final Path path = Path();
       for (int index = 0; index < track.path.length; index++) {
-        final LocalPixel pixel = affine.pixelFor(track.path[index], projection: projection);
+        final LocalPixel pixel =
+            affine.pixelFor(track.path[index], projection: projection);
         if (index == 0) {
           path.moveTo(pixel.u, pixel.v);
         } else {
@@ -282,16 +288,18 @@ class WildlifeOverlayPainter extends CustomPainter {
       ..strokeWidth = 2
       ..color = colors.danger;
     canvas.drawCircle(offset, 10, stroke);
-    canvas.drawLine(offset - const Offset(18, 0), offset + const Offset(18, 0), stroke);
-    canvas.drawLine(offset - const Offset(0, 18), offset + const Offset(0, 18), stroke);
+    canvas.drawLine(
+        offset - const Offset(18, 0), offset + const Offset(18, 0), stroke);
+    canvas.drawLine(
+        offset - const Offset(0, 18), offset + const Offset(0, 18), stroke);
   }
 
   Color _feedingTone(FeedingPolicy policy) => switch (policy.tone) {
-    FeedingBadgeTone.success => colors.success,
-    FeedingBadgeTone.warning => colors.warning,
-    FeedingBadgeTone.danger => colors.danger,
-    FeedingBadgeTone.muted => colors.textMuted,
-  };
+        FeedingBadgeTone.success => colors.success,
+        FeedingBadgeTone.warning => colors.warning,
+        FeedingBadgeTone.danger => colors.danger,
+        FeedingBadgeTone.muted => colors.textMuted,
+      };
 
   @override
   bool shouldRepaint(WildlifeOverlayPainter oldDelegate) =>
@@ -350,7 +358,8 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: KedaYaTokens.space1),
         Text(
           label,
-          style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+          style: TextStyle(
+              fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
         ),
       ],
     );

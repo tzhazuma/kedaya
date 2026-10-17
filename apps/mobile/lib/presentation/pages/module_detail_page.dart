@@ -54,7 +54,8 @@ class ModuleDetailPage extends ConsumerWidget {
     }
 
     final bool hasConsent =
-        ref.watch(consentControllerProvider).valueOrNull?.contains(module.id) ?? false;
+        ref.watch(consentControllerProvider).valueOrNull?.contains(module.id) ??
+            false;
 
     return KedaYaPageScaffold(
       title: module.nameZh,
@@ -173,7 +174,8 @@ class ModuleDetailPage extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: () => context.push(implementedModuleRoutes[module.id]!),
+                      onPressed: () =>
+                          context.push(implementedModuleRoutes[module.id]!),
                       icon: const Icon(Icons.arrow_forward, size: 18),
                       label: const Text('进入模块'),
                     ),

@@ -9,7 +9,8 @@ import '../../data/mock/mock_failure.dart';
 /// 契约 §7 要求所有列表页行为一致，三态演示不该各写一套。
 /// 它只操作 [MockControls]，不触碰任何端口 —— 因此对真实运行时是惰性的。
 class MockStateMenu extends StatelessWidget {
-  const MockStateMenu({required this.controls, required this.onChanged, super.key});
+  const MockStateMenu(
+      {required this.controls, required this.onChanged, super.key});
 
   final MockControls controls;
 
@@ -18,19 +19,19 @@ class MockStateMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
-    tooltip: 'mock 三态演示',
-    icon: const Icon(Icons.science_outlined),
-    onSelected: (String value) {
-      controls.emptyResults = value == 'empty';
-      controls.failureMode = value == 'error'
-          ? MockFailureMode.upstreamUnavailable
-          : MockFailureMode.none;
-      onChanged();
-    },
-    itemBuilder: (BuildContext context) => const <PopupMenuEntry<String>>[
-      PopupMenuItem<String>(value: 'normal', child: Text('正常数据')),
-      PopupMenuItem<String>(value: 'empty', child: Text('空列表（empty 态）')),
-      PopupMenuItem<String>(value: 'error', child: Text('上游故障（error 态）')),
-    ],
-  );
+        tooltip: 'mock 三态演示',
+        icon: const Icon(Icons.science_outlined),
+        onSelected: (String value) {
+          controls.emptyResults = value == 'empty';
+          controls.failureMode = value == 'error'
+              ? MockFailureMode.upstreamUnavailable
+              : MockFailureMode.none;
+          onChanged();
+        },
+        itemBuilder: (BuildContext context) => const <PopupMenuEntry<String>>[
+          PopupMenuItem<String>(value: 'normal', child: Text('正常数据')),
+          PopupMenuItem<String>(value: 'empty', child: Text('空列表（empty 态）')),
+          PopupMenuItem<String>(value: 'error', child: Text('上游故障（error 态）')),
+        ],
+      );
 }

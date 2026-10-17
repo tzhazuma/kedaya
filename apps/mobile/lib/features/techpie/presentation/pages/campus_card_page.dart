@@ -32,7 +32,8 @@ class CampusCardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bool signedIn = ref.watch(sessionControllerProvider).valueOrNull != null;
+    final bool signedIn =
+        ref.watch(sessionControllerProvider).valueOrNull != null;
     final AsyncValue<CampusCardSnapshot> value = ref.watch(
       campusCardControllerProvider,
     );
@@ -64,8 +65,8 @@ class CampusCardPage extends ConsumerWidget {
               ),
               builder: (BuildContext context, CampusCardSnapshot snapshot) =>
                   snapshot.isLinked
-                  ? _LinkedBody(snapshot: snapshot)
-                  : _OpenBody(snapshot: snapshot),
+                      ? _LinkedBody(snapshot: snapshot)
+                      : _OpenBody(snapshot: snapshot),
             )
           : const _SignInBody(),
     );
@@ -216,7 +217,8 @@ class _LinkedBody extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(KedaYaTokens.space4),
       children: <Widget>[
-        if (snapshot.account != null) CampusCardBalanceCard(account: snapshot.account!),
+        if (snapshot.account != null)
+          CampusCardBalanceCard(account: snapshot.account!),
         const SizedBox(height: KedaYaTokens.space3),
         Text(
           '付款码',
@@ -236,9 +238,9 @@ class _LinkedBody extends ConsumerWidget {
           onRetry: () => ref.invalidate(campusPaymentCodeProvider),
           builder: (BuildContext context, CampusPaymentCode paymentCode) =>
               CampusPaymentCodeCard(
-                code: paymentCode,
-                onRefresh: () => ref.invalidate(campusPaymentCodeProvider),
-              ),
+            code: paymentCode,
+            onRefresh: () => ref.invalidate(campusPaymentCodeProvider),
+          ),
         ),
         const SizedBox(height: KedaYaTokens.space3),
         Text(

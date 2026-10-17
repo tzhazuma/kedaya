@@ -11,7 +11,8 @@ abstract interface class KedayaApiPort {
   ///
   /// [decode] 把信封里的 `data`（已解码的 JSON）转成领域模型 —— 契约 §6.1 的
   /// `Page<T>` 也在这里被组装。失败（含 `ok: false` 与网络异常）返回 [Err]。
-  Future<Result<T>> send<T>(ApiRequest request, T Function(Object? data) decode);
+  Future<Result<T>> send<T>(
+      ApiRequest request, T Function(Object? data) decode);
 
   /// 无返回体的请求（DELETE / 动作端点）。成功值为 [Unit.instance]。
   Future<Result<Unit>> sendVoid(ApiRequest request);

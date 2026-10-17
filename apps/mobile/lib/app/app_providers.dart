@@ -31,7 +31,8 @@ import 'app_runtime.dart';
 ///
 /// 故意不给默认实现：忘记装配时立刻抛错，而不是带着空实现静默跑起来。
 final appRuntimeProvider = Provider<AppRuntime>(
-  (ref) => throw StateError('appRuntimeProvider 必须在 ProviderScope 根部被 override'),
+  (ref) =>
+      throw StateError('appRuntimeProvider 必须在 ProviderScope 根部被 override'),
 );
 
 final appEnvironmentProvider = Provider<AppEnvironment>(
@@ -39,7 +40,8 @@ final appEnvironmentProvider = Provider<AppEnvironment>(
 );
 
 /// 第一级身份层（契约 §5）。**不暴露任何校园系统凭据**。
-final authProvider = Provider<AuthPort>((ref) => ref.watch(appRuntimeProvider).auth);
+final authProvider =
+    Provider<AuthPort>((ref) => ref.watch(appRuntimeProvider).auth);
 
 /// 第二级能力层（契约 §5）。唯一能取校园系统 cookie 的端口。
 final campusSessionProvider = Provider<CampusSessionPort>(
@@ -47,7 +49,8 @@ final campusSessionProvider = Provider<CampusSessionPort>(
 );
 
 /// 二次同意门（契约 §9）。
-final consentProvider = Provider<ConsentPort>((ref) => ref.watch(appRuntimeProvider).consent);
+final consentProvider =
+    Provider<ConsentPort>((ref) => ref.watch(appRuntimeProvider).consent);
 
 final groupbuyRepositoryProvider = Provider<GroupbuyPort>(
   (ref) => ref.watch(appRuntimeProvider).groupbuy,
@@ -129,7 +132,8 @@ final locationProvider = Provider<LocationPort>(
   (ref) => ref.watch(appRuntimeProvider).location,
 );
 
-final shareProvider = Provider<SharePort>((ref) => ref.watch(appRuntimeProvider).share);
+final shareProvider =
+    Provider<SharePort>((ref) => ref.watch(appRuntimeProvider).share);
 
 final notificationProvider = Provider<NotificationPort>(
   (ref) => ref.watch(appRuntimeProvider).notifications,

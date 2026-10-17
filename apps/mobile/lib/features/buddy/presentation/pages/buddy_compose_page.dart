@@ -32,10 +32,19 @@ class _BuddyComposePageState extends ConsumerState<BuddyComposePage> {
   BuddyPostDraft _draft = const BuddyPostDraft();
   bool _submitting = false;
 
-  static const List<int> _durationChoices = <int>[30, 60, 90, 120, 180, 240, 480];
+  static const List<int> _durationChoices = <int>[
+    30,
+    60,
+    90,
+    120,
+    180,
+    240,
+    480
+  ];
 
   Future<void> _submit() async {
-    final Map<String, String> errors = _draft.validationErrorsAt(DateTime.now());
+    final Map<String, String> errors =
+        _draft.validationErrorsAt(DateTime.now());
     if (errors.isNotEmpty) {
       setState(() {});
       return;
@@ -51,7 +60,8 @@ class _BuddyComposePageState extends ConsumerState<BuddyComposePage> {
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
     }
   }
 
@@ -101,7 +111,8 @@ class _BuddyComposePageState extends ConsumerState<BuddyComposePage> {
   @override
   Widget build(BuildContext context) {
     final KedaYaColors colors = context.kedayaColors;
-    final Map<String, String> errors = _draft.validationErrorsAt(DateTime.now());
+    final Map<String, String> errors =
+        _draft.validationErrorsAt(DateTime.now());
     final DateTime? startsAt = _draft.startsAt;
 
     return Scaffold(
@@ -116,11 +127,12 @@ class _BuddyComposePageState extends ConsumerState<BuddyComposePage> {
             children: <Widget>[
               for (final BuddyActivity activity in BuddyActivity.values)
                 ChoiceChip(
-                  label: Text('${activity.label}·${sectionOfActivity(activity).label}'),
+                  label: Text(
+                      '${activity.label}·${sectionOfActivity(activity).label}'),
                   selected: _draft.activity == activity,
                   showCheckmark: false,
-                  onSelected: (bool _) =>
-                      setState(() => _draft = _draft.copyWith(activity: activity)),
+                  onSelected: (bool _) => setState(
+                      () => _draft = _draft.copyWith(activity: activity)),
                   backgroundColor: colors.surfaceAlt,
                   selectedColor: colors.brandSoft,
                   side: BorderSide(color: colors.border),
@@ -163,7 +175,7 @@ class _BuddyComposePageState extends ConsumerState<BuddyComposePage> {
           const SizedBox(height: KedaYaTokens.space3),
           _FieldLabel(label: '地点（校园地点白名单）', colors: colors),
           DropdownButtonFormField<String>(
-            value: _draft.location.isEmpty ? null : _draft.location,
+            initialValue: _draft.location.isEmpty ? null : _draft.location,
             isExpanded: true,
             hint: const Text('选择地点'),
             decoration: InputDecoration(
@@ -172,7 +184,8 @@ class _BuddyComposePageState extends ConsumerState<BuddyComposePage> {
             ),
             items: <DropdownMenuItem<String>>[
               for (final String location in buddyCampusLocations)
-                DropdownMenuItem<String>(value: location, child: Text(location)),
+                DropdownMenuItem<String>(
+                    value: location, child: Text(location)),
             ],
             onChanged: (String? value) => setState(
               () => _draft = _draft.copyWith(location: value ?? ''),
@@ -201,8 +214,8 @@ class _BuddyComposePageState extends ConsumerState<BuddyComposePage> {
                   label: Text('$minutes 分钟'),
                   selected: _draft.durationMin == minutes,
                   showCheckmark: false,
-                  onSelected: (bool _) =>
-                      setState(() => _draft = _draft.copyWith(durationMin: minutes)),
+                  onSelected: (bool _) => setState(
+                      () => _draft = _draft.copyWith(durationMin: minutes)),
                   backgroundColor: colors.surfaceAlt,
                   selectedColor: colors.brandSoft,
                   side: BorderSide(color: colors.border),
@@ -238,14 +251,16 @@ class _BuddyComposePageState extends ConsumerState<BuddyComposePage> {
           _FieldLabel(label: '性别偏好（发起人的准入约束，不参与打分）', colors: colors),
           SegmentedButton<BuddyGenderPreference>(
             segments: <ButtonSegment<BuddyGenderPreference>>[
-              for (final BuddyGenderPreference value in BuddyGenderPreference.values)
+              for (final BuddyGenderPreference value
+                  in BuddyGenderPreference.values)
                 ButtonSegment<BuddyGenderPreference>(
                   value: value,
                   label: Text(value.label),
                 ),
             ],
             selected: <BuddyGenderPreference>{_draft.genderPreference},
-            onSelectionChanged: (Set<BuddyGenderPreference> selection) => setState(
+            onSelectionChanged: (Set<BuddyGenderPreference> selection) =>
+                setState(
               () => _draft = _draft.copyWith(genderPreference: selection.first),
             ),
           ),
@@ -308,7 +323,9 @@ class _BuddyComposePageState extends ConsumerState<BuddyComposePage> {
           ],
           const SizedBox(height: KedaYaTokens.space6),
           FilledButton(
-            onPressed: _submitting || errors.isNotEmpty ? null : () => unawaited(_submit()),
+            onPressed: _submitting || errors.isNotEmpty
+                ? null
+                : () => unawaited(_submit()),
             child: Text(_submitting ? '发布中…' : '发布'),
           ),
           if (errors.isNotEmpty) ...<Widget>[
@@ -333,16 +350,16 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: KedaYaTokens.space2),
-    child: Text(
-      label,
-      style: TextStyle(
-        fontSize: KedaYaTokens.fontSizeSm,
-        fontWeight: KedaYaTokens.fontWeightSemibold,
-        color: colors.text,
-      ),
-    ),
-  );
+        padding: const EdgeInsets.only(bottom: KedaYaTokens.space2),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: KedaYaTokens.fontSizeSm,
+            fontWeight: KedaYaTokens.fontWeightSemibold,
+            color: colors.text,
+          ),
+        ),
+      );
 }
 
 class _ErrorText extends StatelessWidget {
@@ -353,10 +370,11 @@ class _ErrorText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: KedaYaTokens.space1),
-    child: Text(
-      text,
-      style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.danger),
-    ),
-  );
+        padding: const EdgeInsets.only(top: KedaYaTokens.space1),
+        child: Text(
+          text,
+          style: TextStyle(
+              fontSize: KedaYaTokens.fontSizeXs, color: colors.danger),
+        ),
+      );
 }

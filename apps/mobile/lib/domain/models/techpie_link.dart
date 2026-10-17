@@ -69,16 +69,17 @@ enum CampusBindingStatus {
 
   /// 曾经绑定过、现在需要重新绑定 —— 与「从未绑定」是**两种不同的引导**。
   bool get needsRebind =>
-      this == CampusBindingStatus.expired || this == CampusBindingStatus.revoked;
+      this == CampusBindingStatus.expired ||
+      this == CampusBindingStatus.revoked;
 
   /// 用户视角的文案（不是错误信息）。
   String get label => switch (this) {
-    CampusBindingStatus.unlinked => '未绑定',
-    CampusBindingStatus.linking => '绑定中',
-    CampusBindingStatus.linked => '已绑定',
-    CampusBindingStatus.expired => '已过期',
-    CampusBindingStatus.revoked => '已解除',
-  };
+        CampusBindingStatus.unlinked => '未绑定',
+        CampusBindingStatus.linking => '绑定中',
+        CampusBindingStatus.linked => '已绑定',
+        CampusBindingStatus.expired => '已过期',
+        CampusBindingStatus.revoked => '已解除',
+      };
 }
 
 /// 第二级 · 能力层的绑定**元数据**（规格 §4.3）。
@@ -140,12 +141,12 @@ final class CampusBindingSummary {
       expiresAt != null && !expiresAt!.isAfter(now.toUtc());
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'platform': platform.wire,
-    'status': status.wire,
-    'externalUserId': externalUserId,
-    'expiresAt': expiresAt == null ? null : isoUtc(expiresAt!),
-    'lastSyncAt': lastSyncAt == null ? null : isoUtc(lastSyncAt!),
-  };
+        'platform': platform.wire,
+        'status': status.wire,
+        'externalUserId': externalUserId,
+        'expiresAt': expiresAt == null ? null : isoUtc(expiresAt!),
+        'lastSyncAt': lastSyncAt == null ? null : isoUtc(lastSyncAt!),
+      };
 
   CampusBindingSummary copyWith({
     CampusPlatform? platform,
@@ -153,13 +154,14 @@ final class CampusBindingSummary {
     String? externalUserId,
     DateTime? expiresAt,
     DateTime? lastSyncAt,
-  }) => CampusBindingSummary(
-    platform: platform ?? this.platform,
-    status: status ?? this.status,
-    externalUserId: externalUserId ?? this.externalUserId,
-    expiresAt: expiresAt ?? this.expiresAt,
-    lastSyncAt: lastSyncAt ?? this.lastSyncAt,
-  );
+  }) =>
+      CampusBindingSummary(
+        platform: platform ?? this.platform,
+        status: status ?? this.status,
+        externalUserId: externalUserId ?? this.externalUserId,
+        expiresAt: expiresAt ?? this.expiresAt,
+        lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      );
 
   @override
   bool operator ==(Object other) =>
@@ -175,8 +177,7 @@ final class CampusBindingSummary {
       Object.hash(platform, status, externalUserId, expiresAt, lastSyncAt);
 
   @override
-  String toString() =>
-      'CampusBindingSummary(${platform.wire}, ${status.wire})';
+  String toString() => 'CampusBindingSummary(${platform.wire}, ${status.wire})';
 }
 
 /// 一条绑定（`GET /api/v1/techpie/links` 的行，规格 §8.3）。
@@ -190,10 +191,10 @@ final class TechpieLink {
   const TechpieLink({required this.id, required this.summary});
 
   factory TechpieLink.fromJson(Map<String, Object?> json) => TechpieLink(
-    id: readString(json, 'id'),
-    // §8.3 的行把 `id` 与元数据放在**同一层**，因此直接复用同一个 map。
-    summary: CampusBindingSummary.fromJson(json),
-  );
+        id: readString(json, 'id'),
+        // §8.3 的行把 `id` 与元数据放在**同一层**，因此直接复用同一个 map。
+        summary: CampusBindingSummary.fromJson(json),
+      );
 
   final String id;
   final CampusBindingSummary summary;
@@ -211,9 +212,9 @@ final class TechpieLink {
   bool get canRenew => status.isLinked || status.needsRebind;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    ...summary.toJson(),
-  };
+        'id': id,
+        ...summary.toJson(),
+      };
 
   TechpieLink copyWith({String? id, CampusBindingSummary? summary}) =>
       TechpieLink(id: id ?? this.id, summary: summary ?? this.summary);

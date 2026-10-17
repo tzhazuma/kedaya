@@ -21,7 +21,8 @@ class WildlifeZonesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<List<WildlifeZone>> value = ref.watch(wildlifeZonesProvider);
+    final AsyncValue<List<WildlifeZone>> value =
+        ref.watch(wildlifeZonesProvider);
     final MockControls? mockControls = ref.watch(mockControlsProvider);
     final KedaYaColors colors = context.kedayaColors;
 
@@ -48,7 +49,8 @@ class WildlifeZonesPage extends ConsumerWidget {
         emptyDescription: '区域由管理端维护，用于承载投喂政策与告示位。',
         loadingMessage: '正在加载活动区域…',
         onRetry: () => ref.invalidate(wildlifeZonesProvider),
-        builder: (BuildContext context, List<WildlifeZone> zones) => ListView.separated(
+        builder: (BuildContext context, List<WildlifeZone> zones) =>
+            ListView.separated(
           padding: const EdgeInsets.all(KedaYaTokens.space4),
           itemCount: zones.length + 1,
           separatorBuilder: (BuildContext context, int index) =>

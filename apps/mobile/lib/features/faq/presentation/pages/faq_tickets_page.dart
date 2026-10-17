@@ -21,9 +21,11 @@ class FaqTicketsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<FaqTicketListState> value = ref.watch(faqTicketsControllerProvider);
+    final AsyncValue<FaqTicketListState> value =
+        ref.watch(faqTicketsControllerProvider);
     final MockControls? mockControls = ref.watch(mockControlsProvider);
-    final FaqTicketsController controller = ref.read(faqTicketsControllerProvider.notifier);
+    final FaqTicketsController controller =
+        ref.read(faqTicketsControllerProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -56,7 +58,8 @@ class FaqTicketsPage extends ConsumerWidget {
               '一般 1–2 个工作日回复。',
           loadingMessage: '正在加载工单…',
           onRetry: controller.refresh,
-          builder: (BuildContext context, FaqTicketListState state) => ListView.separated(
+          builder: (BuildContext context, FaqTicketListState state) =>
+              ListView.separated(
             padding: const EdgeInsets.all(KedaYaTokens.space4),
             itemCount: state.tickets.length,
             separatorBuilder: (BuildContext context, int index) =>
@@ -131,7 +134,8 @@ class _TicketCard extends StatelessWidget {
             const SizedBox(height: KedaYaTokens.space2),
             Text(
               '联系方式：${ticket.contact}',
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
             ),
             if (ticket.hasAnswer) ...<Widget>[
               const SizedBox(height: KedaYaTokens.space3),
@@ -175,15 +179,16 @@ class _TicketCard extends StatelessWidget {
 
 /// 打开提交工单对话框；提交成功后返回 true。
 Future<bool?> showSubmitTicketDialog(BuildContext context) => showDialog<bool>(
-  context: context,
-  builder: (BuildContext context) => const _SubmitTicketDialog(),
-);
+      context: context,
+      builder: (BuildContext context) => const _SubmitTicketDialog(),
+    );
 
 class _SubmitTicketDialog extends ConsumerStatefulWidget {
   const _SubmitTicketDialog();
 
   @override
-  ConsumerState<_SubmitTicketDialog> createState() => _SubmitTicketDialogState();
+  ConsumerState<_SubmitTicketDialog> createState() =>
+      _SubmitTicketDialogState();
 }
 
 class _SubmitTicketDialogState extends ConsumerState<_SubmitTicketDialog> {
@@ -225,7 +230,8 @@ class _SubmitTicketDialogState extends ConsumerState<_SubmitTicketDialog> {
             const SizedBox(height: KedaYaTokens.space3),
             TextField(
               controller: _contact,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
               decoration: InputDecoration(
                 labelText: '联系方式',
                 hintText: 'you@shanghaitech.edu.cn 或 微信号',
@@ -241,7 +247,8 @@ class _SubmitTicketDialogState extends ConsumerState<_SubmitTicketDialog> {
               controller: _question,
               maxLines: 4,
               maxLength: 2000,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
               decoration: InputDecoration(
                 labelText: '问题描述',
                 labelStyle: TextStyle(color: colors.textMuted),
@@ -308,13 +315,13 @@ class _DialogError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: KedaYaTokens.space1),
-    child: Text(
-      message,
-      style: TextStyle(
-        fontSize: KedaYaTokens.fontSizeXs,
-        color: context.kedayaColors.danger,
-      ),
-    ),
-  );
+        padding: const EdgeInsets.only(top: KedaYaTokens.space1),
+        child: Text(
+          message,
+          style: TextStyle(
+            fontSize: KedaYaTokens.fontSizeXs,
+            color: context.kedayaColors.danger,
+          ),
+        ),
+      );
 }

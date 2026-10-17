@@ -20,11 +20,12 @@ void main() {
   MockCampusCardRepository repo({
     CampusCardLinkState? initialState,
     MockControls? controls,
-  }) => MockCampusCardRepository(
-    initialState: initialState,
-    controls: controls ?? MockControls(latency: Duration.zero),
-    clock: () => base,
-  );
+  }) =>
+      MockCampusCardRepository(
+        initialState: initialState,
+        controls: controls ?? MockControls(latency: Duration.zero),
+        clock: () => base,
+      );
 
   String? reasonOf(Result<Object?> result) {
     final Object? details = result.errorOrNull?.details;
@@ -48,9 +49,10 @@ void main() {
       expect(account.errorOrNull?.code, isNot(ApiErrorCode.unauthenticated));
       expect(reasonOf(account), 'CAMPUS_BINDING_REQUIRED');
 
-      final Result<Page<CampusCardTransaction>> transactions = await repository
-          .listTransactions();
-      expect(transactions.errorOrNull?.code, ApiErrorCode.campusBindingRequired);
+      final Result<Page<CampusCardTransaction>> transactions =
+          await repository.listTransactions();
+      expect(
+          transactions.errorOrNull?.code, ApiErrorCode.campusBindingRequired);
 
       final Result<CampusPaymentCode> code = await repository.paymentCode();
       expect(code.errorOrNull?.code, ApiErrorCode.campusBindingRequired);
@@ -78,7 +80,8 @@ void main() {
       final MockCampusCardRepository repository = repo();
       final CampusCardLink link = (await repository.connect(
         openId: 'openid-super-secret-9876',
-      )).unwrap;
+      ))
+          .unwrap;
       expect(link.state, CampusCardLinkState.linked);
       expect(link.channel, 'wechat');
       expect(link.openIdTail, '****9876');
@@ -95,8 +98,10 @@ void main() {
       await repository.connect(openId: 'openid-abcdef-9876');
       expect((await repository.disconnect()).isOk, isTrue);
       expect((await repository.disconnect()).isOk, isTrue);
-      expect((await repository.linkStatus()).unwrap.state, CampusCardLinkState.unlinked);
-      expect((await repository.account()).errorOrNull?.code, ApiErrorCode.campusBindingRequired);
+      expect((await repository.linkStatus()).unwrap.state,
+          CampusCardLinkState.unlinked);
+      expect((await repository.account()).errorOrNull?.code,
+          ApiErrorCode.campusBindingRequired);
     });
   });
 
@@ -114,16 +119,20 @@ void main() {
       final MockCampusCardRepository repository = repo(
         initialState: CampusCardLinkState.linked,
       );
-      final Page<CampusCardTransaction> first = (await repository.listTransactions(
+      final Page<CampusCardTransaction> first =
+          (await repository.listTransactions(
         limit: 2,
-      )).unwrap;
+      ))
+              .unwrap;
       expect(first.items, hasLength(2));
       expect(first.nextCursor, 'tx-2');
 
-      final Page<CampusCardTransaction> second = (await repository.listTransactions(
+      final Page<CampusCardTransaction> second =
+          (await repository.listTransactions(
         cursor: first.nextCursor,
         limit: 2,
-      )).unwrap;
+      ))
+              .unwrap;
       expect(second.items, hasLength(2));
       expect(second.nextCursor, isNull);
 
@@ -134,10 +143,12 @@ void main() {
       expect(ids, hasLength(4), reason: '两页之间不该重复');
 
       // 损坏的游标容错：回到第一页，而不是整页失败。
-      final Page<CampusCardTransaction> broken = (await repository.listTransactions(
+      final Page<CampusCardTransaction> broken =
+          (await repository.listTransactions(
         cursor: 'not-a-cursor',
         limit: 1,
-      )).unwrap;
+      ))
+              .unwrap;
       expect(broken.items, hasLength(1));
       expect(broken.items.first.id, first.items.first.id);
     });

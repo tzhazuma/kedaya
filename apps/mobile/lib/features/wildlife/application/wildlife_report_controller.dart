@@ -12,10 +12,10 @@ import '../../../domain/ports/wildlife_port.dart';
 import 'wildlife_providers.dart';
 
 T _require<T>(Result<T> result) => switch (result) {
-  Ok<T>(:final T value) => value,
-  Err<T>(:final ApiError error, :final String? traceId) =>
-    throw ApiException(error, traceId: traceId),
-};
+      Ok<T>(:final T value) => value,
+      Err<T>(:final ApiError error, :final String? traceId) =>
+        throw ApiException(error, traceId: traceId),
+    };
 
 /// 位置来源（决定 UI 文案："来自定位" / "在地图上点选"）。
 enum WildlifeLocationSource {
@@ -60,7 +60,8 @@ final class WildlifeDraftPhoto {
 
   final int attempts;
 
-  bool get isUploaded => status == WildlifePhotoStatus.uploaded && mediaId != null;
+  bool get isUploaded =>
+      status == WildlifePhotoStatus.uploaded && mediaId != null;
 
   bool get isUploading => status == WildlifePhotoStatus.uploading;
 
@@ -74,19 +75,21 @@ final class WildlifeDraftPhoto {
     String? error,
     int? attempts,
     bool clearError = false,
-  }) => WildlifeDraftPhoto(
-    clientPhotoId: clientPhotoId,
-    bytes: bytes,
-    fileName: fileName,
-    mimeType: mimeType,
-    status: status ?? this.status,
-    mediaId: mediaId ?? this.mediaId,
-    error: clearError ? null : (error ?? this.error),
-    attempts: attempts ?? this.attempts,
-  );
+  }) =>
+      WildlifeDraftPhoto(
+        clientPhotoId: clientPhotoId,
+        bytes: bytes,
+        fileName: fileName,
+        mimeType: mimeType,
+        status: status ?? this.status,
+        mediaId: mediaId ?? this.mediaId,
+        error: clearError ? null : (error ?? this.error),
+        attempts: attempts ?? this.attempts,
+      );
 
   @override
-  String toString() => 'WildlifeDraftPhoto($clientPhotoId, ${status.name}, $mediaId)';
+  String toString() =>
+      'WildlifeDraftPhoto($clientPhotoId, ${status.name}, $mediaId)';
 }
 
 /// 上报表单的完整状态（纯数据，可被单测直接构造）。
@@ -153,9 +156,9 @@ final class WildlifeReportState {
   final WildlifeSighting? submitted;
 
   List<String> get mediaIds => <String>[
-    for (final WildlifeDraftPhoto photo in photos)
-      if (photo.isUploaded) photo.mediaId!,
-  ];
+        for (final WildlifeDraftPhoto photo in photos)
+          if (photo.isUploaded) photo.mediaId!,
+      ];
 
   bool get isUploading =>
       photos.any((WildlifeDraftPhoto photo) => photo.isUploading);
@@ -216,32 +219,34 @@ final class WildlifeReportState {
     bool clearSubmitted = false,
     bool clearZoneId = false,
     bool clearSelectedIndividualId = false,
-  }) => WildlifeReportState(
-    photos: photos ?? this.photos,
-    speciesId: speciesId ?? this.speciesId,
-    observedAt: observedAt ?? this.observedAt,
-    geo: geo ?? this.geo,
-    geoAccuracyM: geoAccuracyM ?? this.geoAccuracyM,
-    locationSource: locationSource ?? this.locationSource,
-    zoneId: clearZoneId ? null : (zoneId ?? this.zoneId),
-    note: note ?? this.note,
-    isAnonymous: isAnonymous ?? this.isAnonymous,
-    ethicsAcknowledged: ethicsAcknowledged ?? this.ethicsAcknowledged,
-    healthConcern: healthConcern ?? this.healthConcern,
-    individualName: individualName ?? this.individualName,
-    selectedIndividualId: clearSelectedIndividualId
-        ? null
-        : (selectedIndividualId ?? this.selectedIndividualId),
-    classify: classify ?? this.classify,
-    autoSpeciesId: autoSpeciesId ?? this.autoSpeciesId,
-    autoConfidence: autoConfidence ?? this.autoConfidence,
-    classifiedBy: classifiedBy ?? this.classifiedBy,
-    isClassifying: isClassifying ?? this.isClassifying,
-    isSubmitting: isSubmitting ?? this.isSubmitting,
-    formNotice: clearFormNotice ? null : (formNotice ?? this.formNotice),
-    submitError: clearSubmitError ? null : (submitError ?? this.submitError),
-    submitted: clearSubmitted ? null : (submitted ?? this.submitted),
-  );
+  }) =>
+      WildlifeReportState(
+        photos: photos ?? this.photos,
+        speciesId: speciesId ?? this.speciesId,
+        observedAt: observedAt ?? this.observedAt,
+        geo: geo ?? this.geo,
+        geoAccuracyM: geoAccuracyM ?? this.geoAccuracyM,
+        locationSource: locationSource ?? this.locationSource,
+        zoneId: clearZoneId ? null : (zoneId ?? this.zoneId),
+        note: note ?? this.note,
+        isAnonymous: isAnonymous ?? this.isAnonymous,
+        ethicsAcknowledged: ethicsAcknowledged ?? this.ethicsAcknowledged,
+        healthConcern: healthConcern ?? this.healthConcern,
+        individualName: individualName ?? this.individualName,
+        selectedIndividualId: clearSelectedIndividualId
+            ? null
+            : (selectedIndividualId ?? this.selectedIndividualId),
+        classify: classify ?? this.classify,
+        autoSpeciesId: autoSpeciesId ?? this.autoSpeciesId,
+        autoConfidence: autoConfidence ?? this.autoConfidence,
+        classifiedBy: classifiedBy ?? this.classifiedBy,
+        isClassifying: isClassifying ?? this.isClassifying,
+        isSubmitting: isSubmitting ?? this.isSubmitting,
+        formNotice: clearFormNotice ? null : (formNotice ?? this.formNotice),
+        submitError:
+            clearSubmitError ? null : (submitError ?? this.submitError),
+        submitted: clearSubmitted ? null : (submitted ?? this.submitted),
+      );
 
   @override
   String toString() =>
@@ -251,8 +256,8 @@ final class WildlifeReportState {
 
 final wildlifeReportControllerProvider =
     NotifierProvider<WildlifeReportController, WildlifeReportState>(
-      WildlifeReportController.new,
-    );
+  WildlifeReportController.new,
+);
 
 /// 上报表单的编排（application 层：**不含 IO**，只调用端口）。
 ///
@@ -291,7 +296,9 @@ final class WildlifeReportController extends Notifier<WildlifeReportState> {
       );
       return;
     }
-    final List<WildlifeDraftPhoto> photos = <WildlifeDraftPhoto>[...state.photos];
+    final List<WildlifeDraftPhoto> photos = <WildlifeDraftPhoto>[
+      ...state.photos
+    ];
     for (final PickedPhoto photo in picked) {
       if (photos.length >= maxMediaPerSighting) break;
       photos.add(
@@ -333,7 +340,9 @@ final class WildlifeReportController extends Notifier<WildlifeReportState> {
 
   Future<void> _uploadPendingPhotos() async {
     final WildlifePort port = ref.read(wildlifeRepositoryProvider);
-    for (final WildlifeDraftPhoto photo in <WildlifeDraftPhoto>[...state.photos]) {
+    for (final WildlifeDraftPhoto photo in <WildlifeDraftPhoto>[
+      ...state.photos
+    ]) {
       if (photo.isUploaded) continue;
       final Result<WildlifeMedia> result = await port.uploadMedia(
         UploadWildlifeMediaCommand(
@@ -376,13 +385,13 @@ final class WildlifeReportController extends Notifier<WildlifeReportState> {
   void setSpecies(String? speciesId) {
     // 用户"接受"自动建议时保留 `vision_api`；自己改选则记为 `manual`
     // （服务端据此记录 correctedFromSpeciesId，形成标注样本，规格 §5.5）。
-    final bool acceptedSuggestion =
-        speciesId != null &&
+    final bool acceptedSuggestion = speciesId != null &&
         speciesId == state.autoSpeciesId &&
         (state.classify?.available ?? false);
     state = state.copyWith(
       speciesId: speciesId,
-      classifiedBy: acceptedSuggestion ? ClassifiedBy.visionApi : ClassifiedBy.manual,
+      classifiedBy:
+          acceptedSuggestion ? ClassifiedBy.visionApi : ClassifiedBy.manual,
       clearSubmitError: true,
     );
   }
@@ -392,27 +401,28 @@ final class WildlifeReportController extends Notifier<WildlifeReportState> {
 
   void setNote(String note) => state = state.copyWith(note: note);
 
-  void toggleAnonymous() => state = state.copyWith(isAnonymous: !state.isAnonymous);
+  void toggleAnonymous() =>
+      state = state.copyWith(isAnonymous: !state.isAnonymous);
 
-  void setEthicsAcknowledged(bool acknowledged) =>
-      state = state.copyWith(ethicsAcknowledged: acknowledged, clearSubmitError: true);
+  void setEthicsAcknowledged(bool acknowledged) => state =
+      state.copyWith(ethicsAcknowledged: acknowledged, clearSubmitError: true);
 
   void toggleHealthConcern() =>
       state = state.copyWith(healthConcern: !state.healthConcern);
 
-  void setIndividualName(String name) =>
-      state = state.copyWith(individualName: name, clearSelectedIndividualId: true);
+  void setIndividualName(String name) => state =
+      state.copyWith(individualName: name, clearSelectedIndividualId: true);
 
   /// 选择一只**已存在的**命名个体（R6 的"这是某只熟悉的动物吗"）。
   void selectIndividual(String? individualId) => state = state.copyWith(
-    selectedIndividualId: individualId,
-    clearSelectedIndividualId: individualId == null,
-  );
+        selectedIndividualId: individualId,
+        clearSelectedIndividualId: individualId == null,
+      );
 
   void setZone(String? zoneId) => state = state.copyWith(
-    zoneId: zoneId,
-    clearZoneId: zoneId == null,
-  );
+        zoneId: zoneId,
+        clearZoneId: zoneId == null,
+      );
 
   // ------------------------------------------------------------- 位置
 
@@ -460,7 +470,8 @@ final class WildlifeReportController extends Notifier<WildlifeReportState> {
   Future<void> _autoSelectZone(Wgs84Point point) async {
     final WildlifePort port = ref.read(wildlifeRepositoryProvider);
     final Result<List<WildlifeZone>> result = await port.listZones();
-    final List<WildlifeZone> zones = result.valueOrNull ?? const <WildlifeZone>[];
+    final List<WildlifeZone> zones =
+        result.valueOrNull ?? const <WildlifeZone>[];
     if (zones.isEmpty) return;
     final WildlifeZone? zone = zoneContaining(point, zones);
     state = state.copyWith(
@@ -499,7 +510,8 @@ final class WildlifeReportController extends Notifier<WildlifeReportState> {
       classify: classify,
       autoSpeciesId: classify.top?.speciesId,
       autoConfidence: classify.top?.confidence,
-      classifiedBy: classify.available ? ClassifiedBy.visionApi : ClassifiedBy.fallback,
+      classifiedBy:
+          classify.available ? ClassifiedBy.visionApi : ClassifiedBy.fallback,
       // 低置信度**不预选**（规格 §5.5 / T44）：用户必须自己选。
       speciesId: preselection?.speciesId,
       formNotice: classify.available ? null : classify.fallbackNotice,
@@ -544,9 +556,7 @@ final class WildlifeReportController extends Notifier<WildlifeReportState> {
     );
     final WildlifeValidationResult validation = draft.validate(
       now: DateTime.now(),
-      knownSpeciesIds: species
-          .map((WildlifeSpecies item) => item.id)
-          .toSet(),
+      knownSpeciesIds: species.map((WildlifeSpecies item) => item.id).toSet(),
     );
     if (validation.isInvalid) {
       state = state.copyWith(
@@ -567,7 +577,8 @@ final class WildlifeReportController extends Notifier<WildlifeReportState> {
       if (individual != null) {
         individualId = individual.id;
       } else if (created.errorOrNull?.code == ApiErrorCode.conflict) {
-        final List<WildlifeIndividual> existing = _require<List<WildlifeIndividual>>(
+        final List<WildlifeIndividual> existing =
+            _require<List<WildlifeIndividual>>(
           await port.listIndividuals(speciesId: speciesId),
         );
         for (final WildlifeIndividual item in existing) {
@@ -615,10 +626,11 @@ final class WildlifeReportController extends Notifier<WildlifeReportState> {
   List<WildlifeDraftPhoto> _mapPhoto(
     String clientPhotoId,
     WildlifeDraftPhoto Function(WildlifeDraftPhoto photo) update,
-  ) => <WildlifeDraftPhoto>[
-    for (final WildlifeDraftPhoto photo in state.photos)
-      if (photo.clientPhotoId == clientPhotoId) update(photo) else photo,
-  ];
+  ) =>
+      <WildlifeDraftPhoto>[
+        for (final WildlifeDraftPhoto photo in state.photos)
+          if (photo.clientPhotoId == clientPhotoId) update(photo) else photo,
+      ];
 
   /// 客户端幂等键。
   ///

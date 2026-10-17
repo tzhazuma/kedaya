@@ -24,9 +24,11 @@ class ForumBoardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<ForumListState> value = ref.watch(forumListControllerProvider);
+    final AsyncValue<ForumListState> value =
+        ref.watch(forumListControllerProvider);
     final MockControls? mockControls = ref.watch(mockControlsProvider);
-    final ForumListController controller = ref.read(forumListControllerProvider.notifier);
+    final ForumListController controller =
+        ref.read(forumListControllerProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -65,30 +67,31 @@ class ForumBoardPage extends ConsumerWidget {
                 onRetry: controller.refresh,
                 builder: (BuildContext context, ForumListState state) =>
                     NotificationListener<ScrollNotification>(
-                      // 触底加载：剩余不足 240px 时预取下一页。
-                      onNotification: (ScrollNotification notification) {
-                        if (notification.metrics.extentAfter < 240) {
-                          unawaited(controller.loadMore());
-                        }
-                        return false;
-                      },
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(KedaYaTokens.space4),
-                        itemCount: state.posts.length + 1,
-                        separatorBuilder: (BuildContext context, int index) =>
-                            const SizedBox(height: KedaYaTokens.space3),
-                        itemBuilder: (BuildContext context, int index) {
-                          if (index == state.posts.length) {
-                            return _ListFooter(state: state, controller: controller);
-                          }
-                          final ForumPost post = state.posts[index];
-                          return ForumPostCard(
-                            post: post,
-                            onTap: () => context.push('/forum/${post.id}'),
-                          );
-                        },
-                      ),
-                    ),
+                  // 触底加载：剩余不足 240px 时预取下一页。
+                  onNotification: (ScrollNotification notification) {
+                    if (notification.metrics.extentAfter < 240) {
+                      unawaited(controller.loadMore());
+                    }
+                    return false;
+                  },
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(KedaYaTokens.space4),
+                    itemCount: state.posts.length + 1,
+                    separatorBuilder: (BuildContext context, int index) =>
+                        const SizedBox(height: KedaYaTokens.space3),
+                    itemBuilder: (BuildContext context, int index) {
+                      if (index == state.posts.length) {
+                        return _ListFooter(
+                            state: state, controller: controller);
+                      }
+                      final ForumPost post = state.posts[index];
+                      return ForumPostCard(
+                        post: post,
+                        onTap: () => context.push('/forum/${post.id}'),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           ),
@@ -119,7 +122,8 @@ class _BoardFilterBar extends ConsumerWidget {
             const SizedBox(width: KedaYaTokens.space4),
             Text(
               '版块列表加载失败',
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.danger),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs, color: colors.danger),
             ),
             TextButton(
               onPressed: () => ref.invalidate(forumBoardsProvider),
@@ -182,7 +186,9 @@ class _BoardChip extends StatelessWidget {
       side: BorderSide(color: colors.border),
       labelStyle: TextStyle(
         fontSize: KedaYaTokens.fontSizeSm,
-        fontWeight: selected ? KedaYaTokens.fontWeightSemibold : KedaYaTokens.fontWeightRegular,
+        fontWeight: selected
+            ? KedaYaTokens.fontWeightSemibold
+            : KedaYaTokens.fontWeightRegular,
         color: selected ? colors.brandStrong : colors.textMuted,
       ),
     );
@@ -207,7 +213,8 @@ class _ListFooter extends StatelessWidget {
             Text(
               '加载更多失败：${state.loadMoreError}',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
             ),
             const SizedBox(height: KedaYaTokens.space2),
             OutlinedButton(
@@ -240,7 +247,8 @@ class _ListFooter extends StatelessWidget {
       child: Center(
         child: Text(
           state.total == null ? '没有更多了' : '共 ${state.total} 条 · 没有更多了',
-          style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+          style: TextStyle(
+              fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
         ),
       ),
     );

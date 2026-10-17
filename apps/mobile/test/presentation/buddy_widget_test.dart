@@ -22,11 +22,12 @@ import 'package:kedaya/presentation/theme/kedaya_theme.dart';
 ///   - 暗色主题下不能抛异常（颜色全部来自设计令牌）。
 void main() {
   Widget wrap(Widget child, {ThemeData? theme}) => MaterialApp(
-    theme: theme ?? KedaYaTheme.light(),
-    home: Scaffold(body: SingleChildScrollView(child: child)),
-  );
+        theme: theme ?? KedaYaTheme.light(),
+        home: Scaffold(body: SingleChildScrollView(child: child)),
+      );
 
-  Future<void> pumpPage(WidgetTester tester, Widget page, ThemeData theme) async {
+  Future<void> pumpPage(
+      WidgetTester tester, Widget page, ThemeData theme) async {
     final AppRuntime runtime = AppRuntime.mock(latency: Duration.zero);
     addTearDown(runtime.dispose);
     await tester.pumpWidget(
@@ -39,20 +40,20 @@ void main() {
   }
 
   BuddyPost samplePost() => BuddyPost(
-    id: 'bp-widget',
-    activity: BuddyActivity.sport,
-    title: '周六下午羽毛球，缺 2 人',
-    description: '体育馆 3 号场，打两小时，新手也行。',
-    location: '体育馆 3 号场',
-    // 上海 2026-10-19（周一）14:00
-    startsAt: DateTime.utc(2026, 10, 19, 6),
-    durationMin: 120,
-    capacity: 4,
-    joinedCount: 2,
-    tags: const <String>['badminton', 'indoor'],
-    minSkillLevel: BuddySkillLevel.beginner,
-    creator: const BuddyCreator(id: 'u-2001', nickname: '鸭鸭一号'),
-  );
+        id: 'bp-widget',
+        activity: BuddyActivity.sport,
+        title: '周六下午羽毛球，缺 2 人',
+        description: '体育馆 3 号场，打两小时，新手也行。',
+        location: '体育馆',
+        // 上海 2026-10-19（周一）14:00
+        startsAt: DateTime.utc(2026, 10, 19, 6),
+        durationMin: 120,
+        capacity: 4,
+        joinedCount: 2,
+        tags: const <String>['badminton', 'gym'],
+        minSkillLevel: BuddySkillLevel.beginner,
+        creator: const BuddyCreator(id: 'u-2001', nickname: '鸭鸭一号'),
+      );
 
   group('BuddyPostCard', () {
     testWidgets('展示标题 / 时间 / 地点 / 名额 / 标签 / 发起人', (WidgetTester tester) async {
@@ -60,10 +61,10 @@ void main() {
 
       expect(find.text('周六下午羽毛球，缺 2 人'), findsOneWidget);
       expect(find.text('10月19日 周一 14:00 · 120 分钟'), findsOneWidget);
-      expect(find.text('体育馆 3 号场'), findsOneWidget);
+      expect(find.text('体育馆'), findsOneWidget);
       expect(find.text('2/4 人 · 还缺 2 人'), findsOneWidget);
       expect(find.text('羽毛球'), findsOneWidget);
-      expect(find.text('室内'), findsOneWidget);
+      expect(find.text('健身'), findsOneWidget);
       expect(find.text('要求至少「入门」水平'), findsOneWidget);
       expect(find.text('发起人：鸭鸭一号'), findsOneWidget);
       expect(find.textContaining('体育馆 3 号场，打两小时'), findsNothing,
@@ -79,7 +80,8 @@ void main() {
 
     testWidgets('满员帖显示「已满员」徽标', (WidgetTester tester) async {
       await tester.pumpWidget(
-        wrap(BuddyPostCard(post: samplePost().copyWith(status: BuddyPostStatus.full))),
+        wrap(BuddyPostCard(
+            post: samplePost().copyWith(status: BuddyPostStatus.full))),
       );
       expect(find.text('已满员'), findsWidgets);
     });
@@ -115,7 +117,9 @@ void main() {
   });
 
   group('BuddyRecommendationCard（§1.1 G3：展示理由）', () {
-    Widget card({BuddyMatchMode mode = BuddyMatchMode.rule, bool withFeedback = true}) =>
+    Widget card(
+            {BuddyMatchMode mode = BuddyMatchMode.rule,
+            bool withFeedback = true}) =>
         BuddyRecommendationCard(
           recommendation: BuddyRecommendation(
             post: samplePost(),
@@ -123,7 +127,8 @@ void main() {
             reason: '运动水平相同、共同活动：羽毛球',
           ),
           matchMode: mode,
-          onFeedback: withFeedback ? (BuddyMatchFeedbackAction action) {} : null,
+          onFeedback:
+              withFeedback ? (BuddyMatchFeedbackAction action) {} : null,
         );
 
     testWidgets('理由区块必须出现，且不是只给分数', (WidgetTester tester) async {
@@ -217,8 +222,11 @@ void main() {
 
   group('BuddyPrivacyPage：承诺逐条可读', () {
     testWidgets('九个承诺标题都在，且明确写了不做 dating', (WidgetTester tester) async {
+      // 9 条承诺超过默认 600px 视口；给足高度，否则 ListView 不会构建底部条目。
+      await tester.binding.setSurfaceSize(const Size(900, 2400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
-        const MaterialApp(home: BuddyPrivacyPage()),
+        MaterialApp(theme: KedaYaTheme.light(), home: const BuddyPrivacyPage()),
       );
       await tester.pumpAndSettle();
 

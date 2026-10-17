@@ -116,9 +116,8 @@ class _TechpieWebViewPageState extends ConsumerState<TechpieWebViewPage> {
       _lastOutcome = null;
     });
     try {
-      final WebViewLaunchOutcome outcome = await ref
-          .read(techpieWebViewLauncherProvider)
-          .open(entry);
+      final WebViewLaunchOutcome outcome =
+          await ref.read(techpieWebViewLauncherProvider).open(entry);
       if (!mounted) return;
       setState(() => _lastOutcome = outcome);
     } on Object {
@@ -251,9 +250,9 @@ class _OutcomeNotice extends StatelessWidget {
             child: Text(
               outcome.isOpened
                   ? '已交给系统 WebView 打开「${outcome.entry.title}」。'
-                        '票据已用掉，不会再次使用。'
+                      '票据已用掉，不会再次使用。'
                   : '「${outcome.entry.title}」未能打开：'
-                        '${outcome.problem ?? outcome.status.wire}',
+                      '${outcome.problem ?? outcome.status.wire}',
               style: TextStyle(
                 fontSize: KedaYaTokens.fontSizeXs,
                 height: KedaYaTokens.lineHeightNormal,
@@ -319,9 +318,7 @@ class _EntryTile extends StatelessWidget {
                     ? (platformUsable ? colors.success : colors.warning)
                     : colors.info,
                 icon: entry.requiresBinding
-                    ? (platformUsable
-                          ? Icons.check_circle_outline
-                          : Icons.link)
+                    ? (platformUsable ? Icons.check_circle_outline : Icons.link)
                     : Icons.public,
               ),
             ],
@@ -383,7 +380,8 @@ class _EntryTile extends StatelessWidget {
           Row(
             children: <Widget>[
               FilledButton(
-                onPressed: busy || problem != null || _needsBinding ? null : onOpen,
+                onPressed:
+                    busy || problem != null || _needsBinding ? null : onOpen,
                 child: const Text('打开'),
               ),
               if (_needsBinding) ...<Widget>[

@@ -123,13 +123,13 @@ final class CampusWebEntry {
   bool get isTargetUrlAllowed => targetUrlProblem == null;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'title': title,
-    'description': description,
-    'platform': platform.wire,
-    'targetUrl': targetUrl,
-    'requiresBinding': requiresBinding,
-  };
+        'id': id,
+        'title': title,
+        'description': description,
+        'platform': platform.wire,
+        'targetUrl': targetUrl,
+        'requiresBinding': requiresBinding,
+      };
 
   @override
   bool operator ==(Object other) =>
@@ -210,11 +210,11 @@ final class WebViewTicket {
       !now.toUtc().isBefore(expiresAtFrom(issuedAt));
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'ticket': ticket,
-    'expiresInSec': expiresInSec,
-    'targetUrl': targetUrl,
-    'platform': platform?.wire,
-  };
+        'ticket': ticket,
+        'expiresInSec': expiresInSec,
+        'targetUrl': targetUrl,
+        'platform': platform?.wire,
+      };
 
   @override
   bool operator ==(Object other) =>
@@ -256,13 +256,14 @@ final class WebViewHandoff {
     Map<String, Object?> json, {
     required DateTime fallbackExpiresAt,
     String? targetUrl,
-  }) => WebViewHandoff(
-    url: readString(json, 'url'),
-    targetUrl: readStringOr(json, 'targetUrl', targetUrl ?? ''),
-    // ⚠️ Phase 0（W4 直连）下服务端返回 `expiresAt: null` —— 此时用**票据自身的时效**
-    // 兜底，绝不放宽成"永不过期"（宁可让用户重试一次）。
-    expiresAt: readDateTimeOrNull(json, 'expiresAt') ?? fallbackExpiresAt,
-  );
+  }) =>
+      WebViewHandoff(
+        url: readString(json, 'url'),
+        targetUrl: readStringOr(json, 'targetUrl', targetUrl ?? ''),
+        // ⚠️ Phase 0（W4 直连）下服务端返回 `expiresAt: null` —— 此时用**票据自身的时效**
+        // 兜底，绝不放宽成"永不过期"（宁可让用户重试一次）。
+        expiresAt: readDateTimeOrNull(json, 'expiresAt') ?? fallbackExpiresAt,
+      );
 
   final String url;
   final String targetUrl;
@@ -271,10 +272,10 @@ final class WebViewHandoff {
   bool isExpiredAt(DateTime now) => !now.toUtc().isBefore(expiresAt.toUtc());
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'url': url,
-    'targetUrl': targetUrl,
-    'expiresAt': isoUtc(expiresAt),
-  };
+        'url': url,
+        'targetUrl': targetUrl,
+        'expiresAt': isoUtc(expiresAt),
+      };
 
   @override
   String toString() =>
@@ -316,8 +317,7 @@ final class WebViewLaunchOutcome {
   bool get isOpened => status.isOpened;
 
   @override
-  String toString() =>
-      'WebViewLaunchOutcome(${status.wire}, entry=${entry.id}'
+  String toString() => 'WebViewLaunchOutcome(${status.wire}, entry=${entry.id}'
       '${problem == null ? '' : ', problem=$problem'})';
 }
 

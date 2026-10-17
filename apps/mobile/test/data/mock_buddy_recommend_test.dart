@@ -14,18 +14,20 @@ void main() {
   final DateTime fixedNow = DateTime.utc(2026, 10, 17, 4);
 
   /// 与 fixtures 一致、但**打开了匹配开关**的资料。
-  BuddyProfile matchingProfile() => mockBuddyProfile().copyWith(matchEnabled: true);
+  BuddyProfile matchingProfile() =>
+      mockBuddyProfile().copyWith(matchEnabled: true);
 
   MockBuddyRepository repo({
     BuddyProfile? profile,
     List<BuddyPost>? posts,
     MockControls? controls,
-  }) => MockBuddyRepository(
-    controls: controls ?? MockControls(latency: Duration.zero),
-    clock: () => fixedNow,
-    profile: profile ?? matchingProfile(),
-    posts: posts,
-  );
+  }) =>
+      MockBuddyRepository(
+        controls: controls ?? MockControls(latency: Duration.zero),
+        clock: () => fixedNow,
+        profile: profile ?? matchingProfile(),
+        posts: posts,
+      );
 
   BuddyPost customPost({
     required String id,
@@ -36,20 +38,22 @@ void main() {
     List<String> tags = const <String>[],
     BuddyActivity activity = BuddyActivity.sport,
     String creatorId = 'u-9999',
-  }) => BuddyPost(
-    id: id,
-    activity: activity,
-    title: '自定义活动 $id',
-    location: '体育馆',
-    startsAt: buddyShanghaiInstant(fixedNow, dayOffset: dayOffset, hour: hour),
-    durationMin: durationMin,
-    capacity: 4,
-    joinedCount: 1,
-    minSkillLevel: minSkillLevel,
-    tags: tags,
-    creator: BuddyCreator(id: creatorId, nickname: creatorId),
-    createdAt: fixedNow,
-  );
+  }) =>
+      BuddyPost(
+        id: id,
+        activity: activity,
+        title: '自定义活动 $id',
+        location: '体育馆',
+        startsAt:
+            buddyShanghaiInstant(fixedNow, dayOffset: dayOffset, hour: hour),
+        durationMin: durationMin,
+        capacity: 4,
+        joinedCount: 1,
+        minSkillLevel: minSkillLevel,
+        tags: tags,
+        creator: BuddyCreator(id: creatorId, nickname: creatorId),
+        createdAt: fixedNow,
+      );
 
   List<String> idsOf(BuddyRecommendationPage page) => page.items
       .map((BuddyRecommendation item) => item.post.id)
@@ -59,7 +63,8 @@ void main() {
     test('matchMode = rule、score = 0、reason = 按时间排序', () async {
       final BuddyRecommendationPage page = (await repo(
         profile: mockBuddyProfile(),
-      ).recommend(const BuddyRecommendQuery(section: BuddySection.sport))).unwrap;
+      ).recommend(const BuddyRecommendQuery(section: BuddySection.sport)))
+          .unwrap;
 
       expect(page.matchMode, BuddyMatchMode.rule);
       expect(idsOf(page), <String>['bp-1001', 'bp-1006', 'bp-1010']);
@@ -77,7 +82,8 @@ void main() {
       await repository.deleteMyProfile();
       final BuddyRecommendationPage page = (await repository.recommend(
         const BuddyRecommendQuery(section: BuddySection.academic),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(page.matchMode, BuddyMatchMode.rule);
       expect(page.items, isNotEmpty);
       expect(page.items.first.reason, buddyTimeSortedReason);
@@ -88,7 +94,8 @@ void main() {
     test('sport：只留下最匹配的那条，分数与理由都可解释', () async {
       final BuddyRecommendationPage page = (await repo().recommend(
         const BuddyRecommendQuery(section: BuddySection.sport),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(page.matchMode, BuddyMatchMode.rule, reason: 'mock 无向量能力 → 规则降级档');
       expect(page.matchMode.notice, isNot(contains('为你智能推荐')));
@@ -104,7 +111,8 @@ void main() {
     test('academic：同院系 + 共同兴趣 + 共同活动', () async {
       final BuddyRecommendationPage page = (await repo().recommend(
         const BuddyRecommendQuery(section: BuddySection.academic),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(idsOf(page), <String>['bp-1002']);
       final BuddyRecommendation top = page.items.first;
@@ -115,7 +123,8 @@ void main() {
     test('daily：共同兴趣 + 时间合适', () async {
       final BuddyRecommendationPage page = (await repo().recommend(
         const BuddyRecommendQuery(section: BuddySection.daily),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(idsOf(page), <String>['bp-1003']);
       final BuddyRecommendation top = page.items.first;
@@ -126,14 +135,16 @@ void main() {
     test('F3：不推荐自己发的活动（bp-1005 是我发的）', () async {
       final BuddyRecommendationPage page = (await repo().recommend(
         const BuddyRecommendQuery(section: BuddySection.daily),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(idsOf(page), isNot(contains('bp-1005')));
     });
 
     test('F4：已申请（PENDING / ACCEPTED）的不再推荐', () async {
       final BuddyRecommendationPage page = (await repo().recommend(
         const BuddyRecommendQuery(section: BuddySection.sport),
-      )).unwrap;
+      ))
+          .unwrap;
       // bp-1001 上我有一条 ACCEPTED；bp-1006 上我有一条 PENDING。
       expect(idsOf(page), isNot(contains('bp-1001')));
       expect(idsOf(page), isNot(contains('bp-1006')));
@@ -143,7 +154,8 @@ void main() {
       for (final BuddySection section in buddyMatchableSections) {
         final BuddyRecommendationPage page = (await repo().recommend(
           BuddyRecommendQuery(section: section),
-        )).unwrap;
+        ))
+            .unwrap;
         expect(idsOf(page), isNot(contains('bp-1004')), reason: 'FULL');
         expect(idsOf(page), isNot(contains('bp-1007')), reason: 'EXPIRED');
         expect(idsOf(page), isNot(contains('bp-1008')), reason: 'CLOSED');
@@ -155,9 +167,11 @@ void main() {
       final BuddyRecommendationPage page = (await repo(
         posts: <BuddyPost>[
           customPost(id: 'bp-hard', minSkillLevel: BuddySkillLevel.competitive),
-          customPost(id: 'bp-ok', minSkillLevel: BuddySkillLevel.beginner, hour: 19),
+          customPost(
+              id: 'bp-ok', minSkillLevel: BuddySkillLevel.beginner, hour: 19),
         ],
-      ).recommend(const BuddyRecommendQuery(section: BuddySection.sport))).unwrap;
+      ).recommend(const BuddyRecommendQuery(section: BuddySection.sport)))
+          .unwrap;
 
       expect(idsOf(page), <String>['bp-ok']);
     });
@@ -170,16 +184,19 @@ void main() {
           // 周一 03:00 → 不在任何时段里 → 排除
           customPost(id: 'bp-out', dayOffset: 2, hour: 3),
         ],
-      ).recommend(const BuddyRecommendQuery(section: BuddySection.sport))).unwrap;
+      ).recommend(const BuddyRecommendQuery(section: BuddySection.sport)))
+          .unwrap;
 
       expect(idsOf(page), <String>['bp-in']);
     });
 
     test('F7 的宽松：我没填任何时段时不做时段约束（否则推荐恒空）', () async {
       final BuddyRecommendationPage page = (await repo(
-        profile: matchingProfile().copyWith(availability: const <AvailabilitySlot>[]),
+        profile: matchingProfile()
+            .copyWith(availability: const <AvailabilitySlot>[]),
         posts: <BuddyPost>[customPost(id: 'bp-anytime', dayOffset: 2, hour: 3)],
-      ).recommend(const BuddyRecommendQuery(section: BuddySection.sport))).unwrap;
+      ).recommend(const BuddyRecommendQuery(section: BuddySection.sport)))
+          .unwrap;
 
       expect(idsOf(page), <String>['bp-anytime']);
     });
@@ -190,7 +207,8 @@ void main() {
           customPost(id: 'bp-late', dayOffset: 3, hour: 20),
           customPost(id: 'bp-early', dayOffset: 2, hour: 20),
         ],
-      ).recommend(const BuddyRecommendQuery(section: BuddySection.sport))).unwrap;
+      ).recommend(const BuddyRecommendQuery(section: BuddySection.sport)))
+          .unwrap;
 
       expect(idsOf(page), <String>['bp-early', 'bp-late']);
       expect(page.items[0].score, page.items[1].score);
@@ -202,7 +220,11 @@ void main() {
       final MockBuddyRepository repository = repo();
       final double before = (await repository.recommend(
         const BuddyRecommendQuery(section: BuddySection.sport),
-      )).unwrap.items.first.score;
+      ))
+          .unwrap
+          .items
+          .first
+          .score;
 
       await repository.submitFeedback(
         BuddyMatchFeedback(
@@ -216,7 +238,11 @@ void main() {
 
       final double after = (await repository.recommend(
         const BuddyRecommendQuery(section: BuddySection.sport),
-      )).unwrap.items.first.score;
+      ))
+          .unwrap
+          .items
+          .first
+          .score;
 
       expect(before, closeTo(0.75, 1e-9));
       expect(after, closeTo(0.45, 1e-9));
@@ -236,7 +262,11 @@ void main() {
       );
       final double score = (await repository.recommend(
         const BuddyRecommendQuery(section: BuddySection.sport),
-      )).unwrap.items.first.score;
+      ))
+          .unwrap
+          .items
+          .first
+          .score;
       expect(score, closeTo(0.95, 1e-9));
     });
 
@@ -256,14 +286,22 @@ void main() {
       expect(
         (await repository.recommend(
           const BuddyRecommendQuery(section: BuddySection.sport),
-        )).unwrap.items.first.score,
+        ))
+            .unwrap
+            .items
+            .first
+            .score,
         closeTo(0.75, 1e-9),
       );
       // daily 生效
       expect(
         (await repository.recommend(
           const BuddyRecommendQuery(section: BuddySection.daily),
-        )).unwrap.items.first.score,
+        ))
+            .unwrap
+            .items
+            .first
+            .score,
         closeTo(0.05, 1e-9),
       );
     });
@@ -280,12 +318,14 @@ void main() {
     test('limit 收敛到 1–50', () async {
       final BuddyRecommendationPage page = (await repo().recommend(
         const BuddyRecommendQuery(section: BuddySection.sport, limit: 500),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(page.items, hasLength(1));
 
       final BuddyRecommendationPage one = (await repo().recommend(
         const BuddyRecommendQuery(section: BuddySection.sport, limit: 0),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(one.items, hasLength(1));
     });
 
@@ -294,7 +334,8 @@ void main() {
         ..emptyResults = true;
       final BuddyRecommendationPage page = (await repo(
         controls: controls,
-      ).recommend(const BuddyRecommendQuery(section: BuddySection.sport))).unwrap;
+      ).recommend(const BuddyRecommendQuery(section: BuddySection.sport)))
+          .unwrap;
       expect(page.items, isEmpty);
       expect(page.matchMode, BuddyMatchMode.rule);
     });

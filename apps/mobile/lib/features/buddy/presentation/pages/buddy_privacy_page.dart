@@ -97,7 +97,7 @@ class BuddyPrivacyPage extends StatelessWidget {
           ],
           const SizedBox(height: KedaYaTokens.space3),
           Text(
-            '本平台由学生社区维护，与上海科技大学官方系统无关。',
+            '可达鸭是第三方非官方校园服务平台，与上海科技大学官方无关。',
             style: TextStyle(
               fontSize: KedaYaTokens.fontSizeXs,
               color: colors.textMuted,

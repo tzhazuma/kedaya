@@ -32,6 +32,12 @@ const loginSchema = z.object({
   password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
 });
 
+// 验证码免密登录：只收邮箱，不收密码
+const loginCodeSchema = z.object({
+  email: emailSchema,
+  code: codeSchema,
+});
+
 const resetSchema = z.object({
   email: emailSchema,
   code: codeSchema,
@@ -113,6 +119,44 @@ export class LocalAuthController {
     @Headers() headers: Record<string, string | string[] | undefined>,
   ) {
     return this.localAuth.login(body, readContext(headers));
+  }
+
+  /**
+   * 发送**登录用**验证码（免密码登录）。
+   *
+   * ⚠️ 与注册/找回同一取舍：**不区分邮箱是否已注册** ——
+   * 已注册与未注册都返回同样的 `sent: true`。否则这个接口就成了
+   * 「查询某邮箱是否是上科大师生」的枚举器。
+   */
+  @Post('login/code')
+  @ApiOperation({
+    summary: '发送登录验证码（免密码登录）',
+    description:
+      '10 分钟有效，60 秒冷却，每小时最多 5 条。不区分邮箱是否已注册（防枚举）。'
+      + '首次用验证码登录会自动建号（免密账号）。',
+  })
+  sendLoginCode(
+    @ZodBody(emailOnlySchema) body: { email: string },
+    @Headers() headers: Record<string, string | string[] | undefined>,
+  ) {
+    return this.localAuth.sendLoginCode(body.email, readContext(headers));
+  }
+
+  /**
+   * 用验证码登录（免密码）。首次登录自动建号。
+   */
+  @Post('login/code/verify')
+  @ApiOperation({
+    summary: '验证码登录（首次登录自动建号）',
+    description:
+      '验证码一次性：用后即焚；最多尝试 5 次。首次登录创建的账号是**免密账号**，'
+      + '之后仍可用验证码登录，也可在设置里补一个密码。',
+  })
+  loginWithCode(
+    @ZodBody(loginCodeSchema) body: { email: string; code: string },
+    @Headers() headers: Record<string, string | string[] | undefined>,
+  ) {
+    return this.localAuth.loginWithCode(body, readContext(headers));
   }
 
   @Post('password/forgot')

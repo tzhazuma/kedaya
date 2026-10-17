@@ -25,8 +25,12 @@
  *   **techpie**（TechPie 整合 Phase 0：校园平台绑定 + 一次性 WebView 票据 +
  *     cookie 唯一出口 + 白名单 fail-closed —— 见 docs/features/techpie-integration.md §8.1）、
  *   **campus-card**（校园卡：第二级绑定门 + 流水汇总，规格 §2.5 的 OPENID 通道）、
- *   **schedule**（课表：校园能力，必须挂 CampusBindingGuard —— 不变式 I4）。
+ *   **schedule**（课表：校园能力，必须挂 CampusBindingGuard —— 不变式 I4）、
+ *   **contact-exchange**（联系方式交换 U8：双方同意 + 条目级授权 + 密文落库 +
+ *     查看审计 + 24h 限流。交换的是**读取权限**不是副本，因此不能被"一套 CRUD"
+ *     形状表达。见 services/api/src/modules/contact-exchange/README.md）。
  *   判据：领域形状超出"一套 CRUD + 一个动作"能表达的范围。
+ *   ⚠️ contact-exchange 已确认**不在**下面的 SPEC 表里；新增模块时也不要把它加进去。
  *
  * 用法：node scripts/scaffold.mjs
  */

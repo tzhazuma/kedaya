@@ -23,22 +23,25 @@ void main() {
   UploadWildlifeMediaCommand command({
     required String clientPhotoId,
     List<int>? bytes,
-  }) => UploadWildlifeMediaCommand(
-    bytes: bytes ?? mockPngBytes,
-    clientPhotoId: clientPhotoId,
-    fileName: 'cat.png',
-    mimeType: 'image/png',
-  );
+  }) =>
+      UploadWildlifeMediaCommand(
+        bytes: bytes ?? mockPngBytes,
+        clientPhotoId: clientPhotoId,
+        fileName: 'cat.png',
+        mimeType: 'image/png',
+      );
 
   group('上传：幂等与校验（规格 §4.5 / §11.5 T35-T37）', () {
     test('同一 clientPhotoId 重试 → 相同 mediaId，且不重复存储', () async {
       final MockWildlifeRepository repository = buildRepository();
       final WildlifeMedia first = (await repository.uploadMedia(
         command(clientPhotoId: 'cp-1'),
-      )).unwrap;
+      ))
+          .unwrap;
       final WildlifeMedia retry = (await repository.uploadMedia(
         command(clientPhotoId: 'cp-1'),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(retry.mediaId, first.mediaId);
       expect(repository.mediaCount, 1);
     });
@@ -47,10 +50,12 @@ void main() {
       final MockWildlifeRepository repository = buildRepository();
       final WildlifeMedia first = (await repository.uploadMedia(
         command(clientPhotoId: 'cp-1'),
-      )).unwrap;
+      ))
+          .unwrap;
       final WildlifeMedia second = (await repository.uploadMedia(
         command(clientPhotoId: 'cp-2'),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(second.mediaId, isNot(first.mediaId));
       expect(repository.mediaCount, 2);
       expect(second.clientPhotoId, 'cp-2');
@@ -65,7 +70,8 @@ void main() {
           // 客户端撒谎：声明成 jpeg，实际是 png。
           mimeType: 'image/jpeg',
         ),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(media.mimeType, 'image/png');
       expect(media.sha256, startsWith('mock-fnv1a-'));
     });
@@ -129,7 +135,8 @@ void main() {
       final MockWildlifeRepository repository = buildRepository();
       final WildlifeMedia media = (await repository.uploadMedia(
         command(clientPhotoId: 'cp-10'),
-      )).unwrap;
+      ))
+          .unwrap;
 
       final WildlifeSighting created = (await repository.createSighting(
         WildlifeSightingDraft(
@@ -139,7 +146,8 @@ void main() {
           mediaIds: <String>[media.mediaId],
           ethicsAcknowledged: true,
         ),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(created.photoUrls, hasLength(1));
       expect(created.photoUrls.single, contains(media.mediaId));
 
@@ -167,7 +175,8 @@ void main() {
           geo: const Wgs84Point(lat: 31.17855, lng: 121.59010),
           ethicsAcknowledged: true,
         ),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(created.photoUrls, isEmpty);
     });
   });
@@ -177,17 +186,20 @@ void main() {
       final MockWildlifeRepository repository = buildRepository();
       final WildlifeClassifyResult result = (await repository.classify(
         const WildlifeClassifyRequest(mediaId: 'wm-1'),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(result.available, isFalse);
       expect(result.items, isEmpty);
       expect(result.preselection, isNull);
     });
 
     test('启用分类器后有建议，且 top-1 置信度 ≥ 0.55', () async {
-      final MockWildlifeRepository repository = buildRepository(classifierEnabled: true);
+      final MockWildlifeRepository repository =
+          buildRepository(classifierEnabled: true);
       final WildlifeClassifyResult result = (await repository.classify(
         const WildlifeClassifyRequest(mediaId: 'wm-1'),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(result.available, isTrue);
       expect(result.items, isNotEmpty);
       expect(result.top!.confidence, greaterThanOrEqualTo(0.55));
@@ -195,17 +207,20 @@ void main() {
       // 同一 mediaId 永远给同一结果（确定性，便于复现）。
       final WildlifeClassifyResult again = (await repository.classify(
         const WildlifeClassifyRequest(mediaId: 'wm-1'),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(again.top!.speciesId, result.top!.speciesId);
       expect(again.top!.confidence, result.top!.confidence);
     });
 
     test('置信度 < 0.60 时不预选（T44）', () async {
-      final MockWildlifeRepository repository = buildRepository(classifierEnabled: true)
-        ..classifierForcedConfidence = 0.42;
+      final MockWildlifeRepository repository =
+          buildRepository(classifierEnabled: true)
+            ..classifierForcedConfidence = 0.42;
       final WildlifeClassifyResult result = (await repository.classify(
         const WildlifeClassifyRequest(mediaId: 'wm-1'),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(result.top!.confidence, 0.42);
       expect(result.top!.confidenceLabel, '无法确定');
       expect(result.preselection, isNull);

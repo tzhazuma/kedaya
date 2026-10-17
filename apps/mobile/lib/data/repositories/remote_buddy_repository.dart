@@ -1,3 +1,4 @@
+import '../../domain/models/api_request.dart';
 import '../../domain/models/buddy.dart';
 import '../../domain/models/buddy_application.dart';
 import '../../domain/models/buddy_matching.dart';
@@ -26,9 +27,9 @@ final class RemoteBuddyRepository implements BuddyPort {
 
   @override
   Future<Result<BuddyProfile>> getMyProfile() => _api.send<BuddyProfile>(
-    const ApiRequest(path: _profile, method: ApiMethod.get),
-    _decodeProfile,
-  );
+        const ApiRequest(path: _profile, method: ApiMethod.get),
+        _decodeProfile,
+      );
 
   @override
   Future<Result<BuddyProfile>> saveMyProfile(BuddyProfile profile) =>
@@ -43,8 +44,8 @@ final class RemoteBuddyRepository implements BuddyPort {
 
   @override
   Future<Result<Unit>> deleteMyProfile() => _api.sendVoid(
-    const ApiRequest(path: _profile, method: ApiMethod.delete),
-  );
+        const ApiRequest(path: _profile, method: ApiMethod.delete),
+      );
 
   // ------------------------------------------------------------ 活动列表
 
@@ -60,9 +61,9 @@ final class RemoteBuddyRepository implements BuddyPort {
 
   @override
   Future<Result<BuddyPost>> getPost(String id) => _api.send<BuddyPost>(
-    ApiRequest(path: '$_items/$id', method: ApiMethod.get),
-    _decodePost,
-  );
+        ApiRequest(path: '$_items/$id', method: ApiMethod.get),
+        _decodePost,
+      );
 
   @override
   Future<Result<BuddyPost>> createPost(CreateBuddyPostCommand command) =>
@@ -78,13 +79,13 @@ final class RemoteBuddyRepository implements BuddyPort {
 
   @override
   Future<Result<BuddyPost>> closePost(String postId) => _api.send<BuddyPost>(
-    ApiRequest(
-      path: '$_items/$postId/close',
-      method: ApiMethod.post,
-      idempotencyKey: newIdempotencyKey(),
-    ),
-    _decodePost,
-  );
+        ApiRequest(
+          path: '$_items/$postId/close',
+          method: ApiMethod.post,
+          idempotencyKey: newIdempotencyKey(),
+        ),
+        _decodePost,
+      );
 
   // ------------------------------------------------------------ 申请与审批
 
@@ -139,7 +140,8 @@ final class RemoteBuddyRepository implements BuddyPort {
   // ------------------------------------------------------------ 推荐与反馈
 
   @override
-  Future<Result<BuddyRecommendationPage>> recommend(BuddyRecommendQuery query) =>
+  Future<Result<BuddyRecommendationPage>> recommend(
+          BuddyRecommendQuery query) =>
       _api.send<BuddyRecommendationPage>(
         ApiRequest(
           path: 'buddy/recommendations',
@@ -152,7 +154,8 @@ final class RemoteBuddyRepository implements BuddyPort {
       );
 
   @override
-  Future<Result<BuddyMatchFeedback>> submitFeedback(BuddyMatchFeedback feedback) =>
+  Future<Result<BuddyMatchFeedback>> submitFeedback(
+          BuddyMatchFeedback feedback) =>
       _api.send<BuddyMatchFeedback>(
         ApiRequest(
           path: '$_items/${feedback.targetPostId}/feedback',
@@ -166,7 +169,8 @@ final class RemoteBuddyRepository implements BuddyPort {
           idempotencyKey: newIdempotencyKey(),
         ),
         (Object? data) {
-          final Map<String, Object?> json = requireJsonMap(data, what: 'buddy feedback');
+          final Map<String, Object?> json =
+              requireJsonMap(data, what: 'buddy feedback');
           // 后端只回 `{ action }`（规格 §5.8）：缺 `targetPostId` / `createdAt` 时
           // 用请求里的值补齐，避免整条解析失败。
           return BuddyMatchFeedback(
@@ -179,7 +183,8 @@ final class RemoteBuddyRepository implements BuddyPort {
                   readStringOr(json, 'action', feedback.action.wire),
                 ) ??
                 feedback.action,
-            createdAt: readDateTimeOrNull(json, 'createdAt') ?? feedback.createdAt,
+            createdAt:
+                readDateTimeOrNull(json, 'createdAt') ?? feedback.createdAt,
           );
         },
       );
@@ -193,20 +198,22 @@ final class RemoteBuddyRepository implements BuddyPort {
       BuddyPost.fromJson(requireJsonMap(data, what: 'buddy post'));
 
   BuddyApplication _decodeApplication(Object? data) =>
-      BuddyApplication.fromJson(requireJsonMap(data, what: 'buddy application'));
+      BuddyApplication.fromJson(
+          requireJsonMap(data, what: 'buddy application'));
 
   List<BuddyApplication> _decodeApplications(Object? data) {
-    final Map<String, Object?> json = requireJsonMap(data, what: 'buddy applications');
+    final Map<String, Object?> json =
+        requireJsonMap(data, what: 'buddy applications');
     // 兼容裸数组与 `{ items: [...] }` 两种形状（`forum` 的经验：后端两种都用过）。
     final List<Object?> raw = json.containsKey('items')
         ? readListOrEmpty(json, 'items')
         : (json['applications'] is List<Object?>
-              ? readListOrEmpty(json, 'applications')
-              : <Object?>[json]);
+            ? readListOrEmpty(json, 'applications')
+            : <Object?>[json]);
     return raw
         .map(
-          (Object? item) =>
-              BuddyApplication.fromJson(requireJsonMap(item, what: 'buddy application')),
+          (Object? item) => BuddyApplication.fromJson(
+              requireJsonMap(item, what: 'buddy application')),
         )
         .toList(growable: false);
   }

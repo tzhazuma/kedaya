@@ -44,10 +44,10 @@ class ForumPostDetailPage extends ConsumerWidget {
             onPressed: post == null
                 ? null
                 : () => showForumReportSheet(
-                    context,
-                    targetType: ForumReportTargetType.post,
-                    targetId: post.id,
-                  ),
+                      context,
+                      targetType: ForumReportTargetType.post,
+                      targetId: post.id,
+                    ),
             icon: const Icon(Icons.flag_outlined),
           ),
         ],
@@ -55,7 +55,8 @@ class ForumPostDetailPage extends ConsumerWidget {
       body: value.when(
         data: (ForumPost data) => _DetailBody(post: data),
         loading: () => const KedaYaLoadingState(message: '正在加载主题…'),
-        error: (Object error, StackTrace stackTrace) => _buildError(context, ref, error),
+        error: (Object error, StackTrace stackTrace) =>
+            _buildError(context, ref, error),
       ),
     );
   }
@@ -64,7 +65,8 @@ class ForumPostDetailPage extends ConsumerWidget {
   ///
   /// 当前装配的是 `ClipboardSharePort` —— 链接会进系统剪贴板，**真实可用**；
   /// 换成 `share_plus` 只需替换 platform 层的实现，这里不用改。
-  Future<void> _share(BuildContext context, WidgetRef ref, ForumPost post) async {
+  Future<void> _share(
+      BuildContext context, WidgetRef ref, ForumPost post) async {
     final SharePort share = ref.read(shareProvider);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     await share.shareText(
@@ -98,7 +100,8 @@ class _DetailBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final KedaYaColors colors = context.kedayaColors;
-    final AsyncValue<ForumReplyListState> replies = ref.watch(forumRepliesProvider(post.id));
+    final AsyncValue<ForumReplyListState> replies =
+        ref.watch(forumRepliesProvider(post.id));
 
     return Column(
       children: <Widget>[
@@ -138,7 +141,8 @@ class _DetailBody extends ConsumerWidget {
                       )
                     : _ReplyList(state: state, postId: post.id),
                 loading: () => const KedaYaLoadingState(message: '正在加载回复…'),
-                error: (Object error, StackTrace stackTrace) => KedaYaErrorState(
+                error: (Object error, StackTrace stackTrace) =>
+                    KedaYaErrorState(
                   error: error,
                   onRetry: () => ref.invalidate(forumRepliesProvider(post.id)),
                 ),
@@ -174,7 +178,8 @@ class _PostHeader extends StatelessWidget {
                 tone: ForumPillTone.brand,
                 icon: Icons.push_pin_outlined,
               ),
-            if (post.anonymous) ForumAnonymousBadge(notice: anonymousPostNotice),
+            if (post.anonymous)
+              ForumAnonymousBadge(notice: anonymousPostNotice),
             if (post.isLocked)
               const ForumPill(
                 text: '已锁定',
@@ -258,7 +263,8 @@ class _ReplyList extends ConsumerWidget {
         if (state.loadMoreError != null) ...<Widget>[
           Text(
             '加载更多回复失败：${state.loadMoreError}',
-            style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
+            style: TextStyle(
+                fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
           ),
           const SizedBox(height: KedaYaTokens.space2),
         ],
@@ -300,7 +306,8 @@ class _ReplyTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: KedaYaTokens.space1),
-              if (reply.anonymous) ForumAnonymousBadge(notice: anonymousReplyNotice),
+              if (reply.anonymous)
+                ForumAnonymousBadge(notice: anonymousReplyNotice),
               if (reply.parentReplyId != null) ...<Widget>[
                 const SizedBox(width: KedaYaTokens.space1),
                 const ForumPill(text: '二级回复'),
@@ -364,7 +371,8 @@ class _ReplyComposerState extends ConsumerState<_ReplyComposer> {
         child: Text(
           '该主题当前状态为「${widget.post.status.label}」，暂不能回复。',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.textMuted),
+          style: TextStyle(
+              fontSize: KedaYaTokens.fontSizeSm, color: colors.textMuted),
         ),
       );
     }
@@ -401,11 +409,13 @@ class _ReplyComposerState extends ConsumerState<_ReplyComposer> {
                         isDense: true,
                         enabledBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: colors.border),
-                          borderRadius: BorderRadius.circular(KedaYaTokens.radiusMd),
+                          borderRadius:
+                              BorderRadius.circular(KedaYaTokens.radiusMd),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: colors.brandStrong),
-                          borderRadius: BorderRadius.circular(KedaYaTokens.radiusMd),
+                          borderRadius:
+                              BorderRadius.circular(KedaYaTokens.radiusMd),
                         ),
                       ),
                     ),
@@ -461,9 +471,7 @@ class _ReplyComposerState extends ConsumerState<_ReplyComposer> {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
     try {
-      await ref
-          .read(forumActionsProvider)
-          .reply(
+      await ref.read(forumActionsProvider).reply(
             CreateForumReplyCommand(
               postId: widget.post.id,
               body: body,

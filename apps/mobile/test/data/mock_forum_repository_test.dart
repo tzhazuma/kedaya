@@ -9,8 +9,8 @@ import 'package:kedaya/domain/models/result.dart';
 
 /// `MockForumRepository` 的行为测试：分页、筛选、可见性、匿名、举报治理。
 void main() {
-  MockForumRepository repo({MockControls? controls}) =>
-      MockForumRepository(controls: controls ?? MockControls(latency: Duration.zero));
+  MockForumRepository repo({MockControls? controls}) => MockForumRepository(
+      controls: controls ?? MockControls(latency: Duration.zero));
 
   group('listBoards', () {
     test('返回 4 个版块，按 id 稳定排序，含 campus_only 可见性', () async {
@@ -22,7 +22,8 @@ void main() {
         boards.map((ForumBoard board) => board.id),
         <String>['fb-campus', 'fb-club', 'fb-study', 'fb-voice'],
       );
-      expect(boards.last.requiresSignIn, isTrue, reason: 'fb-voice 是 campus_only');
+      expect(boards.last.requiresSignIn, isTrue,
+          reason: 'fb-voice 是 campus_only');
       expect(boards.first.requiresSignIn, isFalse);
     });
   });
@@ -48,7 +49,14 @@ void main() {
 
       expect(
         page.items.map((ForumPost post) => post.id),
-        <String>['fp-1001', 'fp-1004', 'fp-1003', 'fp-1002', 'fp-1005', 'fp-1006'],
+        <String>[
+          'fp-1001',
+          'fp-1004',
+          'fp-1003',
+          'fp-1002',
+          'fp-1005',
+          'fp-1006'
+        ],
       );
       expect(page.items.first.isPinned, isTrue);
     });
@@ -58,14 +66,16 @@ void main() {
 
       final Page<ForumPost> first = (await repository.listPosts(
         const ForumPostQuery(limit: 4),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(first.items, hasLength(4));
       expect(first.nextCursor, '4');
       expect(first.total, 6);
 
       final Page<ForumPost> second = (await repository.listPosts(
         ForumPostQuery(cursor: first.nextCursor, limit: 4),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(second.items, hasLength(2));
       expect(second.nextCursor, isNull);
     });
@@ -73,7 +83,8 @@ void main() {
     test('按版块筛选', () async {
       final Page<ForumPost> page = (await repo().listPosts(
         const ForumPostQuery(boardId: 'fb-study', limit: 50),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(
         page.items.map((ForumPost post) => post.id),
@@ -84,13 +95,17 @@ void main() {
     test('关键词同时匹配标题与正文', () async {
       final Page<ForumPost> byTitle = (await repo().listPosts(
         const ForumPostQuery(keyword: '空调', limit: 50),
-      )).unwrap;
-      expect(byTitle.items.map((ForumPost post) => post.id), <String>['fp-1003']);
+      ))
+          .unwrap;
+      expect(
+          byTitle.items.map((ForumPost post) => post.id), <String>['fp-1003']);
 
       final Page<ForumPost> byBody = (await repo().listPosts(
         const ForumPostQuery(keyword: '保温杯', limit: 50),
-      )).unwrap;
-      expect(byBody.items.map((ForumPost post) => post.id), <String>['fp-1004']);
+      ))
+          .unwrap;
+      expect(
+          byBody.items.map((ForumPost post) => post.id), <String>['fp-1004']);
     });
   });
 
@@ -105,9 +120,11 @@ void main() {
     test('回复按时间正序返回，二级回复带 parentReplyId', () async {
       final Page<ForumReply> page = (await repo().listReplies(
         const ForumReplyQuery(postId: 'fp-1002', limit: 50),
-      )).unwrap;
+      ))
+          .unwrap;
 
-      expect(page.items.map((ForumReply reply) => reply.id), <String>['fr-2003', 'fr-2004']);
+      expect(page.items.map((ForumReply reply) => reply.id),
+          <String>['fr-2003', 'fr-2004']);
       expect(page.items.last.parentReplyId, 'fr-2003');
     });
 
@@ -125,19 +142,22 @@ void main() {
       final MockForumRepository repository = repo();
 
       final Result<ForumPost> emptyTitle = await repository.createPost(
-        const CreateForumPostCommand(boardId: 'fb-campus', title: '   ', body: '正文'),
+        const CreateForumPostCommand(
+            boardId: 'fb-campus', title: '   ', body: '正文'),
       );
       expect(emptyTitle.errorOrNull!.code, ApiErrorCode.validationFailed);
 
       final Result<ForumPost> emptyBody = await repository.createPost(
-        const CreateForumPostCommand(boardId: 'fb-campus', title: '标题', body: '  '),
+        const CreateForumPostCommand(
+            boardId: 'fb-campus', title: '标题', body: '  '),
       );
       expect(emptyBody.errorOrNull!.code, ApiErrorCode.validationFailed);
     });
 
     test('不存在的版块 => NOT_FOUND', () async {
       final Result<ForumPost> result = await repo().createPost(
-        const CreateForumPostCommand(boardId: 'fb-nope', title: '标题', body: '正文'),
+        const CreateForumPostCommand(
+            boardId: 'fb-nope', title: '标题', body: '正文'),
       );
 
       expect(result.errorOrNull!.code, ApiErrorCode.notFound);
@@ -145,8 +165,10 @@ void main() {
 
     test('实名发帖：author 是 RealAuthor，authorId 是当前用户', () async {
       final ForumPost post = (await repo().createPost(
-        const CreateForumPostCommand(boardId: 'fb-campus', title: '标题', body: '正文'),
-      )).unwrap;
+        const CreateForumPostCommand(
+            boardId: 'fb-campus', title: '标题', body: '正文'),
+      ))
+          .unwrap;
 
       expect(post.anonymous, isFalse);
       expect(post.author, isA<RealAuthor>());
@@ -163,7 +185,8 @@ void main() {
           body: '正文',
           anonymous: true,
         ),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(post.anonymous, isTrue);
       expect(post.author, isA<AnonymousAuthor>());
@@ -182,7 +205,8 @@ void main() {
           body: 'b',
           anonymous: true,
         ),
-      )).unwrap;
+      ))
+          .unwrap;
       final ForumPost second = (await repository.createPost(
         const CreateForumPostCommand(
           boardId: 'fb-campus',
@@ -190,7 +214,8 @@ void main() {
           body: 'd',
           anonymous: true,
         ),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(second.authorId, first.authorId);
 
@@ -203,7 +228,8 @@ void main() {
           body: 'f',
           anonymous: true,
         ),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(otherUser.authorId, isNot(first.authorId));
     });
   });
@@ -224,13 +250,15 @@ void main() {
 
       final ForumReply created = (await repository.createReply(
         const CreateForumReplyCommand(postId: 'fp-1001', body: '新回复'),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(created.postId, 'fp-1001');
       expect(created.anonymous, isFalse);
 
       final Page<ForumReply> page = (await repository.listReplies(
         const ForumReplyQuery(postId: 'fp-1001', limit: 50),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(page.items, hasLength(3));
       expect(page.items.last.body, '新回复');
 
@@ -240,8 +268,10 @@ void main() {
 
     test('匿名回复不带实名出口', () async {
       final ForumReply reply = (await repo().createReply(
-        const CreateForumReplyCommand(postId: 'fp-1001', body: '匿名回复', anonymous: true),
-      )).unwrap;
+        const CreateForumReplyCommand(
+            postId: 'fp-1001', body: '匿名回复', anonymous: true),
+      ))
+          .unwrap;
 
       expect(reply.anonymous, isTrue);
       expect(reply.author.realUserIdOrNull, isNull);
@@ -314,7 +344,8 @@ void main() {
 
       final Page<ForumPost> page = (await repository.listPosts(
         const ForumPostQuery(limit: 50),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(page.items.any((ForumPost post) => post.id == 'fp-1002'), isFalse);
       expect(page.total, 5);
     });
@@ -339,7 +370,8 @@ void main() {
           reason: ForumReportReason.privacy,
           anonymous: true,
         ),
-      )).unwrap;
+      ))
+          .unwrap;
 
       expect(report.anonymous, isTrue);
       expect(report.reporter.realUserIdOrNull, isNull);
@@ -374,13 +406,15 @@ void main() {
 
       final Page<ForumPost> page = (await repository.listPosts(
         const ForumPostQuery(),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(page.items, isEmpty);
       expect(page.total, 0);
 
       final Page<ForumReply> replies = (await repository.listReplies(
         const ForumReplyQuery(postId: 'fp-1001'),
-      )).unwrap;
+      ))
+          .unwrap;
       expect(replies.items, isEmpty);
     });
   });

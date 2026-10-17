@@ -105,7 +105,8 @@ class _BuddyProfileFormState extends ConsumerState<_BuddyProfileForm> {
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
     }
   }
 
@@ -142,7 +143,8 @@ class _BuddyProfileFormState extends ConsumerState<_BuddyProfileForm> {
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
     }
   }
 
@@ -174,8 +176,8 @@ class _BuddyProfileFormState extends ConsumerState<_BuddyProfileForm> {
                 ),
                 onChanged: _busy
                     ? null
-                    : (bool next) =>
-                          setState(() => _draft = _draft.copyWith(matchEnabled: next)),
+                    : (bool next) => setState(
+                        () => _draft = _draft.copyWith(matchEnabled: next)),
               ),
               Text(
                 _draft.isRecommendable
@@ -183,7 +185,8 @@ class _BuddyProfileFormState extends ConsumerState<_BuddyProfileForm> {
                     : '当前：不会被推荐（需要开启开关 + 至少选 1 个板块）',
                 style: TextStyle(
                   fontSize: KedaYaTokens.fontSizeXs,
-                  color: _draft.isRecommendable ? colors.success : colors.warning,
+                  color:
+                      _draft.isRecommendable ? colors.success : colors.warning,
                 ),
               ),
             ],
@@ -336,7 +339,8 @@ class _BuddyProfileFormState extends ConsumerState<_BuddyProfileForm> {
 
         // -------------------------------------------------- 保存 / 删除
         FilledButton(
-          onPressed: _busy || errors.isNotEmpty ? null : () => unawaited(_save()),
+          onPressed:
+              _busy || errors.isNotEmpty ? null : () => unawaited(_save()),
           child: Text(_busy ? '处理中…' : '保存匹配资料'),
         ),
         const SizedBox(height: KedaYaTokens.space2),
@@ -413,7 +417,8 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                             _selected = _selected
                                 .where((String item) => item != location)
                                 .toList(growable: false);
-                          } else if (_selected.length < buddyPreferredAreaMaxCount) {
+                          } else if (_selected.length <
+                              buddyPreferredAreaMaxCount) {
                             _selected = <String>[..._selected, location];
                           }
                         }),
@@ -466,16 +471,16 @@ class _Label extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: KedaYaTokens.space2),
-    child: Text(
-      text,
-      style: TextStyle(
-        fontSize: KedaYaTokens.fontSizeSm,
-        fontWeight: KedaYaTokens.fontWeightSemibold,
-        color: colors.text,
-      ),
-    ),
-  );
+        padding: const EdgeInsets.only(bottom: KedaYaTokens.space2),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: KedaYaTokens.fontSizeSm,
+            fontWeight: KedaYaTokens.fontWeightSemibold,
+            color: colors.text,
+          ),
+        ),
+      );
 }
 
 class _PickerRow extends StatelessWidget {
@@ -491,12 +496,12 @@ class _PickerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => OutlinedButton(
-    onPressed: onTap,
-    child: SizedBox(
-      width: double.infinity,
-      child: Text(summary, textAlign: TextAlign.left),
-    ),
-  );
+        onPressed: onTap,
+        child: SizedBox(
+          width: double.infinity,
+          child: Text(summary, textAlign: TextAlign.left),
+        ),
+      );
 }
 
 class _Error extends StatelessWidget {
@@ -507,10 +512,11 @@ class _Error extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: KedaYaTokens.space1),
-    child: Text(
-      text,
-      style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.danger),
-    ),
-  );
+        padding: const EdgeInsets.only(top: KedaYaTokens.space1),
+        child: Text(
+          text,
+          style: TextStyle(
+              fontSize: KedaYaTokens.fontSizeXs, color: colors.danger),
+        ),
+      );
 }

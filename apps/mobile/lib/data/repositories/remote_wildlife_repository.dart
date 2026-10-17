@@ -30,28 +30,33 @@ final class RemoteWildlifeRepository implements WildlifePort {
 
   @override
   Future<Result<CampusBasemap>> getBasemap() => _api.send<CampusBasemap>(
-    const ApiRequest(path: '$_base/basemap', method: ApiMethod.get),
-    (Object? data) =>
-        CampusBasemap.fromJson(requireJsonMap(data, what: 'wildlife basemap')),
-  );
+        const ApiRequest(path: '$_base/basemap', method: ApiMethod.get),
+        (Object? data) => CampusBasemap.fromJson(
+            requireJsonMap(data, what: 'wildlife basemap')),
+      );
 
   @override
-  Future<Result<List<WildlifeSpecies>>> listSpecies() => _api.send<List<WildlifeSpecies>>(
-    const ApiRequest(path: '$_base/species', method: ApiMethod.get),
-    (Object? data) => _decodeList(data, 'wildlife species', WildlifeSpecies.fromJson),
-  );
+  Future<Result<List<WildlifeSpecies>>> listSpecies() =>
+      _api.send<List<WildlifeSpecies>>(
+        const ApiRequest(path: '$_base/species', method: ApiMethod.get),
+        (Object? data) =>
+            _decodeList(data, 'wildlife species', WildlifeSpecies.fromJson),
+      );
 
   @override
-  Future<Result<List<WildlifeZone>>> listZones() => _api.send<List<WildlifeZone>>(
-    const ApiRequest(path: '$_base/zones', method: ApiMethod.get),
-    (Object? data) => _decodeList(data, 'wildlife zones', WildlifeZone.fromJson),
-  );
+  Future<Result<List<WildlifeZone>>> listZones() =>
+      _api.send<List<WildlifeZone>>(
+        const ApiRequest(path: '$_base/zones', method: ApiMethod.get),
+        (Object? data) =>
+            _decodeList(data, 'wildlife zones', WildlifeZone.fromJson),
+      );
 
   @override
   Future<Result<WildlifeZone>> getZone(String id) => _api.send<WildlifeZone>(
-    ApiRequest(path: '$_base/zones/$id', method: ApiMethod.get),
-    (Object? data) => WildlifeZone.fromJson(requireJsonMap(data, what: 'wildlife zone')),
-  );
+        ApiRequest(path: '$_base/zones/$id', method: ApiMethod.get),
+        (Object? data) =>
+            WildlifeZone.fromJson(requireJsonMap(data, what: 'wildlife zone')),
+      );
 
   @override
   Future<Result<Page<WildlifeSpot>>> listSpots(WildlifeSpotQuery query) =>
@@ -83,12 +88,14 @@ final class RemoteWildlifeRepository implements WildlifePort {
 
   @override
   Future<Result<WildlifeTrack>> getTrack(String id) => _api.send<WildlifeTrack>(
-    ApiRequest(path: '$_base/tracks/$id', method: ApiMethod.get),
-    (Object? data) => WildlifeTrack.fromJson(requireJsonMap(data, what: 'wildlife track')),
-  );
+        ApiRequest(path: '$_base/tracks/$id', method: ApiMethod.get),
+        (Object? data) => WildlifeTrack.fromJson(
+            requireJsonMap(data, what: 'wildlife track')),
+      );
 
   @override
-  Future<Result<List<WildlifeIndividual>>> listIndividuals({String? speciesId}) =>
+  Future<Result<List<WildlifeIndividual>>> listIndividuals(
+          {String? speciesId}) =>
       _api.send<List<WildlifeIndividual>>(
         ApiRequest(
           path: '$_base/individuals',
@@ -97,26 +104,28 @@ final class RemoteWildlifeRepository implements WildlifePort {
             if (speciesId != null && speciesId.isNotEmpty) 'species': speciesId,
           },
         ),
-        (Object? data) =>
-            _decodeList(data, 'wildlife individuals', WildlifeIndividual.fromJson),
+        (Object? data) => _decodeList(
+            data, 'wildlife individuals', WildlifeIndividual.fromJson),
       );
 
   @override
   Future<Result<WildlifeIndividual>> createIndividual(
     CreateWildlifeIndividualCommand command,
-  ) => _api.send<WildlifeIndividual>(
-    ApiRequest(
-      path: '$_base/individuals',
-      method: ApiMethod.post,
-      body: command.toJson(),
-      idempotencyKey: newIdempotencyKey(),
-    ),
-    (Object? data) =>
-        WildlifeIndividual.fromJson(requireJsonMap(data, what: 'wildlife individual')),
-  );
+  ) =>
+      _api.send<WildlifeIndividual>(
+        ApiRequest(
+          path: '$_base/individuals',
+          method: ApiMethod.post,
+          body: command.toJson(),
+          idempotencyKey: newIdempotencyKey(),
+        ),
+        (Object? data) => WildlifeIndividual.fromJson(
+            requireJsonMap(data, what: 'wildlife individual')),
+      );
 
   @override
-  Future<Result<Page<WildlifeSighting>>> listSightings(WildlifeSightingQuery query) =>
+  Future<Result<Page<WildlifeSighting>>> listSightings(
+          WildlifeSightingQuery query) =>
       _api.send<Page<WildlifeSighting>>(
         ApiRequest(
           path: _items,
@@ -130,14 +139,16 @@ final class RemoteWildlifeRepository implements WildlifePort {
       );
 
   @override
-  Future<Result<WildlifeSighting>> getSighting(String id) => _api.send<WildlifeSighting>(
-    ApiRequest(path: '$_items/$id', method: ApiMethod.get),
-    (Object? data) =>
-        WildlifeSighting.fromJson(requireJsonMap(data, what: 'wildlife sighting')),
-  );
+  Future<Result<WildlifeSighting>> getSighting(String id) =>
+      _api.send<WildlifeSighting>(
+        ApiRequest(path: '$_items/$id', method: ApiMethod.get),
+        (Object? data) => WildlifeSighting.fromJson(
+            requireJsonMap(data, what: 'wildlife sighting')),
+      );
 
   @override
-  Future<Result<WildlifeMedia>> uploadMedia(UploadWildlifeMediaCommand command) =>
+  Future<Result<WildlifeMedia>> uploadMedia(
+          UploadWildlifeMediaCommand command) =>
       _api.sendMultipart<WildlifeMedia>(
         ApiRequest(
           path: '$_base/media',
@@ -154,11 +165,13 @@ final class RemoteWildlifeRepository implements WildlifePort {
             mimeType: command.mimeType,
           ),
         ],
-        (Object? data) => WildlifeMedia.fromJson(requireJsonMap(data, what: 'wildlife media')),
+        (Object? data) => WildlifeMedia.fromJson(
+            requireJsonMap(data, what: 'wildlife media')),
       );
 
   @override
-  Future<Result<WildlifeSighting>> createSighting(WildlifeSightingDraft draft) =>
+  Future<Result<WildlifeSighting>> createSighting(
+          WildlifeSightingDraft draft) =>
       _api.send<WildlifeSighting>(
         ApiRequest(
           path: _items,
@@ -166,12 +179,13 @@ final class RemoteWildlifeRepository implements WildlifePort {
           body: draft.toJson(),
           idempotencyKey: newIdempotencyKey(),
         ),
-        (Object? data) =>
-            WildlifeSighting.fromJson(requireJsonMap(data, what: 'wildlife sighting')),
+        (Object? data) => WildlifeSighting.fromJson(
+            requireJsonMap(data, what: 'wildlife sighting')),
       );
 
   @override
-  Future<Result<WildlifeClassifyResult>> classify(WildlifeClassifyRequest request) =>
+  Future<Result<WildlifeClassifyResult>> classify(
+          WildlifeClassifyRequest request) =>
       _api.send<WildlifeClassifyResult>(
         ApiRequest(
           path: '$_base/classify',
@@ -179,30 +193,31 @@ final class RemoteWildlifeRepository implements WildlifePort {
           body: request.toJson(),
           idempotencyKey: newIdempotencyKey(),
         ),
-        (Object? data) =>
-            WildlifeClassifyResult.fromJson(requireJsonMap(data, what: 'wildlife classify')),
+        (Object? data) => WildlifeClassifyResult.fromJson(
+            requireJsonMap(data, what: 'wildlife classify')),
       );
 
   @override
   Future<Result<WildlifeSighting>> correctSpecies(
     String id, {
     required String speciesId,
-  }) => _api.send<WildlifeSighting>(
-    ApiRequest(
-      path: '$_items/$id',
-      method: ApiMethod.patch,
-      // 契约 §11.1：只发要改的字段（RFC 7396）。
-      body: <String, Object?>{'species': speciesId},
-      contentType: mergePatchContentType,
-    ),
-    (Object? data) =>
-        WildlifeSighting.fromJson(requireJsonMap(data, what: 'wildlife sighting')),
-  );
+  }) =>
+      _api.send<WildlifeSighting>(
+        ApiRequest(
+          path: '$_items/$id',
+          method: ApiMethod.patch,
+          // 契约 §11.1：只发要改的字段（RFC 7396）。
+          body: <String, Object?>{'species': speciesId},
+          contentType: mergePatchContentType,
+        ),
+        (Object? data) => WildlifeSighting.fromJson(
+            requireJsonMap(data, what: 'wildlife sighting')),
+      );
 
   @override
   Future<Result<Unit>> deleteSighting(String id) => _api.sendVoid(
-    ApiRequest(path: '$_items/$id', method: ApiMethod.delete),
-  );
+        ApiRequest(path: '$_items/$id', method: ApiMethod.delete),
+      );
 
   /// 列表响应既可能是裸数组，也可能是 `{ items: [...] }` —— 两种都接受。
   ///
@@ -215,7 +230,10 @@ final class RemoteWildlifeRepository implements WildlifePort {
     T Function(Map<String, Object?> item) decode,
   ) {
     if (data is List<Object?>) {
-      return data.whereType<Map<String, Object?>>().map(decode).toList(growable: false);
+      return data
+          .whereType<Map<String, Object?>>()
+          .map(decode)
+          .toList(growable: false);
     }
     final Map<String, Object?> map = requireJsonMap(data, what: what);
     return readListOrEmpty(map, 'items')

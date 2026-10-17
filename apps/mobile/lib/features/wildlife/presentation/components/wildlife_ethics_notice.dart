@@ -43,7 +43,9 @@ class WildlifeEthicsNotice extends StatelessWidget {
         color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(KedaYaTokens.radiusLg),
         border: Border.all(
-          color: acknowledged ? colors.border : colors.warning.withValues(alpha: 0.6),
+          color: acknowledged
+              ? colors.border
+              : colors.warning.withValues(alpha: 0.6),
         ),
       ),
       child: Column(
@@ -60,7 +62,8 @@ class WildlifeEthicsNotice extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Icon(Icons.report_gmailerrorred, size: 18, color: colors.danger),
+                  Icon(Icons.report_gmailerrorred,
+                      size: 18, color: colors.danger),
                   const SizedBox(width: KedaYaTokens.space2),
                   Expanded(
                     child: Text(
@@ -79,7 +82,8 @@ class WildlifeEthicsNotice extends StatelessWidget {
           ],
           Row(
             children: <Widget>[
-              Icon(Icons.volunteer_activism_outlined, size: 18, color: colors.brandStrong),
+              Icon(Icons.volunteer_activism_outlined,
+                  size: 18, color: colors.brandStrong),
               const SizedBox(width: KedaYaTokens.space2),
               Text(
                 '观察动物的基本约定',

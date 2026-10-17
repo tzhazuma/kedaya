@@ -60,12 +60,12 @@ final class FaqCategory {
   });
 
   factory FaqCategory.fromJson(Map<String, Object?> json) => FaqCategory(
-    id: readString(json, 'id'),
-    name: readString(json, 'name'),
-    slug: readStringOr(json, 'slug', ''),
-    description: readStringOrNull(json, 'description'),
-    articleCount: readIntOr(json, 'articleCount', 0),
-  );
+        id: readString(json, 'id'),
+        name: readString(json, 'name'),
+        slug: readStringOr(json, 'slug', ''),
+        description: readStringOrNull(json, 'description'),
+        articleCount: readIntOr(json, 'articleCount', 0),
+      );
 
   final String id;
   final String name;
@@ -74,12 +74,12 @@ final class FaqCategory {
   final int articleCount;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'name': name,
-    'slug': slug,
-    'description': description,
-    'articleCount': articleCount,
-  };
+        'id': id,
+        'name': name,
+        'slug': slug,
+        'description': description,
+        'articleCount': articleCount,
+      };
 
   @override
   bool operator ==(Object other) => other is FaqCategory && other.id == id;
@@ -107,17 +107,18 @@ final class FaqArticle {
   });
 
   factory FaqArticle.fromJson(Map<String, Object?> json) => FaqArticle(
-    id: readString(json, 'id'),
-    question: readString(json, 'question'),
-    answer: readString(json, 'answer'),
-    category: readString(json, 'category'),
-    slug: readStringOr(json, 'slug', ''),
-    status: FaqArticleStatus.fromWire(readStringOr(json, 'status', 'PUBLISHED')),
-    helpfulCount: readIntOr(json, 'helpfulCount', 0),
-    unhelpfulCount: readIntOr(json, 'unhelpfulCount', 0),
-    tags: readStringList(json, 'tags'),
-    updatedAt: readDateTimeOrNull(json, 'updatedAt'),
-  );
+        id: readString(json, 'id'),
+        question: readString(json, 'question'),
+        answer: readString(json, 'answer'),
+        category: readString(json, 'category'),
+        slug: readStringOr(json, 'slug', ''),
+        status: FaqArticleStatus.fromWire(
+            readStringOr(json, 'status', 'PUBLISHED')),
+        helpfulCount: readIntOr(json, 'helpfulCount', 0),
+        unhelpfulCount: readIntOr(json, 'unhelpfulCount', 0),
+        tags: readStringList(json, 'tags'),
+        updatedAt: readDateTimeOrNull(json, 'updatedAt'),
+      );
 
   final String id;
 
@@ -165,17 +166,17 @@ final class FaqArticle {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'slug': slug,
-    'question': question,
-    'answer': answer,
-    'category': category,
-    'status': status.wire,
-    'helpfulCount': helpfulCount,
-    'unhelpfulCount': unhelpfulCount,
-    'tags': tags,
-    'updatedAt': updatedAt == null ? null : isoUtc(updatedAt!),
-  };
+        'id': id,
+        'slug': slug,
+        'question': question,
+        'answer': answer,
+        'category': category,
+        'status': status.wire,
+        'helpfulCount': helpfulCount,
+        'unhelpfulCount': unhelpfulCount,
+        'tags': tags,
+        'updatedAt': updatedAt == null ? null : isoUtc(updatedAt!),
+      };
 
   FaqArticle copyWith({
     String? id,
@@ -188,18 +189,19 @@ final class FaqArticle {
     int? unhelpfulCount,
     List<String>? tags,
     DateTime? updatedAt,
-  }) => FaqArticle(
-    id: id ?? this.id,
-    slug: slug ?? this.slug,
-    question: question ?? this.question,
-    answer: answer ?? this.answer,
-    category: category ?? this.category,
-    status: status ?? this.status,
-    helpfulCount: helpfulCount ?? this.helpfulCount,
-    unhelpfulCount: unhelpfulCount ?? this.unhelpfulCount,
-    tags: tags ?? this.tags,
-    updatedAt: updatedAt ?? this.updatedAt,
-  );
+  }) =>
+      FaqArticle(
+        id: id ?? this.id,
+        slug: slug ?? this.slug,
+        question: question ?? this.question,
+        answer: answer ?? this.answer,
+        category: category ?? this.category,
+        status: status ?? this.status,
+        helpfulCount: helpfulCount ?? this.helpfulCount,
+        unhelpfulCount: unhelpfulCount ?? this.unhelpfulCount,
+        tags: tags ?? this.tags,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
 
   @override
   bool operator ==(Object other) => other is FaqArticle && other.id == id;
@@ -229,16 +231,16 @@ final class FaqTicket {
   });
 
   factory FaqTicket.fromJson(Map<String, Object?> json) => FaqTicket(
-    id: readString(json, 'id'),
-    contact: readString(json, 'contact'),
-    question: readString(json, 'question'),
-    createdAt: readDateTime(json, 'createdAt'),
-    userId: readStringOrNull(json, 'userId'),
-    status: FaqTicketStatus.fromWire(readStringOr(json, 'status', 'OPEN')),
-    answer: readStringOrNull(json, 'answer'),
-    answeredAt: readDateTimeOrNull(json, 'answeredAt'),
-    closedAt: readDateTimeOrNull(json, 'closedAt'),
-  );
+        id: readString(json, 'id'),
+        contact: readString(json, 'contact'),
+        question: readString(json, 'question'),
+        createdAt: readDateTime(json, 'createdAt'),
+        userId: readStringOrNull(json, 'userId'),
+        status: FaqTicketStatus.fromWire(readStringOr(json, 'status', 'OPEN')),
+        answer: readStringOrNull(json, 'answer'),
+        answeredAt: readDateTimeOrNull(json, 'answeredAt'),
+        closedAt: readDateTimeOrNull(json, 'closedAt'),
+      );
 
   final String id;
 
@@ -269,29 +271,30 @@ final class FaqTicket {
     DateTime? createdAt,
     DateTime? answeredAt,
     DateTime? closedAt,
-  }) => FaqTicket(
-    id: id ?? this.id,
-    userId: userId ?? this.userId,
-    contact: contact ?? this.contact,
-    question: question ?? this.question,
-    status: status ?? this.status,
-    answer: answer ?? this.answer,
-    createdAt: createdAt ?? this.createdAt,
-    answeredAt: answeredAt ?? this.answeredAt,
-    closedAt: closedAt ?? this.closedAt,
-  );
+  }) =>
+      FaqTicket(
+        id: id ?? this.id,
+        userId: userId ?? this.userId,
+        contact: contact ?? this.contact,
+        question: question ?? this.question,
+        status: status ?? this.status,
+        answer: answer ?? this.answer,
+        createdAt: createdAt ?? this.createdAt,
+        answeredAt: answeredAt ?? this.answeredAt,
+        closedAt: closedAt ?? this.closedAt,
+      );
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'userId': userId,
-    'contact': contact,
-    'question': question,
-    'status': status.wire,
-    'answer': answer,
-    'createdAt': isoUtc(createdAt),
-    'answeredAt': answeredAt == null ? null : isoUtc(answeredAt!),
-    'closedAt': closedAt == null ? null : isoUtc(closedAt!),
-  };
+        'id': id,
+        'userId': userId,
+        'contact': contact,
+        'question': question,
+        'status': status.wire,
+        'answer': answer,
+        'createdAt': isoUtc(createdAt),
+        'answeredAt': answeredAt == null ? null : isoUtc(answeredAt!),
+        'closedAt': closedAt == null ? null : isoUtc(closedAt!),
+      };
 
   @override
   bool operator ==(Object other) => other is FaqTicket && other.id == id;
@@ -319,17 +322,19 @@ final class FaqQuery {
 
   /// 对齐 `services/api` 的 `GET /faq/items?category=&q=`：关键词参数名是 `q`。
   Map<String, Object?> toQuery() => <String, Object?>{
-    ...PageQuery(cursor: cursor, limit: limit).toQuery(),
-    if (category != null && category!.isNotEmpty) 'category': category,
-    if (keyword != null && keyword!.trim().isNotEmpty) 'q': keyword!.trim(),
-  };
+        ...PageQuery(cursor: cursor, limit: limit).toQuery(),
+        if (category != null && category!.isNotEmpty) 'category': category,
+        if (keyword != null && keyword!.trim().isNotEmpty) 'q': keyword!.trim(),
+      };
 
-  FaqQuery copyWith({String? category, String? keyword, String? cursor, int? limit}) => FaqQuery(
-    category: category ?? this.category,
-    keyword: keyword ?? this.keyword,
-    cursor: cursor ?? this.cursor,
-    limit: limit ?? this.limit,
-  );
+  FaqQuery copyWith(
+          {String? category, String? keyword, String? cursor, int? limit}) =>
+      FaqQuery(
+        category: category ?? this.category,
+        keyword: keyword ?? this.keyword,
+        cursor: cursor ?? this.cursor,
+        limit: limit ?? this.limit,
+      );
 
   @override
   bool operator ==(Object other) =>
@@ -343,7 +348,8 @@ final class FaqQuery {
   int get hashCode => Object.hash(category, keyword, cursor, limit);
 
   @override
-  String toString() => 'FaqQuery(category=$category, keyword=$keyword, cursor=$cursor)';
+  String toString() =>
+      'FaqQuery(category=$category, keyword=$keyword, cursor=$cursor)';
 }
 
 /// 提交工单命令（`POST /api/v1/faq/items`）。
@@ -354,9 +360,9 @@ final class SubmitFaqTicketCommand {
   final String question;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'contact': contact.trim(),
-    'question': question.trim(),
-  };
+        'contact': contact.trim(),
+        'question': question.trim(),
+      };
 }
 
 /// 「有用」投票结果。
@@ -388,7 +394,8 @@ final class FaqHelpfulResult {
   bool get alreadyVoted => !counted;
 
   @override
-  String toString() => 'FaqHelpfulResult($articleId, helpfulCount=$helpfulCount, counted=$counted)';
+  String toString() =>
+      'FaqHelpfulResult($articleId, helpfulCount=$helpfulCount, counted=$counted)';
 }
 
 /// 「有用」投票者的身份种类。
@@ -434,7 +441,8 @@ final class FaqVoter {
   }
 
   /// 由「已登录的 userId（可为 null）」与「设备 id」解析出稳定的投票者。
-  factory FaqVoter.resolve({required String? userId, required String deviceId}) {
+  factory FaqVoter.resolve(
+      {required String? userId, required String deviceId}) {
     if (userId != null && userId.isNotEmpty) return FaqVoter.forUser(userId);
     return FaqVoter.forDevice(deviceId);
   }
@@ -490,8 +498,10 @@ final class FaqTicketDraft {
   bool get isValid => contactError == null && questionError == null;
 
   FaqTicketDraft copyWith({String? contact, String? question}) =>
-      FaqTicketDraft(contact: contact ?? this.contact, question: question ?? this.question);
+      FaqTicketDraft(
+          contact: contact ?? this.contact,
+          question: question ?? this.question);
 
-  SubmitFaqTicketCommand toCommand() =>
-      SubmitFaqTicketCommand(contact: contact.trim(), question: question.trim());
+  SubmitFaqTicketCommand toCommand() => SubmitFaqTicketCommand(
+      contact: contact.trim(), question: question.trim());
 }

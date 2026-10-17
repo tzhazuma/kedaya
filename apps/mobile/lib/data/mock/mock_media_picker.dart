@@ -37,12 +37,12 @@ final class InMemoryMediaPicker implements MediaPickerPort {
   }
 
   PickedPhoto _nextPng() => PickedPhoto(
-    bytes: mockPngBytes,
-    fileName: 'mock-photo-${_sequence++}.png',
-    mimeType: 'image/png',
-    widthPx: 1,
-    heightPx: 1,
-  );
+        bytes: mockPngBytes,
+        fileName: 'mock-photo-${_sequence++}.png',
+        mimeType: 'image/png',
+        widthPx: 1,
+        heightPx: 1,
+      );
 }
 
 /// 选图行为（演示 / 测试用）。
@@ -75,5 +75,16 @@ const List<int> mockPngBytes = <int>[
 
 /// 一段文本（冒充图片）：用于验证魔数嗅探会拒绝它。
 const List<int> _textFileBytes = <int>[
-  0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x77, 0x6F, 0x72, 0x6C, 0x64, 0x21,
+  0x68,
+  0x65,
+  0x6C,
+  0x6C,
+  0x6F,
+  0x20,
+  0x77,
+  0x6F,
+  0x72,
+  0x6C,
+  0x64,
+  0x21,
 ];

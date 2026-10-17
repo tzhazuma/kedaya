@@ -26,13 +26,14 @@ void main() {
     return container;
   }
 
-  MockFaqRepository repo({MockControls? controls}) =>
-      MockFaqRepository(controls: controls ?? MockControls(latency: Duration.zero));
+  MockFaqRepository repo({MockControls? controls}) => MockFaqRepository(
+      controls: controls ?? MockControls(latency: Duration.zero));
 
   /// 等到状态不再是 loading（依赖失效后的重建是异步的）。
   Future<FaqListState> settle(ProviderContainer container) async {
     for (int i = 0; i < 50; i++) {
-      final AsyncValue<FaqListState> value = container.read(faqListControllerProvider);
+      final AsyncValue<FaqListState> value =
+          container.read(faqListControllerProvider);
       if (value.hasValue && !value.isLoading) return value.requireValue;
       await Future<void>.delayed(Duration.zero);
     }
@@ -45,7 +46,8 @@ void main() {
 
       expect(container.read(faqListControllerProvider).isLoading, isTrue);
 
-      final FaqListState state = await container.read(faqListControllerProvider.future);
+      final FaqListState state =
+          await container.read(faqListControllerProvider.future);
 
       expect(state.articles, hasLength(7));
       expect(state.isEmpty, isFalse);
@@ -55,9 +57,11 @@ void main() {
     test('empty：空结果时 isEmpty 为 true', () async {
       final MockControls controls = MockControls(latency: Duration.zero)
         ..emptyResults = true;
-      final ProviderContainer container = containerWith(repo(controls: controls));
+      final ProviderContainer container =
+          containerWith(repo(controls: controls));
 
-      final FaqListState state = await container.read(faqListControllerProvider.future);
+      final FaqListState state =
+          await container.read(faqListControllerProvider.future);
 
       expect(state.isEmpty, isTrue);
     });
@@ -65,7 +69,8 @@ void main() {
     test('error：上游故障抛出 ApiException', () async {
       final MockControls controls = MockControls(latency: Duration.zero)
         ..failureMode = MockFailureMode.upstreamUnavailable;
-      final ProviderContainer container = containerWith(repo(controls: controls));
+      final ProviderContainer container =
+          containerWith(repo(controls: controls));
 
       await expectLater(
         container.read(faqListControllerProvider.future),
@@ -89,11 +94,13 @@ void main() {
       final ProviderContainer container = containerWith(repo());
       container.read(faqFilterProvider.notifier).selectCategory('fc-account');
 
-      final FaqListState state = await container.read(faqListControllerProvider.future);
+      final FaqListState state =
+          await container.read(faqListControllerProvider.future);
 
       expect(state.articles, hasLength(3));
       expect(
-        state.articles.every((FaqArticle article) => article.category == 'fc-account'),
+        state.articles
+            .every((FaqArticle article) => article.category == 'fc-account'),
         isTrue,
       );
     });
@@ -102,15 +109,18 @@ void main() {
       final ProviderContainer container = containerWith(repo());
       container.read(faqFilterProvider.notifier).setKeyword('匿名');
 
-      final FaqListState state = await container.read(faqListControllerProvider.future);
+      final FaqListState state =
+          await container.read(faqListControllerProvider.future);
 
-      expect(state.articles.map((FaqArticle article) => article.id), <String>['fa-1004']);
+      expect(state.articles.map((FaqArticle article) => article.id),
+          <String>['fa-1004']);
     });
 
     test('切换筛选条件会重新加载；搜索无结果 => 空态而不是错误态', () async {
       final ProviderContainer container = containerWith(repo());
 
-      expect((await container.read(faqListControllerProvider.future)).articles, hasLength(7));
+      expect((await container.read(faqListControllerProvider.future)).articles,
+          hasLength(7));
 
       container.read(faqFilterProvider.notifier).setKeyword('zzz-不存在-zzz');
       final FaqListState noMatch = await settle(container);
@@ -148,10 +158,15 @@ void main() {
 
       await actions.markHelpful('fa-1005');
 
-      final Map<String, int> overrides = container.read(faqHelpfulOverridesProvider);
+      final Map<String, int> overrides =
+          container.read(faqHelpfulOverridesProvider);
       expect(overrides.containsKey('fa-1005'), isTrue);
       expect(overrides['fa-1005'], 12, reason: 'fixture 里是 11');
-      expect(container.read(faqHelpfulOverridesProvider.notifier).hasVoted('fa-1005'), isTrue);
+      expect(
+          container
+              .read(faqHelpfulOverridesProvider.notifier)
+              .hasVoted('fa-1005'),
+          isTrue);
       // 未投票的文章不受影响。
       expect(overrides.containsKey('fa-1001'), isFalse);
     });
@@ -159,7 +174,8 @@ void main() {
     test('投票失败时抛出 ApiException，且不写入覆盖', () async {
       final MockControls controls = MockControls(latency: Duration.zero)
         ..failureMode = MockFailureMode.upstreamUnavailable;
-      final ProviderContainer container = containerWith(repo(controls: controls));
+      final ProviderContainer container =
+          containerWith(repo(controls: controls));
 
       await expectLater(
         container.read(faqHelpfulProvider).markHelpful('fa-1001'),
@@ -210,7 +226,8 @@ void main() {
     test('error：上游故障抛出 ApiException', () async {
       final MockControls controls = MockControls(latency: Duration.zero)
         ..failureMode = MockFailureMode.upstreamUnavailable;
-      final ProviderContainer container = containerWith(repo(controls: controls));
+      final ProviderContainer container =
+          containerWith(repo(controls: controls));
 
       await expectLater(
         container.read(faqTicketsControllerProvider.future),
@@ -223,11 +240,11 @@ void main() {
       await container.read(faqTicketsControllerProvider.future);
 
       await container.read(faqTicketActionsProvider).submit(
-        const SubmitFaqTicketCommand(
-          contact: 'test@shanghaitech.edu.cn',
-          question: '新问题',
-        ),
-      );
+            const SubmitFaqTicketCommand(
+              contact: 'test@shanghaitech.edu.cn',
+              question: '新问题',
+            ),
+          );
 
       final FaqTicketListState state = await container.read(
         faqTicketsControllerProvider.future,
@@ -241,8 +258,9 @@ void main() {
 
       await expectLater(
         container.read(faqTicketActionsProvider).submit(
-          const SubmitFaqTicketCommand(contact: '13800138000', question: '问题'),
-        ),
+              const SubmitFaqTicketCommand(
+                  contact: '13800138000', question: '问题'),
+            ),
         throwsA(
           isA<ApiException>().having(
             (ApiException error) => error.code,

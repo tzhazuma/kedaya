@@ -20,10 +20,11 @@ final class RemoteFaqRepository implements FaqPort {
   final KedayaApiPort _api;
 
   @override
-  Future<Result<List<FaqCategory>>> listCategories() => _api.send<List<FaqCategory>>(
-    const ApiRequest(path: 'faq/categories', method: ApiMethod.get),
-    _decodeCategories,
-  );
+  Future<Result<List<FaqCategory>>> listCategories() =>
+      _api.send<List<FaqCategory>>(
+        const ApiRequest(path: 'faq/categories', method: ApiMethod.get),
+        _decodeCategories,
+      );
 
   @override
   Future<Result<Page<FaqArticle>>> listArticles(FaqQuery query) =>
@@ -39,31 +40,33 @@ final class RemoteFaqRepository implements FaqPort {
   Future<Result<FaqHelpfulResult>> markHelpful(
     String articleId, {
     required String voterId,
-  }) => _api.send<FaqHelpfulResult>(
-    ApiRequest(
-      path: '$_items/$articleId/helpful',
-      method: ApiMethod.post,
-      body: <String, Object?>{'voterId': voterId},
-      idempotencyKey: newIdempotencyKey(),
-    ),
-    _decodeHelpful,
-  );
+  }) =>
+      _api.send<FaqHelpfulResult>(
+        ApiRequest(
+          path: '$_items/$articleId/helpful',
+          method: ApiMethod.post,
+          body: <String, Object?>{'voterId': voterId},
+          idempotencyKey: newIdempotencyKey(),
+        ),
+        _decodeHelpful,
+      );
 
   @override
   Future<Result<Page<FaqTicket>>> listMyTickets({
     String? cursor,
     int limit = defaultPageSize,
-  }) => _api.send<Page<FaqTicket>>(
-    ApiRequest(
-      path: _tickets,
-      method: ApiMethod.get,
-      query: PageQuery(cursor: cursor, limit: limit).toQuery(),
-    ),
-    (Object? data) => Page<FaqTicket>.fromJson(
-      requireJsonMap(data, what: 'faq tickets'),
-      FaqTicket.fromJson,
-    ),
-  );
+  }) =>
+      _api.send<Page<FaqTicket>>(
+        ApiRequest(
+          path: _tickets,
+          method: ApiMethod.get,
+          query: PageQuery(cursor: cursor, limit: limit).toQuery(),
+        ),
+        (Object? data) => Page<FaqTicket>.fromJson(
+          requireJsonMap(data, what: 'faq tickets'),
+          FaqTicket.fromJson,
+        ),
+      );
 
   @override
   Future<Result<FaqTicket>> submitTicket(SubmitFaqTicketCommand command) =>
@@ -74,15 +77,17 @@ final class RemoteFaqRepository implements FaqPort {
           body: command.toJson(),
           idempotencyKey: newIdempotencyKey(),
         ),
-        (Object? data) => FaqTicket.fromJson(requireJsonMap(data, what: 'faq ticket')),
+        (Object? data) =>
+            FaqTicket.fromJson(requireJsonMap(data, what: 'faq ticket')),
       );
 
   List<FaqCategory> _decodeCategories(Object? data) => readListOrEmpty(
-    requireJsonMap(data, what: 'faq categories'),
-    'items',
-  )
-      .map((Object? item) => FaqCategory.fromJson(requireJsonMap(item, what: 'faq category')))
-      .toList(growable: false);
+        requireJsonMap(data, what: 'faq categories'),
+        'items',
+      )
+          .map((Object? item) =>
+              FaqCategory.fromJson(requireJsonMap(item, what: 'faq category')))
+          .toList(growable: false);
 
   /// `services/api` 返回 `{ id, helpfulCount, counted }`。
   ///

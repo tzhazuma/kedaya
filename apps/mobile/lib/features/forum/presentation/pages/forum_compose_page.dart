@@ -42,10 +42,10 @@ class _ForumComposePageState extends ConsumerState<ForumComposePage> {
   Widget build(BuildContext context) {
     final KedaYaColors colors = context.kedayaColors;
     final AsyncValue<List<ForumBoard>> boards = ref.watch(forumBoardsProvider);
-    final List<ForumBoard> boardList = boards.valueOrNull ?? const <ForumBoard>[];
+    final List<ForumBoard> boardList =
+        boards.valueOrNull ?? const <ForumBoard>[];
     // 默认选中：先看列表页当前的版块筛选，否则第一个版块。
-    final String? selectedBoardId =
-        _boardId ??
+    final String? selectedBoardId = _boardId ??
         ref.watch(forumBoardFilterProvider) ??
         (boardList.isEmpty ? null : boardList.first.id);
 
@@ -114,7 +114,8 @@ class _ForumComposePageState extends ConsumerState<ForumComposePage> {
         TextField(
           controller: _title,
           maxLength: ForumPostDraft.titleMaxLength,
-          style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
+          style:
+              TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
           decoration: _decoration(colors, '一句话说清你要讨论什么'),
           onChanged: (String _) => setState(() {}),
         ),
@@ -127,7 +128,8 @@ class _ForumComposePageState extends ConsumerState<ForumComposePage> {
           maxLines: 8,
           minLines: 5,
           maxLength: ForumPostDraft.bodyMaxLength,
-          style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
+          style:
+              TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
           decoration: _decoration(colors, '支持 Markdown 子集（标题、列表、链接）'),
           onChanged: (String _) => setState(() {}),
         ),
@@ -137,7 +139,8 @@ class _ForumComposePageState extends ConsumerState<ForumComposePage> {
         _FieldLabel('标签（可选，最多 5 个，用逗号分隔）'),
         TextField(
           controller: _tags,
-          style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
+          style:
+              TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
           decoration: _decoration(colors, '例如：食堂, 测评'),
           onChanged: (String _) => setState(() {}),
         ),
@@ -145,14 +148,16 @@ class _ForumComposePageState extends ConsumerState<ForumComposePage> {
           const SizedBox(height: KedaYaTokens.space1),
           Text(
             '将提交：${draft.tags.map((String tag) => '#$tag').join(' ')}',
-            style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+            style: TextStyle(
+                fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
           ),
         ],
         if (draft.tagsError != null) _FieldError(message: draft.tagsError!),
         const SizedBox(height: KedaYaTokens.space4),
         Card(
           child: SwitchListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: KedaYaTokens.space4),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: KedaYaTokens.space4),
             value: _anonymous,
             onChanged: (bool next) => setState(() => _anonymous = next),
             title: const Text('匿名发帖'),
@@ -193,19 +198,21 @@ class _ForumComposePageState extends ConsumerState<ForumComposePage> {
     );
   }
 
-  InputDecoration _decoration(KedaYaColors colors, String hint) => InputDecoration(
-    hintText: hint,
-    hintStyle: TextStyle(color: colors.textMuted, fontSize: KedaYaTokens.fontSizeSm),
-    counterText: '',
-    enabledBorder: OutlineInputBorder(
-      borderSide: BorderSide(color: colors.border),
-      borderRadius: BorderRadius.circular(KedaYaTokens.radiusMd),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderSide: BorderSide(color: colors.brandStrong),
-      borderRadius: BorderRadius.circular(KedaYaTokens.radiusMd),
-    ),
-  );
+  InputDecoration _decoration(KedaYaColors colors, String hint) =>
+      InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(
+            color: colors.textMuted, fontSize: KedaYaTokens.fontSizeSm),
+        counterText: '',
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: colors.border),
+          borderRadius: BorderRadius.circular(KedaYaTokens.radiusMd),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: colors.brandStrong),
+          borderRadius: BorderRadius.circular(KedaYaTokens.radiusMd),
+        ),
+      );
 
   Future<void> _submit(ForumPostDraft draft, String? boardId) async {
     setState(() {
@@ -222,7 +229,9 @@ class _ForumComposePageState extends ConsumerState<ForumComposePage> {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
     try {
-      await ref.read(forumActionsProvider).createPost(draft.toCommand(boardId: boardId));
+      await ref
+          .read(forumActionsProvider)
+          .createPost(draft.toCommand(boardId: boardId));
       navigator.pop();
       messenger.showSnackBar(
         SnackBar(content: Text(draft.anonymous ? '已匿名发布' : '发布成功')),
@@ -245,16 +254,16 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: KedaYaTokens.space1),
-    child: Text(
-      text,
-      style: TextStyle(
-        fontSize: KedaYaTokens.fontSizeXs,
-        fontWeight: KedaYaTokens.fontWeightSemibold,
-        color: context.kedayaColors.textMuted,
-      ),
-    ),
-  );
+        padding: const EdgeInsets.only(bottom: KedaYaTokens.space1),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: KedaYaTokens.fontSizeXs,
+            fontWeight: KedaYaTokens.fontWeightSemibold,
+            color: context.kedayaColors.textMuted,
+          ),
+        ),
+      );
 }
 
 class _FieldError extends StatelessWidget {
@@ -264,13 +273,13 @@ class _FieldError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: KedaYaTokens.space1),
-    child: Text(
-      message,
-      style: TextStyle(
-        fontSize: KedaYaTokens.fontSizeXs,
-        color: context.kedayaColors.danger,
-      ),
-    ),
-  );
+        padding: const EdgeInsets.only(top: KedaYaTokens.space1),
+        child: Text(
+          message,
+          style: TextStyle(
+            fontSize: KedaYaTokens.fontSizeXs,
+            color: context.kedayaColors.danger,
+          ),
+        ),
+      );
 }

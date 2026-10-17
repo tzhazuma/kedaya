@@ -18,23 +18,23 @@ import '../support/source_scan.dart';
 void main() {
   /// 本模块新增/改动的全部 Dart 源文件。
   List<String> techpieSources() => <String>[
-    ...dartSourcesUnder('lib/features/techpie'),
-    'lib/domain/models/techpie_link.dart',
-    'lib/domain/models/campus_capability.dart',
-    'lib/domain/models/campus_web_entry.dart',
-    'lib/domain/models/bind_credential.dart',
-    'lib/domain/models/campus_card.dart',
-    'lib/domain/ports/techpie_port.dart',
-    'lib/domain/ports/campus_card_port.dart',
-    'lib/domain/ports/webview_port.dart',
-    'lib/data/repositories/remote_techpie_repository.dart',
-    'lib/data/repositories/remote_campus_card_repository.dart',
-    'lib/data/mock/techpie_fixtures.dart',
-    'lib/data/mock/mock_techpie_repository.dart',
-    'lib/data/mock/mock_campus_card_repository.dart',
-    'lib/data/mock/mock_webview_port.dart',
-    'lib/platform/method_channel_webview.dart',
-  ];
+        ...dartSourcesUnder('lib/features/techpie'),
+        'lib/domain/models/techpie_link.dart',
+        'lib/domain/models/campus_capability.dart',
+        'lib/domain/models/campus_web_entry.dart',
+        'lib/domain/models/bind_credential.dart',
+        'lib/domain/models/campus_card.dart',
+        'lib/domain/ports/techpie_port.dart',
+        'lib/domain/ports/campus_card_port.dart',
+        'lib/domain/ports/webview_port.dart',
+        'lib/data/repositories/remote_techpie_repository.dart',
+        'lib/data/repositories/remote_campus_card_repository.dart',
+        'lib/data/mock/techpie_fixtures.dart',
+        'lib/data/mock/mock_techpie_repository.dart',
+        'lib/data/mock/mock_campus_card_repository.dart',
+        'lib/data/mock/mock_webview_port.dart',
+        'lib/platform/method_channel_webview.dart',
+      ];
 
   group('扫描前提', () {
     test('被扫描的文件都存在且非空（否则扫描会静默通过）', () {
@@ -161,7 +161,11 @@ void main() {
     test('没有明文口令绑定的写法（U12：在信息办回复前不实现）', () {
       for (final String file in techpieSources()) {
         final String code = stripComments(readSource(file)).toLowerCase();
-        for (final String token in <String>['password', 'passwd', 'studentid']) {
+        for (final String token in <String>[
+          'password',
+          'passwd',
+          'studentid'
+        ]) {
           expect(
             code.contains(token),
             isFalse,
@@ -218,10 +222,26 @@ void main() {
         readSource('lib/data/mock/techpie_fixtures.dart'),
       );
       // 与 `services/api` 的 `TECHPIE_CAPABILITIES` 逐条对齐：7 + 4 + 2 = 13。
-      expect(RegExp('phase: CampusCapabilityPhase.phase0').allMatches(fixtures).length, 7);
-      expect(RegExp('phase: CampusCapabilityPhase.phase1').allMatches(fixtures).length, 4);
-      expect(RegExp('phase: CampusCapabilityPhase.phase2').allMatches(fixtures).length, 2);
-      expect(RegExp('phase: CampusCapabilityPhase.phase3').allMatches(fixtures).length, 0);
+      expect(
+          RegExp('phase: CampusCapabilityPhase.phase0')
+              .allMatches(fixtures)
+              .length,
+          7);
+      expect(
+          RegExp('phase: CampusCapabilityPhase.phase1')
+              .allMatches(fixtures)
+              .length,
+          4);
+      expect(
+          RegExp('phase: CampusCapabilityPhase.phase2')
+              .allMatches(fixtures)
+              .length,
+          2);
+      expect(
+          RegExp('phase: CampusCapabilityPhase.phase3')
+              .allMatches(fixtures)
+              .length,
+          0);
     });
   });
 
@@ -240,7 +260,8 @@ void main() {
         final String code = stripComments(readSource(file));
         expect(code.contains('package:flutter'), isFalse, reason: file);
         expect(code.contains('package:dio'), isFalse, reason: file);
-        expect(code.contains('package:flutter_riverpod'), isFalse, reason: file);
+        expect(code.contains('package:flutter_riverpod'), isFalse,
+            reason: file);
         expect(code.contains('dart:io'), isFalse, reason: file);
       }
     });

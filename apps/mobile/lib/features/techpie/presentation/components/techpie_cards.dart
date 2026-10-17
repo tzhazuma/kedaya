@@ -40,22 +40,22 @@ Color campusCapabilityTone(CampusCapabilityState state, KedaYaColors colors) =>
     };
 
 IconData campusCapabilityIcon(CampusCapabilityState state) => switch (state) {
-  CampusCapabilityState.available => Icons.check_circle_outline,
-  CampusCapabilityState.bindingRequired => Icons.link,
-  CampusCapabilityState.unauthenticated => Icons.login,
-  CampusCapabilityState.upstreamUnavailable => Icons.cloud_off,
-  CampusCapabilityState.unsupported => Icons.block,
-  CampusCapabilityState.notImplemented => Icons.construction,
-  CampusCapabilityState.unknown => Icons.help_outline,
-};
+      CampusCapabilityState.available => Icons.check_circle_outline,
+      CampusCapabilityState.bindingRequired => Icons.link,
+      CampusCapabilityState.unauthenticated => Icons.login,
+      CampusCapabilityState.upstreamUnavailable => Icons.cloud_off,
+      CampusCapabilityState.unsupported => Icons.block,
+      CampusCapabilityState.notImplemented => Icons.construction,
+      CampusCapabilityState.unknown => Icons.help_outline,
+    };
 
 IconData campusBindingIcon(CampusBindingStatus status) => switch (status) {
-  CampusBindingStatus.linked => Icons.check_circle_outline,
-  CampusBindingStatus.linking => Icons.hourglass_empty,
-  CampusBindingStatus.expired => Icons.schedule,
-  CampusBindingStatus.revoked => Icons.link_off,
-  CampusBindingStatus.unlinked => Icons.link,
-};
+      CampusBindingStatus.linked => Icons.check_circle_outline,
+      CampusBindingStatus.linking => Icons.hourglass_empty,
+      CampusBindingStatus.expired => Icons.schedule,
+      CampusBindingStatus.revoked => Icons.link_off,
+      CampusBindingStatus.unlinked => Icons.link,
+    };
 
 /// 小徽章（状态胶囊）。
 class TechpieBadge extends StatelessWidget {
@@ -72,31 +72,31 @@ class TechpieBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(
-      horizontal: KedaYaTokens.space2,
-      vertical: KedaYaTokens.space1,
-    ),
-    decoration: BoxDecoration(
-      color: tone.withValues(alpha: 0.14),
-      borderRadius: BorderRadius.circular(KedaYaTokens.radiusPill),
-      border: Border.all(color: tone.withValues(alpha: 0.6)),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Icon(icon, size: 14, color: tone),
-        const SizedBox(width: KedaYaTokens.space1),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: KedaYaTokens.fontSizeXs,
-            fontWeight: KedaYaTokens.fontWeightSemibold,
-            color: tone,
-          ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: KedaYaTokens.space2,
+          vertical: KedaYaTokens.space1,
         ),
-      ],
-    ),
-  );
+        decoration: BoxDecoration(
+          color: tone.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(KedaYaTokens.radiusPill),
+          border: Border.all(color: tone.withValues(alpha: 0.6)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(icon, size: 14, color: tone),
+            const SizedBox(width: KedaYaTokens.space1),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: KedaYaTokens.fontSizeXs,
+                fontWeight: KedaYaTokens.fontWeightSemibold,
+                color: tone,
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 // ------------------------------------------------------------------ 通用说明
@@ -130,9 +130,9 @@ class CredentialFreeNotice extends StatelessWidget {
             child: Text(
               extra == null
                   ? '本页只展示绑定**元数据**（状态 / 有效期 / 对端标识），'
-                        '不含任何凭证：没有会话串、没有网站凭据、没有会话票据。'
+                      '不含任何凭证：没有会话串、没有网站凭据、没有会话票据。'
                   : '本页只展示绑定**元数据**（状态 / 有效期 / 对端标识），'
-                        '不含任何凭证：没有会话串、没有网站凭据、没有票据。\n$extra',
+                      '不含任何凭证：没有会话串、没有网站凭据、没有票据。\n$extra',
               style: TextStyle(
                 fontSize: KedaYaTokens.fontSizeXs,
                 height: KedaYaTokens.lineHeightNormal,
@@ -208,10 +208,10 @@ class TwoTierIdentityNotice extends StatelessWidget {
           Text(
             signedIn
                 ? '当前身份：${identityLabel ?? '（无显示名）'}'
-                      '。已登录但未绑定是**合法状态** —— 校园功能会提示去绑定，'
-                      '而不是把你踢回登录页。'
+                    '。已登录但未绑定是**合法状态** —— 校园功能会提示去绑定，'
+                    '而不是把你踢回登录页。'
                 : '还没有登录。校园自有功能（论坛 / 找搭子 / 拼单 / 校园动物）'
-                      '在未登录时依然可用；校园系统能力需要先登录、再绑定。',
+                    '在未登录时依然可用；校园系统能力需要先登录、再绑定。',
             style: TextStyle(
               fontSize: KedaYaTokens.fontSizeXs,
               height: KedaYaTokens.lineHeightNormal,

@@ -16,17 +16,18 @@ void main() {
     int widthPx = 1000,
     int heightPx = 700,
     String imageUrl = '',
-  }) => CampusBasemap(
-    version: 'v1',
-    imageUrl: imageUrl,
-    widthPx: widthPx,
-    heightPx: heightPx,
-    affine: const BasemapAffine(a: 1, b: 0, c: 500, d: 0, e: -1, f: 400),
-    calibrationRmsePx: rmse,
-    controlPointCount: controlPoints,
-    attribution: attribution,
-    license: license,
-  );
+  }) =>
+      CampusBasemap(
+        version: 'v1',
+        imageUrl: imageUrl,
+        widthPx: widthPx,
+        heightPx: heightPx,
+        affine: const BasemapAffine(a: 1, b: 0, c: 500, d: 0, e: -1, f: 400),
+        calibrationRmsePx: rmse,
+        controlPointCount: controlPoints,
+        attribution: attribution,
+        license: license,
+      );
 
   group('规格 §1.4 的四条 CI 规则', () {
     test('合法底图可渲染', () {
@@ -62,7 +63,9 @@ void main() {
         contains(CampusBasemap.attributionRequired),
       );
       expect(
-        basemap(license: BasemapLicense.odbl, attribution: '© OpenStreetMap contributors')
+        basemap(
+                license: BasemapLicense.odbl,
+                attribution: '© OpenStreetMap contributors')
             .validate(),
         isEmpty,
       );
@@ -139,7 +142,8 @@ void main() {
     test('许可标识收敛', () {
       expect(BasemapLicense.fromWire('original'), BasemapLicense.original);
       expect(BasemapLicense.fromWire('odbl'), BasemapLicense.odbl);
-      expect(BasemapLicense.fromWire('school-authorized'), BasemapLicense.schoolAuthorized);
+      expect(BasemapLicense.fromWire('school-authorized'),
+          BasemapLicense.schoolAuthorized);
       expect(BasemapLicense.fromWire('whatever'), BasemapLicense.unknown);
     });
   });
