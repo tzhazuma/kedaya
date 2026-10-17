@@ -14,7 +14,7 @@
  */
 
 /* ------------------------------------------------------------------ *
- * 菜的种类与餐型
+ * 菜的种类、食堂与餐型
  * ------------------------------------------------------------------ */
 
 /** 菜的种类。识别、推荐（品类均衡）、统计都依赖它 */
@@ -44,6 +44,34 @@ export const DISH_CATEGORY_LABELS: Record<DishCategory, string> = {
 
 export function isDishCategory(value: unknown): value is DishCategory {
   return typeof value === 'string' && (DISH_CATEGORIES as readonly string[]).includes(value);
+}
+
+/**
+ * 食堂白名单 —— 三端**唯一真相**。
+ *
+ * 谁会用到：菜品库的「按食堂筛选」胶囊、录入表单的食堂选择、Web 后台的筛选。
+ * 三端各写一份必然漂移，而漂移的后果是**筛选出空列表** ——
+ * 看起来像「数据丢了」，其实是名字对不上（`第一食堂` vs `一食堂`）。
+ *
+ * 刻意包含 `清真食堂` / `其他`：它们在校内真实存在 / 作为兜底，
+ * 即便当前种子数据里暂时没有对应菜品，筛选后走到空态也是诚实的结果。
+ *
+ * ⚠️ 值必须与 `services/api/prisma/seed-data.ts` 的菜品数据、以及本地既有数据一致。
+ */
+export const CANTEEN_NAMES = [
+  '第一食堂',
+  '第二食堂',
+  '第三食堂',
+  '清真食堂',
+  '教工食堂',
+  '咖啡吧',
+  '其他',
+] as const;
+
+export type CanteenName = (typeof CANTEEN_NAMES)[number];
+
+export function isCanteenName(value: unknown): value is CanteenName {
+  return typeof value === 'string' && (CANTEEN_NAMES as readonly string[]).includes(value);
 }
 
 /** 餐型 */

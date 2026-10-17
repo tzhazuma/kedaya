@@ -288,6 +288,7 @@ export function createHttpNutritionRepository(client: ApiClient): NutritionRepos
       const result = await client.get<Page<RawDish>>(modulePath('canteen', 'dishes'), {
         q: query.q,
         category: query.category,
+        canteen: query.canteen,
         cursor: query.cursor ?? undefined,
         limit: query.limit ?? 20,
       })

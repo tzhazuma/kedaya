@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
-import { DISH_CATEGORIES, DISH_CATEGORY_LABELS, checkDishEnergyConsistency, fenToYuan, validateDishInput } from '@kedaya/shared';
+import { CANTEEN_NAMES, DISH_CATEGORIES, DISH_CATEGORY_LABELS, checkDishEnergyConsistency, fenToYuan, validateDishInput } from '@kedaya/shared';
 
 import type { CreateDishInput, CanteenDish, DishCategory } from '@/domain/models/canteen';
 import { NUTRIENT_FIELDS } from '@/domain/models/canteen';
@@ -30,7 +30,7 @@ import { KdySkeleton } from '../KdySkeleton';
 const CATEGORY_FILTERS: ReadonlyArray<DishCategory | 'all'> = ['all', ...DISH_CATEGORIES];
 
 const EMPTY_FORM = {
-  canteen: '一食堂',
+  canteen: '第一食堂',
   name: '',
   category: 'other' as DishCategory,
   servingG: '100',
@@ -55,6 +55,8 @@ export function DishManager() {
 
   const [q, setQ] = useState('');
   const [category, setCategory] = useState<DishCategory | 'all'>('all');
+  /** 食堂筛选（`all` = 不限）。与分类/关键词是**叠加**条件 */
+  const [canteen, setCanteen] = useState<string>('all');
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -64,12 +66,14 @@ export function DishManager() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const query = useQuery({
-    queryKey: queryKeys.canteen.list({ q, category }),
+    queryKey: queryKeys.canteen.list({ q, category, canteen }),
     queryFn: async () =>
       unwrapOrThrow(
         await repositories.dishes.list({
           q,
           category: category === 'all' ? undefined : category,
+          // 「不限食堂」不下传（而不是传空串，空串会被后端当成真的筛一个叫 "" 的食堂）
+          canteen: canteen === 'all' ? undefined : canteen,
           limit: 50,
         }),
       ),
@@ -252,6 +256,30 @@ export function DishManager() {
           </div>
         </div>
 
+        {/*
+          食堂筛选：白名单来自 `@kedaya/shared` 的 `CANTEEN_NAMES`（与小程序端同一份），
+          手写一份必然漂移 —— 漂移的表现是「筛选点下去是空列表」。
+          `all` 不在白名单里，只是「不限食堂」这个开关。
+        */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted">食堂</span>
+          {(['all', ...CANTEEN_NAMES] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setCanteen(item)}
+              aria-pressed={canteen === item}
+              className={
+                canteen === item
+                  ? 'rounded-pill border border-brand-strong bg-brand px-2.5 py-1 text-xs text-ink'
+                  : 'rounded-pill border border-border bg-surface px-2.5 py-1 text-xs text-muted hover:text-body'
+              }
+            >
+              {item === 'all' ? '不限' : item}
+            </button>
+          ))}
+        </div>
+
         {formError !== undefined && !formOpen ? (
           <KdyAlert tone="danger" title="操作失败">
             <p>{formError}</p>
@@ -366,8 +394,15 @@ export function DishManager() {
                   <input
                     value={form.canteen}
                     onChange={(event) => setForm({ ...form, canteen: event.target.value })}
+                    list="kdy-dish-canteen-options"
                     className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm text-body"
                   />
+                  {/* 自由文本 + 白名单候选：校内的「丝路餐厅」等不在白名单里，不能堵死 */}
+                  <datalist id="kdy-dish-canteen-options">
+                    {CANTEEN_NAMES.map((name) => (
+                      <option key={name} value={name} />
+                    ))}
+                  </datalist>
                 </label>
                 <label className="flex flex-col gap-1 text-xs text-muted">
                   菜名

@@ -96,6 +96,42 @@ describe('mock 营养仓储 · 记录当餐', () => {
   })
 })
 
+describe('mock 营养仓储 · 菜品库筛选（食堂 / 品类 / 关键词叠加）', () => {
+  it('按食堂精确筛选，只返回该食堂的菜', async () => {
+    const repo = createRepo()
+    const result = await repo.listDishes({ canteen: '第二食堂', limit: 100 })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.items.length).toBeGreaterThan(0)
+    expect(result.value.items.every((dish) => dish.canteen === '第二食堂')).toBe(true)
+  })
+
+  it('食堂与关键词是叠加条件，不是二选一', async () => {
+    const repo = createRepo()
+    const result = await repo.listDishes({ canteen: '第二食堂', q: '豆腐', limit: 100 })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.items.map((dish) => dish.name)).toEqual(['麻婆豆腐'])
+    // 反证：不限食堂时同一个关键词还有别的结果，说明确实做了交集
+    const all = await repo.listDishes({ q: '豆腐', limit: 100 })
+    expect(all.ok).toBe(true)
+    if (!all.ok) return
+    expect(all.value.items.map((dish) => dish.name).sort()).toEqual(['麻婆豆腐'])
+  })
+
+  it('白名单里还没有菜品的食堂返回空列表（诚实空态，不兜底成全量）', async () => {
+    const repo = createRepo()
+    const result = await repo.listDishes({ canteen: '清真食堂', limit: 100 })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.items).toEqual([])
+    expect(result.value.nextCursor).toBeNull()
+  })
+})
+
 describe('mock 营养仓储 · 识别与推荐', () => {
   it('识别返回确定性候选，且带菜品库匹配', async () => {
     const repo = createRepo()

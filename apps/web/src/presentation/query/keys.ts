@@ -91,8 +91,8 @@ export const queryKeys = {
    */
   canteen: {
     root: ['canteen', 'dishes'] as const,
-    list: (filters: { q: string; category: string }) =>
-      ['canteen', 'dishes', 'list', filters.q, filters.category] as const,
+    list: (filters: { q: string; category: string; canteen: string }) =>
+      ['canteen', 'dishes', 'list', filters.q, filters.category, filters.canteen] as const,
     detail: (id: string) => ['canteen', 'dishes', 'detail', id] as const,
   },
   wildlife: {

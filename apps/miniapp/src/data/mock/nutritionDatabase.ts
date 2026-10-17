@@ -174,6 +174,7 @@ export function createNutritionDatabase(
       const limit = Math.min(Math.max(1, Math.floor(query.limit ?? 20)), 100)
       const filtered = dishes
         .filter((dish) => query.category === undefined || dish.category === query.category)
+        .filter((dish) => query.canteen === undefined || dish.canteen === query.canteen)
         .filter((dish) => matchesKeyword(dish, query.q))
         .sort((a, b) => a.id.localeCompare(b.id))
 

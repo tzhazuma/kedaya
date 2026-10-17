@@ -47,16 +47,16 @@ const TARGET_INPUT = {
 
 const DISHES: CanteenDishModel[] = [
   {
-    id: 'dish-rice', canteen: '一食堂', name: '米饭', category: 'staple', servingG: 150,
+    id: 'dish-rice', canteen: '第一食堂', name: '米饭', category: 'staple', servingG: 150,
     caloriesKcal: 174, proteinG: 4, fatG: 1, carbG: 38, fiberG: 1, sodiumMg: 5, priceFen: 200,
-    source: '一食堂公告栏公示', lastVerifiedAt: new Date('2026-10-12T00:00:00.000Z'),
+    source: '第一食堂公告栏公示', lastVerifiedAt: new Date('2026-10-12T00:00:00.000Z'),
     allergens: [],
     deletedAt: null, createdAt: new Date(), updatedAt: new Date(),
   },
   {
-    id: 'dish-paigu', canteen: '一食堂', name: '红烧排骨', category: 'meat', servingG: 200,
+    id: 'dish-paigu', canteen: '第一食堂', name: '红烧排骨', category: 'meat', servingG: 200,
     caloriesKcal: 520, proteinG: 28, fatG: 38, carbG: 10, fiberG: 0, sodiumMg: 900, priceFen: 1400,
-    source: '一食堂公告栏公示', lastVerifiedAt: new Date('2026-10-12T00:00:00.000Z'),
+    source: '第一食堂公告栏公示', lastVerifiedAt: new Date('2026-10-12T00:00:00.000Z'),
     allergens: [],
     deletedAt: null, createdAt: new Date(), updatedAt: new Date(),
   },

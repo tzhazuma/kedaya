@@ -34,7 +34,7 @@ const BASE: CanteenDishModel = {
   fiberG: 2,
   sodiumMg: 900,
   priceFen: 1_500,
-  source: '一食堂公告栏公示',
+  source: '第一食堂公告栏公示',
   lastVerifiedAt: new Date('2026-10-12T00:00:00.000Z'),
   allergens: [],
   deletedAt: null,

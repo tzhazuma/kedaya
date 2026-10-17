@@ -63,6 +63,7 @@ export function createMockDishRepository(options: MockDishRepositoryOptions = {}
       const keyword = query.q?.trim().toLowerCase() ?? '';
       const filtered = dishes
         .filter((item) => query.category === undefined || item.category === query.category)
+        .filter((item) => query.canteen === undefined || item.canteen === query.canteen)
         .filter((item) => keyword === '' || item.name.toLowerCase().includes(keyword));
 
       const limit = Math.min(Math.max(1, Math.floor(query.limit ?? 50)), 100);

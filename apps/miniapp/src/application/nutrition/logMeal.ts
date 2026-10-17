@@ -26,6 +26,13 @@ export type LogMealSource = 'manual' | 'photo'
 export interface LogMealState {
   /** 菜名检索 */
   query: string
+  /**
+   * 食堂筛选：`null` = 全部食堂。
+   *
+   * 与 `query` 是**并列**条件（后端 `?canteen=&q=` 同一口径）：
+   * 「第二食堂」+「鸡」应该筛出第二食堂里名字带鸡的菜，而不是二选一。
+   */
+  canteen: string | null
   results: CanteenDish[]
   searching: boolean
   /** 拍照识别 */
@@ -48,6 +55,8 @@ export interface LogMealUseCase {
   getSnapshot(): LogMealState
   subscribe(listener: () => void): () => void
   setQuery(query: string): void
+  /** 选食堂（`null` = 全部）：立即用当前关键词重查，返回重查的 Promise */
+  setCanteen(canteen: string | null): Promise<void>
   search(query: string): Promise<void>
   recognize(imageUrl: string): Promise<void>
   /** 加入当餐：搜索/识别/推荐三个入口都走这里（只要求最小字段集） */
@@ -63,6 +72,7 @@ export interface LogMealUseCase {
 
 const INITIAL_STATE: LogMealState = {
   query: '',
+  canteen: null,
   results: [],
   searching: false,
   recognizing: false,
@@ -91,6 +101,24 @@ export function createLogMealUseCase(deps: { repository: NutritionRepository }):
     return state
   }
 
+  /**
+   * 检索菜品库。`query` 与 `state.canteen` 一起下传 ——
+   * 两个入口（`search` / `setCanteen`）都走这里，避免只改一个条件就漏传另一个。
+   */
+  async function runSearch(query: string): Promise<void> {
+    patch({ query, searching: true, recognizeError: null })
+    const result = await repository.listDishes({
+      q: query,
+      canteen: state.canteen === null ? undefined : state.canteen,
+      limit: 20,
+    })
+    patch({
+      searching: false,
+      results: result.ok ? result.value.items : [],
+      saveError: result.ok ? null : result.error.message,
+    })
+  }
+
   return {
     getSnapshot: () => state,
     subscribe(listener: () => void): () => void {
@@ -104,14 +132,14 @@ export function createLogMealUseCase(deps: { repository: NutritionRepository }):
       patch({ query })
     },
 
+    async setCanteen(canteen: string | null): Promise<void> {
+      patch({ canteen })
+      // 换了食堂立刻重查：胶囊点了还要再敲一次回车才生效，谁都会以为点坏了
+      await runSearch(state.query)
+    },
+
     async search(query: string): Promise<void> {
-      patch({ query, searching: true, recognizeError: null })
-      const result = await repository.listDishes({ q: query, limit: 20 })
-      patch({
-        searching: false,
-        results: result.ok ? result.value.items : [],
-        saveError: result.ok ? null : result.error.message,
-      })
+      return runSearch(query)
     },
 
     async recognize(imageUrl: string): Promise<void> {

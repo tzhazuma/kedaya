@@ -1,6 +1,7 @@
 import { Text, View } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import {
+  CANTEEN_NAMES,
   DISH_CATEGORY_LABELS,
   MEAL_TYPES,
   MEAL_TYPE_LABELS,
@@ -214,10 +215,43 @@ export default function NutritionLogPage() {
               搜索
             </KdyButton>
           </View>
+
+          {/*
+            食堂分类 —— 与「共建菜品库」页面的筛选同一份白名单
+            （`@kedaya/shared` 的 CANTEEN_NAMES），不再各写一份。
+            「全部」不是白名单成员，只是一个取消筛选的入口。
+          */}
+          <View className='kdy-nu-log__canteens'>
+            <KdyChip active={state.canteen === null} onClick={() => void logMeal.setCanteen(null)}>
+              全部食堂
+            </KdyChip>
+            {CANTEEN_NAMES.map((name) => (
+              <KdyChip
+                key={name}
+                active={state.canteen === name}
+                onClick={() => void logMeal.setCanteen(name)}
+              >
+                {name}
+              </KdyChip>
+            ))}
+          </View>
+          <Text className='kdy-nu-log__canteens-hint'>
+            食堂和菜名是叠加条件：选了食堂再看菜名，两个条件一起生效。
+          </Text>
+
           {state.searching && <KdyEmpty mode='loading' description='正在搜索菜品库' />}
-          {!state.searching && state.results.length === 0 && state.query !== '' && (
+          {!state.searching && state.results.length === 0 && (state.query !== '' || state.canteen !== null) && (
             <View className='kdy-nu-log__no-result'>
-              <Text className='kdy-nu-log__hint'>菜品库里没找到「{state.query}」</Text>
+              <Text className='kdy-nu-log__hint'>
+                {state.query === ''
+                  ? `「${state.canteen}」暂无菜品`
+                  : `菜品库里没找到「${state.query}」${state.canteen === null ? '' : `（限${state.canteen}）`}`}
+              </Text>
+              {state.canteen !== null && (
+                <KdyButton size='sm' variant='ghost' onClick={() => void logMeal.setCanteen(null)}>
+                  不限食堂
+                </KdyButton>
+              )}
               <KdyButton
                 size='sm'
                 variant='ghost'

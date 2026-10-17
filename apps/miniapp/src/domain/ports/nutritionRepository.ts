@@ -26,6 +26,15 @@ import type { RepositoryError } from './errors'
 export interface DishSearchQuery {
   q?: string
   category?: DishCategory
+  /**
+   * 食堂**精确**筛选（与后端 `?canteen=` 一致）。
+   *
+   * 类型是 `string` 而不是 `CanteenName`：筛选胶囊只给白名单里的值，
+   * 但菜品表允许存在白名单外的真实食堂（如「丝路餐厅」），
+   * 收紧成联合类型会把「点菜品上的食堂名直接筛」这条路堵死。
+   * 白名单本身仍由 `@kedaya/shared` 的 `CANTEEN_NAMES` 单一维护。
+   */
+  canteen?: string
   cursor?: string | null
   limit?: number
 }

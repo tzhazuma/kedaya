@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CANTEEN_NAMES,
   checkDishEnergyConsistency,
   computeGaps,
   computeStreak,
@@ -11,6 +12,7 @@ import {
   estimateDailyTargets,
   formatAllergenList,
   inferAllergensFromName,
+  isCanteenName,
   isDishCategory,
   isGoalsMet,
   matchAvoidedAllergens,
@@ -25,6 +27,35 @@ import {
   type MealItemLike,
   type NutritionTarget,
 } from './nutrition';
+
+/* ------------------------------------------------------------------ *
+ * 食堂白名单（三端唯一真相）
+ * ------------------------------------------------------------------ */
+
+describe('CANTEEN_NAMES', () => {
+  it('列出校内真实食堂与兜底项，顺序稳定（筛选胶囊按这个顺序排）', () => {
+    expect([...CANTEEN_NAMES]).toEqual([
+      '第一食堂',
+      '第二食堂',
+      '第三食堂',
+      '清真食堂',
+      '教工食堂',
+      '咖啡吧',
+      '其他',
+    ]);
+  });
+
+  it('isCanteenName 只认白名单里的值', () => {
+    expect(isCanteenName('第一食堂')).toBe(true);
+    expect(isCanteenName('其他')).toBe(true);
+    // 简称曾经在种子数据里漂移过（`一食堂` vs `第一食堂`）——
+    // 名字对不上时筛选点下去是空列表，看起来像「数据丢了」，这里钉住口径
+    expect(isCanteenName('一食堂')).toBe(false);
+    expect(isCanteenName('')).toBe(false);
+    expect(isCanteenName(undefined)).toBe(false);
+    expect(isCanteenName(1)).toBe(false);
+  });
+});
 
 /* ------------------------------------------------------------------ *
  * 汇总

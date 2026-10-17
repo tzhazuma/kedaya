@@ -88,6 +88,22 @@
   flex: 1;
 }
 
+/* 食堂筛选胶囊：横向可换行（7 个食堂 + 「全部」，一屏放不下） */
+.kdy-nu-log__canteens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-nu-log__canteens-hint {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
 /* WXSS 不支持通配选择器 `*`，必须写成显式子元素类名 */
 .kdy-nu-log__search > .kdy-nu-log__search-input {
   flex: 1;

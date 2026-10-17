@@ -59,6 +59,13 @@ export type UpdateDishInput = Partial<CreateDishInput>;
 export interface DishQuery {
   q?: string;
   category?: DishCategory;
+  /**
+   * 食堂**精确**筛选（与后端 `?canteen=` 一致）。
+   *
+   * 类型是 `string` 而不是 `CanteenName`：筛选条只给白名单（`CANTEEN_NAMES`）里的值，
+   * 但菜品表允许白名单外的真实食堂（如「丝路餐厅」），表单也保持自由文本。
+   */
+  canteen?: string;
   cursor?: string | null;
   limit?: number;
 }

@@ -45,6 +45,7 @@ export function createDishHttpRepository(client: ApiClient): DishRepository {
       const result = await client.get<unknown>(DISHES_PATH, {
         q: query.q,
         category: query.category,
+        canteen: query.canteen,
         cursor: query.cursor ?? undefined,
         limit: query.limit ?? 50,
       });

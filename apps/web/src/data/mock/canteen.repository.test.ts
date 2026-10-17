@@ -76,6 +76,26 @@ describe('菜品检索', () => {
     expect(result.value.items.map((item) => item.name).sort()).toEqual(['红烧排骨', '香煎鸡腿']);
   });
 
+  it('按食堂精确过滤（与分类 / 关键词叠加，不是二选一）', async () => {
+    const repo = makeRepo();
+
+    const byCanteen = await repo.list({ canteen: '第二食堂' });
+    expect(byCanteen.ok).toBe(true);
+    if (!byCanteen.ok) return;
+    expect(byCanteen.value.items.map((item) => item.name).sort()).toEqual(['红烧牛肉面', '麻婆豆腐']);
+    expect(byCanteen.value.items.every((item) => item.canteen === '第二食堂')).toBe(true);
+
+    // 叠加：第二食堂 + 素菜 —— 只剩麻婆豆腐
+    const stacked = await repo.list({ canteen: '第二食堂', category: 'vegetable' });
+    if (!stacked.ok) return;
+    expect(stacked.value.items.map((item) => item.name)).toEqual(['麻婆豆腐']);
+
+    // 白名单里有、但种子数据里没有菜品的食堂 → 诚实空态
+    const empty = await repo.list({ canteen: '清真食堂' });
+    if (!empty.ok) return;
+    expect(empty.value.items).toEqual([]);
+  });
+
   it('游标分页：不重叠、不遗漏，翻到底 nextCursor 为 null', async () => {
     const repo = makeRepo();
     const first = await repo.list({ limit: 5 });

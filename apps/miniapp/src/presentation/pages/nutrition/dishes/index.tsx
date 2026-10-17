@@ -1,5 +1,5 @@
 import { Text, View } from '@tarojs/components'
-import { DISH_CATEGORIES, DISH_CATEGORY_LABELS } from '@kedaya/shared'
+import { CANTEEN_NAMES, DISH_CATEGORIES, DISH_CATEGORY_LABELS } from '@kedaya/shared'
 import { useState } from 'react'
 
 import { getContainer } from '../../../../app/container'
@@ -29,7 +29,9 @@ interface DishForm {
 }
 
 const EMPTY_FORM: DishForm = {
-  canteen: '一食堂',
+  // 默认选中白名单第一项：食堂是**单选**（chip），不再是自由文本输入框 ——
+  // 手写的食堂名会与「共建菜品库」的筛选项对不上，筛选点下去就是空列表。
+  canteen: CANTEEN_NAMES[0],
   name: '',
   category: 'other',
   servingG: '100',
@@ -121,12 +123,22 @@ export default function NutritionDishesPage() {
           （正式数据由管理员在 Web 后台批量维护，这里适合演示 / 补录）。
         </Text>
 
-        <KdyField
-          className='kdy-nu-dishes__field'
-          label='食堂'
-          value={form.canteen}
-          onChange={(value) => setField('canteen', value)}
-        />
+        {/*
+          食堂用**单选 chip** 而不是输入框：手写食堂名（「一食堂」vs「第一食堂」）
+          会让「共建菜品库」的筛选点下去是空的。白名单来自 `@kedaya/shared`，三端同一份。
+        */}
+        <Text className='kdy-nu-dishes__label'>食堂</Text>
+        <View className='kdy-nu-dishes__chips'>
+          {CANTEEN_NAMES.map((canteen) => (
+            <KdyChip
+              key={canteen}
+              active={canteen === form.canteen}
+              onClick={() => setField('canteen', canteen)}
+            >
+              {canteen}
+            </KdyChip>
+          ))}
+        </View>
 
         <KdyField
           className='kdy-nu-dishes__field'

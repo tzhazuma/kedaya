@@ -74,7 +74,7 @@ describe('allNutrientProgress（六项顺序）', () => {
 
 describe('validateDishInput（录入校验，shared 唯一真相）', () => {
   const valid: CreateDishInput = {
-    canteen: '一食堂',
+    canteen: '第一食堂',
     name: '测试菜',
     category: 'meat',
     servingG: 200,

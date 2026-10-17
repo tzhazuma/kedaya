@@ -23,7 +23,7 @@ import type { DishRecognitionPort } from './domain/recognition.domain';
 
 const DISH: CanteenDishModel = {
   id: 'dish-1',
-  canteen: '一食堂',
+  canteen: '第一食堂',
   name: '红烧排骨',
   category: 'meat',
   servingG: 200,
@@ -34,7 +34,7 @@ const DISH: CanteenDishModel = {
   fiberG: 0,
   sodiumMg: 900,
   priceFen: 1400,
-  source: '一食堂公告栏公示',
+  source: '第一食堂公告栏公示',
   lastVerifiedAt: new Date('2026-10-12T00:00:00.000Z'),
   allergens: ['pork'],
   deletedAt: null,

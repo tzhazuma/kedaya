@@ -11,8 +11,10 @@
  */
 
 import {
+  CANTEEN_NAMES,
   DISH_CATEGORIES,
   DISH_CATEGORY_LABELS,
+  isCanteenName,
   isDishCategory,
   MEAL_TYPES,
   MEAL_TYPE_LABELS,
@@ -20,6 +22,7 @@ import {
   NUTRIENT_UNITS,
   suggestMealType,
   type ActivityLevel,
+  type CanteenName,
   type DishCategory,
   type MealType,
   type NutritionGoal,
@@ -29,8 +32,10 @@ import {
 } from '@kedaya/shared'
 
 export {
+  CANTEEN_NAMES,
   DISH_CATEGORIES,
   DISH_CATEGORY_LABELS,
+  isCanteenName,
   isDishCategory,
   MEAL_TYPES,
   MEAL_TYPE_LABELS,
@@ -38,7 +43,16 @@ export {
   NUTRIENT_UNITS,
   suggestMealType,
 }
-export type { ActivityLevel, DishCategory, MealType, NutritionGoal, NutritionTarget, NutritionTotals, Sex }
+export type {
+  ActivityLevel,
+  CanteenName,
+  DishCategory,
+  MealType,
+  NutritionGoal,
+  NutritionTarget,
+  NutritionTotals,
+  Sex,
+}
 
 /**
  * 估算器需要的身体档案。
@@ -311,7 +325,7 @@ export function toCartDish(dish: {
 }
 
 /**
- * 营养数据来源的一行说明：`来源：一食堂公告栏公示 · 更新于 2026-10-12`。
+ * 营养数据来源的一行说明：`来源：第一食堂公告栏公示 · 更新于 2026-10-12`。
  * 两个字段都没有时返回 null（UI 就不显示这一行，不编造）。
  */
 export function formatNutrientSource(
