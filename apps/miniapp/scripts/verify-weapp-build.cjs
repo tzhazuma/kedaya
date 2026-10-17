@@ -64,6 +64,10 @@ for (const [id, { ast, outer }] of modules) {
 }
 for (const marker of ['spot', 'sighting', 'sensitive', 'track'])
   assert.ok(fs.existsSync(path.join(root, `assets/wildlife/marker-${marker}.png`)), `Missing marker icon: ${marker}`);
+// 物种头像（档案页用，`presentation/theme/speciesIcons.ts` 引用）。少一张不会报错，
+// 只会让档案页那一行悄悄退化成首字占位 —— 因此在构建产物里也断言一次。
+for (const species of ['cat', 'swan', 'bird'])
+  assert.ok(fs.existsSync(path.join(root, `assets/wildlife/species-${species}.png`)), `Missing species icon: ${species}`);
 const app = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
 // 页面路由既可能在主包（`app.pages`），也可能在分包（`app.subPackages[].pages`）。
 // wildlife 三页都在分包里 —— 只看 `app.pages` 会漏判，这里合并后再断言。
@@ -74,6 +78,10 @@ const allPages = [
   ...subpackages.flatMap(entry => entry.pages.map(page => `${entry.root}/${page}`)),
 ];
 assert.ok(allPages.includes('presentation/pages/wildlife/map/index'));
+assert.ok(allPages.includes('presentation/pages/wildlife/archive/index'));
+assert.ok(app.pages.includes('presentation/pages/home/services/index'));
+assert.ok(app.pages.includes('presentation/pages/profile/home/index'));
+assert.ok(app.pages.includes('presentation/pages/cou/index'));
 assert.ok(app.permission['scope.userLocation']);
 for (const page of allPages) {
   assert.ok(!page.endsWith('.html'), `Invalid WeChat page route: ${page}`);

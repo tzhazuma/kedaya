@@ -406,7 +406,7 @@ forum/faq 浏览器实测（真实 Chromium，`http://127.0.0.1:3311`，数据�
 
 ---
 
-## 8. wildlife 切片（猫 / 鸟 / 黑天鹅）
+## 8. wildlife 切片（野生动物）
 
 > 规格：`docs/features/wildlife-map.md` · 契约：`00-FROZEN-CONTRACT.md` §4.1 / §6.1 / §9 / §11.2 / §11.5
 

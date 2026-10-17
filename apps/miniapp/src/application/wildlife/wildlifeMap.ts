@@ -18,6 +18,7 @@ import type {
   MapCircle,
   MapMarker,
   SightingSummary,
+  WildlifeIndividual,
   WildlifeSighting,
   WildlifeSpecies,
   WildlifeSpot,
@@ -51,6 +52,15 @@ export interface WildlifeMapState {
   spots: WildlifeSpot[]
   tracks: WildlifeTrack[]
   sightings: WildlifeSighting[]
+  /**
+   * 已命名个体（"野生居民"）。
+   *
+   * 地图本身不画个体（一个个体的位置不是一条观测，画上去就等于实时定位），
+   * 它服务于**档案页**的「常住居民」：谁被起了名字、属于哪个物种。
+   * 因为档案与地图是同一个模块的两面、数据也一起变，所以放在同一份 state 里，
+   * 而不是再建一个只差一次请求的用例（那样两边会各拉一次、页面上还会先后跳一下）。
+   */
+  individuals: WildlifeIndividual[]
   /** `null` = 全部物种 */
   activeSpeciesId: string | null
   /** 用户在地图上点选的区域（详情面板） */
@@ -71,6 +81,8 @@ export interface CachedWildlifeMap {
   spots: WildlifeSpot[]
   tracks: WildlifeTrack[]
   sightings: WildlifeSighting[]
+  /** 旧版本缓存没有这一项 → 读的时候回落到 `[]`（见 `hydrate`） */
+  individuals?: WildlifeIndividual[]
   activeSpeciesId: string | null
   updatedAt: string
 }
@@ -105,6 +117,7 @@ const INITIAL_STATE: WildlifeMapState = {
   spots: [],
   tracks: [],
   sightings: [],
+  individuals: [],
   activeSpeciesId: null,
   selectedZoneId: null,
   selectedSightingId: null,
@@ -158,6 +171,7 @@ export function createWildlifeMapUseCase(deps: WildlifeMapDeps): WildlifeMapUseC
       spots: cached.spots,
       tracks: cached.tracks ?? [],
       sightings: cached.sightings ?? [],
+      individuals: cached.individuals ?? [],
       activeSpeciesId: cached.activeSpeciesId,
       error: null,
       fromCache: true,
@@ -178,16 +192,24 @@ export function createWildlifeMapUseCase(deps: WildlifeMapDeps): WildlifeMapUseC
       ...(defaultLimit === undefined ? {} : { limit: defaultLimit }),
     }
 
-    // 地图首屏需要「底图 + 物种 + 区域 + 热点 + 轨迹」齐了才有意义，因此并发拉取
-    const [basemapResult, speciesResult, zonesResult, spotsResult, tracksResult, sightingsResult] =
-      await Promise.all([
-        repository.basemap(),
-        repository.listSpecies(),
-        repository.listZones(),
-        repository.listSpots(query),
-        repository.listTracks(query),
-        repository.listSightings(query),
-      ])
+    // 地图首屏需要「底图 + 物种 + 区域 + 热点 + 轨迹 + 个体」齐了才有意义，因此并发拉取
+    const [
+      basemapResult,
+      speciesResult,
+      zonesResult,
+      spotsResult,
+      tracksResult,
+      sightingsResult,
+      individualsResult,
+    ] = await Promise.all([
+      repository.basemap(),
+      repository.listSpecies(),
+      repository.listZones(),
+      repository.listSpots(query),
+      repository.listTracks(query),
+      repository.listSightings(query),
+      repository.listIndividuals(active),
+    ])
 
     // 契约 §8：失败静默降级 —— 有缓存就继续用缓存，只把错误文案挂上
     const failure =
@@ -203,7 +225,9 @@ export function createWildlifeMapUseCase(deps: WildlifeMapDeps): WildlifeMapUseC
                 ? tracksResult.error
                 : !sightingsResult.ok
                   ? sightingsResult.error
-                  : null
+                  : !individualsResult.ok
+                    ? individualsResult.error
+                    : null
 
     if (failure !== null) {
       return patch({
@@ -213,13 +237,14 @@ export function createWildlifeMapUseCase(deps: WildlifeMapDeps): WildlifeMapUseC
       })
     }
 
-    // 到这里六个结果都成功（failure === null 蕴含全部 ok）
+    // 到这里七个结果都成功（failure === null 蕴含全部 ok）
     const basemap = basemapResult.ok ? basemapResult.value : null
     const species = speciesResult.ok ? speciesResult.value : []
     const zones = zonesResult.ok ? zonesResult.value : []
     const spots = spotsResult.ok ? spotsResult.value.items : []
     const tracks = tracksResult.ok ? tracksResult.value.items : []
     const sightings = sightingsResult.ok ? sightingsResult.value.items : []
+    const individuals = individualsResult.ok ? individualsResult.value : []
 
     const updatedAt = clock.now().toISOString()
     cache.write(cacheKey, {
@@ -229,6 +254,7 @@ export function createWildlifeMapUseCase(deps: WildlifeMapDeps): WildlifeMapUseC
       spots,
       tracks,
       sightings,
+      individuals,
       activeSpeciesId: active,
       updatedAt,
     } satisfies CachedWildlifeMap)
@@ -242,6 +268,7 @@ export function createWildlifeMapUseCase(deps: WildlifeMapDeps): WildlifeMapUseC
       spots,
       tracks,
       sightings,
+      individuals,
       activeSpeciesId: active,
       error: null,
       fromCache: false,

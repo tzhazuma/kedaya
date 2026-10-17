@@ -10,7 +10,7 @@ import { WildlifeExplorer } from '@/presentation/components/wildlife/WildlifeExp
 const WILDLIFE_MODULE = findPortalModule(PORTAL_MODULES, 'wildlife');
 
 export const metadata: Metadata = {
-  title: WILDLIFE_MODULE?.nameZh ?? '猫鸟黑天鹅',
+  title: WILDLIFE_MODULE?.nameZh ?? '野生动物',
   description:
     '校园动物活动区域与推断轨迹：静态校园平面图 + 叠加层（活动区域 / 聚合热点 / 推断轨迹 / 观测点）。位置已模糊化，热点为历史聚合，非实时位置。',
 };

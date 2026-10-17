@@ -8,9 +8,18 @@
 
 export const PAGE_PATHS = {
   home: '/presentation/pages/home/index',
+  /** 服务大厅：首页「全部服务」格的落地页（分组 + 搜索） */
+  homeServices: '/presentation/pages/home/services/index',
   discover: '/presentation/pages/discover/index',
   messages: '/presentation/pages/messages/index',
   profile: '/presentation/pages/profile/index',
+  /**
+   * 凑凑 —— 产品一级入口，下设「拼单」与「找搭子」。
+   *
+   * ⚠️ 它不是契约模块（契约里 `groupbuy` / `buddy` 仍是两个独立模块）：
+   * 这里只是一个**导航聚合页**，没有自己的 API 与数据。
+   */
+  cou: '/presentation/pages/cou/index',
   // 拼单
   groupBuyList: '/presentation/pages/groupbuy/list/index',
   groupBuyCreate: '/presentation/pages/groupbuy/create/index',
@@ -24,6 +33,8 @@ export const PAGE_PATHS = {
   // 资料（昵称 / 头像：微信一键注册后会直接引到这里）
   profileEdit: '/presentation/pages/profile/edit/index',
   profileSettings: '/presentation/pages/profile/settings/index',
+  /** 「首页管理」：选择首页展示哪些服务、排序、恢复默认 */
+  profileHome: '/presentation/pages/profile/home/index',
   /** 「我的资产」：我的拼单（发起/参与）+ 各模块入口 */
   profileAssets: '/presentation/pages/profile/assets/index',
   // 跳蚤市场
@@ -49,7 +60,8 @@ export const PAGE_PATHS = {
   forumCreate: '/presentation/pages/forum/create/index',
   forumDetail: '/presentation/pages/forum/detail/index',
   forumReport: '/presentation/pages/forum/report/index',
-  // 猫鸟黑天鹅（校园动物观察点）：地图（主界面）/ 上报 / 轨迹
+  // 野生动物（校园动物观察点）：档案（主界面）/ 地图 / 上报 / 轨迹
+  wildlifeArchive: '/presentation/pages/wildlife/archive/index',
   wildlifeMap: '/presentation/pages/wildlife/map/index',
   wildlifeReport: '/presentation/pages/wildlife/report/index',
   wildlifeTracks: '/presentation/pages/wildlife/tracks/index',
@@ -101,9 +113,13 @@ export type PagePath = (typeof PAGE_PATHS)[keyof typeof PAGE_PATHS]
  * 各写一份必然漂移（新增页面时只改了一处，另一处静默点不进去）。
  *
  * ⚠️ 有多个真实页面时，入口取**模块主界面**：
- *   · `wildlife` → 地图页（模块主界面），上报 / 轨迹 / 列表从地图页进入；
+ *   · `wildlife` → **档案页**（野生居民档案是模块主界面），地图 / 上报 / 轨迹从档案页进入；
  *   · `techpie` → 绑定管理页（用户来这里第一个问题是"我绑了什么"）；
  *   · `faq` → 折叠首页（问答库主界面），检索列表从首页进入。
+ *
+ * ⚠️ `groupbuy` / `buddy` 仍然**各自**登记入口（它们仍是契约模块、仍有独立页面），
+ * 但首页宫格对外只给一个聚合入口「凑凑」——聚合关系在
+ * `domain/models/homeEntries.ts` 里声明，本表保持「模块 id → 页面」的单一职责。
  */
 export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   groupbuy: PAGE_PATHS.groupBuyList,
@@ -112,7 +128,7 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   buddy: PAGE_PATHS.buddyList,
   'lost-found': PAGE_PATHS.lostFoundList,
   forum: PAGE_PATHS.forumList,
-  wildlife: PAGE_PATHS.wildlifeMap,
+  wildlife: PAGE_PATHS.wildlifeArchive,
   canteen: PAGE_PATHS.canteenList,
   faq: PAGE_PATHS.faq,
   'takeout-guard': PAGE_PATHS.takeoutGuardList,
@@ -131,6 +147,37 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
 
 export function moduleEntryPath(moduleId: string): string | null {
   return MODULE_ENTRY_PATHS[moduleId] ?? null
+}
+
+/**
+ * 首页 / 服务大厅的**入口 id → 页面路径**（`domain/models/homeEntries` 的目录用）。
+ *
+ * 为什么需要它而不是让目录自己带 `path`：`app/routes.ts` 是应用层，领域层
+ * 不能 import 它（见 `domain/models/notification.ts` 的同一条纪律）。
+ * 于是目录只声明「有哪些入口、属于哪一组」，路径在这里解析 ——
+ * 聚合入口（凑凑）没有对应的契约模块，所以额外判一次。
+ *
+ * ⚠️ 第 3 步是 `null`（未上线的模块）：调用方要如实告知「开发中」，
+ * 而不是跳到一个不存在的页面（微信只会静默失败）。
+ */
+export function homeEntryPath(entryId: string): string | null {
+  if (entryId === 'cou') return PAGE_PATHS.cou
+  return moduleEntryPath(entryId)
+}
+
+/** 首页管理（自定义首页展示哪些服务） */
+export function profileHomePath(): string {
+  return PAGE_PATHS.profileHome
+}
+
+/** 服务大厅（全部服务，分组 + 搜索） */
+export function homeServicesPath(): string {
+  return PAGE_PATHS.homeServices
+}
+
+/** 凑凑（拼单 + 找搭子） */
+export function couPath(): string {
+  return PAGE_PATHS.cou
 }
 
 /** tabBar 上的四个主页面（必须与 app.config.ts 的 tabBar.list 完全一致） */
@@ -250,8 +297,32 @@ export function dormHarmonyDetailPath(trackCode: string): string {
 }
 
 /* ------------------------------------------------------------------ *
- * wildlife（猫 / 鸟 / 黑天鹅）
+ * wildlife（野生动物：档案 / 地图 / 上报 / 轨迹）
  * ------------------------------------------------------------------ */
+
+/**
+ * 档案页 —— 模块主界面。
+ *
+ * 可选 `speciesId`：从服务大厅 / 档案卡的"看它的地图"进来时，
+ * 地图页据此预选物种筛选（不带就展示全部）。
+ */
+export function wildlifeArchivePath(params?: { speciesId?: string | null }): string {
+  const speciesId = params?.speciesId
+  return speciesId == null || speciesId === ''
+    ? PAGE_PATHS.wildlifeArchive
+    : `${PAGE_PATHS.wildlifeArchive}?speciesId=${encodeURIComponent(speciesId)}`
+}
+
+/**
+ * 地图页；可选带上物种，进入后默认选中该物种的筛选。
+ *
+ * ⚠️ 只接受**物种 id**（契约数据），不接受坐标 —— 坐标一律由页面自己采集。
+ */
+export function wildlifeMapWithSpeciesPath(speciesId?: string | null): string {
+  return speciesId == null || speciesId === ''
+    ? PAGE_PATHS.wildlifeMap
+    : `${PAGE_PATHS.wildlifeMap}?speciesId=${encodeURIComponent(speciesId)}`
+}
 
 /**
  * 上报页；可选带上物种与区域，进入后默认选中。

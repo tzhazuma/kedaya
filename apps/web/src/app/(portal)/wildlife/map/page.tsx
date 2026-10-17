@@ -11,7 +11,7 @@ import { PageHeader } from '@/presentation/components/PageHeader';
 const WILDLIFE_MODULE = findPortalModule(PORTAL_MODULES, 'wildlife');
 
 export const metadata: Metadata = {
-  title: '校园地图 · 猫鸟黑天鹅',
+  title: '校园地图 · 野生动物',
   description:
     '基于 OpenStreetMap（ODbL）离线渲染的上海科技大学张江校区底图，叠加动物活动区域、聚合热点、推断轨迹与已模糊化的观测点；标注 25 个校园地点并逐项注明定位依据。',
 };

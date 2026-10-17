@@ -74,6 +74,8 @@ import { createCampusUseCases } from '../application/campus/campusUseCases'
 import type { CampusUseCases } from '../application/campus/campusUseCases'
 import { createPrivacyUseCase } from '../application/privacy/privacyUseCases'
 import type { PrivacyUseCase } from '../application/privacy/privacyUseCases'
+import { createHomeLayoutUseCase } from '../application/homeLayout/homeLayoutUseCases'
+import type { HomeLayoutUseCase } from '../application/homeLayout/homeLayoutUseCases'
 import { createAgentUseCase } from '../application/agent/agentUseCases'
 import type { AgentUseCase } from '../application/agent/agentUseCases'
 import { createMediaUseCases } from '../application/media/mediaUseCases'
@@ -315,6 +317,8 @@ export interface AppContainer {
     // 四个核心模块 + 全局助手
     campus: CampusUseCases
     privacy: PrivacyUseCase
+    /** 首页展示哪些入口（本机偏好，按登录用户分片） */
+    homeLayout: HomeLayoutUseCase
     agent: AgentUseCase
     media: MediaUseCases
     report: ReportUseCases
@@ -684,6 +688,16 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
   })
 
   /**
+   * 首页布局（本机偏好）：key 里拼用户标识，换账号就换一份 ——
+   * 同一台手机上换号是真实场景，不能把上一个人的常用服务留给下一个人。
+   */
+  const homeLayout = createHomeLayoutUseCase({
+    cache,
+    viewerId,
+    cacheKeyFor: (viewer) => `${StorageKeys.homeLayout}:${viewer ?? 'anonymous'}`,
+  })
+
+  /**
    * 可达鸭 agent：mock 模式下是一个本地规则实现（复用上面的 mock 校园仓储），
    * 因此"离线也能问课表和余额"这条**演示路径**成立。
    * 接真后端时只是换掉仓储 —— 页面与用例完全不变。
@@ -806,7 +820,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     session: sessionStore,
   })
 
-  /* ---------------- 猫鸟黑天鹅（观察点 / 轨迹 / 上报） ---------------- */
+  /* ---------------- 野生动物（档案 / 观察点 / 轨迹 / 上报） ---------------- */
 
   const wildlifeMap = createWildlifeMapUseCase({
     repository: wildlifeRepository,
@@ -982,6 +996,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       dormHarmony,
       campus,
       privacy,
+      homeLayout,
       agent,
       media,
       report,

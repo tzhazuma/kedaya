@@ -1,8 +1,8 @@
 import { Map, Text, View } from '@tarojs/components'
-import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
+import Taro, { useDidShow, usePullDownRefresh, useRouter } from '@tarojs/taro'
 
 import { getContainer } from '../../../../app/container'
-import { wildlifeReportPath, wildlifeTracksPath } from '../../../../app/routes'
+import { wildlifeArchivePath, wildlifeReportPath, wildlifeTracksPath } from '../../../../app/routes'
 import {
   FEEDING_POLICY_TONES,
   WILDLIFE_BLACK_SWAN_NOTICE,
@@ -55,9 +55,22 @@ import './index.scss'
 const MAP_SCALE = 16
 
 export default function WildlifeMapPage() {
+  const router = useRouter()
   const container = getContainer()
   const map = container.useCases.wildlifeMap
   const state = useStore(map)
+
+  /**
+   * 从档案页的物种卡进来时带 `speciesId`（`wildlifeMapWithSpeciesPath`），
+   * 地图直接落在那个物种的筛选上 —— 否则用户点「黑天鹅」却看到全部物种，
+   * 还得自己再点一次筛选。
+   *
+   * ⚠️ 只认**物种 id**：坐标永远由本页自己采集，绝不由 URL 带进来。
+   */
+  const paramSpeciesId =
+    typeof router.params.speciesId === 'string' && router.params.speciesId !== ''
+      ? router.params.speciesId
+      : null
 
   const now = container.clock.now()
   const overlays = buildMapOverlays(state, now, MAP_OVERLAY_COLORS)
@@ -79,7 +92,13 @@ export default function WildlifeMapPage() {
   useDidShow(() => {
     // 契约 §8 第 1 步（幂等，同步读缓存）+ 第 3 步（后台刷新）
     map.hydrate()
-    void map.load()
+    if (paramSpeciesId === null) {
+      void map.load()
+      return
+    }
+    // 带物种进来：先落到该物种的筛选，再按该物种拉数据
+    map.selectSpecies(paramSpeciesId)
+    void map.load(paramSpeciesId)
   })
 
   usePullDownRefresh(() => {
@@ -189,6 +208,9 @@ export default function WildlifeMapPage() {
       <View className='kdy-wildlife-map__actions'>
         <KdyButton size='sm' onClick={() => void navigateTo(wildlifeReportPath())}>
           上报观测
+        </KdyButton>
+        <KdyButton size='sm' variant='ghost' onClick={() => void navigateTo(wildlifeArchivePath())}>
+          居民档案
         </KdyButton>
         <KdyButton size='sm' variant='ghost' onClick={() => void navigateTo(wildlifeTracksPath())}>
           推断轨迹

@@ -122,7 +122,7 @@ export const StorageKeys = {
   privacySettingsCache: `${STORAGE_PREFIX}cache:privacy:settings`,
   /** 站内信列表缓存：断网进「消息」页也能看到上次拉到的通知 */
   notificationListCache: `${STORAGE_PREFIX}cache:notifications:list`,
-  /** 猫鸟黑天鹅列表缓存 */
+  /** 野生动物（档案 / 观察点）列表缓存 */
   wildlifeListCache: `${STORAGE_PREFIX}cache:wildlife:list`,
   /** 食堂营养列表缓存 */
   canteenListCache: `${STORAGE_PREFIX}cache:canteen:list`,
@@ -144,6 +144,18 @@ export const StorageKeys = {
    * 画像本体刻意**不缓存** —— 它是服务端结论，落盘会在换账号/换设备后被当成自己的数据读出来。
    */
   aiPortraitSourcesCache: `${STORAGE_PREFIX}cache:ai-portrait:sources`,
+  /**
+   * 首页展示的入口清单（`domain/models/homeEntries` 的入口 id 数组）。
+   *
+   * 运行时会拼上用户标识（`${homeLayout}:${userId ?? 'anonymous'}`）：
+   * 首页是「我的首页」，换账号就该换一份，而不是把上一个人的常用服务
+   * 显示给下一个人（同一台手机上换号登录是真实场景）。
+   *
+   * 与隐私开关相反，这份偏好**不需要**服务端确认：它只是本机的界面状态，
+   * 写入失败最坏是"下次进来自定义没生效"，不会造成"以为关掉了其实没关"。
+   * 因此允许乐观更新（见 `application/homeLayout/homeLayoutUseCases`）。
+   */
+  homeLayout: `${STORAGE_PREFIX}home:layout`,
 } as const
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys]

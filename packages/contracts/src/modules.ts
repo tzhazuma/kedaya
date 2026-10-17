@@ -162,10 +162,15 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
     route: 'techpie',
   },
   {
+    /**
+     * ⚠️ 展示名已从「猫鸟黑天鹅」改为「野生动物」（产品面：野生居民**档案** + 地图）。
+     * `id` 是冻结契约的一部分（它同时是 API 路由段与落库字段），**不改** ——
+     * 改名只发生在展示层，历史数据、审计与路由全都不受影响。
+     */
     id: 'wildlife',
-    nameZh: '猫鸟黑天鹅',
+    nameZh: '野生动物',
     nameEn: 'Campus Wildlife',
-    summary: '校园动物活动区域地图、投喂规范与上报',
+    summary: '野生居民档案：物种与个体、校园活动地图、投喂规范与观测上报',
     category: 'business',
     sensitivity: 'low',
     requiresConsent: false,

@@ -34,6 +34,32 @@ page,
   padding: $kdy-space-6 $kdy-space-5 $kdy-space-3;
 }
 
+/*
+ * 模块宫格图标（`KdyModuleIcon`）。
+ *
+ * 放在全局样式里而不是某个页面的 scss：首页、服务大厅、发现页都用它，
+ * 挂在页面样式下会变成"谁先加载谁说了算"——首页改了图标尺寸，
+ * 发现页跟着变，但没人能从文件名看出这层耦合。
+ */
+.kdy-module-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: $kdy-radius-lg;
+  background: $kdy-color-brand-soft;
+  color: $kdy-color-ink;
+  font-size: 24px;
+}
+
+/* 导航格（「全部服务」这类），描边弱化，避免被误当成一个服务模块 */
+.kdy-module-icon--plain {
+  background: $kdy-color-surface;
+  border: 1px solid $kdy-color-border;
+  color: $kdy-color-ink-soft;
+}
+
 .kdy-eyebrow {
   display: block;
   margin-bottom: $kdy-space-2;

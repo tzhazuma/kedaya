@@ -237,7 +237,7 @@ export default function DiscoverPage() {
         </View>
       </KdyCard>
 
-      <KdyCard title='猫 / 鸟 / 黑天鹅（野生动物地图）' elevated={false}>
+      <KdyCard title='野生动物（居民档案 · 地图）' elevated={false}>
         <Text className='kdy-discover__hint'>
           地图：活动区域圈 + 聚合热点 + 历史观测点；上报：照片 / 发现时间 / 定位或地图点选 /
           自动分类（不可用时降级为手动选择）/ 给个体起名；轨迹：推断轨迹（显著标注「不是实测路径」）。

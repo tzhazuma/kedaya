@@ -30,7 +30,7 @@
 
 ### 0.2 只有脚手架、端上没有页面的（7 个）
 
-`takeout-guard` 偷外卖 · `canteen` 食堂营养 · `faq` 常见问题 · `wildlife` 猫鸟黑天鹅 ·
+`takeout-guard` 偷外卖 · `canteen` 食堂营养 · `faq` 常见问题 · `wildlife` 野生动物 ·
 `techpie` TechPie 整合 · `ai-portrait` AI 校园画像 · `wellbeing` 心理治疗
 
 > 后端这 7 个都是 `scripts/scaffold.mjs` 生成的通用 CRUD：
@@ -114,7 +114,7 @@ flowchart TB
     m_faq["faq 常见问题"]
     m_canteen["canteen 食堂营养"]
     m_takeout["takeout-guard 偷外卖"]
-    m_wild["wildlife 猫鸟黑天鹅"]
+    m_wild["wildlife 野生动物"]
     m_safe["wellbeing / ai-portrait 安全子集"]
     m_techpie["techpie 诚实占位"]
   end
@@ -586,7 +586,7 @@ R5 是「好看 + 丝滑」。按「**用户能感觉到**」这条线选了四�
 | 偷外卖 `takeout-guard` | ✅ CRUD + escalate | ❌ 无 | ✅ 见 §10.3 |
 | 食堂营养 `canteen` | ✅ CRUD + 按食堂聚合热量 | ❌ 无 | ✅ 见 §10.3 |
 | 常见问题 `faq` | ✅ CRUD + 有帮助 | ❌ 无 | ✅ 见 §10.3 |
-| 猫鸟黑天鹅 `wildlife` | ✅ CRUD + confirm | ❌ 无 | ✅ 见 §10.3 |
+| 野生动物 `wildlife` | ✅ CRUD + confirm | ❌ 无 | ✅ 见 §10.3 |
 | TechPie `techpie` | ✅ CRUD + sync | ❌ 无 | ✅ 见 §10.5 |
 | AI 校园画像 `ai-portrait` | ✅ 同意 / 来源 / 开关 | ❌ 无 | ✅ 见 §10.5 |
 | 心理支持 `wellbeing` | ✅ 同意 / 危机热线 / 预约 | ❌ 无 | ✅ 见 §10.5 |
@@ -620,7 +620,7 @@ R5 是「好看 + 丝滑」。按「**用户能感觉到**」这条线选了四�
 - **常见问题**（`faq`）：分类白名单（9 类）+ 关键词搜索 + 「有帮助」。
   「有帮助」如实标注为**热度计数**而非一人一票（服务端是 `increment`，没有投票实体可查重）；
   本机记标记防重复计数，页面写明「换设备/清缓存可能再次计入」。
-- **猫鸟黑天鹅**（`wildlife`）：物种筛选 + 上报（坐标是**近似值**，页面写明）+ 地图定位 +
+- **野生动物**（`wildlife`）：物种筛选 + 上报（坐标是**近似值**，页面写明）+ 地图定位 +
   「我也看到了」。`confirm` 改的是**全校共享状态**，所以用服务端返回刷新详情，不做乐观更新。
   常驻「观察不打扰，请勿投喂」。
 - **偷外卖**（`takeout-guard`）：拍板做成**本人可见的报备记录**，不是公开举报墙 ——

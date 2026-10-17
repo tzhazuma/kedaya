@@ -1,4 +1,4 @@
-# feature: `wildlife`（猫 / 鸟 / 黑天鹅活动区域与轨迹）
+# feature: `wildlife`（野生动物活动区域与轨迹）
 
 契约 §4.1 的 `wildlife`（敏感级：**低**，**无同意门**）。规格文档：
 `docs/features/wildlife-map.md`。

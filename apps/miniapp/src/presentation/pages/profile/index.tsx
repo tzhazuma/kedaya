@@ -259,6 +259,16 @@ export default function ProfilePage() {
 
       <KdyCard title='校园服务' elevated={false}>
         {[
+          {
+            label: '首页管理',
+            detail: '首页展示哪些服务、排在什么位置，最多 12 个',
+            path: PAGE_PATHS.profileHome,
+          },
+          {
+            label: '服务大厅',
+            detail: '全部服务按场景分组，找不到就搜一下',
+            path: PAGE_PATHS.homeServices,
+          },
           { label: '身份与校园绑定', detail: '统一身份 / 教务 / 校园卡，逐系统授权', path: PAGE_PATHS.identity },
           { label: '我的课表', detail: '今天上什么、下一节在哪、还有多久', path: PAGE_PATHS.schedule },
           { label: '校园卡', detail: '余额、消费集中地、异常扣款与挂失指引', path: PAGE_PATHS.campusCard },

@@ -1,4 +1,4 @@
-.kdy-home__feature {
+.kdy-home__hero {
   display: flex;
   align-items: center;
   margin: $kdy-space-3 $kdy-space-5 $kdy-space-5;
@@ -6,43 +6,45 @@
   border-radius: $kdy-radius-xl;
   overflow: hidden;
 }
-.kdy-home__feature-copy {
+.kdy-home__hero-copy {
   flex: 1;
   min-width: 0;
 }
-.kdy-home__feature-title {
+.kdy-home__hero-title {
   display: block;
   margin-top: $kdy-space-4;
   font-size: $kdy-font-size-xl;
-  font-weight: 700;
+  font-weight: $kdy-font-weight-bold;
   color: $kdy-color-ink;
 }
-.kdy-home__feature-description {
+.kdy-home__hero-description {
   display: block;
   margin-top: $kdy-space-2;
   font-size: $kdy-font-size-xs;
-  line-height: 1.7;
+  line-height: $kdy-line-height-loose;
   color: $kdy-color-text-muted;
 }
-.kdy-home__feature-link {
+.kdy-home__hero-link {
   display: flex;
   align-items: center;
   gap: $kdy-space-2;
   margin-top: $kdy-space-5;
   color: $kdy-color-ink;
-  font-weight: 600;
+  font-weight: $kdy-font-weight-semibold;
 }
-.kdy-home__feature-art {
+.kdy-home__hero-art {
   margin-left: $kdy-space-3;
   transform: rotate(-8deg);
 }
-.kdy-home__feature-art .kdy-module-icon {
+.kdy-home__hero-art .kdy-module-icon {
   width: 64px;
   height: 72px;
   font-size: 40px;
   background: $kdy-color-brand;
   border-radius: $kdy-radius-xl;
 }
+
+/* 「我的常用」宫格 —— 4 列，与「服务大厅」用同一套视觉 */
 .kdy-home__grid {
   display: flex;
   flex-wrap: wrap;
@@ -58,17 +60,6 @@
   padding: $kdy-space-2 0;
   min-width: 0;
 }
-.kdy-module-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: $kdy-radius-lg;
-  background: $kdy-color-brand-soft;
-  color: $kdy-color-ink;
-  font-size: 24px;
-}
 .kdy-home__grid-name {
   font-size: $kdy-font-size-xs;
   color: $kdy-color-text;
@@ -78,10 +69,29 @@
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
 }
-.kdy-home__module-state--brand {
-  color: $kdy-color-success;
+.kdy-home__module-state--danger {
+  color: $kdy-color-danger;
 }
-.kdy-home__support {
+.kdy-home__module-state--warning {
+  color: $kdy-color-warning;
+}
+.kdy-home__module-state--neutral {
+  color: $kdy-color-text-muted;
+}
+.kdy-home__grid-hint {
+  display: block;
+  margin-top: $kdy-space-3;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-loose;
+}
+.kdy-home__edit {
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-sm;
+}
+
+/* 安全出口：常驻，不被"自定义"影响（不属于可选项） */
+.kdy-home__safety {
   display: flex;
   align-items: center;
   gap: $kdy-space-3;
@@ -92,16 +102,17 @@
   color: $kdy-color-success;
   font-size: $kdy-font-size-xl;
 }
-.kdy-home__support > view {
+.kdy-home__safety-body {
   flex: 1;
+  min-width: 0;
 }
-.kdy-home__support-title {
+.kdy-home__safety-title {
   display: block;
   color: $kdy-color-ink;
   font-size: $kdy-font-size-sm;
-  font-weight: 600;
+  font-weight: $kdy-font-weight-semibold;
 }
-.kdy-home__support-description {
+.kdy-home__safety-description {
   display: block;
   margin-top: $kdy-space-1;
   color: $kdy-color-text-muted;

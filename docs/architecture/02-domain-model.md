@@ -852,7 +852,7 @@ stateDiagram-v2
 **依赖**：`auth`。
 **边界**：TechPie 的 `CASTGC` 之类的校园会话**绝不进入 KedaYa 的身份层**；如需其能力，走 `CampusSessionPort` 的 `techpie` 实现，见 [../adr/0004-auth-two-tier.md](../adr/0004-auth-two-tier.md)。
 
-### 2.10 `wildlife` 猫鸟黑天鹅（敏感级：低）
+### 2.10 `wildlife` 野生动物（敏感级：低）
 
 **核心实体**
 

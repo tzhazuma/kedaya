@@ -129,7 +129,7 @@ interface UploadedFileLike {
   originalname?: string;
 }
 
-@ApiTags('wildlife · 猫鸟黑天鹅')
+@ApiTags('wildlife · 野生动物')
 @Controller(modulePath('wildlife'))
 @UseGuards(OptionalAuthGuard)
 @UseInterceptors(IdempotencyInterceptor)

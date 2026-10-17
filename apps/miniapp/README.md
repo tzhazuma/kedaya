@@ -181,6 +181,32 @@ apps/miniapp/
 首页宫格**完全由 `@kedaya/contracts` 的 `MODULES` 驱动**，端上没有任何写死的模块数组。
 新增模块时首页自动出现。API 路径也用 `modulePath('groupbuy', 'items')` 生成。
 
+### 4.5 首页 / 服务大厅 / 首页管理（首页不再是模块目录）
+
+模块长到 20 个之后，「全部平铺」本身就变成了问题：首页退化成一张要**找**东西的目录。
+现在的分工：
+
+| 页面 | 职责 | 关键文件 |
+| --- | --- | --- |
+| 首页 `pages/home` | 用户自己挑的常用（默认 9 个 / 上限 12 个）+ 聚合入口「凑凑」+ 常驻安全出口 | `presentation/pages/home/index.tsx` |
+| 服务大厅 `pages/home/services` | 全部服务，按**使用场景**分组 + 搜索；未上线的如实标「开发中」 | `presentation/pages/home/services/index.tsx` |
+| 首页管理 `pages/profile/home` | 增删与排序（上移 / 下移）、恢复默认 | `presentation/pages/profile/home/index.tsx` |
+| 凑凑 `pages/cou` | 一级入口，下设拼单与找搭子 | `presentation/pages/cou/index.tsx` |
+
+- **入口目录**是 `domain/models/homeEntries.ts`：由契约 `MODULES` 派生，
+  只补「图标 / 分组 / 聚合关系 / 固定入口」。契约新增模块却忘了登记分组，
+  `__tests__/homeEntries.test.ts` 会红 —— 而不是让新模块在服务大厅里静默消失。
+- **聚合入口不吃掉契约模块**：`groupbuy` / `buddy` 仍是两个独立模块（各自的 API、
+  页面与测试都在），只是首页对外只给一个「凑凑」入口，避免两个格子进同一个页面。
+- **偏好存在本机并按账号分片**（`StorageKeys.homeLayout` + `userId`）：
+  同一台手机换号登录，看到的是那个账号自己的首页。它是界面状态，
+  因此**允许乐观更新**（与「隐私与数据」的开关相反，那条规矩是"绝不乐观更新"）。
+- **`wellbeing` 是固定入口**：可排序、**不可移除**（安全出口不能被一次误触藏掉），
+  首页底部还有一条常驻的心理支持热线横幅。管理页会**明说**这条规则，
+  而不是让按钮静默失灵。
+- **角标只在需要时出现**：开发中 / 需二次同意 / 高敏感。
+  给每个入口都挂「已上线」等于没有角标，还会把真正需要注意的两类淹掉。
+
 ---
 
 ## 5. 平台能力：微信特有 vs H5 降级
@@ -272,14 +298,23 @@ npm run build:weapp -w @kedaya/miniapp
   （domain-model §2.8「不存明文手机号」），校验在 domain 层，页面只展示错误。
 - **未登录也能提交工单**（`userId: null`），列表此时只显示匿名工单。
 
-## 6.3 垂直切片：猫 / 鸟 / 黑天鹅（`wildlife`）
+## 6.3 垂直切片：野生动物（`wildlife`）
 
 对应 `docs/features/wildlife-map.md`，敏感级 **low**（**无同意门**，契约 §9）。
 
 - **动物地图页** `presentation/pages/wildlife/map`：`<map>` 底图 +
   **活动区域圈**（`circles`）+ **聚合热点 / 历史观测标记**（`markers`）+ **推断轨迹折线**（`polyline`，
   虚线）；物种筛选、区域列表、点标记看观测详情（物种 / 发现时间 / 照片 / 区域 / 投喂规范）、
-  「在腾讯地图中打开」（`wx.openLocation`）。
+  「在腾讯地图中打开」（`wx.openLocation`）。带 `?speciesId=` 进来会直接落在该物种的筛选上。
+- **居民档案页** `presentation/pages/wildlife/archive`（**模块主界面**）：
+  物种卡（头像 + 学名 + 受保护 / 繁殖期敏感 / 投喂规范 + 观测条数）、
+  常住居民（被起名的个体 —— 只显示「谁」，**不显示它在哪**）、最近观测、伦理与隐私提示，
+  以及通往地图 / 上报 / 轨迹的三个入口。
+  - 物种头像在 `presentation/theme/speciesIcons.ts`：三张图覆盖七个物种
+    （猫与黑天鹅各有专属图，其余五种鸟共用一张）。没有插画的物种显示**首字占位**，
+    而不是硬塞一张不准的图；`theme/__tests__/speciesIcons.test.ts` 守住内置物种一个不漏。
+  - 本页的物种筛选是**本页本地状态**，与地图共用的 `activeSpeciesId` 分开：
+    换筛选不重新发请求，也不会顺手改掉地图的筛选（数据始终按全量加载）。
 - **上报观测页** `presentation/pages/wildlife/report`（**核心流程**）：
   `Taro.chooseMedia` 选图 → 按需压缩 → `POST /media`（**multipart**，走 `data/api/mediaUpload.ts`）→
   `POST /classify` 自动分类建议（**无 key 时静默降级为纯手动**）→ 手动选物种 →
@@ -497,9 +532,10 @@ npm run test -w @kedaya/miniapp
   - **向量匹配（`vector` / `hash` 模式）**：mock 诚实返回 `matchMode: 'rule'`
     （无 embedding）；端上不实现向量推理，只消费服务端的 `matchMode` 与 `score`。
 - **tabBar 图标**：未配置 `iconPath`（品牌图标未就位），当前只显示文字。
-- **分包（subPackages）**：**已做**。当前主包 **1172 KB**（上限 2048 KB），余量约 870 KB。
-  14 个子包共 57 个页面（六个生活模块 + 宿舍矛盾 + 猫鸟黑天鹅 / 食堂 / FAQ / 偷外卖 /
-  TechPie / 心理支持各三页，AI 画像两页）移出主包。
+- **分包（subPackages）**：**已做**。当前主包 **1.33 MiB / 2048 KB**（`npm run verify:weapp` 实测）。
+  14 个子包共 63 个页面（六个生活模块 + 宿舍矛盾 + 野生动物 4 页 / 食堂 / FAQ / 偷外卖 /
+  TechPie / 心理支持各三页，AI 画像两页）移出主包；主包内新增「服务大厅」`home/services`、
+  「凑凑」`cou` 与「首页管理」`profile/home`（野生动物档案在分包里）。
   分法与理由见 `src/app.config.ts` 的注释；`src/app/__tests__/routes.test.ts` 守住
   「tabBar 页必须在主包」「root 不嵌套」「preloadRule 只指向真实子包」这三条。
   特别地，`auth/*`、`agent`、`profile/*` **刻意留在主包** ——

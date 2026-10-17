@@ -345,7 +345,7 @@ flowchart TB
 | `wellbeing` | 心理支持 | `domain:wellbeing` | **最高** | `auth` `notifications` |
 | `faq` | 常见问题 | `domain:content` | 低 | — |
 | `techpie` | TechPie 整合 | `domain:social` | 中 | `auth` |
-| `wildlife` | 猫鸟黑天鹅 | `domain:content` | 低 | — |
+| `wildlife` | 野生动物 | `domain:content` | 低 | — |
 
 ### 7.2 基础模块（5）
 

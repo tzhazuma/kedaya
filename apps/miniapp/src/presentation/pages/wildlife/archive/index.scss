@@ -1,0 +1,180 @@
+.kdy-archive__lead {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-3;
+}
+.kdy-archive__lead-text {
+  flex: 1;
+  min-width: 0;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-md;
+  font-weight: $kdy-font-weight-semibold;
+}
+.kdy-archive__body {
+  display: block;
+  margin-top: $kdy-space-3;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-loose;
+}
+.kdy-archive__link {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-4;
+  color: $kdy-color-ink;
+  font-weight: $kdy-font-weight-semibold;
+}
+.kdy-archive__hint {
+  display: block;
+  margin-bottom: $kdy-space-3;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-loose;
+}
+.kdy-archive__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  padding: $kdy-space-2 $kdy-space-5 $kdy-space-4;
+}
+.kdy-archive__filter {
+  display: flex;
+}
+
+/* 物种档案行 */
+.kdy-archive__species {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-4;
+  padding: $kdy-space-4 0;
+  border-bottom: 1px solid $kdy-color-border;
+}
+.kdy-archive__species-photo {
+  flex-shrink: 0;
+  width: 48px;
+  height: 56px;
+  border-radius: $kdy-radius-md;
+  background-color: $kdy-color-brand-soft;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+/* 没有专属插画的物种：用首字占位，而不是硬塞一张错图 */
+.kdy-archive__species-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 56px;
+  border-radius: $kdy-radius-md;
+  background: $kdy-color-brand-soft;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-lg;
+  font-weight: $kdy-font-weight-semibold;
+}
+.kdy-archive__species-copy {
+  flex: 1;
+  min-width: 0;
+}
+.kdy-archive__species-name {
+  display: block;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-semibold;
+}
+.kdy-archive__species-latin {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  font-style: italic;
+}
+.kdy-archive__species-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-2;
+}
+.kdy-archive__species-count {
+  flex-shrink: 0;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+/* 常住居民 */
+.kdy-archive__resident {
+  padding: $kdy-space-3 0;
+  border-bottom: 1px solid $kdy-color-border;
+}
+.kdy-archive__resident-name {
+  display: block;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-semibold;
+}
+.kdy-archive__resident-meta {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+.kdy-archive__resident-note {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-loose;
+}
+
+/* 最近观测 */
+.kdy-archive__sighting {
+  padding: $kdy-space-3 0;
+  border-bottom: 1px solid $kdy-color-border;
+}
+.kdy-archive__sighting-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $kdy-space-3;
+}
+.kdy-archive__sighting-species {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-semibold;
+}
+.kdy-archive__sighting-when {
+  flex-shrink: 0;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+.kdy-archive__sighting-meta {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+.kdy-archive__sighting-note {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-loose;
+}
+.kdy-archive__sighting-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-2;
+}
+
+.kdy-archive__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-3;
+  padding: $kdy-space-5;
+}
+.kdy-archive__privacy {
+  padding: 0 $kdy-space-5 $kdy-space-4;
+}
