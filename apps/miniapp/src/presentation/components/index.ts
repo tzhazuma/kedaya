@@ -50,3 +50,6 @@ export type { KdyReportEntryProps } from './KdyReportEntry'
 
 export { KdyListSkeleton } from './KdyListSkeleton'
 export type { KdyListSkeletonProps } from './KdyListSkeleton'
+
+export { KdyShareEntry } from './KdyShareEntry'
+export type { KdyShareEntryProps } from './KdyShareEntry'

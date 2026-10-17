@@ -1,10 +1,10 @@
 import { Text, View } from '@tarojs/components'
-import Taro, { useDidShow, useRouter } from '@tarojs/taro'
+import Taro, { useDidShow, useShareAppMessage, useRouter } from '@tarojs/taro'
 import { useState } from 'react'
 import { fenToYuan, yuanToFen } from '@kedaya/shared'
 
 import { getContainer } from '../../../../app/container'
-import { PAGE_PATHS, readIdParam } from '../../../../app/routes'
+import { PAGE_PATHS, readIdParam, fleaDetailPath } from '../../../../app/routes'
 import {
   FLEA_ACTION_LABELS,
   FLEA_CATEGORIES,
@@ -20,7 +20,7 @@ import {
 } from '../../../../domain/models/fleaMarket'
 import type { FleaAction } from '../../../../domain/models/fleaMarket'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyImageGallery, KdyReportEntry, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyImageGallery, KdyReportEntry, KdyShareEntry, KdyTag } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -69,6 +69,21 @@ export default function FleaMarketDetailPage() {
       </View>
     )
   }
+
+  /**
+   * 分享给好友。
+   *
+   * 微信的硬性约束：转发**只能**由用户点击 `open-type="share"` 触发（组件是
+   * 页面底部的 `<KdyShareEntry />`），代码不能静默分享。这里只负责
+   * 「转发出去的标题 + 落地路径」。
+   *
+   * 落地路径**带上 id**：好友点开看到的就是这一条，
+   * 而不是被丢回列表里再找一遍。
+   */
+  useShareAppMessage(() => ({
+    title: detail.data === null ? '可达鸭 · 跳蚤市场' : `【闲置】${detail.data.title} · 可达鸭`,
+    path: id === null ? PAGE_PATHS.fleaList : fleaDetailPath(id),
+  }))
 
   if (detail.status === 'loading' && detail.data === null) {
     return (
@@ -295,6 +310,8 @@ export default function FleaMarketDetailPage() {
           面交前请再确认物品状态；平台不参与资金往来，因此也没有退款流程。
         </Text>
       </KdyCard>
+
+      <KdyShareEntry />
 
       <KdyReportEntry
         targetType='flea-item'

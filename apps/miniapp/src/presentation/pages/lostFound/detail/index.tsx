@@ -1,9 +1,9 @@
 import { Text, View } from '@tarojs/components'
-import Taro, { useDidShow, useRouter } from '@tarojs/taro'
+import Taro, { useDidShow, useShareAppMessage, useRouter } from '@tarojs/taro'
 import { useState } from 'react'
 
 import { getContainer } from '../../../../app/container'
-import { PAGE_PATHS, readIdParam } from '../../../../app/routes'
+import { PAGE_PATHS, readIdParam, lostFoundDetailPath } from '../../../../app/routes'
 import { validateDraft } from '../../../../application/lostFound/lostFoundUseCases'
 import {
   LOST_FOUND_ACTION_LABELS,
@@ -18,7 +18,7 @@ import {
 } from '../../../../domain/models/lostFound'
 import type { LostFoundAction, LostFoundItem } from '../../../../domain/models/lostFound'
 import { navigateTo, redirectTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyEmpty, KdyField, KdyImageGallery, KdyReportEntry, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyEmpty, KdyField, KdyImageGallery, KdyReportEntry, KdyShareEntry, KdyTag } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -70,6 +70,21 @@ export default function LostFoundDetailPage() {
       </View>
     )
   }
+
+  /**
+   * 分享给好友。
+   *
+   * 微信的硬性约束：转发**只能**由用户点击 `open-type="share"` 触发（组件是
+   * 页面底部的 `<KdyShareEntry />`），代码不能静默分享。这里只负责
+   * 「转发出去的标题 + 落地路径」。
+   *
+   * 落地路径**带上 id**：好友点开看到的就是这一条，
+   * 而不是被丢回列表里再找一遍。
+   */
+  useShareAppMessage(() => ({
+    title: detail.data === null ? '可达鸭 · 失物招领' : `${detail.data.kind === 'found' ? '【失物招领】' : '【寻物】'}${detail.data.title} · 可达鸭`,
+    path: id === null ? PAGE_PATHS.lostFoundList : lostFoundDetailPath(id),
+  }))
 
   if (detail.status === 'loading' && detail.data === null) {
     return (
@@ -331,6 +346,8 @@ export default function LostFoundDetailPage() {
       )}
 
       {detail.error !== null && <Text className='kdy-lost-detail__error'>{detail.error}</Text>}
+
+      <KdyShareEntry />
 
       <KdyReportEntry
         targetType='lost-found-item'

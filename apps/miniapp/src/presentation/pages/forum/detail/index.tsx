@@ -1,9 +1,9 @@
 import { Text, View } from '@tarojs/components'
-import Taro, { useDidShow, useRouter } from '@tarojs/taro'
+import Taro, { useDidShow, useRouter, useShareAppMessage } from '@tarojs/taro'
 import { useState } from 'react'
 
 import { getContainer } from '../../../../app/container'
-import { PAGE_PATHS, readIdParam } from '../../../../app/routes'
+import { PAGE_PATHS, readIdParam, forumDetailPath } from '../../../../app/routes'
 import { validateReplyDraft } from '../../../../application/forum/forumUseCases'
 import {
   FORUM_ACTION_LABELS,
@@ -16,17 +16,7 @@ import {
 } from '../../../../domain/models/forum'
 import type { ForumPost, ForumPostAction } from '../../../../domain/models/forum'
 import { navigateTo, redirectTo, toast } from '../../../../platform/navigation'
-import {
-  KdyButton,
-  KdyCard,
-  KdyChip,
-  KdyEmpty,
-  KdyField,
-  KdyImageGallery,
-  KdyReportEntry,
-  KdyReportSheet,
-  KdyTag,
-} from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyImageGallery, KdyReportEntry, KdyReportSheet, KdyShareEntry, KdyTag } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -80,6 +70,21 @@ export default function ForumDetailPage() {
       </View>
     )
   }
+
+  /**
+   * 分享给好友。
+   *
+   * 微信的硬性约束：转发**只能**由用户点击 `open-type="share"` 触发（组件是
+   * 页面底部的 `<KdyShareEntry />`），代码不能静默分享。这里只负责
+   * 「转发出去的标题 + 落地路径」。
+   *
+   * 落地路径**带上 id**：好友点开看到的就是这一个帖子，
+   * 而不是被丢回列表里再找一遍。
+   */
+  useShareAppMessage(() => ({
+    title: detail.data === null ? '可达鸭 · 校园论坛' : `${detail.data.post.title} · 可达鸭`,
+    path: id === null ? PAGE_PATHS.forumList : forumDetailPath(id),
+  }))
 
   if (detail.status === 'loading' && detail.data === null) {
     return (
@@ -389,6 +394,8 @@ export default function ForumDetailPage() {
         targetId={reportReply?.id ?? ''}
         targetTitle={reportReply?.body.slice(0, 40)}
       />
+
+      <KdyShareEntry />
 
       <KdyReportEntry
         targetType='forum-post'

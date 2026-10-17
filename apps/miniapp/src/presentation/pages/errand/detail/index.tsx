@@ -1,10 +1,10 @@
 import { Text, View } from '@tarojs/components'
-import Taro, { useDidShow, useRouter } from '@tarojs/taro'
+import Taro, { useDidShow, useShareAppMessage, useRouter } from '@tarojs/taro'
 import { useState } from 'react'
 import { fenToYuan, yuanToFen } from '@kedaya/shared'
 
 import { getContainer } from '../../../../app/container'
-import { PAGE_PATHS, readIdParam } from '../../../../app/routes'
+import { PAGE_PATHS, readIdParam, errandDetailPath } from '../../../../app/routes'
 import {
   hoursFromNowIso,
   resolveErrandDeadline,
@@ -21,7 +21,7 @@ import {
 } from '../../../../domain/models/errand'
 import type { ErrandAction, UpdateErrandTaskInput } from '../../../../domain/models/errand'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyReportEntry, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyReportEntry, KdyShareEntry, KdyTag } from '../../../components'
 import type { KdyTagTone } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
@@ -91,6 +91,21 @@ export default function ErrandDetailPage() {
       </View>
     )
   }
+
+  /**
+   * 分享给好友。
+   *
+   * 微信的硬性约束：转发**只能**由用户点击 `open-type="share"` 触发（组件是
+   * 页面底部的 `<KdyShareEntry />`），代码不能静默分享。这里只负责
+   * 「转发出去的标题 + 落地路径」。
+   *
+   * 落地路径**带上 id**：好友点开看到的就是这一条，
+   * 而不是被丢回列表里再找一遍。
+   */
+  useShareAppMessage(() => ({
+    title: detail.data === null ? '可达鸭 · 跑腿互助' : `【求助】${detail.data.title} · 可达鸭`,
+    path: id === null ? PAGE_PATHS.errandList : errandDetailPath(id),
+  }))
 
   if (detail.status === 'loading' && detail.data === null) {
     return (
@@ -425,6 +440,8 @@ export default function ErrandDetailPage() {
       )}
 
       {detail.error !== null && <Text className='kdy-errand-detail__error'>{detail.error}</Text>}
+
+      <KdyShareEntry />
 
       <KdyReportEntry
         targetType='errand-task'
