@@ -26,7 +26,7 @@
 const path = require('node:path');
 const Module = require('node:module');
 
-/** tsc 产出的根（本文件在 `services/api/`，产物在 `settings/api/dist/` 下） */
+/** tsc 产出的根（本文件在 `services/api/`，产物在 `services/api/dist/packages/` 下） */
 const DIST_ROOT = path.join(__dirname, 'dist', 'packages');
 
 const ALIASES = {
