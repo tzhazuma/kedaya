@@ -45,7 +45,7 @@ export default function ProfileEditPage() {
   if (state.profile === null) {
     return (
       <View className='kdy-page kdy-auth'>
-        <KdyHeading title='编辑资料' subtitle='请先登录后再修改昵称与头像。' eyebrow='KEDAYA · 资料' />
+        <KdyHeading title='编辑资料' subtitle='请先登录后再修改昵称与头像。' />
         <KdyCard title='未登录' elevated={false}>
           <Text className='kdy-auth__tip'>登录后即可设置昵称与头像。</Text>
         </KdyCard>
@@ -105,7 +105,6 @@ export default function ProfileEditPage() {
             ? '账号已经建好了。填个昵称和头像，让同学认得出你 —— 也可以稍后再改。'
             : '昵称与头像会显示在你发布的内容旁边。'
         }
-        eyebrow='KEDAYA · 资料'
       />
 
       <KdyCard title='头像' elevated={false}>

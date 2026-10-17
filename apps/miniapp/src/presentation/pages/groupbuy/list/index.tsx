@@ -33,7 +33,7 @@ import { KdyDemoTools } from '../../../components/KdyDemoTools'
  * - `loading`：首次进入、无缓存
  * - `empty`：后端返回 0 条（或筛选后为空）
  * - `error`：请求失败且**没有**缓存可降级
- * - `ready`：正常；若数据来自缓存，会额外提示「正在后台刷新」
+ * - `ready`：正常（缓存先出、后台刷新，刷新过程不打扰用户）
  *
  * 契约 §8 的启动时序在这里落地：`hydrate()` 同步给出缓存 → `load()` 后台刷新。
  *
@@ -220,7 +220,6 @@ export default function GroupBuyListPage() {
       <KdyHeading
         title='一起拼单，好物共享'
         subtitle='和身边的同学，凑一份刚刚好的快乐。'
-        eyebrow='KEDAYA · 校园拼单'
       />
 
       <View className='kdy-gb-list__chips'>
@@ -307,10 +306,6 @@ export default function GroupBuyListPage() {
 
       {state.status === 'ready' && (
         <View>
-          {state.fromCache && (
-            <Text className='kdy-gb-list__hint'>当前展示本地缓存，正在后台刷新…</Text>
-          )}
-
           {state.items.map((item) => (
             <GroupBuyCard key={item.id} item={item} />
           ))}

@@ -145,7 +145,6 @@ export default function CanteenDetailPage() {
       <KdyHeading
         title={dish.name}
         subtitle={`${dish.canteen} · ${caloriesLabel(dish.caloriesKcal)}`}
-        eyebrow='KEDAYA · 食堂营养'
       />
 
       <KdyCard title='营养成分表' elevated={false}>

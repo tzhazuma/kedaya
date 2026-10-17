@@ -78,7 +78,6 @@ export default function ProfileAssetsPage() {
       <KdyHeading
         title='我的资产'
         subtitle='我发起和参与的拼单，一处看全。'
-        eyebrow='KEDAYA · 我的'
       />
 
       {!loggedIn ? (

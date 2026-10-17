@@ -172,8 +172,6 @@ export default function FaqPage() {
 
       {state.status === 'ready' && (
         <View>
-          {state.fromCache && <Text className='kdy-faq__hint'>当前展示本地缓存，正在后台刷新…</Text>}
-
           <KdyCard elevated={false}>
             {state.articles.map((article) => (
               <KdyAccordion
@@ -211,7 +209,7 @@ export default function FaqPage() {
 
       {state.error !== null && state.status === 'ready' && (
         <Text className='kdy-faq__soft-error'>
-          后台刷新失败：{state.error}（已继续展示缓存数据，契约 §8 静默降级）
+          刷新失败：{state.error}
         </Text>
       )}
 

@@ -200,7 +200,6 @@ export default function AiPortraitPage() {
         <KdyHeading
           title='AI 校园画像'
           subtitle='把你自己的使用记录汇总成一份统计画像，每条结论都能查到来源。'
-          eyebrow='KEDAYA · 校园画像'
         />
         <Text className='kdy-portrait__positioning'>{AI_PORTRAIT_POSITIONING}</Text>
         <KdyEmpty
@@ -226,7 +225,6 @@ export default function AiPortraitPage() {
         <KdyHeading
           title='AI 校园画像'
           subtitle='把你自己的使用记录汇总成一份统计画像，每条结论都能查到来源。'
-          eyebrow='KEDAYA · 校园画像'
         />
 
         {declined ? (
@@ -276,7 +274,6 @@ export default function AiPortraitPage() {
       <KdyHeading
         title='AI 校园画像'
         subtitle='把你自己的使用记录汇总成一份统计画像，每条结论都能查到来源。'
-        eyebrow='KEDAYA · 校园画像'
       />
 
       <Text className='kdy-portrait__positioning'>{AI_PORTRAIT_POSITIONING}</Text>

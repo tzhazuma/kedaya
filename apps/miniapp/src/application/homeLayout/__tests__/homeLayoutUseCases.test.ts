@@ -56,7 +56,7 @@ describe('createHomeLayoutUseCase', () => {
 
     seeded.useCase.hydrate()
 
-    expect(seeded.useCase.getSnapshot().ids).toEqual(['wellbeing', 'wildlife', 'cou'])
+    expect(seeded.useCase.getSnapshot().ids).toEqual(['cou', 'wellbeing', 'wildlife'])
     expect(seeded.useCase.getSnapshot().hydrated).toBe(true)
   })
 
@@ -66,7 +66,7 @@ describe('createHomeLayoutUseCase', () => {
     seeded.useCase.hydrate()
     seeded.useCase.hydrate()
 
-    expect(seeded.useCase.getSnapshot().ids).toEqual(['wellbeing', 'cou'])
+    expect(seeded.useCase.getSnapshot().ids).toEqual(['cou', 'wellbeing'])
   })
 
   it('换账号后重新读一份布局，不会串味', () => {
@@ -78,13 +78,13 @@ describe('createHomeLayoutUseCase', () => {
     const useCase = createHomeLayoutUseCase({ cache, viewerId: () => viewer, cacheKeyFor: KEY })
 
     useCase.hydrate()
-    expect(useCase.getSnapshot().ids).toEqual(['wellbeing', 'cou', 'wildlife'])
+    expect(useCase.getSnapshot().ids).toEqual(['cou', 'wellbeing', 'wildlife'])
 
     viewer = 'u-2'
-    expect(useCase.hydrate().ids).toEqual(['wellbeing', 'flea-market'])
+    expect(useCase.hydrate().ids).toEqual(['cou', 'wellbeing', 'flea-market'])
 
     viewer = 'u-1'
-    expect(useCase.hydrate().ids).toEqual(['wellbeing', 'cou', 'wildlife'])
+    expect(useCase.hydrate().ids).toEqual(['cou', 'wellbeing', 'wildlife'])
   })
 
   it('toggle 增删入口，并同步写回缓存', () => {
@@ -104,7 +104,7 @@ describe('createHomeLayoutUseCase', () => {
     expect(cache.dump()[KEY('u-1')]).toEqual(useCase.getSnapshot().ids)
   })
 
-  it('固定入口（心理支持）不能移除', () => {
+  it('固定入口（凑凑 / 心理支持）不能移除', () => {
     useCase.hydrate()
 
     const result = useCase.toggle('wellbeing')
@@ -141,17 +141,32 @@ describe('createHomeLayoutUseCase', () => {
   })
 
   it('move 上移 / 下移，且不会越过固定入口', () => {
-    useCase.hydrate() // ['wellbeing', 'cou', 'canteen', 'flea-market', ...]
+    useCase.hydrate() // ['cou', 'wellbeing', 'canteen', 'flea-market', ...]
 
-    expect(useCase.move('canteen', -1)).toEqual({ ok: true, message: '已上移' })
-    expect(useCase.getSnapshot().ids.slice(0, 3)).toEqual(['wellbeing', 'canteen', 'cou'])
+    expect(useCase.move('flea-market', -1)).toEqual({ ok: true, message: '已上移' })
+    expect(useCase.getSnapshot().ids.slice(0, 4)).toEqual([
+      'cou',
+      'wellbeing',
+      'flea-market',
+      'canteen',
+    ])
 
-    // 再往上一步就会越过固定入口
-    expect(useCase.move('canteen', -1).ok).toBe(false)
-    expect(useCase.getSnapshot().ids.slice(0, 3)).toEqual(['wellbeing', 'canteen', 'cou'])
+    // 再往上一步就会越过固定入口（cou / wellbeing 永远在最前面）
+    expect(useCase.move('flea-market', -1).ok).toBe(false)
+    expect(useCase.getSnapshot().ids.slice(0, 4)).toEqual([
+      'cou',
+      'wellbeing',
+      'flea-market',
+      'canteen',
+    ])
 
-    expect(useCase.move('canteen', 1)).toEqual({ ok: true, message: '已下移' })
-    expect(useCase.getSnapshot().ids.slice(0, 3)).toEqual(['wellbeing', 'cou', 'canteen'])
+    expect(useCase.move('flea-market', 1)).toEqual({ ok: true, message: '已下移' })
+    expect(useCase.getSnapshot().ids.slice(0, 4)).toEqual([
+      'cou',
+      'wellbeing',
+      'canteen',
+      'flea-market',
+    ])
   })
 
   it('move 在两端与固定入口上给出明确提示', () => {

@@ -172,7 +172,6 @@ export default function ErrandListPage() {
       <KdyHeading
         title='跑腿互助'
         subtitle='代取、代买、代送 —— 校园里的小事，顺手帮一把。'
-        eyebrow='KEDAYA · 跑腿'
       />
 
       <View className='kdy-errand__toolbar'>
@@ -305,10 +304,6 @@ export default function ErrandListPage() {
             </KdyButton>
           </View>
         </KdyCard>
-      )}
-
-      {state.fromCache && state.status === 'ready' && (
-        <Text className='kdy-errand__cache-hint'>正在后台刷新…</Text>
       )}
 
       {state.status === 'loading' && <KdyListSkeleton />}

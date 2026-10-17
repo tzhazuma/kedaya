@@ -155,7 +155,6 @@ export default function LostFoundListPage() {
       <KdyHeading
         title='失物招领'
         subtitle='丢了东西或被同学捡到，都可以在这里登记，让物品回到主人手里。'
-        eyebrow='KEDAYA · 失物招领'
       />
 
       <View className='kdy-lost__toolbar'>
@@ -272,10 +271,6 @@ export default function LostFoundListPage() {
             </KdyChip>
           </View>
         </KdyCard>
-      )}
-
-      {state.fromCache && state.status === 'ready' && (
-        <Text className='kdy-lost__cache-hint'>正在后台刷新…</Text>
       )}
 
       {state.status === 'loading' && <KdyListSkeleton />}

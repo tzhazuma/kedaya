@@ -23,7 +23,6 @@ export default function CampusCardPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={`校园服务 · ${CAMPUS_CARD_MODULE.id}`}
         title={CAMPUS_CARD_MODULE.nameZh}
         description={`${CAMPUS_CARD_MODULE.summary}。本页属于 TechPie 整合 Phase 0：校园卡走独立的 OPENID 通道（与 eGate / CpDaily 的校园会话不是同一条链路），因此可以在不代持校园会话的前提下独立落地。`}
         actions={

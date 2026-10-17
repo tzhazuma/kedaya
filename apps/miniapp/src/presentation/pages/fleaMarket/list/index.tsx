@@ -143,7 +143,6 @@ export default function FleaMarketListPage() {
       <KdyHeading
         title='跳蚤市场'
         subtitle='闲置物品找到下一位主人，当面交易、不掺资金。'
-        eyebrow='KEDAYA · 跳蚤'
       />
 
       <View className='kdy-flea__toolbar'>
@@ -234,10 +233,6 @@ export default function FleaMarketListPage() {
             </KdyChip>
           </View>
         </KdyCard>
-      )}
-
-      {state.fromCache && state.status === 'ready' && (
-        <Text className='kdy-flea__cache-hint'>正在后台刷新…</Text>
       )}
 
       {state.status === 'loading' && <KdyListSkeleton />}

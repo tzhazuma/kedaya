@@ -56,10 +56,11 @@ describe('首页入口目录', () => {
     expect(normalizeHomeEntryIds(DEFAULT_HOME_ENTRY_IDS)).toEqual(DEFAULT_HOME_ENTRY_IDS)
   })
 
-  it('心理支持是固定入口（安全出口不能被自定义藏掉）', () => {
-    expect(LOCKED_HOME_ENTRY_IDS).toEqual(['wellbeing'])
+  it('凑凑与心理支持是固定入口（一级入口与安全出口都不能被自定义藏掉）', () => {
+    expect(LOCKED_HOME_ENTRY_IDS).toEqual(['cou', 'wellbeing'])
+    expect(isLockedHomeEntry('cou')).toBe(true)
     expect(isLockedHomeEntry('wellbeing')).toBe(true)
-    expect(isLockedHomeEntry('cou')).toBe(false)
+    expect(isLockedHomeEntry('flea-market')).toBe(false)
   })
 })
 
@@ -72,22 +73,25 @@ describe('normalizeHomeEntryIds', () => {
 
   it('丢掉不认识的 id 与非字符串项（旧缓存 / 手工改坏）', () => {
     expect(normalizeHomeEntryIds(['cou', 'groupbuy', 42, null, 'flea-market'])).toEqual([
-      'wellbeing',
       'cou',
+      'wellbeing',
       'flea-market',
     ])
   })
 
   it('去重，且固定入口始终排在前面', () => {
     expect(normalizeHomeEntryIds(['cou', 'cou', 'wildlife'])).toEqual([
-      'wellbeing',
       'cou',
+      'wellbeing',
       'wildlife',
     ])
   })
 
   it('用户把固定入口删掉也不会真的消失', () => {
-    expect(normalizeHomeEntryIds(['cou'])).toContain('wellbeing')
+    const result = normalizeHomeEntryIds(['flea-market'])
+
+    expect(result).toContain('cou')
+    expect(result).toContain('wellbeing')
   })
 
   it('超过上限时截断，但固定入口一定保住', () => {
@@ -99,7 +103,7 @@ describe('normalizeHomeEntryIds', () => {
   })
 
   it('允许只留固定入口（用户明确清空自己的选择）', () => {
-    expect(normalizeHomeEntryIds([])).toEqual(['wellbeing'])
+    expect(normalizeHomeEntryIds([])).toEqual(['cou', 'wellbeing'])
   })
 })
 

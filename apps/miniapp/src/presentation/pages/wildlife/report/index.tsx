@@ -210,7 +210,7 @@ export default function WildlifeReportPage() {
             )}
 
             <Text className='kdy-wildlife-report__tip'>
-              照片的 EXIF（含 GPS）由**服务端**强制剥离后再存储 —— 客户端不做、也不能承诺这件事。
+              照片的 EXIF（含 GPS）由服务端强制剥离后再存储 —— 客户端不做、也不能承诺这件事。
             </Text>
           </KdyCard>
 
@@ -218,7 +218,7 @@ export default function WildlifeReportPage() {
           <KdyCard title='物种（必填）' elevated={false}>
             {state.classification.degraded ? (
               <Text className='kdy-wildlife-report__degrade'>
-                自动识别当前不可用（未配置识别能力），已降级为**手动选择**。
+                自动识别暂不可用，请手动选择物种。
                 这不影响上报 —— 分类是增强，不是前置条件。
               </Text>
             ) : (
@@ -345,7 +345,7 @@ export default function WildlifeReportPage() {
             </View>
 
             <Text className='kdy-wildlife-report__tip'>
-              发现时间与「上报时间」是两件事：补录时请填**真正看到它的时间**，
+              发现时间与「上报时间」是两件事：补录时请填真正看到它的时间，
               发现时间需在最近 30 天内。
             </Text>
           </KdyCard>

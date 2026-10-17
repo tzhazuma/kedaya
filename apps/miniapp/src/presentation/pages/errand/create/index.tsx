@@ -110,7 +110,6 @@ export default function ErrandCreatePage() {
       <KdyHeading
         title='发布跑腿'
         subtitle='写清地点与时间，接单的同学才不容易跑空。'
-        eyebrow='KEDAYA · 跑腿'
       />
 
       <KdyCard title='任务信息' elevated={false}>

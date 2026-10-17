@@ -363,7 +363,6 @@ export default function DormHarmonyPage() {
         <KdyHeading
           title='宿舍矛盾'
           subtitle='匿名提交、凭追踪码跟进的调解申请。'
-          eyebrow='KEDAYA · 匿名调解'
         />
 
         {declined ? (
@@ -417,7 +416,6 @@ export default function DormHarmonyPage() {
       <KdyHeading
         title='宿舍矛盾'
         subtitle='匿名提交、凭追踪码跟进的调解申请。'
-        eyebrow='KEDAYA · 匿名调解'
       />
 
       {/* 1. 提交 */}

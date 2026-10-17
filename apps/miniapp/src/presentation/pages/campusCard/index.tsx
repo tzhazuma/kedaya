@@ -73,7 +73,6 @@ export default function CampusCardPage() {
       <KdyHeading
         title='校园卡'
         subtitle='余额、消费与挂失指引 —— 先说清"这数据是什么时候的"'
-        eyebrow='KEDAYA · 校园卡'
       />
 
       {/* 缓存/上游不可用：必须显眼，且说清时间 */}
@@ -97,7 +96,7 @@ export default function CampusCardPage() {
       {state.fromCache && overview !== null && overview.stale === false && (
         <View className='kdy-card-page__stale'>
           <Text className='kdy-card-page__stale-text'>
-            当前显示的是本地缓存（还没连上服务端），下拉或点「刷新」获取最新余额。
+            还没连上服务端，下拉或点「刷新」试试。
           </Text>
           <View className='kdy-card-page__stale-action'>
             <KdyButton size='sm' variant='secondary' onClick={() => void campusCard.load()}>
@@ -252,7 +251,7 @@ export default function CampusCardPage() {
 
       {state.error !== null && overview !== null && <Text className='kdy-card-page__error'>{state.error}</Text>}
 
-      <KdyAgentFab module='campus-card' page={PAGE_PATHS.campusCard} hint='卡里还剩多少？' />
+      <KdyAgentFab module='campus-card' page={PAGE_PATHS.campusCard} />
     </View>
   )
 }

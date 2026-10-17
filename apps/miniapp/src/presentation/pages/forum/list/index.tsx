@@ -235,10 +235,6 @@ export default function ForumListPage() {
 
       {state.status === 'ready' && (
         <View>
-          {state.fromCache && (
-            <Text className='kdy-forum-list__hint'>当前展示本地缓存，正在后台刷新…</Text>
-          )}
-
           {state.posts.map((item) => (
             <ForumPostCard key={item.id} item={item} boardName={boardName(item.boardId)} />
           ))}
@@ -252,7 +248,7 @@ export default function ForumListPage() {
 
       {state.error !== null && state.status === 'ready' && (
         <Text className='kdy-forum-list__soft-error'>
-          后台刷新失败：{state.error}（已继续展示缓存数据，契约 §8 静默降级）
+          刷新失败：{state.error}
         </Text>
       )}
 

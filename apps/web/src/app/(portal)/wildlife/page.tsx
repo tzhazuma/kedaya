@@ -21,7 +21,6 @@ export default function WildlifePage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={`校园服务 · ${WILDLIFE_MODULE.id}`}
         title={WILDLIFE_MODULE.nameZh}
         description={`${WILDLIFE_MODULE.summary}。底图方案：静态校园平面图 + SVG 叠加层（校园尺度下街道图信息密度更低，且绕开 GCJ-02 坐标系问题）。数据流：presentation（本页）→ application（用例）→ domain（端口/模型）← data（mock / HTTP 适配器）。`}
         actions={undefined}

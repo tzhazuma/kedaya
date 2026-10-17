@@ -41,18 +41,22 @@ export interface HomeEntry {
   /**
    * 固定入口：**用户不能把它从首页移除**。
    *
-   * 目前只有 `wellbeing`：心理支持是安全出口，不能因为一次「自定义」误触
-   * 就在首页上彻底消失（首页底部还有一条常驻热线横幅作为第二重兜底）。
+   * 两个：
+   *   · `cou` —— 产品要求它是**一级入口**（拼单 + 找搭子），所以它既不能
+   *     被用户自定义删掉，也不能像普通格子那样被排到后面去；
+   *   · `wellbeing` —— 心理支持是安全出口，不能因为一次「自定义」误触
+   *     就在首页上彻底消失（首页底部还有一条常驻热线行作为第二重兜底）。
    * 允许排序、不允许删除 —— 这是产品决定，不是权限。
    */
   locked: boolean
+  /** 固定入口的原因，用于「不能移除」的提示文案（非固定入口为 `null`） */
+  lockedReason: string | null
 }
 
 /** 服务大厅的分组 */
 export interface HomeSection {
   id: string
   title: string
-  hint: string
   entryIds: readonly string[]
 }
 
@@ -71,7 +75,8 @@ const AGGREGATES: readonly HomeEntry[] = [
     icon: 'cou',
     moduleIds: ['groupbuy', 'buddy'],
     subLabel: '拼单 · 找搭子',
-    locked: false,
+    locked: true,
+    lockedReason: '一级入口',
   },
 ]
 
@@ -89,6 +94,7 @@ const MODULE_ENTRIES: readonly HomeEntry[] = MODULES.filter(
   moduleIds: [module.id],
   subLabel: null,
   locked: module.id === 'wellbeing',
+  lockedReason: module.id === 'wellbeing' ? '安全出口' : null,
 }))
 
 /** 全部入口（聚合入口在前，便于首页默认值里「凑凑」排在第一个） */
@@ -105,31 +111,26 @@ export const HOME_SECTIONS: readonly HomeSection[] = [
   {
     id: 'daily',
     title: '校园日常',
-    hint: '每天都会用到的服务',
     entryIds: ['cou', 'flea-market', 'errand', 'lost-found', 'canteen', 'wildlife', 'schedule', 'campus-card'],
   },
   {
     id: 'community',
     title: '交流与互助',
-    hint: '同学之间的事，同学之间解决',
     entryIds: ['forum', 'faq', 'dorm-harmony', 'takeout-guard', 'techpie'],
   },
   {
     id: 'care',
     title: '关怀与成长',
-    hint: '需要有人听你说的时候',
     entryIds: ['wellbeing', 'ai-portrait'],
   },
   {
     id: 'account',
     title: '账号与身份',
-    hint: '登录、资料与消息',
     entryIds: ['auth', 'profile', 'notifications'],
   },
   {
     id: 'soon',
     title: '尚未上线',
-    hint: '契约已登记、页面还没做 —— 点开会如实说明，不会给你白屏',
     entryIds: ['facility'],
   },
 ]
@@ -140,13 +141,13 @@ export const HOME_SECTIONS: readonly HomeSection[] = [
  * 只放 9 个：首页的价值是「最常用的那几个一眼可见」，
  * 全部 19 个入口平铺是这次要修掉的问题本身（服务大厅才是「全部」的家）。
  *
- * `wellbeing` 排在第一个（与 `normalizeHomeEntryIds` 的固定入口置前一致，
- * 因此「默认值 → 规范化」是恒等变换，不会出现"一进首页顺序就变"的错觉）：
- * 心理支持作为安全出口常驻首屏，用户不能把它移除。
+ * 顺序必须与 `normalizeHomeEntryIds` 的「固定入口置前」一致
+ * （`cou` → `wellbeing` → 其余），否则「默认值 → 规范化」会改变顺序，
+ * 用户会觉得"一进首页顺序就自己变了一次"。
  */
 export const DEFAULT_HOME_ENTRY_IDS: readonly string[] = [
-  'wellbeing',
   'cou',
+  'wellbeing',
   'canteen',
   'flea-market',
   'errand',
@@ -188,7 +189,7 @@ export function isLockedHomeEntry(id: string): boolean {
  *   1. 不是数组 → 用默认值（读缓存失败的常见形态，不该把首页清空）；
  *   2. 丢掉不认识的 id（旧缓存 / 契约删过的模块）；
  *   3. 去重；
- *   4. 固定入口**强制排在前面**（`wellbeing` 永远在首页）；
+ *   4. 固定入口**强制排在前面**（`cou` 与 `wellbeing` 永远在首页）；
  *   5. 截断到 `MAX_HOME_ENTRY_IDS`（先保固定入口，再按用户顺序）。
  *
  * 允许「只留固定入口」：用户明确清空自己的选择是一种意图，

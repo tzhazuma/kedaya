@@ -13,7 +13,6 @@ export default function WildlifeZonesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="wildlife · 区域"
         title="动物活动区域"
         description="区域由管理端人工定义（与算法聚类出的「热点」不是一回事）：它承载投喂政策、告示位与管理边界。禁投喂区域在区域详情与上报表单里都会显著提示。"
       />

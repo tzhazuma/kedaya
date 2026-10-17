@@ -151,7 +151,6 @@ export default function GroupBuyDetailPage() {
       <KdyHeading
         title='好物一起，快乐加倍'
         subtitle='确认拼单信息，再和同学一起出发。'
-        eyebrow='KEDAYA · 拼单详情'
       />
       <KdyCard
         title={summary.title}
@@ -163,7 +162,6 @@ export default function GroupBuyDetailPage() {
       >
         <View className='kdy-gb-detail__meta'>
           <KdyTag tone='neutral'>{summary.categoryLabel}</KdyTag>
-          {state.fromCache && <KdyTag tone='info'>本地缓存</KdyTag>}
         </View>
 
         <View className='kdy-gb-detail__price-row'>

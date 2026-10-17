@@ -288,7 +288,6 @@ export default function WellbeingCreatePage() {
       <KdyHeading
         title='预约一次'
         subtitle='写清楚想约谁、什么时候，剩下的交给中心值班老师。'
-        eyebrow='KEDAYA · 心理支持'
       />
 
       {/* 危机出口与边界：填表的人也可能正在难受，热线必须就近可见 */}

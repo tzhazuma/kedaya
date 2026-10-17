@@ -129,7 +129,6 @@ export default function AiPortraitSourcesPage() {
       <KdyHeading
         title='数据来源与开关'
         subtitle='这份画像用到哪些数据、哪些数据被排除，以及两个开关的区别。'
-        eyebrow='KEDAYA · 校园画像'
       />
 
       <KdyCard

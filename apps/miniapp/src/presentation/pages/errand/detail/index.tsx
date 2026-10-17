@@ -265,7 +265,6 @@ export default function ErrandDetailPage() {
       <KdyHeading
         title={task.title}
         subtitle={`${task.fromPlace} → ${task.toPlace}`}
-        eyebrow='KEDAYA · 跑腿'
       />
 
       <KdyCard elevated={false}>

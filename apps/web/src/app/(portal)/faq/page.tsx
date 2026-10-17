@@ -21,7 +21,6 @@ export default function FaqPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={`校园服务 · ${FAQ_MODULE.id}`}
         title={FAQ_MODULE.nameZh}
         description={`${FAQ_MODULE.summary}。先搜知识库；没有答案再到工单里提问。`}
         actions={

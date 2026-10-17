@@ -142,9 +142,10 @@ export function createHomeLayoutUseCase(deps: HomeLayoutUseCaseDeps): HomeLayout
       if (isSelected) {
         if (isLockedHomeEntry(id)) {
           const entry = homeEntryById(id)
+          const reason = entry?.lockedReason ?? '固定入口'
           return {
             ok: false,
-            message: `${entry?.label ?? id} 固定在首页，不能移除（安全出口）`,
+            message: `${entry?.label ?? id} 固定在首页，不能移除（${reason}）`,
           }
         }
         commit(selected.filter((item) => item !== id))

@@ -150,7 +150,6 @@ export default function TakeoutGuardListPage() {
         <KdyHeading
           title='外卖被拿错'
           subtitle='把经过记下来，需要时再请平台或辅导员协助沟通。'
-          eyebrow='KEDAYA · 偷外卖'
         />
         <Text className='kdy-tg__notice'>{TAKEOUT_GUARD_NOTICE}</Text>
         <KdyEmpty
@@ -174,7 +173,6 @@ export default function TakeoutGuardListPage() {
       <KdyHeading
         title='外卖被拿错'
         subtitle='只记录你自己的经历；把经过说清楚，需要时再请平台协助沟通。'
-        eyebrow='KEDAYA · 偷外卖'
       />
 
       <Text className='kdy-tg__notice'>{TAKEOUT_GUARD_NOTICE}</Text>
@@ -190,10 +188,6 @@ export default function TakeoutGuardListPage() {
           </KdyChip>
         ))}
       </View>
-
-      {state.fromCache && state.status === 'ready' && (
-        <Text className='kdy-tg__cache-hint'>正在后台刷新…</Text>
-      )}
 
       {state.status === 'loading' && <KdyListSkeleton />}
 

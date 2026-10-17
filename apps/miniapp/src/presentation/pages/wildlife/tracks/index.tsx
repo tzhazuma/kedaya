@@ -149,7 +149,7 @@ export default function WildlifeTracksPage() {
           ⚠️ 以下全部是{WILDLIFE_TRACK_INFERRED_LABEL}，不是实测路径
         </Text>
         <Text className='kdy-wildlife-tracks__banner-body'>
-          我们的数据来自同学偶发上报，不是 GPS 项圈，因此**无法**重建动物的真实运动路径。
+          我们的数据来自同学偶发上报，不是 GPS 项圈，因此无法重建动物的真实运动路径。
           这些折线只是「由 N 次上报推断出的活动走廊」。轨迹断裂处表示期间没有上报，
           **不代表**动物没有移动。
         </Text>
@@ -181,10 +181,6 @@ export default function WildlifeTracksPage() {
 
       {state.status === 'ready' && (
         <View>
-          {state.fromCache && (
-            <Text className='kdy-wildlife-tracks__hint'>当前展示本地缓存，正在后台刷新…</Text>
-          )}
-
           {polylinePoints.length > 0 && (
             <Map
               className='kdy-wildlife-tracks__canvas'

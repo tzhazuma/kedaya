@@ -148,7 +148,6 @@ export default function ForumDetailPage() {
         <View className='kdy-forum-detail__meta'>
           <KdyTag tone='neutral'>{summary.authorName}</KdyTag>
           {summary.anonymous && <KdyTag tone='info'>匿名</KdyTag>}
-          {state.fromCache && <KdyTag tone='info'>本地缓存</KdyTag>}
           <Text className='kdy-forum-detail__time'>{summary.createdAtLabel}</Text>
         </View>
 

@@ -21,13 +21,6 @@
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
 }
-.kdy-manage__row-hint {
-  display: block;
-  margin-top: $kdy-space-1;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-  line-height: $kdy-line-height-loose;
-}
 .kdy-manage__actions {
   display: flex;
   align-items: center;
@@ -56,5 +49,5 @@
   line-height: $kdy-line-height-loose;
 }
 .kdy-manage__reset {
-  margin-top: $kdy-space-4;
+  padding: $kdy-space-2 $kdy-space-5 $kdy-space-4;
 }

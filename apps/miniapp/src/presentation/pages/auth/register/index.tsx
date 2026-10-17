@@ -81,7 +81,6 @@ export default function RegisterPage() {
       <KdyHeading
         title='创建账号'
         subtitle='一个邮箱就够了。不会向任何校园系统索要你的密码。'
-        eyebrow='KEDAYA · 注册'
       />
 
       <KdyCard title='微信快捷注册' elevated={false}>

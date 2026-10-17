@@ -191,7 +191,6 @@ export default function FleaMarketDetailPage() {
       <KdyHeading
         title={item.title}
         subtitle={`${categoryLabel(item.category)} · ${conditionLabel(item.condition)}`}
-        eyebrow='KEDAYA · 跳蚤'
       />
 
       <KdyCard elevated={false}>

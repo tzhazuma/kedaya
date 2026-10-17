@@ -140,7 +140,6 @@ export default function CanteenListPage() {
       <KdyHeading
         title='食堂营养'
         subtitle='看菜品的估算热量与营养，帮助你决定今天吃什么。'
-        eyebrow='KEDAYA · 食堂营养'
       />
 
       <View className='kdy-canteen__toolbar'>
@@ -179,10 +178,6 @@ export default function CanteenListPage() {
           </KdyChip>
         ))}
       </View>
-
-      {state.fromCache && state.status === 'ready' && (
-        <Text className='kdy-canteen__cache-hint'>正在后台刷新…</Text>
-      )}
 
       {state.status === 'loading' && <KdyListSkeleton />}
 

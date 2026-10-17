@@ -1,45 +1,39 @@
-.kdy-cou__lead {
+.kdy-cou__row {
   display: flex;
   align-items: center;
   gap: $kdy-space-3;
+  margin: 0 $kdy-space-5 $kdy-space-3;
+  padding: $kdy-space-4;
+  background: $kdy-color-surface;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-xl;
+  color: $kdy-color-ink-soft;
 }
-.kdy-cou__lead-text {
+.kdy-cou__row-body {
   flex: 1;
   min-width: 0;
+}
+.kdy-cou__row-title {
+  display: block;
   color: $kdy-color-ink;
   font-size: $kdy-font-size-md;
   font-weight: $kdy-font-weight-semibold;
 }
-.kdy-cou__body {
+.kdy-cou__row-sub {
   display: block;
-  margin-top: $kdy-space-3;
+  margin-top: $kdy-space-1;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
-  line-height: $kdy-line-height-loose;
-}
-.kdy-cou__link {
-  display: flex;
-  align-items: center;
-  gap: $kdy-space-2;
-  margin-top: $kdy-space-4;
-  color: $kdy-color-ink;
-  font-weight: $kdy-font-weight-semibold;
 }
 .kdy-cou__actions {
   display: flex;
   flex-wrap: wrap;
   gap: $kdy-space-3;
-  margin-top: $kdy-space-4;
+  padding: $kdy-space-2 $kdy-space-5 $kdy-space-4;
 }
-.kdy-cou__rule {
-  display: flex;
-  align-items: flex-start;
-  gap: $kdy-space-3;
-  margin-top: $kdy-space-3;
-}
-.kdy-cou__rule-text {
-  flex: 1;
-  min-width: 0;
+.kdy-cou__note {
+  display: block;
+  padding: 0 $kdy-space-5;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-loose;

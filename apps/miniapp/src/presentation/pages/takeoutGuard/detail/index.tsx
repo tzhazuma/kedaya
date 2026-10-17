@@ -131,7 +131,6 @@ export default function TakeoutGuardDetailPage() {
       <KdyHeading
         title={item.place}
         subtitle='只有你自己能看到这条记录'
-        eyebrow='KEDAYA · 偷外卖'
       />
 
       <KdyCard elevated={false}>

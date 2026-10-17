@@ -22,7 +22,6 @@ export default function TechpiePage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={`校园服务 · ${TECHPIE_MODULE.id}`}
         title={TECHPIE_MODULE.nameZh}
         description={`${TECHPIE_MODULE.summary}。本页是 Phase 0：绑定列表（GET /techpie/links，响应不含凭证）、发起绑定（POST /techpie/links）、解绑（DELETE）、手动续期（POST /techpie/links/:id/renew，已冻结动作）。结构化校园数据（课表 / 考试 / DDL）与场馆预约属于 Phase 1–2，阻塞于学校信息办的书面确认，本轮不实现。`}
         actions={undefined}

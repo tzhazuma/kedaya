@@ -75,11 +75,7 @@ export default function DiscoverPage() {
       void navigateTo(route)
       return
     }
-    if (module.requiresConsent) {
-      toast(`${module.nameZh}：需二次同意，该流程尚未实现`)
-      return
-    }
-    toast(`${module.nameZh}：契约已登记，页面尚未实现`)
+    toast(`${module.nameZh}还在开发中`)
   }
 
   async function handleScan(): Promise<void> {
@@ -131,13 +127,9 @@ export default function DiscoverPage() {
 
   return (
     <View className='kdy-page kdy-discover'>
-      <KdyHeading
-        title='发现校园的更多可能'
-        subtitle='拼单、闲置、跑腿、组队、失物、论坛 —— 校园日常都在这里。'
-        eyebrow='KEDAYA · 发现'
-      />
+      <KdyHeading title='发现' />
 
-      <KdyCard title='生活模块' extra={<KdyTag tone='brand'>已上线</KdyTag>} elevated={false}>
+      <KdyCard title='生活模块' elevated={false}>
         <View className='kdy-discover__grid'>
           {lifeModules.map((module) => (
             <View
@@ -167,10 +159,7 @@ export default function DiscoverPage() {
             </View>
           ))}
         </View>
-        <Text className='kdy-discover__hint'>
-          六个生活模块都可直接进入。尚未实现的模块（当前是「场馆预约」）点开会如实说明状态，
-          不会给你一个白屏或假的可用入口。
-        </Text>
+        <Text className='kdy-discover__hint'>灰色的是还没上线的模块。</Text>
       </KdyCard>
 
       <KdyCard title='校园服务' elevated={false}>
@@ -191,15 +180,13 @@ export default function DiscoverPage() {
 
       <KdyCard title='数据来源' elevated={false}>
         <Text className='kdy-discover__hint'>
-          当前为演示模式：校园数据（课表、校园卡、实名）来自确定性模拟数据源，界面会如实标注；
-          生活模块的数据也可在本地演示。接入校方授权后切到真实数据源，权限与审计逻辑不变。
+          课表、校园卡、实名等校园数据为演示数据，非校方真实数据。
         </Text>
       </KdyCard>
 
       <KdyCard title='论坛与常见问题' elevated={false}>
         <Text className='kdy-discover__hint'>
-          论坛：版块 / 主题 / 回复 / 匿名发帖 / 举报，支持下拉刷新与触底加载。
-          FAQ：分类 / 搜索 / 手风琴 / 「有用」（幂等）/ 我的工单。默认走 mock 数据。
+          同学之间的问答与互助：论坛发帖、常见问题里找答案，找不到可以提工单。
         </Text>
         <View className='kdy-discover__actions'>
           <KdyButton
@@ -237,22 +224,20 @@ export default function DiscoverPage() {
         </View>
       </KdyCard>
 
-      <KdyCard title='野生动物（居民档案 · 地图）' elevated={false}>
+      <KdyCard title='野生动物' elevated={false}>
         <Text className='kdy-discover__hint'>
-          地图：活动区域圈 + 聚合热点 + 历史观测点；上报：照片 / 发现时间 / 定位或地图点选 /
-          自动分类（不可用时降级为手动选择）/ 给个体起名；轨迹：推断轨迹（显著标注「不是实测路径」）。
-          含投喂规范与位置模糊化说明。默认走 mock 数据。
+          认识校园里的野生居民，看看它们在哪活动；偶遇了可以上报一条观测。
         </Text>
         <View className='kdy-discover__actions'>
           <KdyButton
             size='sm'
             onClick={() => {
-              void navigateTo(PAGE_PATHS.wildlifeMap).then((result) => {
+              void navigateTo(PAGE_PATHS.wildlifeArchive).then((result) => {
                 if (!result.ok) toast(result.error.message)
               })
             }}
           >
-            进入动物地图
+            居民档案
           </KdyButton>
           <KdyButton
             size='sm'
@@ -327,7 +312,7 @@ export default function DiscoverPage() {
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
       </Text>
 
-      <KdyAgentFab module='discover' page={PAGE_PATHS.discover} hint='想找什么？问我' />
+      <KdyAgentFab module='discover' page={PAGE_PATHS.discover} />
     </View>
   )
 }

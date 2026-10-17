@@ -231,7 +231,7 @@ export default function BuddyCreatePage() {
 
       {/* ---------------- 性别准入 + 运动水平 ---------------- */}
       <KdyCard title='准入条件'>
-        <KdyField label='性别偏好' hint='契约已冻结的准入约束，不参与匹配打分'>
+        <KdyField label='性别偏好' hint='仅按此条件筛选，不计入匹配分'>
           <KdyPicker
             range={BUDDY_GENDER_PREFERENCES.map((p) => BUDDY_GENDER_PREFERENCE_LABELS[p])}
             title='选择性别偏好'
@@ -273,7 +273,7 @@ export default function BuddyCreatePage() {
         }
       >
         <Text className='kdy-buddy-create__note'>
-          标签只能从下面的清单里选（服务端封闭标签表）。刻意**没有**自由输入框 ——
+          标签只能从下面的清单里选（服务端封闭标签表）。刻意没有自由输入框 ——
           自由文本会让「羽毛球」「打羽毛球」「badminton」互不匹配，而共同标签数是本模块最精确的匹配特征。
         </Text>
 

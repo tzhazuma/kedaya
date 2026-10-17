@@ -52,7 +52,6 @@ export default function LoginPage() {
       <KdyHeading
         title='欢迎回来'
         subtitle='登录后即可发布、接单、发帖，和同学一起过日子。'
-        eyebrow='KEDAYA · 账号'
       />
 
       <KdyCard title='微信一键登录' elevated={false}>
@@ -93,7 +92,7 @@ export default function LoginPage() {
 
         {container.env.useMock && (
           <Text className='kdy-auth__dev'>
-            当前是本地演示模式（未连后端）。演示账号：demo@kedaya.dev / Kedaya2026
+            演示模式（未连后端）· 演示账号 demo@kedaya.dev / Kedaya2026
           </Text>
         )}
 

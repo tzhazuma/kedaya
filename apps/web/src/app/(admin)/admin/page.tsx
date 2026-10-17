@@ -13,7 +13,6 @@ export default function AdminPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="管理后台 · 占位"
         title="模块开关与审计"
         description="演示契约 §9 的合规要求：敏感模块的开关受权限约束，任何开关操作（含被拒）都会落审计日志；审计主体标识默认脱敏。"
       />

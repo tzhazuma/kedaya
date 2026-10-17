@@ -1,54 +1,8 @@
-.kdy-home__hero {
-  display: flex;
-  align-items: center;
-  margin: $kdy-space-3 $kdy-space-5 $kdy-space-5;
-  padding: $kdy-space-6 $kdy-space-5;
-  border-radius: $kdy-radius-xl;
-  overflow: hidden;
-}
-.kdy-home__hero-copy {
-  flex: 1;
-  min-width: 0;
-}
-.kdy-home__hero-title {
-  display: block;
-  margin-top: $kdy-space-4;
-  font-size: $kdy-font-size-xl;
-  font-weight: $kdy-font-weight-bold;
-  color: $kdy-color-ink;
-}
-.kdy-home__hero-description {
-  display: block;
-  margin-top: $kdy-space-2;
-  font-size: $kdy-font-size-xs;
-  line-height: $kdy-line-height-loose;
-  color: $kdy-color-text-muted;
-}
-.kdy-home__hero-link {
-  display: flex;
-  align-items: center;
-  gap: $kdy-space-2;
-  margin-top: $kdy-space-5;
-  color: $kdy-color-ink;
-  font-weight: $kdy-font-weight-semibold;
-}
-.kdy-home__hero-art {
-  margin-left: $kdy-space-3;
-  transform: rotate(-8deg);
-}
-.kdy-home__hero-art .kdy-module-icon {
-  width: 64px;
-  height: 72px;
-  font-size: 40px;
-  background: $kdy-color-brand;
-  border-radius: $kdy-radius-xl;
-}
-
-/* 「我的常用」宫格 —— 4 列，与「服务大厅」用同一套视觉 */
+/* 「我的常用」宫格 —— 4 列，紧凑：行距只留一眼能分开的余量 */
 .kdy-home__grid {
   display: flex;
   flex-wrap: wrap;
-  row-gap: $kdy-space-5;
+  row-gap: $kdy-space-3;
 }
 .kdy-home__grid-item {
   display: flex;
@@ -57,7 +11,7 @@
   box-sizing: border-box;
   width: 25%;
   gap: $kdy-space-2;
-  padding: $kdy-space-2 0;
+  padding: $kdy-space-1 0;
   min-width: 0;
 }
 .kdy-home__grid-name {
@@ -65,38 +19,18 @@
   color: $kdy-color-text;
   text-align: center;
 }
-.kdy-home__module-state {
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-}
-.kdy-home__module-state--danger {
-  color: $kdy-color-danger;
-}
-.kdy-home__module-state--warning {
-  color: $kdy-color-warning;
-}
-.kdy-home__module-state--neutral {
-  color: $kdy-color-text-muted;
-}
-.kdy-home__grid-hint {
-  display: block;
-  margin-top: $kdy-space-3;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-  line-height: $kdy-line-height-loose;
-}
 .kdy-home__edit {
   color: $kdy-color-ink-soft;
   font-size: $kdy-font-size-sm;
 }
 
-/* 安全出口：常驻，不被"自定义"影响（不属于可选项） */
+/* 安全出口：常驻一行，不被"自定义"影响（不属于可选项） */
 .kdy-home__safety {
   display: flex;
   align-items: center;
   gap: $kdy-space-3;
-  margin: $kdy-space-5;
-  padding: $kdy-space-4;
+  margin: $kdy-space-4 $kdy-space-5;
+  padding: $kdy-space-3 $kdy-space-4;
   background: rgba($kdy-color-success, 0.06);
   border-radius: $kdy-radius-xl;
   color: $kdy-color-success;

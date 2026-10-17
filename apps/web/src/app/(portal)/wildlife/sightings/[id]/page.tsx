@@ -18,7 +18,6 @@ export default async function WildlifeSightingDetailPage({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="wildlife · 观测"
         title="观测详情"
         description="这里展示的是公开信息：精确坐标与上报人 id 不在响应里（不是「前端不显示」，而是接口就不返回）。"
       />

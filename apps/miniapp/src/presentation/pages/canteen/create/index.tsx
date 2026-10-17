@@ -75,7 +75,6 @@ export default function CanteenCreatePage() {
       <KdyHeading
         title='补充菜品'
         subtitle='把你常吃的菜记下来，帮助同学估算热量。创建无需登录，数据由同学共建。'
-        eyebrow='KEDAYA · 食堂营养'
       />
 
       <KdyCard title='食堂' elevated={false}>

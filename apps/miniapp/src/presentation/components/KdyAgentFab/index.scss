@@ -44,19 +44,4 @@
     font-weight: 600;
     line-height: 1;
   }
-
-  &__hint {
-    max-width: 220px;
-    margin-bottom: $kdy-space-2;
-    padding: $kdy-space-2 $kdy-space-3;
-    border-radius: $kdy-radius-lg;
-    background: $kdy-color-surface;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  }
-
-  &__hint-text {
-    color: $kdy-color-text;
-    font-size: $kdy-font-size-xs;
-    line-height: $kdy-line-height-normal;
-  }
 }

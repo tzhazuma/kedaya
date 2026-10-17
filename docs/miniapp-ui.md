@@ -27,7 +27,7 @@ ESLint 会阻止在 presentation 层直接引入 Taro 原始表单控件和其�
 | `KdyChip` | 可点击胶囊：筛选器与单选（分类、成色、状态、排序）都用它 |
 | `KdyTag` | 状态标签，`tone` 取语义色，不要自己写色值 |
 | `KdyEmpty` | `loading / empty / error` 三态占位，可带行动按钮（重试、去发布） |
-| `KdyHeading` | 页面标题区（`title` / `subtitle` / `eyebrow`） |
+| `KdyHeading` | 页面标题区（`title` 必填，`subtitle` 可选、只在能帮用户做决定时才写） |
 
 列表页与详情页的状态机统一走 `application/common/{listUseCase,detailUseCase}.ts`：
 `hydrate()` 同步出缓存、`load()` 后台刷新、失败静默降级。页面只读 `useStore(...)` 的快照，
@@ -40,18 +40,20 @@ ESLint 会阻止在 presentation 层直接引入 Taro 原始表单控件和其�
 
 首页是**用户自己挑的几个服务**，不是模块目录：
 
-- 顶部是聚合入口「凑凑」（`presentation/pages/cou/`），下设拼单与找搭子 ——
-  契约里 `groupbuy` / `buddy` 仍是两个独立模块，聚合关系只声明在
-  `domain/models/homeEntries.ts`（入口目录），不污染契约；
-- 中间「我的常用」宫格由**用户偏好**驱动（`application/homeLayout/`，
+- 「我的常用」宫格由**用户偏好**驱动（`application/homeLayout/`，
   缓存键 `StorageKeys.homeLayout` 拼登录用户，换号换一份），默认 9 个、上限 12 个，
-  最后一格固定是「全部服务」；角标只在需要提醒时才出现（开发中 / 需二次同意 / 高敏感），
-  不给每个入口都挂一个「已上线」；
-- 宫格下方是常驻的**安全出口**（心理支持热线），它不属于可自定义的内容；
-  `wellbeing` 同时是入口目录里的固定项（`locked`）：可排序、不可移除；
+  最后一格固定是「全部服务」；格子上不挂任何角标 ——
+  没做出来的模块点开时给一句说明，不做成小字提前挂在首页上；
+- 两个 `locked` 入口：`cou`（凑凑：拼单 + 找搭子，产品要求的一级入口）与
+  `wellbeing`（心理支持，安全出口）。两者都可排序、**不可移除**，
+  管理页会明说这条规则而不是让按钮静默失灵。契约里 `groupbuy` / `buddy`
+  仍是两个独立模块，聚合关系只声明在 `domain/models/homeEntries.ts`（入口目录），
+  不污染契约；
+- 宫格下方是常驻的**安全出口**（心理支持 · 24 小时热线 12356），
+  它不属于可自定义的内容，是 `wellbeing` 之外的**第二重兜底**；
 - 「全部服务」落到**服务大厅**（`presentation/pages/home/services/`）：
   按使用场景分组（校园日常 / 交流与互助 / 关怀与成长 / 账号与身份 / 尚未上线）+ 搜索，
-  未实现的模块如实标「开发中」，点它得到一句说明而不是白屏；
+  未实现的模块（当前是 `facility`）列在「尚未上线」一组里，点它得到一句说明而不是白屏；
 - 「我的 → 首页管理」（`presentation/pages/profile/home/`）增删与排序。
   用上移 / 下移而不是长按拖拽：小程序里跨行拖拽在真机上会飘，且读屏用户用不了。
 

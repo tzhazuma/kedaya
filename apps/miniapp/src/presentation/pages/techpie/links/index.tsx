@@ -94,7 +94,7 @@ function BindingCard({
 
         {!usable && (
           <Text className='kdy-techpie-binding__warn'>
-            这个绑定当前不可用。重新绑定即可恢复；你的账号本身没有问题（契约 I4）。
+            这个绑定当前不可用，重新绑定即可恢复。
           </Text>
         )}
 
@@ -269,8 +269,8 @@ export default function TechpieLinksPage() {
       {!authenticated && (
         <KdyCard elevated={false} title='还没有登录'>
           <Text className='kdy-techpie-links__hint'>
-            未登录与未绑定是**两件不同的事**：未登录时校园能力不可用（UNAUTHENTICATED）；
-            登录后如果还没绑定校园系统，那是**合法状态**，我们会引导你去绑定，而不是报错。
+            未登录与未绑定是两件不同的事：未登录时校园能力不可用（UNAUTHENTICATED）；
+            登录后如果还没绑定校园系统，那是合法状态，我们会引导你去绑定，而不是报错。
           </Text>
         </KdyCard>
       )}
@@ -295,7 +295,7 @@ export default function TechpieLinksPage() {
 
         <View className='kdy-techpie-links__blocked'>
           <Text className='kdy-techpie-links__blocked-title'>
-            以下平台本轮**不提供**绑定入口（不是忘了做）
+            以下平台暂不支持绑定
           </Text>
           {phase1Platforms.map((platform: CampusPlatform) => (
             <Text key={platform} className='kdy-techpie-links__blocked-item'>
@@ -352,9 +352,6 @@ export default function TechpieLinksPage() {
 
       {state.status === 'ready' && (
         <View>
-          {state.fromCache && (
-            <Text className='kdy-techpie-links__hint'>当前展示本地缓存，正在后台刷新…</Text>
-          )}
           {state.items.map((binding) => (
             <BindingCard
               key={binding.id}
@@ -369,7 +366,7 @@ export default function TechpieLinksPage() {
 
       {state.error !== null && state.status === 'ready' && (
         <Text className='kdy-techpie-links__soft-error'>
-          后台刷新失败：{state.error}（已继续展示缓存数据，契约 §8 静默降级）
+          刷新失败：{state.error}
         </Text>
       )}
 

@@ -252,10 +252,6 @@ export default function WildlifeMapPage() {
 
       {(state.status === 'ready' || state.status === 'idle') && (
         <View>
-          {state.fromCache && (
-            <Text className='kdy-wildlife-map__hint'>当前展示本地缓存，正在后台刷新…</Text>
-          )}
-
           {/*
             ⚠️ 底图 = 小程序原生 map（腾讯地图街道图）。
             所有叠加层的坐标**已经**是 GCJ-02（由 buildMapOverlays 转换）。
@@ -373,7 +369,7 @@ export default function WildlifeMapPage() {
 
       {state.error !== null && state.status === 'ready' && (
         <Text className='kdy-wildlife-map__soft-error'>
-          后台刷新失败：{state.error}（已继续展示缓存数据，契约 §8 静默降级）
+          刷新失败：{state.error}
         </Text>
       )}
 

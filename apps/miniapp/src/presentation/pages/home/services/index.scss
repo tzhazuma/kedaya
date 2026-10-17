@@ -1,22 +1,10 @@
 .kdy-hall__search {
   padding: 0 $kdy-space-5 $kdy-space-3;
 }
-.kdy-hall__hint {
-  display: block;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-  line-height: $kdy-line-height-loose;
-}
-.kdy-hall__section-hint {
-  display: block;
-  margin-bottom: $kdy-space-4;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-}
 .kdy-hall__grid {
   display: flex;
   flex-wrap: wrap;
-  row-gap: $kdy-space-5;
+  row-gap: $kdy-space-3;
 }
 .kdy-hall__grid-item {
   display: flex;
@@ -25,7 +13,7 @@
   box-sizing: border-box;
   width: 25%;
   gap: $kdy-space-2;
-  padding: $kdy-space-2 0;
+  padding: $kdy-space-1 0;
   min-width: 0;
 }
 .kdy-hall__grid-name {
@@ -33,19 +21,30 @@
   color: $kdy-color-text;
   text-align: center;
 }
-.kdy-hall__state {
-  font-size: $kdy-font-size-xs;
-  color: $kdy-color-text-muted;
-}
-.kdy-hall__state--danger {
-  color: $kdy-color-danger;
-}
-.kdy-hall__state--warning {
-  color: $kdy-color-warning;
-}
-.kdy-hall__tags {
+.kdy-hall__manage {
   display: flex;
-  flex-wrap: wrap;
-  gap: $kdy-space-2;
-  margin-top: $kdy-space-3;
+  align-items: center;
+  gap: $kdy-space-3;
+  margin: $kdy-space-4 $kdy-space-5;
+  padding: $kdy-space-4;
+  background: $kdy-color-surface;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-xl;
+  color: $kdy-color-ink-soft;
+}
+.kdy-hall__manage-body {
+  flex: 1;
+  min-width: 0;
+}
+.kdy-hall__manage-title {
+  display: block;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-semibold;
+}
+.kdy-hall__manage-sub {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
 }

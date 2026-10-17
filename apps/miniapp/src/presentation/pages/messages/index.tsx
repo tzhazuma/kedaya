@@ -122,7 +122,6 @@ export default function MessagesPage() {
       <KdyHeading
         title='消息'
         subtitle='不错过每一份期待，也给生活留一点安静。'
-        eyebrow='KEDAYA · 消息'
       />
 
       <View className='kdy-messages__toolbar'>
@@ -237,7 +236,7 @@ export default function MessagesPage() {
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
       </Text>
 
-      <KdyAgentFab module='notifications' page={PAGE_PATHS.messages} hint='通知看不懂？问我' />
+      <KdyAgentFab module='notifications' page={PAGE_PATHS.messages} />
     </View>
   )
 }

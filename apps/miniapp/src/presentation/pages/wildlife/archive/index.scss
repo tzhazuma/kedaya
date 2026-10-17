@@ -1,59 +1,57 @@
-.kdy-archive__lead {
+.kdy-archive__map {
   display: flex;
   align-items: center;
   gap: $kdy-space-3;
+  margin: 0 $kdy-space-5 $kdy-space-3;
+  padding: $kdy-space-4;
+  background: $kdy-color-surface;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-xl;
+  color: $kdy-color-ink-soft;
 }
-.kdy-archive__lead-text {
+.kdy-archive__map-body {
   flex: 1;
   min-width: 0;
+}
+.kdy-archive__map-title {
+  display: block;
   color: $kdy-color-ink;
   font-size: $kdy-font-size-md;
   font-weight: $kdy-font-weight-semibold;
 }
-.kdy-archive__body {
+.kdy-archive__map-sub {
   display: block;
-  margin-top: $kdy-space-3;
+  margin-top: $kdy-space-1;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
-  line-height: $kdy-line-height-loose;
-}
-.kdy-archive__link {
-  display: flex;
-  align-items: center;
-  gap: $kdy-space-2;
-  margin-top: $kdy-space-4;
-  color: $kdy-color-ink;
-  font-weight: $kdy-font-weight-semibold;
 }
 .kdy-archive__hint {
   display: block;
-  margin-bottom: $kdy-space-3;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
-  line-height: $kdy-line-height-loose;
 }
 .kdy-archive__filters {
   display: flex;
   flex-wrap: wrap;
   gap: $kdy-space-2;
-  padding: $kdy-space-2 $kdy-space-5 $kdy-space-4;
+  padding: 0 $kdy-space-5 $kdy-space-4;
 }
 .kdy-archive__filter {
   display: flex;
 }
 
-/* 物种档案行 */
+/* 物种行 */
 .kdy-archive__species {
   display: flex;
   align-items: center;
   gap: $kdy-space-4;
-  padding: $kdy-space-4 0;
+  padding: $kdy-space-3 0;
   border-bottom: 1px solid $kdy-color-border;
 }
 .kdy-archive__species-photo {
   flex-shrink: 0;
-  width: 48px;
-  height: 56px;
+  width: 44px;
+  height: 52px;
   border-radius: $kdy-radius-md;
   background-color: $kdy-color-brand-soft;
   background-size: contain;
@@ -66,8 +64,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 48px;
-  height: 56px;
+  width: 44px;
+  height: 52px;
   border-radius: $kdy-radius-md;
   background: $kdy-color-brand-soft;
   color: $kdy-color-ink;
@@ -120,13 +118,6 @@
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
 }
-.kdy-archive__resident-note {
-  display: block;
-  margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-  line-height: $kdy-line-height-loose;
-}
 
 /* 最近观测 */
 .kdy-archive__sighting {
@@ -155,13 +146,6 @@
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
 }
-.kdy-archive__sighting-note {
-  display: block;
-  margin-top: $kdy-space-2;
-  color: $kdy-color-text;
-  font-size: $kdy-font-size-xs;
-  line-height: $kdy-line-height-loose;
-}
 .kdy-archive__sighting-tags {
   display: flex;
   flex-wrap: wrap;
@@ -173,7 +157,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: $kdy-space-3;
-  padding: $kdy-space-5;
+  padding: $kdy-space-4 $kdy-space-5;
 }
 .kdy-archive__privacy {
   padding: 0 $kdy-space-5 $kdy-space-4;

@@ -75,7 +75,6 @@ export default function BindEmailPage() {
       <KdyHeading
         title='绑定邮箱'
         subtitle='给账号加一条后路：以后可以用邮箱 + 密码登录，也能自助重置密码。'
-        eyebrow='KEDAYA · 账号安全'
       />
 
       <KdyCard title='填写信息' elevated={false}>

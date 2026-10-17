@@ -109,7 +109,6 @@ export default function FleaMarketCreatePage() {
       <KdyHeading
         title='发布闲置'
         subtitle='如实描述成色与瑕疵，成交率会高很多。'
-        eyebrow='KEDAYA · 跳蚤'
       />
 
       <KdyCard title='商品信息' elevated={false}>

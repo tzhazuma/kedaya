@@ -22,7 +22,6 @@ export default function CampusMapPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={`校园服务 · ${WILDLIFE_MODULE.id} · map`}
         title="校园地图"
         description="默认使用仓库内离线渲染的 SVG/GeoJSON 底图（断网可用、校园尺度更细，不依赖在线瓦片）；也可切到 OpenStreetMap 在线瓦片看清校园在张江的位置。两者都用 WGS84，不经过 GCJ-02。地点标注逐项区分「已确证 / 推断 / 近似」，并公开数据来源与精度。"
         actions={undefined}

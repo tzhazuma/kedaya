@@ -206,7 +206,6 @@ export default function LostFoundDetailPage() {
       <KdyHeading
         title={item.title}
         subtitle={`${kindLabel(item.kind)} · ${item.place}`}
-        eyebrow='KEDAYA · 失物招领'
       />
 
       <KdyCard elevated={false}>

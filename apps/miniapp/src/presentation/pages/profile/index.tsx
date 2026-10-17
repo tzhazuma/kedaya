@@ -326,13 +326,10 @@ export default function ProfilePage() {
         </View>
 
         <Text className='kdy-profile__hint'>
-          可达鸭（KedaYa）· 上海科技大学统一校园服务平台 · 第三方开源项目（非官方）。
+          第三方开源项目（非官方）· 吉祥物为原创美术，与任何第三方角色形象无关。
         </Text>
-        <Text className='kdy-profile__hint'>吉祥物为原创美术，与任何第三方角色形象无关。</Text>
         {container.env.useMock && (
-          <Text className='kdy-profile__hint'>
-            当前为本地演示模式：数据来自内存 Mock，刷新后重置。
-          </Text>
+          <Text className='kdy-profile__hint'>当前是演示模式，数据不会保存。</Text>
         )}
       </KdyCard>
 
@@ -340,7 +337,7 @@ export default function ProfilePage() {
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
       </Text>
 
-      <KdyAgentFab module='profile' page={PAGE_PATHS.profile} hint='问我校园生活的事' />
+      <KdyAgentFab module='profile' page={PAGE_PATHS.profile} />
     </View>
   )
 }

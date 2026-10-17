@@ -88,13 +88,12 @@ export default function IdentityPage() {
       <KdyHeading
         title='身份'
         subtitle='登录回答「你是谁」，绑定校园系统才能读到课表、余额与实名信息'
-        eyebrow='KEDAYA · 身份与校园系统'
       />
 
       {state.overview?.dataMode === 'mock' && (
         <View className='kdy-identity__notice'>
           <Text className='kdy-identity__notice-text'>
-            当前为演示数据源：这里的校园数据是本地模拟的，方便先跑通全链路，不代表真实校园数据。
+            校园数据为演示数据，非真实数据。
           </Text>
         </View>
       )}
@@ -158,7 +157,7 @@ export default function IdentityPage() {
         )}
 
         {state.identity?.simulated === true && (
-          <Text className='kdy-identity__muted'>以上为演示数据（来自本地模拟数据源）。</Text>
+          <Text className='kdy-identity__muted'>以上为演示数据。</Text>
         )}
       </KdyCard>
 
@@ -210,7 +209,7 @@ export default function IdentityPage() {
 
       <KdyCard title='为什么需要绑定'>
         <Text className='kdy-identity__p'>
-          登录只解决「你是谁」；课表、校园卡、通知属于校园系统里的数据，必须由你**逐系统**授权后才能读取。
+          登录只解决「你是谁」；课表、校园卡、通知属于校园系统里的数据，必须由你逐系统授权后才能读取。
         </Text>
         <Text className='kdy-identity__p'>
           授权凭据在服务端加密保存，本地只留「绑定了哪些系统」这一条状态；解绑后对应数据立即不可读。
@@ -222,7 +221,7 @@ export default function IdentityPage() {
         </View>
       </KdyCard>
 
-      <KdyAgentFab module='auth' page={PAGE_PATHS.identity} hint='绑哪个？问我' />
+      <KdyAgentFab module='auth' page={PAGE_PATHS.identity} />
     </View>
   )
 }
