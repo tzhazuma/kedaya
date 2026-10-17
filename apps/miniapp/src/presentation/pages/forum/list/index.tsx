@@ -31,6 +31,14 @@ function statusTone(status: ForumPostSummary['status']): KdyTagTone {
   return 'neutral'
 }
 
+/**
+ * 主题行 —— 论坛的定制化外观：**热度**（回复 / 赞）与作者分列两端，
+ * 摘要在中间固定两行。
+ *
+ * 与商品卡/任务卡不同，论坛扫的是"这帖说了什么、有没有人理它"，
+ * 所以数字不做成大件，而是收成一个右上角的小统计簇（回复 / 赞），
+ * 让标题与摘要占满宽度。
+ */
 function ForumPostCard({ item, boardName }: { item: ForumPostSummary; boardName: string }) {
   return (
     <KdyCard
@@ -48,7 +56,9 @@ function ForumPostCard({ item, boardName }: { item: ForumPostSummary; boardName:
           )}
         </View>
 
-        <Text className='kdy-forum-card__excerpt'>{item.excerpt}</Text>
+        {item.excerpt === '' ? null : (
+          <Text className='kdy-forum-card__excerpt'>{item.excerpt}</Text>
+        )}
 
         {item.tags.length > 0 && (
           <View className='kdy-forum-card__tags'>
@@ -61,13 +71,16 @@ function ForumPostCard({ item, boardName }: { item: ForumPostSummary; boardName:
         )}
 
         <View className='kdy-forum-card__foot'>
-          <Text className='kdy-forum-card__meta'>
+          <Text className='kdy-forum-card__author'>
             {boardName} · {item.authorName}
             {item.anonymous ? '（匿名）' : ''}
           </Text>
-          <Text className='kdy-forum-card__meta'>
-            {item.replyCount} 回复 · {item.createdAtLabel}
-          </Text>
+
+          <View className='kdy-forum-card__stats'>
+            <Text className='kdy-forum-card__stat'>{item.replyCount} 回复</Text>
+            <Text className='kdy-forum-card__stat'>{item.likeCount} 赞</Text>
+            <Text className='kdy-forum-card__stat'>{item.createdAtLabel}</Text>
+          </View>
         </View>
       </View>
     </KdyCard>
@@ -139,24 +152,40 @@ export default function ForumListPage() {
     reloadBoard(boardId)
   }
 
+  const activeBoard = boardState.boards.find((board) => board.id === state.activeBoardId) ?? null
+
   return (
     <View className='kdy-page kdy-forum-list'>
+      {/* 版块栏：每个版块带**主题数**（决定值不值得点进去），
+          选中后下面补一行版块简介与可见性 —— 论坛里"这版块是干嘛的、
+          谁能看"是要说清楚的。 */}
       <View className='kdy-forum-list__boards'>
-        <View className='kdy-forum-list__board' onClick={() => handleSwitchBoard(null)}>
-          <KdyTag tone={state.activeBoardId === null ? 'brand' : 'neutral'}>全部</KdyTag>
-        </View>
-        {boardState.boards.map((board) => (
-          <View
-            key={board.id}
-            className='kdy-forum-list__board'
-            onClick={() => handleSwitchBoard(board.id)}
-          >
-            <KdyTag tone={state.activeBoardId === board.id ? 'brand' : 'neutral'}>
-              {board.name}
-            </KdyTag>
-          </View>
-        ))}
+        {boardState.boards.map((board) => {
+          const active = state.activeBoardId === board.id
+          return (
+            <View
+              key={board.id}
+              className={active ? 'kdy-forum-list__board is-active' : 'kdy-forum-list__board'}
+              onClick={() => handleSwitchBoard(active ? null : board.id)}
+            >
+              <Text className='kdy-forum-list__board-name'>{board.name}</Text>
+              <Text className='kdy-forum-list__board-count'>{board.postCount} 主题</Text>
+            </View>
+          )
+        })}
       </View>
+
+      {activeBoard === null ? (
+        <Text className='kdy-forum-list__board-hint'>全部版块的最新主题（按时间倒序）</Text>
+      ) : (
+        <View className='kdy-forum-list__board-hint'>
+          <Text className='kdy-forum-list__board-desc'>{activeBoard.description}</Text>
+          <Text className='kdy-forum-list__board-desc'>
+            {activeBoard.visibilityLabel}
+            {activeBoard.campusOnly ? ' · 仅校内可见' : ''}
+          </Text>
+        </View>
+      )}
 
       <View className='kdy-forum-list__actions'>
         <KdyButton

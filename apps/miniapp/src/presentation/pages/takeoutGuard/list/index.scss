@@ -62,6 +62,71 @@
     white-space: nowrap;
   }
 
+  /* 三段状态轨：记录 → 升级 → 解决。当前段用品牌黄，已完成用深色，
+     未开始置灰 —— 与详情页共用 `statusTimeline` 的三态语义。 */
+  &__rail {
+    display: flex;
+    align-items: flex-start;
+    gap: $kdy-space-1;
+    margin-top: $kdy-space-2;
+  }
+
+  &__seg {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-1;
+  }
+
+  &__seg-bar {
+    height: 4px;
+    border-radius: $kdy-radius-pill;
+    background: $kdy-color-border;
+  }
+
+  &__seg.is-done &__seg-bar {
+    background: $kdy-color-ink-soft;
+  }
+
+  &__seg.is-current &__seg-bar {
+    background: $kdy-color-brand;
+  }
+
+  &__seg-label {
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__seg.is-current &__seg-label {
+    color: $kdy-color-ink;
+    font-weight: $kdy-font-weight-medium;
+  }
+
+  /* 发生 / 订单：左标签对齐 */
+  &__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $kdy-space-2 $kdy-space-4;
+    margin-top: $kdy-space-2;
+  }
+
+  &__fact {
+    display: flex;
+    align-items: baseline;
+    gap: $kdy-space-1;
+  }
+
+  &__fact-key {
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__fact-value {
+    color: $kdy-color-ink;
+    font-size: $kdy-font-size-xs;
+  }
+
   &__preview {
     display: block;
     margin: $kdy-space-1 0;
@@ -87,6 +152,13 @@
   }
 
   &__badge {
+    display: block;
+    margin-top: $kdy-space-1;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__foot {
     display: block;
     margin-top: $kdy-space-1;
     color: $kdy-color-text-muted;

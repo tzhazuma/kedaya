@@ -75,6 +75,80 @@
   font-weight: $kdy-font-weight-semibold;
 }
 
+/* 活动 / 时间 / 地点三行：左标签对齐，扫起来比一行拼接快 */
+.kdy-buddy-card__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kdy-buddy-card__fact {
+  display: flex;
+  align-items: flex-start;
+  gap: $kdy-space-2;
+}
+
+.kdy-buddy-card__fact-key {
+  flex: none;
+  width: 32px;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-buddy-card__fact-value {
+  flex: 1;
+  min-width: 0;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  line-height: $kdy-line-height-normal;
+  word-break: break-all;
+}
+
+/* 名额条 */
+.kdy-buddy-card__slots {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-1;
+  margin-top: $kdy-space-1;
+}
+
+.kdy-buddy-card__slots-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+}
+
+.kdy-buddy-card__slots-text {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-medium;
+}
+
+.kdy-buddy-card__slots-left {
+  color: $kdy-color-brand-strong;
+  font-size: $kdy-font-size-sm;
+  font-weight: 700;
+}
+
+.kdy-buddy-card__slots-left.is-full {
+  color: $kdy-color-success;
+  font-weight: 500;
+}
+
+.kdy-buddy-card__slots-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: $kdy-radius-pill;
+}
+
+.kdy-buddy-card__requirements {
+  display: block;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
 .kdy-buddy-card__meta,
 .kdy-buddy-card__row,
 .kdy-buddy-card__foot,
@@ -107,4 +181,11 @@
 
 .kdy-buddy-card__count {
   color: $kdy-color-brand-strong;
+}
+
+.kdy-buddy-list__section-hint {
+  display: block;
+  padding: $kdy-space-1 $kdy-space-4 0;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
 }

@@ -7,6 +7,7 @@ import {
   TAKEOUT_GUARD_NOTICE,
   TAKEOUT_GUARD_STATUS_LABELS,
   TAKEOUT_GUARD_STATUSES,
+  statusTimeline,
 } from '../../../../domain/models/takeoutGuard'
 import type {
   TakeoutGuardReportSummary,
@@ -42,7 +43,18 @@ function statusTone(status: TakeoutGuardStatus): KdyTagTone {
   return 'warning'
 }
 
+/**
+ * 报备记录卡 —— **本人视角**的定制化外观：一条三段状态轨（记录 → 升级 → 解决）。
+ *
+ * 与其它模块的关键差别：这里显示的不是"别人的东西"，而是"我这单走到哪一步了"。
+ * 因此：
+ *   · 状态轨的三态文案与详情页共用 `statusTimeline`（单一真相，列表不另写一套判断）；
+ *   · 订单号**只给后四位**（连起来就足以指向具体的人，见 `orderNoTail` 的注释）；
+ *   · 卡片底部把「仅你自己可见」写在明处 —— 这是本模块的产品承诺，不是装饰。
+ */
 function TakeoutGuardCard({ item }: { item: TakeoutGuardReportSummary }) {
+  const timeline = statusTimeline(item.status)
+
   return (
     <KdyCard
       elevated={false}
@@ -55,14 +67,35 @@ function TakeoutGuardCard({ item }: { item: TakeoutGuardReportSummary }) {
           <Text className='kdy-tg-card__place'>{item.place}</Text>
           <KdyTag tone={statusTone(item.status)}>{item.statusLabel}</KdyTag>
         </View>
+
+        <View className='kdy-tg-card__rail'>
+          {timeline.map((step) => (
+            <View key={step.id} className={`kdy-tg-card__seg is-${step.state}`}>
+              <View className='kdy-tg-card__seg-bar' />
+              <Text className='kdy-tg-card__seg-label'>{step.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View className='kdy-tg-card__facts'>
+          <View className='kdy-tg-card__fact'>
+            <Text className='kdy-tg-card__fact-key'>发生</Text>
+            <Text className='kdy-tg-card__fact-value'>{item.happenedLabel}</Text>
+          </View>
+          <View className='kdy-tg-card__fact'>
+            <Text className='kdy-tg-card__fact-key'>订单</Text>
+            <Text className='kdy-tg-card__fact-value'>尾号 {item.orderNoTail}</Text>
+          </View>
+        </View>
+
         {item.detailPreview === '' ? null : (
           <Text className='kdy-tg-card__preview'>{item.detailPreview}</Text>
         )}
-        <View className='kdy-tg-card__meta'>
-          <Text className='kdy-tg-card__meta-item'>发生 {item.happenedLabel}</Text>
-          <Text className='kdy-tg-card__meta-item'>订单号后四位 {item.orderNoTail}</Text>
-        </View>
-        {item.hasEvidence ? <Text className='kdy-tg-card__badge'>已附证据图</Text> : null}
+
+        <Text className='kdy-tg-card__foot'>
+          {item.hasEvidence ? '已附证据图 · ' : ''}
+          报备于 {item.createdLabel} · 仅你自己可见
+        </Text>
       </View>
     </KdyCard>
   )

@@ -7,7 +7,41 @@
 
 .kdy-forum-list__board {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: $kdy-space-1 $kdy-space-3;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-md;
+  background: $kdy-color-surface;
+}
+
+.kdy-forum-list__board.is-active {
+  border-color: $kdy-color-brand;
+  background: $kdy-color-brand-soft;
+}
+
+.kdy-forum-list__board-name {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-medium;
+}
+
+.kdy-forum-list__board-count {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-forum-list__board-hint {
+  display: block;
+  padding: $kdy-space-1 $kdy-space-4 0;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-forum-list__board-desc {
+  display: block;
+  line-height: $kdy-line-height-normal;
 }
 
 .kdy-forum-list__actions {
@@ -71,6 +105,11 @@
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-sm;
   line-height: 1.5;
+  /* 摘要固定两行 —— 列表要能扫，不是把正文搬过来 */
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .kdy-forum-card__tags {
@@ -84,6 +123,29 @@
   align-items: center;
   justify-content: space-between;
   gap: $kdy-space-2;
+}
+
+.kdy-forum-card__author {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 热度统计簇：回复 / 赞 / 时间，右对齐 */
+.kdy-forum-card__stats {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  flex: none;
+}
+
+.kdy-forum-card__stat {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
 }
 
 .kdy-forum-card__meta {

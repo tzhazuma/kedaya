@@ -13,6 +13,7 @@ import {
   SHTU_DEPARTMENTS,
   availabilityOverlapsPost,
   buddyRemainingSlots,
+  buddyFillPercent,
   canApplyToPost,
   canTransitionApplication,
   canTransitionPost,
@@ -260,6 +261,16 @@ describe('buddy · 派生状态与摘要', () => {
     expect(summary.tagLabels).toEqual(['羽毛球', '健身'])
     expect(summary.section).toBe('sport')
     expect(summary.startsAtLabel).toContain('14:00')
+  })
+
+  it('名额填充百分比：正常取整、超额夹到 100、capacity=0 不是 NaN', () => {
+    expect(buddyFillPercent({ capacity: 6, joinedCount: 3 })).toBe(50)
+    expect(buddyFillPercent({ capacity: 3, joinedCount: 1 })).toBe(33)
+    // 超额（后端允许小幅超员）→ 夹到 100，进度条不会撑破容器
+    expect(buddyFillPercent({ capacity: 4, joinedCount: 5 })).toBe(100)
+    // 老数据 capacity=0：返回 0 而不是 NaN（"算不出来"与"没人报名"要区分开）
+    expect(buddyFillPercent({ capacity: 0, joinedCount: 2 })).toBe(0)
+    expect(summarizeBuddyPost(post({ capacity: 6, joinedCount: 3 }), NOW).fillPercent).toBe(50)
   })
 })
 
