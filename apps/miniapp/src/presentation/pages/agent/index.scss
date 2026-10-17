@@ -21,7 +21,11 @@
     align-items: center;
     justify-content: space-between;
     padding: $kdy-space-4 $kdy-space-5 $kdy-space-3;
-    background: color.mix($kdy-color-brand-soft, $kdy-color-bg, 60%);
+    /* sticky 头部是毛玻璃的正当用法：内容从它下面滚过去，用户仍要知道"我在和谁说话" */
+    background: $kdy-surface-glass;
+    border-bottom: 1px solid $kdy-border-hairline;
+    backdrop-filter: $kdy-glass-blur;
+    -webkit-backdrop-filter: $kdy-glass-blur;
   }
 
   &__header-main {
@@ -100,7 +104,8 @@
     height: 32px;
     margin-right: $kdy-space-2;
     border-radius: $kdy-radius-pill;
-    background: $kdy-color-brand;
+    background: $kdy-gradient-brand;
+    box-shadow: 0 2px 6px rgba($kdy-color-brand-strong, 0.35);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -113,16 +118,18 @@
 
   &__bubble {
     max-width: 78%;
-    padding: $kdy-space-3;
-    border-radius: $kdy-radius-lg;
+    padding: $kdy-space-3 $kdy-space-4;
+    border-radius: $kdy-radius-2xl;
 
     &--user {
-      background: $kdy-color-brand;
+      background: $kdy-gradient-brand;
+      box-shadow: 0 4px 12px rgba($kdy-color-brand-strong, 0.28);
     }
 
     &--agent {
-      background: $kdy-color-surface;
-      box-shadow: $kdy-shadow-sm;
+      background: $kdy-surface-glass-strong;
+      border: 1px solid $kdy-border-hairline;
+      box-shadow: 0 2px 8px rgba($kdy-color-ink, 0.06);
     }
   }
 
@@ -202,8 +209,9 @@
 
   &__badge {
     padding: 2px $kdy-space-2;
-    border-radius: $kdy-radius-sm;
-    background: $kdy-color-surface-alt;
+    border: 1px solid $kdy-border-hairline;
+    border-radius: $kdy-radius-pill;
+    background: rgba($kdy-color-surface, 0.9);
     color: $kdy-color-text-muted;
     font-size: $kdy-font-size-xs;
   }
@@ -228,9 +236,12 @@
     bottom: 0;
     margin: $kdy-space-3 $kdy-space-5 0;
     padding: $kdy-space-3;
-    border-radius: $kdy-radius-xl;
-    background: $kdy-color-surface;
-    box-shadow: $kdy-shadow-md;
+    border: 1px solid $kdy-border-glass;
+    border-radius: $kdy-radius-2xl;
+    background: $kdy-surface-glass-strong;
+    box-shadow: $kdy-shadow-card;
+    backdrop-filter: $kdy-glass-blur;
+    -webkit-backdrop-filter: $kdy-glass-blur;
   }
 
   &__composer-action {

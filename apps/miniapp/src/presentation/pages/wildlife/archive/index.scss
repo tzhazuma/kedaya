@@ -4,9 +4,9 @@
   gap: $kdy-space-3;
   margin: 0 $kdy-space-5 $kdy-space-3;
   padding: $kdy-space-4;
-  background: $kdy-color-surface;
-  border: 1px solid $kdy-color-border;
-  border-radius: $kdy-radius-xl;
+  background: rgba($kdy-color-surface, 0.92);
+  border: 1px solid $kdy-border-hairline;
+  border-radius: $kdy-radius-2xl;
   color: $kdy-color-ink-soft;
 }
 .kdy-archive__map-body {

@@ -1,4 +1,5 @@
 import { Text, View } from '@tarojs/components'
+import { ArrowRight } from '@taroify/icons'
 import { MODULES } from '@kedaya/contracts'
 import type { KedayaModule } from '@kedaya/contracts'
 import { useState } from 'react'
@@ -173,7 +174,7 @@ export default function DiscoverPage() {
               <Text className='kdy-discover__nav-title'>{item.label}</Text>
               <Text className='kdy-discover__nav-detail'>{item.detail}</Text>
             </View>
-            <Text className='kdy-discover__nav-arrow'>›</Text>
+            <ArrowRight className='kdy-discover__nav-arrow' />
           </View>
         ))}
       </KdyCard>

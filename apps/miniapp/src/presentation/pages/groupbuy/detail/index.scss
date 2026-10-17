@@ -103,8 +103,9 @@
 .kdy-gb-detail__actions {
   margin: $kdy-space-4 $kdy-space-5;
   padding: $kdy-space-4;
-  background: $kdy-color-surface;
-  border-radius: $kdy-radius-xl;
+  background: rgba($kdy-color-surface, 0.92);
+  border: 1px solid $kdy-border-hairline;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-gb-detail__actions-row {

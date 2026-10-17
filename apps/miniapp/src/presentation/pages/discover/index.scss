@@ -45,8 +45,9 @@
   align-items: center;
   justify-content: space-between;
   gap: $kdy-space-3;
-  padding: $kdy-space-3 0;
-  border-bottom: 1px solid $kdy-color-border;
+  min-height: 56px;
+  padding: $kdy-space-2 0;
+  border-bottom: 1px solid $kdy-border-hairline;
 }
 
 .kdy-discover__nav-body {
@@ -68,8 +69,10 @@
 }
 
 .kdy-discover__nav-arrow {
-  font-size: $kdy-font-size-lg;
+  flex-shrink: 0;
   color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-md;
+  line-height: 1;
 }
 
 .kdy-discover__hint {

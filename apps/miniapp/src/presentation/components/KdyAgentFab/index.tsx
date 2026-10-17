@@ -46,6 +46,8 @@ export function KdyAgentFab({ module, page, raised = false, className }: KdyAgen
       className={classes}
       // 悬浮球本身不承载业务逻辑：它只负责"带着上下文去找可达鸭"
       onClick={() => void navigateTo(agentPathWithContext(module, page))}
+      hoverClass='kdy-agent-fab--pressed'
+      hoverStayTime={70}
     >
       <View className='kdy-agent-fab__ball'>
         <Text className='kdy-agent-fab__emoji'>🦆</Text>

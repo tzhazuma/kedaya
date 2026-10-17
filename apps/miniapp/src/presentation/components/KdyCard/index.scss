@@ -2,14 +2,22 @@
   box-sizing: border-box;
   margin: $kdy-space-3 $kdy-space-5;
   padding: $kdy-space-5;
-  background-color: $kdy-color-surface;
-  border: 1px solid rgba($kdy-color-border, 0.5);
-  border-radius: $kdy-radius-xl;
+  background-color: rgba($kdy-color-surface, 0.92);
+  border: 1px solid $kdy-border-hairline;
+  border-radius: $kdy-radius-2xl;
 }
 
+/*
+ * 阴影分两档，但**都不加 blur**。
+ *
+ * 卡片在列表里会同时出现十几张，给每张都挂 `backdrop-filter`
+ * 会让滚动帧率掉到肉眼可见（AGENTS：磨砂只用于少量重点区域）。
+ * 所以这里的"层次"靠阴影叠层实现：`--elevated` 是大而软的一层 + 贴边一层，
+ * 默认档只留贴边的一层 —— 视觉上有厚薄，滚动时又是纯 CPU 绘制。
+ */
 .kdy-card--elevated {
-  border-color: transparent;
-  box-shadow: $kdy-shadow-md;
+  border-color: $kdy-border-glass;
+  box-shadow: $kdy-shadow-card;
 }
 
 .kdy-card__header {
@@ -23,7 +31,8 @@
 .kdy-card__title {
   color: $kdy-color-ink;
   font-size: $kdy-font-size-md;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.2px;
 }
 
 .kdy-card__extra {

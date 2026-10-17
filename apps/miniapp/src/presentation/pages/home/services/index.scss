@@ -1,10 +1,11 @@
+/* 搜索框自带 20px 水平外边距（与标题、卡片对齐），这里只补下边距 */
 .kdy-hall__search {
-  padding: 0 $kdy-space-5 $kdy-space-3;
+  padding: 0 0 $kdy-space-3;
 }
 .kdy-hall__grid {
   display: flex;
   flex-wrap: wrap;
-  row-gap: $kdy-space-3;
+  row-gap: $kdy-space-4;
 }
 .kdy-hall__grid-item {
   display: flex;
@@ -13,7 +14,6 @@
   box-sizing: border-box;
   width: 25%;
   gap: $kdy-space-2;
-  padding: $kdy-space-1 0;
   min-width: 0;
 }
 .kdy-hall__grid-name {
@@ -26,11 +26,12 @@
   display: flex;
   align-items: center;
   gap: $kdy-space-3;
+  box-sizing: border-box;
   margin: $kdy-space-4 $kdy-space-5;
   padding: $kdy-space-4;
-  background: $kdy-color-surface;
-  border: 1px solid $kdy-color-border;
-  border-radius: $kdy-radius-xl;
+  background: rgba($kdy-color-surface, 0.92);
+  border: 1px solid $kdy-border-hairline;
+  border-radius: $kdy-radius-2xl;
   color: $kdy-color-ink-soft;
 }
 .kdy-hall__manage-body {

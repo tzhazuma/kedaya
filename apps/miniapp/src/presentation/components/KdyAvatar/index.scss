@@ -3,8 +3,8 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: $kdy-color-brand-soft;
-  border: 1px solid rgba($kdy-color-border, 0.6);
+  background: linear-gradient(150deg, rgba($kdy-color-brand, 0.24) 0%, rgba($kdy-color-brand-soft, 0.7) 100%);
+  border: 1px solid rgba($kdy-color-brand, 0.3);
   border-radius: $kdy-radius-pill;
   flex-shrink: 0;
 }

@@ -1,9 +1,100 @@
-/* 「我的常用」宫格 —— 4 列，紧凑：行距只留一眼能分开的余量 */
+/* ==================================================================== *
+ * Hero（问候 + 日期 + 编辑入口）
+ * ==================================================================== */
+
+/*
+ * 首页唯一的"重色块"：品牌渐变 + 同色光晕。
+ *
+ * 为什么值得用一整块渐变：首页原来第一眼是"你好，名字"四号字 + 一张白卡片，
+ * 用户看不出自己到了哪。Hero 用最深的一块色把"这是你的首页"说清楚，
+ * 下面的宫格才有对比参照 —— 全都是浅色等于全都没有重点。
+ *
+ * 两个装饰圆用 `::before` / `::after` 而不是额外元素：
+ * 它们纯装饰、不参与布局，多两个 `<View>` 只会让宫格与 Hero 的文字基线更难对齐。
+ */
+.kdy-home__hero {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: $kdy-space-3;
+  box-sizing: border-box;
+  margin: $kdy-space-4 $kdy-space-5 $kdy-space-3;
+  padding: $kdy-space-5;
+  overflow: hidden;
+  border-radius: $kdy-radius-3xl;
+  background: $kdy-gradient-brand;
+  box-shadow: $kdy-shadow-accent;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -44px;
+    right: -30px;
+    width: 148px;
+    height: 148px;
+    border-radius: 50%;
+    background: rgba($kdy-color-surface, 0.26);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -34px;
+    right: 56px;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: rgba($kdy-color-surface, 0.18);
+  }
+}
+
+/* 文字与胶囊要压在装饰圆之上 —— 装饰圆没有 z-index，所以这里给 1 就够 */
+.kdy-home__hero-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+}
+
+.kdy-home__hero-date {
+  display: block;
+  color: rgba($kdy-color-ink, 0.7);
+  font-size: $kdy-font-size-xs;
+  font-weight: $kdy-font-weight-medium;
+  letter-spacing: 0.4px;
+}
+
+.kdy-home__hero-greet {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-ink;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.kdy-home__hero-edit {
+  position: relative;
+  z-index: 1;
+  color: $kdy-color-ink;
+}
+
+.kdy-home__hero-edit--pressed {
+  opacity: 0.85;
+}
+
+/* ==================================================================== *
+ * 「我的常用」宫格
+ * ==================================================================== */
+
+/* 4 列；行距比图标本身略大，避免相邻两行的图标"连成一片" */
 .kdy-home__grid {
   display: flex;
   flex-wrap: wrap;
-  row-gap: $kdy-space-3;
+  row-gap: $kdy-space-4;
 }
+
 .kdy-home__grid-item {
   display: flex;
   flex-direction: column;
@@ -11,42 +102,64 @@
   box-sizing: border-box;
   width: 25%;
   gap: $kdy-space-2;
-  padding: $kdy-space-1 0;
   min-width: 0;
 }
+
 .kdy-home__grid-name {
   font-size: $kdy-font-size-xs;
   line-height: 1.35;
   color: $kdy-color-text;
   text-align: center;
 }
-.kdy-home__edit {
-  color: $kdy-color-ink-soft;
-  font-size: $kdy-font-size-sm;
-}
 
-/* 安全出口：常驻一行，不被"自定义"影响（不属于可选项） */
+/* ==================================================================== *
+ * 安全出口（常驻一行，不属于可自定义的内容）
+ * ==================================================================== */
+
 .kdy-home__safety {
   display: flex;
   align-items: center;
   gap: $kdy-space-3;
-  margin: $kdy-space-4 $kdy-space-5;
+  margin: $kdy-space-2 $kdy-space-5 0;
   padding: $kdy-space-3 $kdy-space-4;
-  background: rgba($kdy-color-success, 0.06);
-  border-radius: $kdy-radius-xl;
+  border: 1px solid rgba($kdy-color-success, 0.2);
+  border-radius: $kdy-radius-2xl;
+  background: rgba($kdy-color-success, 0.08);
   color: $kdy-color-success;
-  font-size: $kdy-font-size-xl;
+  font-size: $kdy-font-size-md;
 }
+
+.kdy-home__safety--pressed {
+  background: rgba($kdy-color-success, 0.14);
+}
+
+/* 与宫格同一套"图标块"语言：40px 同色相方块，一行里也能一眼认出这是心理支持 */
+.kdy-home__safety-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: $kdy-radius-lg;
+  background: rgba($kdy-color-success, 0.14);
+  color: color.mix($kdy-color-success, $kdy-color-ink, 62%);
+  font-size: $kdy-font-size-md;
+  line-height: 1;
+}
+
 .kdy-home__safety-body {
   flex: 1;
   min-width: 0;
 }
+
 .kdy-home__safety-title {
   display: block;
   color: $kdy-color-ink;
   font-size: $kdy-font-size-sm;
   font-weight: $kdy-font-weight-semibold;
 }
+
 .kdy-home__safety-description {
   display: block;
   margin-top: $kdy-space-1;

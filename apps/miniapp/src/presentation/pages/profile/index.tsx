@@ -18,6 +18,7 @@ import { PAGE_PATHS } from '../../../app/routes'
 import type { WechatStatusDto } from '../../../domain/models/auth'
 import { navigateTo, toast } from '../../../platform/navigation'
 import { KdyAgentFab, KdyAvatar, KdyButton, KdyCard, KdyTag } from '../../components'
+import type { KdyModuleIconTone } from '../../components/KdyModuleIcon'
 import { KdyHeading } from '../../components/KdyHeading'
 import { useStore } from '../../hooks'
 import './index.scss'
@@ -41,20 +42,21 @@ import './index.scss'
  * 登录 ≠ 绑定校园系统：`campusBound` 为 false 时校园能力会被后端拦下（契约 §5）。
  */
 
-/** 常用功能：id 与路径都来自 `app/routes.ts`，这里只决定"显示哪几个、什么图标" */
+/** 常用功能：id 与路径都来自 `app/routes.ts`，这里只决定"显示哪几个、什么图标、哪一档色相" */
 const TOOLS: readonly {
   label: string
   path: string
   Icon: typeof ShoppingCartOutlined
+  tone: KdyModuleIconTone
 }[] = [
-  { label: '我的拼单', path: PAGE_PATHS.profileAssets, Icon: ShoppingCartOutlined },
-  { label: '我的课表', path: PAGE_PATHS.schedule, Icon: ClockOutlined },
-  { label: '校园卡', path: PAGE_PATHS.campusCard, Icon: EcardPay },
-  { label: '身份绑定', path: PAGE_PATHS.identity, Icon: Certificate },
-  { label: '首页管理', path: PAGE_PATHS.profileHome, Icon: SettingOutlined },
-  { label: '服务大厅', path: PAGE_PATHS.homeServices, Icon: AppsOutlined },
-  { label: '隐私与数据', path: PAGE_PATHS.profileSettings, Icon: ShieldOutlined },
-  { label: '常见问题', path: PAGE_PATHS.faq, Icon: QuestionOutlined },
+  { label: '我的拼单', path: PAGE_PATHS.profileAssets, Icon: ShoppingCartOutlined, tone: 'brand' },
+  { label: '我的课表', path: PAGE_PATHS.schedule, Icon: ClockOutlined, tone: 'info' },
+  { label: '校园卡', path: PAGE_PATHS.campusCard, Icon: EcardPay, tone: 'info' },
+  { label: '身份绑定', path: PAGE_PATHS.identity, Icon: Certificate, tone: 'neutral' },
+  { label: '首页管理', path: PAGE_PATHS.profileHome, Icon: SettingOutlined, tone: 'neutral' },
+  { label: '服务大厅', path: PAGE_PATHS.homeServices, Icon: AppsOutlined, tone: 'brand' },
+  { label: '隐私与数据', path: PAGE_PATHS.profileSettings, Icon: ShieldOutlined, tone: 'neutral' },
+  { label: '常见问题', path: PAGE_PATHS.faq, Icon: QuestionOutlined, tone: 'neutral' },
 ]
 
 /** 关于：两份法务文档（内容与 `presentation/content/legal` 同源） */
@@ -161,12 +163,12 @@ export default function ProfilePage() {
       <KdyHeading title='我的' />
 
       <View
-        className='kdy-profile__identity kdy-glass'
+        className='kdy-profile__identity'
         onClick={openIdentityCard}
-        hoverClass='kdy-card--pressed'
+        hoverClass='kdy-profile__identity--pressed'
         hoverStayTime={70}
       >
-        <KdyAvatar src={profile?.avatarUrl ?? null} size={56} />
+        <KdyAvatar src={profile?.avatarUrl ?? null} size={56} className='kdy-profile__avatar' />
         <View className='kdy-profile__identity-text'>
           <Text className='kdy-profile__name'>{profile?.nickname ?? '未登录'}</Text>
           <Text className='kdy-profile__hint'>{statusLine}</Text>
@@ -186,7 +188,7 @@ export default function ProfilePage() {
                 void navigateTo(tool.path)
               }}
             >
-              <View className='kdy-module-icon'>
+              <View className={`kdy-module-icon kdy-module-icon--${tool.tone}`}>
                 <tool.Icon />
               </View>
               <Text className='kdy-profile__grid-name'>{tool.label}</Text>

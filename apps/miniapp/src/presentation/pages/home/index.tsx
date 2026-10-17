@@ -1,13 +1,13 @@
 import { Text, View } from '@tarojs/components'
-import { AppsOutlined, ArrowRight, LikeOutlined } from '@taroify/icons'
+import { AppsOutlined, ArrowRight, Edit, LikeOutlined } from '@taroify/icons'
 import { useDidShow } from '@tarojs/taro'
 
 import { getContainer } from '../../../app/container'
 import { PAGE_PATHS, homeEntryPath, homeServicesPath, profileHomePath } from '../../../app/routes'
 import type { HomeEntry } from '../../../domain/models/homeEntries'
+import { WEEKDAY_LABELS } from '../../../domain/models/schedule'
 import { navigateTo, toast } from '../../../platform/navigation'
 import { KdyAgentFab, KdyCard } from '../../components'
-import { KdyHeading } from '../../components/KdyHeading'
 import { KdyModuleIcon } from '../../components/KdyModuleIcon'
 import { useStore } from '../../hooks'
 import './index.scss'
@@ -33,6 +33,13 @@ import './index.scss'
  * `app/routes.ts`。页面里没有写死的模块数组，也没有「角标」之类的额外装饰：
  * 没做出来的模块点开时给一句说明，不做成挂在格子上的小字。
  */
+
+/** 「10月18日 周日」——问候语之上的一行日期，是首页唯一的时间锚点 */
+function formatToday(date: Date): string {
+  const weekday = WEEKDAY_LABELS[date.getDay() === 0 ? 6 : date.getDay() - 1] ?? ''
+  return `${date.getMonth() + 1}月${date.getDate()}日 ${weekday}`
+}
+
 export default function HomePage() {
   const container = getContainer()
   const session = container.useCases.session
@@ -46,6 +53,8 @@ export default function HomePage() {
   })
 
   const entries = layout.selectedEntries()
+  const nickname = sessionState.profile?.nickname
+  const today = formatToday(container.clock.now())
 
   function openEntry(entry: HomeEntry): void {
     const path = homeEntryPath(entry.id)
@@ -58,18 +67,25 @@ export default function HomePage() {
 
   return (
     <View className='kdy-page kdy-home'>
-      <KdyHeading
-        title={sessionState.profile ? `你好，${sessionState.profile.nickname}` : '你好'}
-      />
-
-      <KdyCard
-        title='我的常用'
-        extra={
-          <Text className='kdy-home__edit' onClick={() => void navigateTo(profileHomePath())}>
-            编辑
+      <View className='kdy-home__hero'>
+        <View className='kdy-home__hero-body'>
+          <Text className='kdy-home__hero-date'>{today}</Text>
+          <Text className='kdy-home__hero-greet'>
+            {nickname === undefined || nickname === '' ? '你好' : `你好，${nickname}`}
           </Text>
-        }
-      >
+        </View>
+        <View
+          className='kdy-pill kdy-home__hero-edit'
+          onClick={() => void navigateTo(profileHomePath())}
+          hoverClass='kdy-home__hero-edit--pressed'
+          hoverStayTime={70}
+        >
+          <Edit />
+          <Text>编辑首页</Text>
+        </View>
+      </View>
+
+      <KdyCard title='我的常用'>
         <View className='kdy-home__grid'>
           {entries.map((entry) => (
             <View key={entry.id} className='kdy-home__grid-item' onClick={() => openEntry(entry)}>
@@ -97,8 +113,12 @@ export default function HomePage() {
           const wellbeing = entries.find((entry) => entry.id === 'wellbeing')
           if (wellbeing !== undefined) openEntry(wellbeing)
         }}
+        hoverClass='kdy-home__safety--pressed'
+        hoverStayTime={70}
       >
-        <LikeOutlined />
+        <View className='kdy-home__safety-icon'>
+          <LikeOutlined />
+        </View>
         <View className='kdy-home__safety-body'>
           <Text className='kdy-home__safety-title'>心理支持</Text>
           <Text className='kdy-home__safety-description'>24 小时热线 12356</Text>

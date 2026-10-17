@@ -14,7 +14,7 @@
   box-sizing: border-box;
   margin: $kdy-space-3 $kdy-space-5;
   padding: $kdy-space-5;
-  background-color: $kdy-color-surface;
-  border: 1px solid rgba($kdy-color-border, 0.5);
-  border-radius: $kdy-radius-xl;
+  background-color: rgba($kdy-color-surface, 0.92);
+  border: 1px solid $kdy-border-hairline;
+  border-radius: $kdy-radius-2xl;
 }

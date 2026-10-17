@@ -26,22 +26,28 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: $kdy-space-2 $kdy-space-3;
+    padding: $kdy-space-2 $kdy-space-4 $kdy-space-2 $kdy-space-3;
+    border: 1px solid rgba($kdy-color-surface, 0.6);
     border-radius: $kdy-radius-pill;
-    background: $kdy-color-brand;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    background: $kdy-gradient-brand;
+    /* 光晕来自品牌色本身：黄色浮在暖白背景上时，只用灰影会显得"脏" */
+    box-shadow: $kdy-shadow-float, $kdy-shadow-accent;
+  }
+
+  &--pressed &__ball {
+    opacity: 0.92;
   }
 
   &__emoji {
     margin-right: $kdy-space-1;
-    font-size: $kdy-font-size-md;
+    font-size: $kdy-font-size-lg;
     line-height: 1;
   }
 
   &__label {
     color: $kdy-color-ink;
     font-size: $kdy-font-size-sm;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1;
   }
 }

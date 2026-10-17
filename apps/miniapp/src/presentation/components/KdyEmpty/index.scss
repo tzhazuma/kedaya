@@ -12,21 +12,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
-  margin: 0 auto $kdy-space-4;
-  border-radius: $kdy-radius-xl;
-  background: $kdy-color-brand-soft;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto $kdy-space-3;
+  border: 1px solid rgba($kdy-color-brand, 0.26);
+  border-radius: $kdy-radius-3xl;
+  background: linear-gradient(150deg, rgba($kdy-color-brand, 0.24) 0%, rgba($kdy-color-brand, 0.06) 100%);
   color: $kdy-color-ink;
-  margin-bottom: $kdy-space-3;
   font-size: $kdy-font-size-display;
+  line-height: 1;
 }
 
 .kdy-empty__title {
   display: block;
   color: $kdy-color-ink;
   font-size: $kdy-font-size-md;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .kdy-empty__description {

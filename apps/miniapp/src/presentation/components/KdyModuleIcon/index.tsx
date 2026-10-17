@@ -29,7 +29,7 @@ import {
  * 模块图标 —— **仅视觉映射**。
  *
  * 模块名称、权限与清单始终来自 `@kedaya/contracts`：这里只回答
- * 「这个 id 画哪个图标」，改动它不会影响任何功能或文案。
+ * 「这个 id 画哪个图标、用哪一档色相」，改动它不会影响任何功能或文案。
  *
  * 为什么从一串嵌套三元改成查表：id 长到二十来个之后，嵌套三元里漏一个
  * 就会**静默落到兜底图标**（全部变成同一个方块），而且没人能一眼看出
@@ -68,11 +68,54 @@ const MODULE_ICONS: Readonly<Record<string, typeof AppsOutlined>> = {
   'campus-map': LocationOutlined,
 }
 
-export function KdyModuleIcon({ id }: { id: string }) {
+/**
+ * 色相档位。
+ *
+ * 一档色相 = 一个**使用场景**，不是一种装饰：
+ *   · `brand`   常去的地方（凑凑 / 拼单 / 食堂）
+ *   · `success` 好结果 / 生活服务（失物招领、跳蚤、动物）
+ *   · `info`    校园事务（课表、校园卡、契约类）
+ *   · `warning` 需要跑腿/代办（跑腿、偷外卖、技术服务）
+ *   · `danger`  需要**照顾**的敏感模块（心理支持、宿舍矛盾、画像）
+ *   · `neutral` 账号与工具（通知、FAQ、身份、我的）
+ *
+ * 底色是这一档色相 20% → 6% 的渐变（见 `appearance.scss`），
+ * 所以整屏宫格是"暖白 + 一点分类色"，不是彩虹。
+ */
+export type KdyModuleIconTone = 'brand' | 'success' | 'info' | 'warning' | 'danger' | 'neutral'
+
+const MODULE_TONES: Readonly<Record<string, KdyModuleIconTone>> = {
+  cou: 'brand',
+  groupbuy: 'brand',
+  canteen: 'brand',
+  'flea-market': 'success',
+  'lost-found': 'success',
+  wildlife: 'success',
+  animals: 'success',
+  buddy: 'info',
+  forum: 'info',
+  schedule: 'info',
+  'campus-card': 'info',
+  facility: 'info',
+  'campus-map': 'info',
+  errand: 'warning',
+  'takeout-guard': 'warning',
+  techpie: 'warning',
+  'dorm-harmony': 'danger',
+  wellbeing: 'danger',
+  'ai-portrait': 'danger',
+  faq: 'neutral',
+  auth: 'neutral',
+  notifications: 'neutral',
+  profile: 'neutral',
+}
+
+export function KdyModuleIcon({ id, tone }: { id: string; tone?: KdyModuleIconTone }) {
   const Icon = MODULE_ICONS[id] ?? AppsOutlined
+  const resolved = tone ?? MODULE_TONES[id] ?? 'neutral'
 
   return (
-    <View className='kdy-module-icon'>
+    <View className={`kdy-module-icon kdy-module-icon--${resolved}`}>
       <Icon />
     </View>
   )
