@@ -126,6 +126,12 @@ export const StorageKeys = {
   wildlifeListCache: `${STORAGE_PREFIX}cache:wildlife:list`,
   /** 食堂营养列表缓存 */
   canteenListCache: `${STORAGE_PREFIX}cache:canteen:list`,
+  /**
+   * 营养管家「今日营养」缓存（ADR 0006）。
+   * 与 `canteenListCache` 分开：那是菜品目录，这是**本人**的当日汇总，
+   * 形状与失效时机都不同（记录一餐就要失效）。
+   */
+  nutritionTodayCache: `${STORAGE_PREFIX}cache:nutrition:today`,
   /** 常见问题列表缓存 */
   faqListCache: `${STORAGE_PREFIX}cache:faq:list`,
   /**

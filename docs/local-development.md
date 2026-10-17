@@ -79,11 +79,19 @@ npm run dev:serve -w @kedaya/api           # 终端 B：node --watch 跑编译�
 ```
 
 `prisma:seed` 覆盖 6 个演示账号与十余类业务数据（课表 / 校园卡流水 / 拼单 /
-跳蚤 / 跑腿 / 搭子 / 失物招领 / 论坛帖与回复 / 食堂菜品 / 野生动植物 / TechPie /
+跳蚤 / 跑腿 / 搭子 / 失物招领 / 论坛帖与回复 / 野生动植物 / TechPie /
 FAQ / 外卖被拿报备 / 站内信），让每个列表页打开就有中文数据可看。
 密码统一为 `Kedaya2026`，账号：`demo@kedaya.dev`、`zhang.yf@kedaya.dev`、
 `chen.mx@kedaya.dev`、`liu.zy@kedaya.dev`、`wang.h@kedaya.dev`、`zhou.qr@kedaya.dev`。
 生产环境**默认拒绝执行**（需要 `SEED_FORCE=1` 才会跑）。
+
+营养管家（`canteen`）的种子分两部分，且**都是演示量级、不是食堂公示值**：
+
+- **菜品库**：72 道菜 / 覆盖 4 个食堂（`services/api/prisma/seed-data.ts` 的 `DISHES_SEED`）。
+  这是推荐与汇总的**数据地基**，通过 Web 后台 `/admin/dishes` 或 API 维护（写操作需管理员）。
+- **个人演示记录**：给 `demo@kedaya.dev`（可用 `SEED_NUTRITION_EMAIL` 改）灌一份每日需求 + 今日早/午餐，
+  好让「营养管家」首页一打开就有进度环与推荐。脚本**刻意不新建账号**（凭空造一个能登录的账号是安全债）；
+  目标邮箱没注册时会打印一行说明并跳过，不会静默成功。当天已有记录时不重复写。
 
 服务地址 <http://localhost:3000/api/v1>（统一前缀 `/api/v1`，响应统一信封）。
 存活探针在 `GET /health`（**不带** `/api/v1` 前缀、**不走**信封）。
@@ -123,6 +131,9 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 | `CAMPUS_UPSTREAM_TIMEOUT_MS` | 校园上游请求超时（毫秒，默认 6000） |
 | `AGENT_LLM_BASE_URL` / `AGENT_LLM_API_KEY` / `AGENT_LLM_MODEL` | 可达鸭的 OpenAI 兼容模型；**全部留空即走规则回答**，功能完整。例：`https://api.modelverse.cn/v1` + `deepseek-v4.1-flash`（优云智算）或 `https://api.deepseek.com/v1` + `deepseek-chat` |
 | `AGENT_LLM_TIMEOUT_MS` | 模型调用超时（毫秒，默认 8000），超时即降级为规则回答 |
+| `ADMIN_API_KEY` / `ADMIN_USER_IDS` | 营养管家**菜品营养数据**的写权限（`POST/PATCH/DELETE /canteen/items`，`AdminGuard`）。前者是请求头 `x-admin-key` 的值，后者是允许的登录用户 id（逗号分隔）。**两者都不配时写操作一律 403**（fail-closed）；读接口匿名可用。Web 后台 `/admin/dishes` 用 `NEXT_PUBLIC_ADMIN_API_KEY` 传同一个值 |
+| `APP_TZ_OFFSET_MINUTES` | 营养管家按哪个时区切「今天」（分钟，默认 `480` = UTC+8）。开发机 TZ 与容器 TZ 不一致时靠它，别依赖进程 TZ |
+| `SEED_NUTRITION_EMAIL` | `prisma:seed` 把营养管家演示数据（每日需求 + 今日早/午餐）灌给哪个**已注册**邮箱（默认 `demo@kedaya.dev`）。账号不存在时如实跳过，不新建账号 |
 
 `AUTH_DEV_EXPOSE_CODES` 只是为了真机联调方便；生产必须关闭，
 否则任何人都能拿到别人的注册验证码。关闭时验证码会打印到 API 控制台（`ConsoleMailAdapter`）。
@@ -314,10 +325,14 @@ npm run dev:web           # Next.js dev server → http://localhost:3001
   `apps/web/src/domain/models/delivery.ts` 一处，改交付范围就改它。
   （当前只有 `facility`（场馆预约）还是「接口就绪」：后端已挂脚手架接口，
   小程序页面待做。）
-- 目前浏览器里真正能点开使用的是拼单垂直切片（`/groupbuy`），
-  以及管理后台占位（`/admin`）；其余模块点进 `/m/<id>` 会看到该模块的交付说明。
-- 默认走 mock 数据，不需要后端；要连真实后端时设 `NEXT_PUBLIC_API_BASE_URL`
-  （默认 `http://localhost:3000`，本机换端口时对应改成 `http://localhost:3999`）。
+- 目前浏览器里真正能点开使用的是拼单（`/groupbuy`）、论坛（`/forum`）、常见问题（`/faq`）、
+  TechPie（`/techpie`）、野生动物（`/wildlife`）、找搭子（`/buddy`）、校园卡（`/campus-card`）
+  这几个切片，以及管理后台（`/admin`，含 `/admin/dishes` 菜品营养数据、`/admin/wildlife`）；
+  其余模块点进 `/m/<id>` 会看到该模块的交付说明。
+- 默认走 mock 数据，不需要后端；要连真实后端时设 `NEXT_PUBLIC_KEDAYA_USE_MOCK=false`
+  与 `NEXT_PUBLIC_KEDAYA_API_BASE`（默认 `/api/v1`，本机跨端口时填
+  `http://localhost:3999/api/v1`）。后台菜品管理的写权限另需 `NEXT_PUBLIC_ADMIN_API_KEY`
+  （与 API 端 `ADMIN_API_KEY` 同值，仅本地/演示用；完整环境变量见 `apps/web/.env.example`）。
 
 ## 5. 测试与校验
 
@@ -325,9 +340,13 @@ npm run dev:web           # Next.js dev server → http://localhost:3001
 nvm use
 npm run typecheck -w @kedaya/api && npm run test -w @kedaya/api && npm run lint -w @kedaya/api
 npm run typecheck -w @kedaya/miniapp && npm run test -w @kedaya/miniapp && npm run lint -w @kedaya/miniapp
-npm run build:weapp
+npm run build:weapp && npm run verify:weapp -w @kedaya/miniapp
 npm run typecheck -w @kedaya/web && npm run test -w @kedaya/web && npm run lint -w @kedaya/web
 ```
+
+（`npm run verify:weapp -w @kedaya/miniapp` 校验主包体积、分包页面齐全与构建指纹；
+`npm run check:nutrition-imports` 是营养管家移植期加的静态冒烟检查，无 node_modules 也能跑，
+用来确认这批文件的相对导入都能解析到真实导出。）
 
 约定与注意事项：
 

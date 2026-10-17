@@ -34,6 +34,13 @@ export const MINIAPP_PAGES = {
   lostFoundDetail: '/presentation/pages/lostFound/detail/index',
   forumList: '/presentation/pages/forum/list/index',
   forumDetail: '/presentation/pages/forum/detail/index',
+  // 营养管家（模块 id 仍是 `canteen`，见 modules.ts）：今日 / 记录 / 历史 / 需求 / 推荐 / 菜品库
+  nutritionHome: '/presentation/pages/nutrition/index',
+  nutritionLog: '/presentation/pages/nutrition/log/index',
+  nutritionHistory: '/presentation/pages/nutrition/history/index',
+  nutritionTargets: '/presentation/pages/nutrition/targets/index',
+  nutritionRecommend: '/presentation/pages/nutrition/recommend/index',
+  nutritionDishes: '/presentation/pages/nutrition/dishes/index',
   // 法务页：用户协议 / 隐私政策（审核必备；系统通知也可能把用户引到这里）
   legalTerms: '/presentation/pages/legal/terms/index',
   legalPrivacy: '/presentation/pages/legal/privacy/index',

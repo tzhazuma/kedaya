@@ -93,5 +93,15 @@ export type { KdyMascotProps } from './KdyMascot'
 export { KdyProgress } from './KdyProgress'
 export type { KdyProgressProps } from './KdyProgress'
 
+/**
+ * 圆环 / 条形进度（营养管家）。
+ *
+ * 与上面的 `KdyProgress` 并存而不是替换：`KdyProgress` 是 Taroify 的线性进度条，
+ * 用于通用加载/进度场景；`KdyRing` 是营养管家的热量主视觉（双半盘旋转实现的
+ * 圆环），营养页面的六项逐项条用 `KdyBar`。
+ */
+export { KdyBar, KdyRing } from './KdyRing'
+export type { KdyBarProps, KdyRingProps, KdyRingTone } from './KdyRing'
+
 export { KdyShareEntry } from './KdyShareEntry'
 export type { KdyShareEntryProps } from './KdyShareEntry'

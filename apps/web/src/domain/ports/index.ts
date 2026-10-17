@@ -5,3 +5,4 @@
 export * from './groupbuy';
 export * from './audit';
 export * from './wildlife';
+export * from './canteen';

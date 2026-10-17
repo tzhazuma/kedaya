@@ -103,11 +103,22 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
   },
   {
     id: 'canteen',
-    nameZh: '食堂营养',
-    nameEn: 'Canteen Nutrition',
-    summary: '菜品营养数据、热量估算与饮食建议',
+    nameZh: '营养管家',
+    nameEn: 'Nutrition Butler',
+    summary: '食堂菜品营养库、每餐记录、每日需求与缺口推荐',
     category: 'business',
-    sensitivity: 'low',
+    /**
+     * 模块 id / route 仍是 `canteen`（营养管家建在食堂营养域上，ADR 0006 §2.3），
+     * 但**对用户的名字已改成「营养管家」** —— 宫格、搜索、权限判定都读本注册表，
+     * 所以改名只需改这里，三端自动同步。
+     */
+    /**
+     * 敏感级从 low 上调为 medium（2026-10-17）：
+     * 新增的「每餐记录 + 身体档案（性别/年龄/身高/体重）」是可推断健康状况的
+     * 个人信息，比单纯的菜品营养表敏感得多。仍不设二次同意门（不做医学判断、
+     * 不对外共享），但写操作落审计。
+     */
+    sensitivity: 'medium',
     requiresConsent: false,
     route: 'canteen',
   },

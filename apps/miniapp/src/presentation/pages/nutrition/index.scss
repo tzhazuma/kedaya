@@ -1,0 +1,377 @@
+.kdy-nu-home__date {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-nu-home__date-side {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-3;
+}
+
+.kdy-nu-home__history-link {
+  color: $kdy-color-brand;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-home__date-text {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-md;
+  font-weight: 600;
+}
+
+.kdy-nu-home__no-target {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-3;
+  padding: $kdy-space-2 0;
+}
+
+.kdy-nu-home__no-target-text {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.6;
+}
+
+.kdy-nu-home__ring {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-5;
+  padding: $kdy-space-2 0;
+}
+
+.kdy-nu-home__ring-side {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: $kdy-space-2;
+}
+
+.kdy-nu-home__ring-line {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: 600;
+}
+
+.kdy-nu-home__ring-sub {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-home__nutrients {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-3;
+}
+
+.kdy-nu-home__nutrient-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: $kdy-space-1;
+}
+
+.kdy-nu-home__nutrient-label {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-nu-home__nutrient-value {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-home__empty-meals {
+  display: block;
+  padding: $kdy-space-3 0;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+  text-align: center;
+}
+
+.kdy-nu-home__meals {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-3;
+}
+
+.kdy-nu-home__meal {
+  padding: $kdy-space-2 $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-nu-home__meal-head {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-1;
+}
+
+.kdy-nu-home__meal-time,
+.kdy-nu-home__meal-kcal {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-home__meal-kcal {
+  margin-left: auto;
+}
+
+.kdy-nu-home__meal-items {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.5;
+}
+
+.kdy-nu-home__actions {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+  padding: $kdy-space-3 $kdy-space-4 0;
+}
+
+.kdy-nu-home__actions-row {
+  display: flex;
+  gap: $kdy-space-2;
+}
+
+/* WXSS 不支持通配选择器 `*`：按钮外层包一层带类名的 View */
+.kdy-nu-home__action {
+  flex: 1;
+}
+
+.kdy-nu-home__demo {
+  display: flex;
+  gap: $kdy-space-2;
+  padding: $kdy-space-3 $kdy-space-4 0;
+}
+
+.kdy-nu-home__soft-error {
+  display: block;
+  padding: $kdy-space-2 $kdy-space-4;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  text-align: center;
+}
+
+.kdy-nu-home__meal-delete {
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-home__meal-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $kdy-space-1 0;
+  border-top: 1px solid $kdy-color-border;
+}
+
+.kdy-nu-home__meal-item-name {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-nu-home__stepper {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-nu-home__stepper-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 触控热区：22px 手指点不中，按 32px（≈64rpx）给足 */
+  width: 32px;
+  height: 32px;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-md;
+  background-color: $kdy-color-surface;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-sm;
+}
+
+.kdy-nu-home__stepper-value {
+  min-width: 28px;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  text-align: center;
+}
+
+.kdy-nu-home__hint {
+  display: block;
+  padding-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.5;
+}
+
+.kdy-nu-home__recs {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+  padding-bottom: $kdy-space-2;
+}
+
+.kdy-nu-home__rec {
+  padding: $kdy-space-2 $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border: 1px solid transparent;
+  border-radius: $kdy-radius-md;
+}
+
+/* 可点的推荐卡：给一点按压反馈 + 「加入」提示，避免看起来只是文本 */
+.kdy-nu-home__rec:active {
+  border-color: $kdy-color-brand;
+}
+
+.kdy-nu-home__rec-head {
+  display: flex;
+  align-items: baseline;
+  gap: $kdy-space-2;
+}
+
+.kdy-nu-home__rec-add {
+  margin-left: auto;
+  padding: 2px 8px;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-xs;
+  background-color: $kdy-color-brand;
+  border-radius: $kdy-radius-sm;
+}
+
+.kdy-nu-home__meal-edit {
+  color: $kdy-color-brand;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-home__rec-source {
+  display: block;
+  margin-top: 2px;
+  color: $kdy-color-text-muted;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.kdy-nu-home__dist {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+}.kdy-nu-home__dist-row {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-nu-home__dist-name {
+  width: 44px;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-home__dist-track {
+  flex: 1;
+}
+
+.kdy-nu-home__dist-value {
+  width: 132px;
+  color: $kdy-color-text-muted;
+  font-size: 10px;
+  text-align: right;
+}
+
+.kdy-nu-home__rec-name {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: 600;
+}
+
+.kdy-nu-home__rec-kcal {
+  margin-left: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-home__rec-reason {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------------ *
+ * 自绘编辑面板（替代原生 showActionSheet：原生面板在模拟器/小屏会被裁掉）
+ * ------------------------------------------------------------------ */
+
+.kdy-nu-sheet__mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background-color: rgba(27, 36, 54, 0.45);
+}
+
+.kdy-nu-sheet {
+  padding: $kdy-space-3 $kdy-space-4 $kdy-space-5;
+  background-color: $kdy-color-surface;
+  border-radius: $kdy-radius-lg $kdy-radius-lg 0 0;
+}
+
+.kdy-nu-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-nu-sheet__title {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-md;
+  font-weight: 600;
+}
+
+.kdy-nu-sheet__close {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-nu-sheet__label {
+  display: block;
+  margin-bottom: $kdy-space-1;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-sheet__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-nu-sheet__hint {
+  display: block;
+  margin-bottom: $kdy-space-3;
+  color: $kdy-color-text-muted;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.kdy-nu-sheet__actions {
+  display: flex;
+  gap: $kdy-space-2;
+}
+
+.kdy-nu-sheet__action {
+  flex: 1;
+}

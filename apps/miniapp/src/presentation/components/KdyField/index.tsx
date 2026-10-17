@@ -47,6 +47,13 @@ export interface KdyFieldProps {
   // ---- 值模式 ----
   value?: string
   onChange?: (value: string) => void
+  /**
+   * 键盘「完成 / 搜索」键回调（值即当前输入内容）。
+   *
+   * 与 `onChange` 同一取值口径（给值不给事件）：搜索框按键盘搜索键直接触发，
+   * 用户不必再去点按钮。`multiline` 下无意义（多行没有确认键）。
+   */
+  onConfirm?: (value: string) => void
   placeholder?: string
   type?: KdyFieldType
   /** 密码输入（微信键盘不记忆、不回显） */
@@ -69,6 +76,7 @@ export function KdyField(props: KdyFieldProps) {
     className,
     value,
     onChange,
+    onConfirm,
     placeholder,
     type = 'text',
     password = false,
@@ -114,6 +122,9 @@ export function KdyField(props: KdyFieldProps) {
         {...lengthLimit}
         onChange={(event) => {
           onChange?.(String(event.detail.value ?? ''))
+        }}
+        onConfirm={(event) => {
+          onConfirm?.(String(event.detail.value ?? ''))
         }}
       />
     )

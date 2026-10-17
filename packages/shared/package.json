@@ -13,7 +13,8 @@
     "./time": "./src/time.ts",
     "./validate": "./src/validate.ts",
     "./geo": "./src/geo/index.ts",
-    "./buddy": "./src/buddy/index.ts"
+    "./buddy": "./src/buddy/index.ts",
+    "./nutrition": "./src/nutrition.ts"
   },
   "files": [
     "src"

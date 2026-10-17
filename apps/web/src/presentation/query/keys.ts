@@ -83,6 +83,18 @@ export const queryKeys = {
     dashboard: ['admin', 'dashboard'] as const,
     wildlifeModeration: ['admin', 'wildlife', 'moderation'] as const,
   },
+  /**
+   * 营养管家 · 菜品库（Web 后台）。
+   *
+   * `root` 带 `dishes` 段：这是**管理后台的菜品目录**，与小程序端的
+   * 「今日营养 / 当餐记录」不是一回事，缓存键分开才不会互相失效。
+   */
+  canteen: {
+    root: ['canteen', 'dishes'] as const,
+    list: (filters: { q: string; category: string }) =>
+      ['canteen', 'dishes', 'list', filters.q, filters.category] as const,
+    detail: (id: string) => ['canteen', 'dishes', 'detail', id] as const,
+  },
   wildlife: {
     root: ['wildlife'] as const,
     map: (filters: WildlifeMapFilters) =>

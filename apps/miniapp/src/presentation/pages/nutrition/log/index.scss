@@ -1,0 +1,211 @@
+.kdy-nu-log__entries {
+  display: flex;
+  gap: $kdy-space-2;
+}
+
+/* WXSS 不支持通配选择器 `*`：按钮外层包一层带类名的 View */
+.kdy-nu-log__entry {
+  flex: 1;
+}
+
+.kdy-nu-log__entries-hint,
+.kdy-nu-log__hint {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-nu-log__candidates {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+}
+
+.kdy-nu-log__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-2;
+  padding: $kdy-space-2 $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-nu-log__candidate {
+  padding: $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-nu-log__candidate-head {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-1;
+}
+
+.kdy-nu-log__candidate-name {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: 600;
+}
+
+.kdy-nu-log__candidate-confidence {
+  margin-left: auto;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-log__candidate-missing {
+  display: block;
+  color: $kdy-color-warning;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.5;
+}
+
+.kdy-nu-log__candidate-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+}
+
+.kdy-nu-log__candidate-nutrition {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-log__search {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-nu-log__search-input {
+  flex: 1;
+}
+
+/* WXSS 不支持通配选择器 `*`，必须写成显式子元素类名 */
+.kdy-nu-log__search > .kdy-nu-log__search-input {
+  flex: 1;
+}
+
+.kdy-nu-log__no-result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-2;
+}
+
+.kdy-nu-log__results {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-2;
+}
+
+.kdy-nu-log__result {
+  padding: $kdy-space-3;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-nu-log__result-main {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-1;
+}
+
+.kdy-nu-log__result-name {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: 600;
+}
+
+.kdy-nu-log__result-meta {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-log__cart {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-3;
+}
+
+.kdy-nu-log__cart-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+}
+
+.kdy-nu-log__cart-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kdy-nu-log__cart-name {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: 600;
+}
+
+.kdy-nu-log__cart-meta {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-log__stepper {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-nu-log__stepper-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background-color: $kdy-color-surface;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-sm;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-md;
+}
+
+.kdy-nu-log__stepper-value {
+  min-width: 20px;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  text-align: center;
+}
+
+.kdy-nu-log__cart-remove {
+  margin-left: $kdy-space-1;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-log__meal-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+}
+
+.kdy-nu-log__note {
+  margin-top: $kdy-space-2;
+}
+
+.kdy-nu-log__save-error {
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}

@@ -69,6 +69,13 @@ export const PAGE_PATHS = {
   canteenList: '/presentation/pages/canteen/list/index',
   canteenCreate: '/presentation/pages/canteen/create/index',
   canteenDetail: '/presentation/pages/canteen/detail/index',
+  // 营养管家（模块 id 仍是 `canteen`，ADR 0006）：今日 / 记录 / 历史 / 需求 / 推荐 / 菜品库
+  nutritionHome: '/presentation/pages/nutrition/index',
+  nutritionLog: '/presentation/pages/nutrition/log/index',
+  nutritionHistory: '/presentation/pages/nutrition/history/index',
+  nutritionTargets: '/presentation/pages/nutrition/targets/index',
+  nutritionRecommend: '/presentation/pages/nutrition/recommend/index',
+  nutritionDishes: '/presentation/pages/nutrition/dishes/index',
   // 常见问题（问答库）：折叠首页 + 我的工单
   faq: '/presentation/pages/faq/index/index',
   faqTickets: '/presentation/pages/faq/tickets/index',
@@ -129,7 +136,15 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   'lost-found': PAGE_PATHS.lostFoundList,
   forum: PAGE_PATHS.forumList,
   wildlife: PAGE_PATHS.wildlifeArchive,
-  canteen: PAGE_PATHS.canteenList,
+  /**
+   * 营养管家（模块 id 仍是 `canteen`）—— 入口取模块**主界面**（今日营养），
+   * 记录 / 历史 / 需求 / 推荐 / 菜品库从主界面进入。
+   *
+   * 旧的「共建菜品库」三页（`canteenList` / `canteenDetail` / `canteenCreate`）
+   * 仍然保留（浏览与纠错可用），但首页宫格不再指向它们：营养管家的主界面
+   * 才是这个模块现在的样子（ADR 0006）。
+   */
+  canteen: PAGE_PATHS.nutritionHome,
   faq: PAGE_PATHS.faq,
   'takeout-guard': PAGE_PATHS.takeoutGuardList,
   techpie: PAGE_PATHS.techpieLinks,

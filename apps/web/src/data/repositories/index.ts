@@ -8,6 +8,7 @@ import { API_BASE_PATH } from '@kedaya/contracts';
 
 import type { AuditLogRepository, ModuleSwitchRepository } from '@/domain/ports/audit';
 import type { BuddyRepository } from '@/domain/ports/buddy';
+import type { DishRepository } from '@/domain/ports/canteen';
 import type { FaqRepository } from '@/domain/ports/faq';
 import type { ForumRepository } from '@/domain/ports/forum';
 import type { GroupBuyRepository } from '@/domain/ports/groupbuy';
@@ -20,6 +21,7 @@ import {
   type MockAdminRepositories,
 } from '../mock/admin.repository';
 import { createMockBuddyRepository, type MockBuddyRepository } from '../mock/buddy.repository';
+import { createMockDishRepository } from '../mock/canteen.repository';
 import { createMockFaqRepository, type MockFaqRepository } from '../mock/faq.repository';
 import { createMockForumRepository, type MockForumRepository } from '../mock/forum.repository';
 import {
@@ -36,6 +38,7 @@ import {
 } from '../mock/techpie.repository';
 import { createAuditLogHttpRepository, createModuleSwitchHttpRepository } from './admin.http';
 import { createBuddyHttpRepository } from './buddy.http';
+import { createDishHttpRepository } from './canteen.http';
 import { createFaqHttpRepository } from './faq.http';
 import { createForumHttpRepository } from './forum.http';
 import { createGroupBuyHttpRepository } from './groupbuy.http';
@@ -55,6 +58,11 @@ export interface RepositoryBundle {
   techpie: TechpieRepository;
   /** 校园卡（走独立 OPENID 通道，与 CASTGC 解耦） */
   campusCard: CampusCardRepository;
+  /**
+   * 营养管家 · 菜品库（Web 管理后台，ADR 0006）。
+   * 写操作在后端受 `AdminGuard` 保护，HTTP 实现带 `x-admin-key`。
+   */
+  dishes: DishRepository;
   auditLog: AuditLogRepository;
   moduleSwitches: ModuleSwitchRepository;
 }
@@ -79,6 +87,7 @@ export function createRepositories(mode: RepositoryMode = repositoryMode()): Rep
       buddy: createBuddyHttpRepository(client),
       techpie: createTechpieHttpRepository(client),
       campusCard: createCampusCardHttpRepository(client),
+      dishes: createDishHttpRepository(client),
       auditLog: createAuditLogHttpRepository(client),
       moduleSwitches: createModuleSwitchHttpRepository(client),
     };
@@ -99,6 +108,7 @@ export function createRepositories(mode: RepositoryMode = repositoryMode()): Rep
     buddy: createMockBuddyRepository(),
     techpie,
     campusCard: techpie,
+    dishes: createMockDishRepository(),
     auditLog: admin.auditLog,
     moduleSwitches: admin.moduleSwitches,
   };

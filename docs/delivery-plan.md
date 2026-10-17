@@ -584,7 +584,7 @@ R5 是「好看 + 丝滑」。按「**用户能感觉到**」这条线选了四�
 | --- | --- | --- | --- |
 | 通知 `notifications` | ✅ 已实现 | ✅ 页面在（tabBar「消息」），**只是没登记模块入口** | ✅ 一行修好 |
 | 偷外卖 `takeout-guard` | ✅ CRUD + escalate | ❌ 无 | ✅ 见 §10.3 |
-| 食堂营养 `canteen` | ✅ CRUD + 按食堂聚合热量 | ❌ 无 | ✅ 见 §10.3 |
+| 食堂营养 `canteen` | ✅ CRUD + 按食堂聚合热量 | ❌ 无 | ✅ 见 §10.3；**后续升级为「营养管家」，见 §11** |
 | 常见问题 `faq` | ✅ CRUD + 有帮助 | ❌ 无 | ✅ 见 §10.3 |
 | 野生动物 `wildlife` | ✅ CRUD + confirm | ❌ 无 | ✅ 见 §10.3 |
 | TechPie `techpie` | ✅ CRUD + sync | ❌ 无 | ✅ 见 §10.5 |
@@ -617,6 +617,9 @@ R5 是「好看 + 丝滑」。按「**用户能感觉到**」这条线选了四�
   最新在前；详情有营养表与「该食堂汇总」（`GET /canteen/calories` 服务端聚合）。
   学校真实菜单没拿到授权 → 页面明确写「数据由同学共建，仅作参考」。
   顺带把 `createSchema` 的边界收紧到与客户端同值（原来能存进「热量 -500」和 500 字广告名）。
+  > **2026-10-18 更新**：`canteen` 已升级为**「营养管家」**（见 §11）。
+  > 这一段描述的「同学共建菜品库」三页**仍在**（浏览与纠错可用），但首页宫格已指向
+  > 营养管家主界面；**菜品写操作收归管理员**（`AdminGuard`），因此「同学共建」不再是数据来源。
 - **常见问题**（`faq`）：分类白名单（9 类）+ 关键词搜索 + 「有帮助」。
   「有帮助」如实标注为**热度计数**而非一人一票（服务端是 `increment`，没有投票实体可查重）；
   本机记标记防重复计数，页面写明「换设备/清缓存可能再次计入」。
@@ -744,3 +747,69 @@ R5 是「好看 + 丝滑」。按「**用户能感觉到**」这条线选了四�
     小程序端只展示「曾触发紧急渠道」标记；开放它需要产品先定"谁来接"。
 - **仍无法在本机验证的部分**（与之前一致）：真机上的视觉/交互、分包跳转、分享按钮、
   举报弹层、错误边界兜底 —— 本机微信开发者工具服务端口关闭，需手动导入 `apps/miniapp/dist`。
+
+---
+
+## 11. 本轮记录（R8 · 2026-10-18）：把「营养管家」完整移植进来
+
+### 11.1 背景与做法
+
+营养管家（模块 id 仍是 `canteen`，ADR 0006）此前在**另一条分支**（`feat/nutrition-butler`）上开发。
+那条分支与当前分支**没有共同祖先**（孤儿提交），因此不可能 `merge` —— 只能**逐个文件移植**：
+新增文件整份取，**共享文件只取营养相关增量**（契约、`shared`、路由、容器、装配、种子等），
+其余一律保留当前分支的版本（那条分支的 `wellbeing`/`wildlife` 改名、buddy 动作删减等都是**更旧/平行**
+的谱系，不回灌）。
+
+因此本轮的验收口径是：**功能不删减**，且当前分支已有的东西一件不少。
+
+### 11.2 交付内容（按包）
+
+| 包 | 内容 |
+| --- | --- |
+| `packages/shared` | `src/nutrition.ts`（计算核心：汇总 / 缺口 / 推荐 / 餐型汇总 / 画像 / 覆盖率，纯函数）+ 测试；`time.ts` 追加 `dayRange` / `DAY_MS` / `dayRangeWithOffset` / `dateKeyAtOffset` / `parseDateKeyAtOffset` |
+| `packages/contracts` | `canteen` 中文名改「营养管家」、`sensitivity: 'medium'`；`pages.ts` 新增 6 条 nutrition 路径 |
+| `services/api` | `canteen` 模块扩为 5 服务（dish / meal / nutrition 三块）+ `AdminGuard`；Prisma 三个新模型 `MealRecord` / `MealItem` / `NutritionTarget` + 迁移 `20261018090000_nutrition_butler`；种子灌 72 道菜 / 4 个食堂 + 给既有账号灌一天演示记录 |
+| `apps/miniapp` | `nutrition` 子包 6 页（今日 / 记录 / 历史 / 需求 / 推荐 / 菜品库）+ `application/nutrition` 5 用例 + `domain` 模型与端口 + mock/http 两个仓储 + `KdyRing`/`KdyBar` 组件 |
+| `apps/web` | 后台 `/admin/dishes` 菜品营养数据管理（`DishManager`）+ `domain`/`data`/`query` 全套接线 |
+| `docs` | ADR `0006-nutrition-butler.md`、API 契约 §12 端点全表、架构五篇同步（模块表 / 领域草图 / 安全域 / 路线图）、本文件 |
+
+### 11.3 关键取舍（都在代码注释与 ADR 里有依据）
+
+1. **识别是 mock，但 seam 是真的**：`POST /canteen/recognize` 返回 `mode: 'mock'`，
+   端上**必须**明示「演示期识别」，绝不假装识别已接真实服务（ADR 0006 D3）。
+2. **营养从菜品库快照，请求不带营养值**：`POST /canteen/meals` 只传 `dishId × servings`，
+   服务端把那一刻的六项营养**快照**进 `MealItem`。菜品之后改营养**不改写历史**（D1）。
+   端上因此没有「手填热量」的入口 —— 编数字等于让整条链路不可信。
+3. **菜品写操作收归管理员**（`AdminGuard`，fail-closed）：`x-admin-key`（`ADMIN_API_KEY`）
+   或登录用户 id 在 `ADMIN_USER_IDS`；两者都没配 → 一律 403。`GET /canteen/dishes` 保持匿名可读
+   （记录当餐要检索菜品）。小程序端 `/nutrition/dishes` 是演示 / 补录，文案已写明写入需管理员。
+4. **旧的「共建菜品库」三页保留**（`canteen/list|create|detail`，不删）：它们仍是可用的浏览实现，
+   只是首页宫格入口改指营养管家主界面（`routes.ts` 有注释）。删掉它们等于删减功能，
+   而本轮的要求是**不删减**。
+5. **两个进度组件并存**：`KdyRing` / `KdyBar` 是新加的（营养页要环、要缺口标记、要分段），
+   与既有的 Taroify 进度条不是一回事，互不替代。
+6. **`KdyField` 补了 `onConfirm`**：营养页的输入框需要「键盘搜索键直接触发」，
+   透传给 Taroify `Input` 的 `onConfirm`，其余页面不受影响。
+7. **筛选/单选一律 `KdyChip`**：移植进来的页面原本用 `KdyTag` + 可点 `View` 模拟选择态，
+   按本仓 AGENTS.md 的约定换成 `KdyChip active=...`（选中态是品牌渐变实心）。
+
+### 11.4 验证证据
+
+- `npm run test -w @kedaya/miniapp`：**77 文件 / 1240 用例全绿**；`typecheck` / `lint` 干净；
+  `build:weapp` exit 0；`verify:weapp` 见 §11.5。
+- `npm run test -w @kedaya/web`：**39 文件 / 786 用例全绿**；`typecheck` / `lint` 干净。
+- `services/api`：`canteen` 模块单测 3 文件 / 51 用例全绿；`typecheck` / `lint` 干净；
+  `prisma validate` / `generate` / 迁移应用 / 种子干跑（`dishes:72, dishCanteens:4`）通过。
+- `packages/shared`：8 文件 / 215 用例全绿；`packages/contracts`：49 用例全绿。
+- `npm run check:nutrition-imports`：1923 个命名导入，0 个解析/导出问题（移植期新增的静态冒烟检查）。
+- **真实模型端到端**：`AGENT_LLM_*` 配好后可达鸭走真实模型回答，功能完整（与营养管家无耦合，仅说明本轮未破坏）。
+
+### 11.5 未完成 / 明确记录的缺口
+
+- **真实视觉识别未接**（ADR 0006 C1）；**菜品营养数据的初始来源未定**（C2，当前是演示量级的 72 道种子）。
+- **新录入菜品的过敏原没有服务端推断**（C8）：只有种子脚本按菜名推断，
+  Web 后台新建的菜 `allergens` 为空 → 「忌口」硬过滤对它们不生效。上线前必须补。
+- **小程序 mock 演示控制面必须在生产构建中移除**（C7）—— 当前靠 `USE_MOCK` 开关隔离。
+- **Web 后台写权限的 key 会进浏览器包**（`NEXT_PUBLIC_ADMIN_API_KEY`）：仅本地 / 演示可用，
+  生产必须改为「管理员登录 + 服务端代理」。
+- **真机视觉仍未验证**（与 §10.7 一致）：本机微信开发者工具服务端口关闭，需手动导入 `apps/miniapp/dist`。

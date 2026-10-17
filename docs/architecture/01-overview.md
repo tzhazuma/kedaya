@@ -339,7 +339,7 @@ flowchart TB
 | `errand` | 跑腿 | `domain:trade` | 低 | `auth` `notifications` `profile` |
 | `buddy` | 找搭子 | `domain:social` | 低 | `auth` `notifications` `profile` |
 | `lost-found` | 失物招领 | `domain:trade` | 低 | `auth` `notifications` |
-| `canteen` | 食堂营养 | `domain:content` | 低 | `auth` |
+| `canteen` | 营养管家（原食堂营养） | `domain:content` | 中 | `auth` |
 | `forum` | 论坛 | `domain:social` | 中 | `auth` `notifications` `profile` |
 | `ai-portrait` | AI 校园画像 | `domain:protected` | **高** | `auth` `profile` |
 | `wellbeing` | 心理支持 | `domain:wellbeing` | **最高** | `auth` `notifications` |

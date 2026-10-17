@@ -58,6 +58,22 @@ const subPackages = [
     pages: ['archive/index', 'map/index', 'report/index', 'tracks/index'],
   },
   { root: 'presentation/pages/canteen', pages: ['list/index', 'create/index', 'detail/index'] },
+  /**
+   * 营养管家（模块 id 仍是 `canteen`）：今日营养是主界面，其余五页从它进入。
+   * 与上面的 `canteen` 子包分开是为了**下载体积**：进营养管家不需要
+   * 拉旧的共建菜品库三页（它们只在纠错/浏览时才用得到）。
+   */
+  {
+    root: 'presentation/pages/nutrition',
+    pages: [
+      'index',
+      'log/index',
+      'history/index',
+      'targets/index',
+      'recommend/index',
+      'dishes/index',
+    ],
+  },
   { root: 'presentation/pages/faq', pages: ['index/index', 'tickets/index'] },
   { root: 'presentation/pages/takeoutGuard', pages: ['list/index', 'create/index', 'detail/index'] },
   {

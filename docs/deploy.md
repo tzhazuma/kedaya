@@ -358,8 +358,8 @@ delete from "ClientEvent" where "createdAt" < now() - interval '30 days';
 举报 → 落 `ContentReport` 表 → 打一条 `WARN` 日志（前缀 `[moderation]`）。
 十个可举报对象：`flea-item` / `errand-task` / `buddy-group` / `lost-found-item` /
 `forum-post` / `forum-reply` / `canteen-dish` / `faq-entry` / `wildlife-spot` / `techpie-link`
-（后四个是同学共建的内容：食堂菜品、常见问题、动物观察点、技术服务链接 ——
-公开 UGC 可能被塞广告或诈骗引导；服务目录尤其如此）；
+（`canteen-dish` 已改为**管理员维护**（见 ADR 0006），但同学仍可就「营养值不对 / 菜名有误」
+发起纠错；其余三类是同学共建：常见问题 / 动物观察点 / 技术服务链接）；
 七个原因：诈骗 / 违法违规 / 色情低俗 / 侮辱谩骂 / 泄露隐私 / 垃圾广告 / 其它。
 共建内容没有作者字段，`targetAuthorId` 记为 null。
 注意 `takeout-guard`（偷外卖）**不在可举报范围内**：它是本人可见的报备记录，

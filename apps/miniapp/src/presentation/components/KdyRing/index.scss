@@ -1,0 +1,117 @@
+/* KdyRing：双半盘旋转圆环（小程序无 SVG，见 index.tsx 头部说明） */
+
+.kdy-ring {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* 轨道：整圆描边 */
+.kdy-ring__track {
+  position: absolute;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  border-style: solid;
+  border-color: $kdy-color-surface-alt;
+  border-radius: 50%;
+}
+
+/* 半盘裁剪容器：各露一半平面 */
+.kdy-ring__clip {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.kdy-ring__clip--right {
+  right: 0;
+}
+
+.kdy-ring__clip--left {
+  left: 0;
+}
+
+/* 半盘：贴满裁剪容器，圆角在远侧（SCSS 只定形状，尺寸/旋转走内联） */
+.kdy-ring__pie {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.kdy-ring__pie--brand {
+  background-color: $kdy-color-brand;
+}
+
+.kdy-ring__pie--success {
+  background-color: $kdy-color-success;
+}
+
+.kdy-ring__pie--warning {
+  background-color: $kdy-color-warning;
+}
+
+.kdy-ring__pie--danger {
+  background-color: $kdy-color-danger;
+}
+
+/* 中心镂空：与卡片（surface）背景一致 —— 环请置于卡片内使用 */
+.kdy-ring__hole {
+  position: absolute;
+  border-radius: 50%;
+  background-color: $kdy-color-surface;
+}
+
+.kdy-ring__center {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.kdy-ring__value-text {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-xl;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.kdy-ring__label-text {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-bar {
+  overflow: hidden;
+  width: 100%;
+  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-pill;
+}
+
+.kdy-bar__inner {
+  height: 100%;
+  border-radius: $kdy-radius-pill;
+  transition: width 0.3s ease;
+}
+
+.kdy-bar__inner--brand {
+  background-color: $kdy-color-brand;
+}
+
+.kdy-bar__inner--success {
+  background-color: $kdy-color-success;
+}
+
+.kdy-bar__inner--warning {
+  background-color: $kdy-color-warning;
+}
+
+.kdy-bar__inner--danger {
+  background-color: $kdy-color-danger;
+}

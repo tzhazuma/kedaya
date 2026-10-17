@@ -33,6 +33,9 @@ npm run lint      -w @kedaya/web
 | `NEXT_PUBLIC_KEDAYA_API_BASE` | `/api/v1` | API 基地址（SSR 可注入绝对地址） |
 | `NEXT_PUBLIC_KEDAYA_DEMO_TOKEN` | 空 | 演示用 Bearer token（真实登录必须走契约 §5 身份层） |
 | `NEXT_PUBLIC_KEDAYA_SITE_URL` | `http://localhost:3000` | `metadataBase`，用于 openGraph 绝对地址 |
+| `NEXT_PUBLIC_ADMIN_API_KEY` | 空 | `/admin/dishes` 写菜品时附加的 `x-admin-key`；须与 API 端 `ADMIN_API_KEY` 一致。**仅限本地开发 / 演示**（见 §10.4） |
+
+示例见 `apps/web/.env.example`。
 
 ---
 
@@ -98,7 +101,8 @@ apps/web/
 | **FAQ 切片** | `app/(portal)/faq/**` | 分类导航 + 搜索 + 手风琴条目 + **「有用/无用」乐观更新与失败回滚**；`/faq/tickets` 我的工单（提交 + 状态 + 脱敏联系方式） |
 | **wildlife 切片** | `app/(portal)/wildlife/**`、`app/(admin)/admin/wildlife/page.tsx` | 动物地图（静态底图 + SVG 叠加层）、观测列表/详情、区域列表、推断轨迹页、上报表单（照片上传 + 地图点选 + 自动分类降级）、审核队列（`moderate` 冻结动作）—— 见 §8 |
 | **找搭子切片** | `app/(portal)/buddy/**` | 搭子广场（三板块分栏 + 封闭标签筛选 + 游标分页）、详情（`join` 申请 / `leave` 撤回 / `decide` 审批 / `close` 关闭）、发布（**封闭标签选择器，无自由文本**）、我的匹配资料（**可用时段编辑器，支持跨零点**）、推荐（**展示 `explainMatch` 的理由**，不是只给分数）+ `like`/`dislike`/`skip` 反馈 —— 见 §9 |
-| 管理后台占位 | `app/(admin)/admin/page.tsx` | 模块开关表（20 行，受权限约束）+ 审计日志表（§9 字段齐全）+ 合规概览 |
+| 管理后台占位 | `app/(admin)/admin/page.tsx` | 模块开关表（20 行，受权限约束）+ 审计日志表（§9 字段齐全）+ 合规概览 + 子页入口 |
+| **营养管家 · 菜品营养数据**（`/admin/dishes`） | `app/(admin)/admin/dishes/page.tsx`、`presentation/components/admin/DishManager.tsx` | 20 个模块中的 `canteen` 的**数据地基**：菜品检索（食堂 / 品类 / 菜名）+ 新建 / 编辑 / 下架，六项营养（热量 / 蛋白 / 脂肪 / 碳水 / 膳食纤维 / 钠，**每份**口径）。写操作走 `x-admin-key`（后端 `AdminGuard`）—— 见 §10 |
 | 5+ 复用组件 | `presentation/components/` | `KdyCard` `KdyButton` `KdyBadge` `KdyEmpty` `KdySkeleton` `KdyAlert` `ModuleGrid` `PageHeader` `SiteHeader` `SiteFooter` `UnofficialNotice` + forum/faq/wildlife/buddy 专属组件 |
 | 主题 Provider | `presentation/theme/` | light/dark/system 三态；`useSyncExternalStore` 订阅 `localStorage` + `matchMedia`；写 `<html data-theme>`（system 移除）+ `dark` class + `color-scheme`，暗色配色来自令牌 `colorDark` |
 | 品牌资源 | `public/brand/` | `kedaya-mascot.svg`、`kedaya-cover.svg`（复制，源文件未动）+ `cover.png`（1200×630，`rsvg-convert`） |
@@ -740,3 +744,63 @@ $ npm run build -w @kedaya/web
   **人数保持 `2/4 人`（`join` 确实不占名额）**、出现「撤回申请」。
 - 暗色：点「深色」→ `<html data-theme="dark">`、`color-scheme: dark`、`--kdy-color-brand = #ffd666`（= 令牌 `colorDark.brand`）、
   卡片背景 `rgb(21, 28, 40)`（= 令牌暗色 surface）→ **buddy 页面零手写色值、暗色由令牌驱动**。
+
+---
+
+## 10. 营养管家切片（`canteen` · Web 侧只有菜品数据管理）
+
+> ADR：[0006](../docs/adr/0006-nutrition-butler.md) · 端点全表：[03-api-contract.md](../docs/architecture/03-api-contract.md) §12
+> 用户侧全流程（识别 / 记录 / 需求 / 推荐）在**小程序端**；Web 只负责它依赖的**菜品营养数据地基**。
+
+### 10.1 交付内容（全部在 `apps/web/` 内）
+
+| 层 | 文件 |
+| --- | --- |
+| domain（模型） | `src/domain/models/canteen.ts`（菜品模型 + `NUTRIENT_FIELDS` 六项展示元数据 + 摘要纯函数；营养计算一律复用 `@kedaya/shared` 的 `nutrition.ts`，**不在 Web 重写一份**） |
+| domain（端口） | `src/domain/ports/canteen.ts`（`DishRepository`） |
+| data（传输层） | `src/data/schemas/canteen.ts`（zod + schema↔domain 双向断言） |
+| data（mock） | `src/data/mock/fixtures/canteen.ts`、`src/data/mock/canteen.repository.ts`（**服务端替身**：内存态 + 延迟 + 故障演练 + 游标分页） |
+| data（HTTP） | `src/data/repositories/canteen.http.ts`（`GET /canteen/dishes`、`GET/POST/PATCH/DELETE /canteen/items[/:id]`，写操作带 `x-admin-key`） |
+| presentation | `src/presentation/components/admin/DishManager.tsx`（检索 + 新建 + 编辑 + 下架；六项营养表单；`KdyCard` / `KdyAlert` / `KdyBadge` / `KdySkeleton`） |
+| 页面 | `/admin/dishes`（`app/(admin)/admin/dishes/page.tsx`），入口在 `/admin` 的子页导航 |
+| 装配 | `data/mock/index.ts`、`data/repositories/index.ts`（`dishes` 字段，mock/http 二选一）、`domain/ports/index.ts`、`presentation/query/keys.ts`（`canteen.root/list/detail`） |
+
+数据默认来自 mock（12 道演示菜品，与小程序端**同口径**：每份六项营养），
+所以 `/admin/dishes` 开箱可做完整增删改查；把 `NEXT_PUBLIC_KEDAYA_USE_MOCK=false`
+并配好 `NEXT_PUBLIC_ADMIN_API_KEY` 即操作真实菜品库。
+
+### 10.2 为什么菜品写操作要带 `x-admin-key`
+
+菜品库是营养结论的**数据地基**（ADR 0006 D1：记录当餐时把营养值快照进历史）。
+谁都能改营养值，等于整条"识别 → 计算 → 推荐"链路的结果不可信。
+因此后端把 `POST/PATCH/DELETE /canteen/items` 收在 `AdminGuard` 之后（fail-closed：`ADMIN_API_KEY`
+与 `ADMIN_USER_IDS` 都未配置时**一律拒绝**），而 `GET /canteen/dishes` 保持匿名可读
+（小程序端记录当餐时要检索菜品）。
+
+| 端 | 写权限来源 |
+| --- | --- |
+| 本机 / 演示 | `apps/web/.env.local` 的 `NEXT_PUBLIC_ADMIN_API_KEY` → 请求头 `x-admin-key` |
+| 小程序 | **没有**写入口（`/nutrition/dishes` 页面只是演示 / 补录，文案已写明写入需管理员） |
+| 生产 | **未接线**：应由「管理员登录 + 服务端代理」注入，见 10.4 第 1 条 |
+
+### 10.3 测试
+
+| 文件 | 用例数 | 覆盖 |
+| --- | --- | --- |
+| `data/mock/canteen.repository.test.ts` | 13 | 检索（关键词忽略大小写与首尾空格 / 品类）、**游标分页不重不漏**、未知游标安全退化、详情、新建（仓储生成 id 与时间戳）、修改（只改传入字段 / `updatedAt` 刷新）、下架、`NOT_FOUND`、故障演练全端点 `UPSTREAM_UNAVAILABLE` |
+
+### 10.4 未实现 / 已知限制（如实列出）
+
+1. **管理密钥会进浏览器包**：`NEXT_PUBLIC_*` 是构建期公开变量。这只适用于**本地开发 / 演示**；
+   生产必须换成管理员登录 + 服务端代理（浏览器不持有 key）。页面上已写明"写操作需要管理员权限"。
+2. **`/admin/dishes` 没有做批量导入 / 导出**：逐条录入。72 道菜的初始数据由种子脚本灌入
+   （`services/api/prisma/seed.mjs` 的 `seedDishes`），不是从 Web 界面敲的。
+3. **过敏原（`allergens`）没有服务端自动推断 —— 已知缺口**：API 接受 `allergens` / `source` /
+   `lastVerifiedAt` 三个可选字段，但**只有种子脚本**按菜名推断过过敏原
+   （`prisma/seed-data.ts` 的 `inferAllergensFromSeedName`）。Web 表单不提供这三项，
+   于是**通过后台新建的菜品 `allergens` 默认为空** —— 小程序端「忌口 / 过敏原」的硬过滤
+   对它们不生效（营养汇总与推荐打分不受影响）。上线前必须补：要么在服务端按菜名推断，
+   要么把过敏原做成后台的必填维护项。
+4. **未接真实登录**：本页与其他后台页一样是**演示会话**（见 §4 第 1 条）。
+5. **没有组件渲染测试**：与其余切片一致，Vitest 只覆盖纯逻辑（node 环境），
+   `/admin/dishes` 的三态与增删改查靠人工在浏览器验证。
