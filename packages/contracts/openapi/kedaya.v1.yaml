@@ -2467,7 +2467,7 @@ components:
         linkedAt: { type: string, format: date-time }
     TechpieLinkCreate:
       type: object
-      required: [provider]
+      required: [provider, authCode]
       properties:
         provider:
           type: string
@@ -2476,9 +2476,19 @@ components:
             校园平台标识（契约 §11.10-B 裁决）。
             ⚠️ **Phase 0 只接受 `ecard`**（校园卡走独立 OPENID 通道，与 CASTGC 完全解耦）。
             其余值属 Phase 1，在信息办书面回复前**不实现**（U7）。
-        openid:
+        authCode:
           type: string
-          description: 校园卡 OPENID 通道的标识（**不是** CASTGC）
+          description: |
+            **一次性**凭证交换码，**不是**任何长期标识（契约 §11.19-B 裁决）。
+
+            ⚠️ 早先这个字段叫 `openid` —— 那是个**有歧义的坏名字**：
+            小程序在密码学上**拿不到 openid**（需服务端用 AppSecret 走 `code2session`），
+            客户端能给的只有 `wx.login()` 的**一次性 code**。
+            叫 `openid` 会诱导客户端把某个长期标识填进来甚至缓存复用。
+
+            服务端必须**立即用掉并丢弃**它（`code2session`），
+            且**不得**把 code 或换来的 openid 写进日志（§10.3）。
+            该字段**只对 `provider: 'ecard'` 有效**（Phase 0 的 OPENID 通道）。
 
     TechpieLink:
       type: object

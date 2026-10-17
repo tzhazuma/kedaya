@@ -998,3 +998,69 @@ Phase 0 的价值不只是"能绑定校园卡"，更是**把两级身份的边�
 | **I3** | `cookieHeaderFor(` 的**全部调用点**都在 `webview-session/` 内 | cookie 只能有一个出口，否则无法审计 |
 | **I4** | 登录但未绑定 → `409 CAMPUS_BINDING_REQUIRED`（**不是 401**） | 401 会误导客户端去重新登录，而用户其实已登录 |
 | **I5** | mock 上游全超时下 `GET /auth/session` **< 50ms** 返回 | 契约 §8：启动不得被上游拖死 |
+
+
+### 11.19 TechPie 绑定契约的三处冲突裁决（v1.3.7 · 2026-10-17）
+
+小程序端实现 Phase 0 时发现规格 §8 与冻结 OpenAPI 有三处**形状冲突**。逐条裁决：
+
+#### A. 绑定状态枚举：**以 OpenAPI 为准**（规格那套作废）
+
+| 来源 | 枚举 |
+| --- | --- |
+| 规格 §8.3 | `UNLINKED \| LINKING \| LINKED \| EXPIRED \| REVOKED` |
+| 冻结 OpenAPI | `PENDING \| ACTIVE \| EXPIRED \| REVOKED \| FAILED` |
+
+**裁决：用 OpenAPI 那套。** 理由：
+- OpenAPI 那套有 **`FAILED`** —— 绑定可能失败，规格那套**无法表达失败**，
+  只能把失败塞进 `UNLINKED`，于是"从没绑过"与"绑过但失败了"不可区分，
+  而这两种状态对用户的意义完全不同（前者引导绑定，后者要显示失败原因）。
+- `UNLINKED` 是**冗余**的：没有 link 记录本身就是"未绑定"，
+  不需要一个专门的记录状态来表达它。
+- 已冻结的枚举不应为一份更弱的规格让路。
+
+规格的 `LINKING`/`LINKED` 归一化为 `PENDING`/`ACTIVE`（小程序端已如此实现）。
+
+#### B. `TechpieLinkCreate.openid` → **改名为 `authCode`**，且语义必须是"一次性"
+
+**问题**：规格 §8.5 的字段叫 `openid`，但**小程序在密码学上拿不到 openid** ——
+openid 需要服务端用 AppSecret 走 `code2session` 换取。客户端能拿到的只有
+`wx.login()` 的**一次性 code**。
+
+**裁决：改名 `authCode`，语义是"一次性凭证交换码"，不是任何长期标识。** 理由：
+
+1. **命名会塑造行为。** 叫 `openid` 会诱导客户端把某个**长期标识**填进去
+   （甚至缓存下来复用），而它应该是一次性的。
+2. 服务端必须**立即用掉并丢弃**该 code（`code2session`），
+   **不得**把 code 或换来的 openid 写进日志（§10.3）。
+3. 该字段**只对 `provider: 'ecard'` 有效**（Phase 0 的 OPENID 通道）。
+   其余 provider 属 Phase 1，在信息办书面回复前不实现（U7）。
+
+> 这与契约 §11.14-A 的推理一致：**有歧义的坏名字必须改**。
+> `openid` 就是这样一个坏名字 —— 它让"一次性 code"看起来像"长期身份"。
+
+#### C. `CampusBindingSummary` 命名冲突：`/techpie/links` 的元素用 **`TechpieLink`**
+
+**问题**：规格 §8.1 说 `GET /techpie/links` 返回 `CampusBindingSummary[]`，
+但冻结 OpenAPI 里 `CampusBindingSummary` 已经被
+**`/auth/campus-bindings`** 占用，且形状完全不同
+（`{platform, bound, expiresAt, lastRenewedAt}`）。
+
+**裁决：`/techpie/links` 的元素用 `TechpieLink`**（OpenAPI 已如此定义），
+规格 §8.1 的表述作废。理由：同名两形状是**最坏的一类契约缺陷** ——
+它会让实现者按名字去猜，而猜错不会报错、只会静默错。
+两者本来就是不同概念：
+- `CampusBindingSummary`（`/auth/*`）= **二级身份绑定状态摘要**（面向登录态）
+- `TechpieLink`（`/techpie/*`）= **一条可管理的绑定资源**（有 id、可解绑、可续期）
+
+#### D. 两个**缺失的端点**（登记为开放项，不在本轮发明）
+
+小程序端发现冻结契约里：
+
+| 缺失 | 小程序端的诚实处理 | 裁决 |
+| --- | --- | --- |
+| **校园卡余额端点** | 用 `CampusCardTxn.balanceFen`（交易后余额）**推导**，未发明端点 | **接受推导**；若要独立余额端点，需先登记进契约（属 `campus-card` 模块，跨作用域） |
+| **付款码端点** | 实现调用路径 + 常量 `CAMPUS_CARD_PAYMENT_CODE_REGISTERED = false` 机器可见，UI 明确告知"当前仅 mock 可演示" | **登记为开放项**（§11.9）。**不假装它能用** —— 这比编一个端点好 |
+
+> 第 2 条是本次最值得保留的做法：**能力未实现时，用一个机器可见的常量把它标出来，
+> 并让 UI 如实告知**，而不是让它看起来已经能用。
