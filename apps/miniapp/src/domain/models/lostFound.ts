@@ -139,6 +139,8 @@ export interface LostFoundItemSummary {
   /** 列表缩略图（第一张；没有图时为 null） */
   thumbnailUrl: string | null
   imageCount: number
+  /** 原始类型（`lost` / `found`）—— 卡片按它切换视觉，不解析中文文案 */
+  kind: LostFoundKind
   resolved: boolean
   mine: boolean
 }
@@ -186,6 +188,14 @@ export function summarize(
     id: item.id,
     title: item.title,
     badge: kindBadge(item.kind),
+    /**
+     * 原始类型（`lost` / `found`）也要给。
+     *
+     * 为什么不能只给 `badge`/`kindLabel`：卡片要按类型换**视觉**（寻物 vs 招领
+     * 的色带与徽标不同），而拿中文文案去 `=== '寻物'` 判断是解析展示字符串 ——
+     * 文案一改就静默失效。未知类型降级为 `lost`，与 `kindLabel` 的降级一致。
+     */
+    kind: isLostFoundKind(item.kind) ? item.kind : 'lost',
     kindLabel: kindLabel(item.kind),
     statusLabel: statusLabel(item.status),
     status: isLostFoundStatus(item.status) ? item.status : LOST_FOUND_STATUS.open,

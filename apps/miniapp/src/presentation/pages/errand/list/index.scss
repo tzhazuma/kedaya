@@ -79,30 +79,97 @@
     white-space: nowrap;
   }
 
-  &__route {
-    overflow: hidden;
+  /* 两条站点导轨：取 / 送。左侧色块是"站点标记"，把一行文字变成可扫的结构。 */
+  &__stops {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-1;
+  }
+
+  &__stop {
+    display: flex;
+    align-items: flex-start;
+    gap: $kdy-space-2;
+  }
+
+  &__stop-key {
+    flex: none;
+    width: 32px;
+    padding: 2px 0;
+    border-radius: $kdy-radius-sm;
+    background: $kdy-color-brand-soft;
+    color: $kdy-color-brand-strong;
+    font-size: $kdy-font-size-xs;
+    text-align: center;
+  }
+
+  &__stop-key--to {
+    background: $kdy-color-surface-alt;
     color: $kdy-color-ink-soft;
+  }
+
+  &__stop-place {
+    flex: 1;
+    min-width: 0;
+    color: $kdy-color-ink;
     font-size: $kdy-font-size-sm;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: $kdy-line-height-normal;
+    word-break: break-all;
+  }
+
+  &__preview {
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: $kdy-line-height-normal;
+    /* 明细预览最多两行 —— 列表要能扫，不是把详情搬过来 */
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   &__foot {
     display: flex;
-    align-items: baseline;
+    align-items: flex-end;
     justify-content: space-between;
     gap: $kdy-space-2;
+    margin-top: $kdy-space-1;
   }
 
   &__reward {
+    display: flex;
+    align-items: baseline;
+    gap: $kdy-space-1;
+  }
+
+  &__reward-label {
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__reward-value {
     color: $kdy-color-danger;
-    font-size: $kdy-font-size-lg;
+    font-size: $kdy-font-size-xl;
     font-weight: $kdy-font-weight-bold;
+    line-height: $kdy-line-height-tight;
   }
 
   &__deadline {
-    color: $kdy-color-warning;
+    color: $kdy-color-text-muted;
     font-size: $kdy-font-size-xs;
+  }
+
+  &__deadline.is-urgent {
+    padding: 2px $kdy-space-2;
+    border-radius: $kdy-radius-pill;
+    background: $kdy-color-brand-soft;
+    color: $kdy-color-brand-strong;
+    font-weight: $kdy-font-weight-medium;
+  }
+
+  &__deadline.is-passed {
+    color: $kdy-color-text-muted;
+    text-decoration: line-through;
   }
 
   &__meta {
@@ -110,3 +177,17 @@
     font-size: $kdy-font-size-xs;
   }
 }
+
+/* 范围内 / 排序：列表上方的两个高频维度（不进折叠面板） */
+.kdy-errand__scopes,
+.kdy-errand__sorts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-2;
+}
+
+.kdy-errand__sorts {
+  margin-bottom: $kdy-space-3;
+}
+

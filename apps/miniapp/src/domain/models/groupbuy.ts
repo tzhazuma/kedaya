@@ -61,6 +61,10 @@ export interface GroupBuySummary {
   totalAmountFen: number
   deadline: string
   deadlineLabel: string
+  /** 截止时间是否已过（`deriveStatus` 会给 `closed`，这里是给**卡片**用的显式标记） */
+  deadlinePassed: boolean
+  /** 是否临近截止（未过期且 ≤ {@link GROUP_BUY_URGENT_WINDOW_MS}）—— 拼单最怕错过截止 */
+  deadlineUrgent: boolean
   pickupPlace: string
   status: GroupBuyStatus
   statusLabel: string
@@ -182,9 +186,27 @@ export function canJoin(
   return { allowed: true }
 }
 
+/**
+ * 拼单「临近截止」的窗口：12 小时。
+ *
+ * 与跑腿的 2 小时不同 —— 拼单按**天**计（预设是一天/三天/一周），
+ * 「今天就截止了」才是该催的分界。窗口值各模块自己定，不共用常量：
+ * 共用一个数字只会让改一个模块时误伤另一个。
+ */
+export const GROUP_BUY_URGENT_WINDOW_MS = 12 * 60 * 60 * 1000
+
+/** 截止时间的两种派生判断（非法时间一律当作"未过期、不紧急"，不抛错） */
+function deadlineState(groupBuy: GroupBuy, now: Date): { passed: boolean; urgent: boolean } {
+  const at = new Date(groupBuy.deadline).getTime()
+  if (Number.isNaN(at)) return { passed: false, urgent: false }
+  const left = at - now.getTime()
+  return { passed: left <= 0, urgent: left > 0 && left <= GROUP_BUY_URGENT_WINDOW_MS }
+}
+
 export function summarize(groupBuy: GroupBuy, now: Date): GroupBuySummary {
   const status = deriveStatus(groupBuy, now)
   const quantity = joinedQuantity(groupBuy)
+  const deadline = deadlineState(groupBuy, now)
   return {
     id: groupBuy.id,
     title: groupBuy.title,
@@ -200,6 +222,8 @@ export function summarize(groupBuy: GroupBuy, now: Date): GroupBuySummary {
     totalAmountFen: totalAmountFen(groupBuy),
     deadline: groupBuy.deadline,
     deadlineLabel: formatDeadline(groupBuy.deadline, now),
+    deadlinePassed: deadline.passed,
+    deadlineUrgent: deadline.urgent,
     pickupPlace: groupBuy.pickupPlace,
     status,
     statusLabel: statusLabel(status),

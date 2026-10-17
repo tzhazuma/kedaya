@@ -48,46 +48,78 @@
   z-index: $kdy-z-index-sticky;
 }
 
+/* 类型两段式切换（从「筛选」里提上来的第一决策）+ 一句口径说明 */
+.kdy-lost__kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin: $kdy-space-3 0 0;
+}
+
+.kdy-lost__kind-hint {
+  display: block;
+  margin: $kdy-space-2 0 $kdy-space-3;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
 .kdy-lost-card {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: $kdy-space-3;
 
-  // 文字徽标（不是 emoji/图片）：寻物 / 招领 的视觉锚点
-  &__badge {
+  /* 类型色带：寻物 = 品牌黄，招领 = 中性灰。一眼分辨"丢了"还是"捡到"。 */
+  &__rail {
+    flex: none;
+    width: 6px;
+    border-radius: $kdy-radius-pill;
+    background: $kdy-color-brand;
+  }
+
+  &.is-found &__rail {
+    background: $kdy-color-border;
+  }
+
+  &__body {
+    flex: 1;
+    min-width: 0;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 96px;
-    height: 88px;
+    flex-direction: column;
+    gap: $kdy-space-1;
+  }
+
+  /* 文字徽标（不是 emoji/图片）：寻物 / 招领 的视觉锚点 */
+  &__badge {
+    flex: none;
+    padding: 2px $kdy-space-2;
+    border-radius: $kdy-radius-sm;
     background: $kdy-color-brand-soft;
-    border-radius: $kdy-radius-md;
-    color: $kdy-color-ink;
-    font-size: $kdy-font-size-sm;
+    color: $kdy-color-brand-strong;
+    font-size: $kdy-font-size-xs;
     font-weight: $kdy-font-weight-medium;
   }
 
-  // 有图时用图当锚点（与跳蚤列表同一套做法）
-  &__cover {
-    width: 96px;
-    height: 88px;
-    flex: none;
+  &.is-found &__badge {
+    background: $kdy-color-surface-alt;
+    color: $kdy-color-ink-soft;
   }
 
-  &__main {
-    flex: 1;
-    min-width: 0;
+  /* 有图时右侧给一张方图（图片是失物最有用的线索） */
+  &__cover {
+    flex: none;
+    width: 88px;
+    height: 88px;
   }
 
   &__head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: $kdy-space-2;
   }
 
   &__title {
     flex: 1;
+    min-width: 0;
     overflow: hidden;
     color: $kdy-color-ink;
     font-size: $kdy-font-size-md;
@@ -96,9 +128,38 @@
     white-space: nowrap;
   }
 
-  &__meta {
+  /* 地点 / 时间两列对齐 —— 匹配物品的主线索 */
+  &__facts {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__fact {
+    display: flex;
+    align-items: flex-start;
+    gap: $kdy-space-2;
+  }
+
+  &__fact-key {
+    flex: none;
+    width: 32px;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: $kdy-line-height-normal;
+  }
+
+  &__fact-value {
+    flex: 1;
+    min-width: 0;
+    color: $kdy-color-ink;
+    font-size: $kdy-font-size-sm;
+    line-height: $kdy-line-height-normal;
+    word-break: break-all;
+  }
+
+  &__preview {
     display: block;
-    margin: $kdy-space-1 0;
     overflow: hidden;
     color: $kdy-color-text-muted;
     font-size: $kdy-font-size-xs;
@@ -106,23 +167,9 @@
     white-space: nowrap;
   }
 
-  &__preview {
-    display: block;
-    overflow: hidden;
-    color: $kdy-color-text;
-    font-size: $kdy-font-size-xs;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   &__foot {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
+    display: block;
     margin-top: $kdy-space-1;
-  }
-
-  &__time {
     color: $kdy-color-text-muted;
     font-size: $kdy-font-size-xs;
   }

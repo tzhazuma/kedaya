@@ -76,6 +76,35 @@ describe('跑腿：标签与派生视图', () => {
       summarizeErrandTask(task({ deadline: '2026-05-01T11:00:00.000Z' }), null, NOW).deadlineLabel,
     ).toBe('已截止')
     expect(errandRouteLabel({ fromPlace: 'A', toPlace: 'B' })).toBe('A → B')
+    // 两点**分开**给（卡片要画成两行导轨，不能靠解析 routeLabel 得到）
+    expect(summary.fromPlace).toBe('菜鸟驿站')
+    expect(summary.toPlace).toBe('3 号楼楼下')
+  })
+
+  it('截止状态由领域层算好：临期（≤2 小时）与已过是**两个**独立标记', () => {
+    // 6 小时后 → 不紧急、未过期
+    const far = summarizeErrandTask(task({ deadline: LATER }), null, NOW)
+    expect(far.deadlineUrgent).toBe(false)
+    expect(far.deadlinePassed).toBe(false)
+
+    // 90 分钟后 → 处于 2 小时窗口内
+    const near = summarizeErrandTask(task({ deadline: '2026-05-01T13:30:00.000Z' }), null, NOW)
+    expect(near.deadlineUrgent).toBe(true)
+    expect(near.deadlinePassed).toBe(false)
+
+    // 正好 2 小时（边界含端点）算临期
+    const edge = summarizeErrandTask(task({ deadline: '2026-05-01T14:00:00.000Z' }), null, NOW)
+    expect(edge.deadlineUrgent).toBe(true)
+
+    // 1 小时前 → 已过期，且**不再**算临期（两个标记互斥）
+    const past = summarizeErrandTask(task({ deadline: '2026-05-01T11:00:00.000Z' }), null, NOW)
+    expect(past.deadlinePassed).toBe(true)
+    expect(past.deadlineUrgent).toBe(false)
+
+    // 残缺时间不抛错，也不误判成紧急
+    const broken = summarizeErrandTask(task({ deadline: 'not-a-date' }), null, NOW)
+    expect(broken.deadlineUrgent).toBe(false)
+    expect(broken.deadlinePassed).toBe(false)
   })
 
   it('「我发布的 / 我接的单」标记依赖当前用户', () => {

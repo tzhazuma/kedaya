@@ -65,34 +65,80 @@
   }
 
   &__meta {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $kdy-space-2;
+  }
+
+  &__canteen {
     color: $kdy-color-text-muted;
     font-size: $kdy-font-size-xs;
   }
 
-  &__macro {
-    display: block;
-    overflow: hidden;
-    color: $kdy-color-text;
-    font-size: $kdy-font-size-xs;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  &__foot {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-top: $kdy-space-1;
-  }
-
   &__price {
     color: $kdy-color-ink;
-    font-size: $kdy-font-size-sm;
+    font-size: $kdy-font-size-xs;
     font-weight: $kdy-font-weight-medium;
   }
 
-  &__time {
+  /* 热量是这道菜的"第一眼数字" */
+  &__calories {
+    display: flex;
+    align-items: baseline;
+    gap: $kdy-space-1;
+    margin-top: $kdy-space-1;
+  }
+
+  &__calories-value {
+    color: $kdy-color-ink;
+    font-size: $kdy-font-size-xl;
+    font-weight: $kdy-font-weight-bold;
+    line-height: $kdy-line-height-tight;
+  }
+
+  &__calories-unit {
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  /* 三条营养比例条：左标签 / 中条 / 右克数 —— 三行对齐才好横向比较 */
+  &__macros {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-2;
+    margin-top: $kdy-space-2;
+  }
+
+  &__macro-row {
+    display: flex;
+    align-items: center;
+    gap: $kdy-space-2;
+  }
+
+  &__macro-key {
+    flex: none;
+    width: 28px;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__macro-bar {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__macro-value {
+    flex: none;
+    width: 44px;
+    color: $kdy-color-ink;
+    font-size: $kdy-font-size-xs;
+    text-align: right;
+  }
+
+  &__foot {
+    display: block;
+    margin-top: $kdy-space-2;
     color: $kdy-color-text-muted;
     font-size: $kdy-font-size-xs;
   }

@@ -84,5 +84,8 @@ export type { KdyReportEntryProps } from './KdyReportEntry'
 export { KdyListSkeleton } from './KdyListSkeleton'
 export type { KdyListSkeletonProps } from './KdyListSkeleton'
 
+export { KdyProgress } from './KdyProgress'
+export type { KdyProgressProps } from './KdyProgress'
+
 export { KdyShareEntry } from './KdyShareEntry'
 export type { KdyShareEntryProps } from './KdyShareEntry'

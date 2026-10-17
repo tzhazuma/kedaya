@@ -16,6 +16,7 @@ import {
   dishNameProblem,
   isCanteenName,
   macroLabel,
+  macroShares,
   parseIntegerText,
   parseYuanText,
   priceLabel,
@@ -93,6 +94,28 @@ describe('白名单、单位标签与派生视图', () => {
     expect(summary.macroSummary).toBe('蛋白 32g · 脂肪 28g · 碳水 96g')
     expect(summary.calorieLevelLabel).toBe('偏高')
     expect(summary.createdLabel).toBe('2 小时前')
+    // 克数原样给出（卡片画比例条用），不能只给拼好的字符串
+    expect([summary.proteinG, summary.fatG, summary.carbG]).toEqual([32, 28, 96])
+  })
+
+  it('三大营养素按**克数**占比，且三项恒好加到 100（不吃四舍五入的亏）', () => {
+    // 32/28/96 → 总和 156 → 20.5% / 17.9% / 61.5%
+    const shares = macroShares({ proteinG: 32, fatG: 28, carbG: 96 })
+    expect(shares.protein).toBe(21)
+    expect(shares.fat).toBe(18)
+    expect(shares.carb).toBe(61) // 第三项取余数：21 + 18 + 61 = 100
+    expect(shares.protein + shares.fat + shares.carb).toBe(100)
+
+    // 极端四舍五入（两项各 50% 后被截断）也不能出现负数
+    const edge = macroShares({ proteinG: 1, fatG: 1, carbG: 1 })
+    expect(edge.protein + edge.fat + edge.carb).toBe(100)
+
+    // 全 0（同学还没填营养数据）→ 三条都 0，而不是 NaN%
+    expect(macroShares({ proteinG: 0, fatG: 0, carbG: 0 })).toEqual({
+      protein: 0,
+      fat: 0,
+      carb: 0,
+    })
   })
 })
 

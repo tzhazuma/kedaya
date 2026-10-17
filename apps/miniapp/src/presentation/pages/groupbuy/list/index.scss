@@ -85,39 +85,69 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  gap: $kdy-space-2;
   margin-top: $kdy-space-3;
+}
+
+/* 催单信息：还差 N 份（品牌色加粗）；满员时降级为安静的「已拼满」 */
+.kdy-gb-card__short {
+  color: $kdy-color-brand-strong;
+  font-size: $kdy-font-size-sm;
+  font-weight: 700;
+}
+
+.kdy-gb-card__short.is-full {
+  color: $kdy-color-success;
+  font-weight: 500;
 }
 
 .kdy-gb-card__price {
   color: $kdy-color-ink;
-  font-size: $kdy-font-size-lg;
-  font-weight: 700;
-}
-
-.kdy-gb-card__progress {
-  color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
 }
 
-.kdy-gb-card__bar {
-  height: 6px;
-  margin-top: $kdy-space-2;
-  overflow: hidden;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-pill;
+.kdy-gb-card__progress {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: 600;
 }
 
-.kdy-gb-card__bar-inner {
-  height: 6px;
-  background-color: $kdy-color-brand;
+.kdy-gb-card__bar {
+  height: 8px;
+  margin-top: $kdy-space-2;
+  overflow: hidden;
   border-radius: $kdy-radius-pill;
 }
 
 .kdy-gb-card__foot {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
+  gap: $kdy-space-2;
   margin-top: $kdy-space-3;
+}
+
+.kdy-gb-card__deadline {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-gb-card__deadline.is-urgent {
+  padding: 2px $kdy-space-2;
+  border-radius: $kdy-radius-pill;
+  background: $kdy-color-brand-soft;
+  color: $kdy-color-brand-strong;
+  font-weight: $kdy-font-weight-medium;
+}
+
+.kdy-gb-card__deadline.is-passed {
+  color: $kdy-color-text-muted;
+  text-decoration: line-through;
+}
+
+.kdy-gb-card__initiator {
+  display: block;
+  margin-top: $kdy-space-1;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
 }

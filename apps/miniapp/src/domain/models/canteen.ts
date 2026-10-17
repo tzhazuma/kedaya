@@ -101,10 +101,23 @@ export interface CanteenDishSummary {
   priceLabel: string
   /** 例：`蛋白 32g · 脂肪 28g · 碳水 96g` */
   macroSummary: string
+  /** 三大营养素克数（卡片要画成三条比例条，不能只给拼好的字符串） */
+  proteinG: number
+  fatG: number
+  carbG: number
+  /** 三大营养素的**克数**占比（0–100 整数，三项之和恒为 100） */
+  macroShares: MacroShares
   /** 热量档位（列表标签用不同语气） */
   calorieLevel: CalorieLevel
   calorieLevelLabel: string
   createdLabel: string
+}
+
+/** 三大营养素的克数占比（百分比整数） */
+export interface MacroShares {
+  protein: number
+  fat: number
+  carb: number
 }
 
 /** 某食堂的营养汇总（对应 `GET /canteen/calories?canteen=`） */
@@ -157,6 +170,26 @@ export function priceLabel(fen: number): string {
 export const CANTEEN_DISCLAIMER = '数据由同学共建，仅作参考，不构成营养建议'
 
 /** 派生视图：把一行原始数据映射成卡片直接可用的形状 */
+/**
+ * 三大营养素的**克数**占比。
+ *
+ * ⚠️ 口径必须说清楚：这是**克数**占比，不是热量占比。热量占比要把蛋白 ×4、
+ * 碳水 ×4、脂肪 ×9 —— 同一份菜按克数和按热量算出来的百分比差别很大。
+ * 卡片上写的就是「按克数占比」这六个字，不做没有依据的换算。
+ *
+ * 两项四舍五入 + 第三项取余数，保证三项**恒好加到 100**（否则条形图会缺一小格，
+ * 看起来像渲染 bug）。`carb` 用 `Math.max(0, ...)` 兜住极端四舍五入。
+ */
+export function macroShares(
+  dish: Pick<CanteenDish, 'proteinG' | 'fatG' | 'carbG'>,
+): MacroShares {
+  const total = dish.proteinG + dish.fatG + dish.carbG
+  if (!(total > 0)) return { protein: 0, fat: 0, carb: 0 }
+  const protein = Math.round((dish.proteinG / total) * 100)
+  const fat = Math.round((dish.fatG / total) * 100)
+  return { protein, fat, carb: Math.max(0, 100 - protein - fat) }
+}
+
 export function summarize(dish: CanteenDish, now: Date): CanteenDishSummary {
   const level = calorieLevel(dish.caloriesKcal)
   return {
@@ -167,6 +200,10 @@ export function summarize(dish: CanteenDish, now: Date): CanteenDishSummary {
     caloriesLabel: caloriesLabel(dish.caloriesKcal),
     priceLabel: priceLabel(dish.priceFen),
     macroSummary: `蛋白 ${dish.proteinG}g · 脂肪 ${dish.fatG}g · 碳水 ${dish.carbG}g`,
+    proteinG: dish.proteinG,
+    fatG: dish.fatG,
+    carbG: dish.carbG,
+    macroShares: macroShares(dish),
     calorieLevel: level,
     calorieLevelLabel: CALORIE_LEVEL_LABELS[level],
     createdLabel: formatRelativeTime(dish.createdAt, now),

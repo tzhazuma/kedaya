@@ -51,7 +51,22 @@ function statusTone(status: ErrandStatus): KdyTagTone {
   return 'neutral'
 }
 
+/**
+ * 任务卡 —— 跑腿列表的**定制化**外观（不是通用「标题 + 摘要 + 标签」卡片）。
+ *
+ * 跑腿只关心三件事，卡片就给它们三个**固定位置**：
+ *   1. **赏金**（值不值得跑）→ 左下角大字，带「赏金」小标；
+ *   2. **路线**（顺不顺路）→ 中部两条站点导轨（取 → 送），
+ *      把"起点终点"从一行 `A → B` 变成可扫的结构，长地点名自动换行；
+ *   3. **截止**（来不来得及）→ 右下角，临期（≤2 小时）换警示色、已过期置灰。
+ * 另外，「等待接单 / 已有同学接单」是接单者的行动信号，单独占一行而不是混进状态标签。
+ */
 function ErrandCard({ task }: { task: ErrandTaskSummary }) {
+  const relation = task.mine ? '我发布的' : task.takenByMe ? '我接的单' : null
+  const deadlineClass =
+    'kdy-errand-card__deadline' +
+    (task.deadlinePassed ? ' is-passed' : task.deadlineUrgent ? ' is-urgent' : '')
+
   return (
     <KdyCard
       elevated={false}
@@ -65,15 +80,31 @@ function ErrandCard({ task }: { task: ErrandTaskSummary }) {
           <KdyTag tone={statusTone(task.status)}>{task.statusLabel}</KdyTag>
         </View>
 
-        <Text className='kdy-errand-card__route'>{task.routeLabel}</Text>
+        <View className='kdy-errand-card__stops'>
+          <View className='kdy-errand-card__stop'>
+            <Text className='kdy-errand-card__stop-key'>取</Text>
+            <Text className='kdy-errand-card__stop-place'>{task.fromPlace}</Text>
+          </View>
+          <View className='kdy-errand-card__stop'>
+            <Text className='kdy-errand-card__stop-key kdy-errand-card__stop-key--to'>送</Text>
+            <Text className='kdy-errand-card__stop-place'>{task.toPlace}</Text>
+          </View>
+        </View>
+
+        {task.detailPreview !== '' && (
+          <Text className='kdy-errand-card__preview'>{task.detailPreview}</Text>
+        )}
 
         <View className='kdy-errand-card__foot'>
-          <Text className='kdy-errand-card__reward'>¥{task.rewardLabel}</Text>
-          <Text className='kdy-errand-card__deadline'>{task.deadlineLabel}</Text>
+          <View className='kdy-errand-card__reward'>
+            <Text className='kdy-errand-card__reward-label'>赏金</Text>
+            <Text className='kdy-errand-card__reward-value'>¥{task.rewardLabel}</Text>
+          </View>
+          <Text className={deadlineClass}>{task.deadlineLabel}</Text>
         </View>
 
         <Text className='kdy-errand-card__meta'>
-          {task.mine ? '我发布的' : task.takenByMe ? '我接的单' : task.hasRunner ? '已有同学接单' : '等待接单'}
+          {relation ?? (task.hasRunner ? '已有同学接单' : '等待接单')}
           {' · '}
           {task.timeLabel}
         </Text>
@@ -170,6 +201,40 @@ export default function ErrandListPage() {
         </KdyButton>
       </View>
 
+      {/* 跑腿的两个**高频**维度直接放在列表上方，不进「筛选」折叠面板：
+          范围（全部 / 我发布的 / 我接的单）与排序（最新 / 赏金最高 / 即将截止）。
+          跑腿的日常用法就是"看我发的、看我能接的"，藏起来等于没有。 */}
+      <View className='kdy-errand__scopes'>
+        {SCOPES.map((scope) => (
+          <KdyChip
+            key={scope}
+            active={(filters.scope ?? 'all') === scope}
+            disabled={scope !== 'all' && container.useCases.session.getSnapshot().tokens === null}
+            onClick={() => {
+              if (scope === 'all') {
+                refresh({ scope: 'all' })
+                return
+              }
+              if (requireLogin(PAGE_PATHS.authLogin)) refresh({ scope })
+            }}
+          >
+            {scopeLabel(scope)}
+          </KdyChip>
+        ))}
+      </View>
+
+      <View className='kdy-errand__sorts'>
+        {ERRAND_SORTS.map((sort) => (
+          <KdyChip
+            key={sort}
+            active={(filters.sort ?? 'latest') === sort}
+            onClick={() => refresh({ sort })}
+          >
+            {ERRAND_SORT_LABELS[sort]}
+          </KdyChip>
+        ))}
+      </View>
+
       {showFilters && (
         <KdyCard elevated={false}>
           <Text className='kdy-errand__filter-label'>状态</Text>
@@ -187,39 +252,6 @@ export default function ErrandListPage() {
                 onClick={() => refresh({ status })}
               >
                 {ERRAND_STATUS_LABELS[status]}
-              </KdyChip>
-            ))}
-          </View>
-
-          <Text className='kdy-errand__filter-label'>排序</Text>
-          <View className='kdy-errand__chips'>
-            {ERRAND_SORTS.map((sort) => (
-              <KdyChip
-                key={sort}
-                active={(filters.sort ?? 'latest') === sort}
-                onClick={() => refresh({ sort })}
-              >
-                {ERRAND_SORT_LABELS[sort]}
-              </KdyChip>
-            ))}
-          </View>
-
-          <Text className='kdy-errand__filter-label'>范围</Text>
-          <View className='kdy-errand__chips'>
-            {SCOPES.map((scope) => (
-              <KdyChip
-                key={scope}
-                active={(filters.scope ?? 'all') === scope}
-                disabled={scope !== 'all' && container.useCases.session.getSnapshot().tokens === null}
-                onClick={() => {
-                  if (scope === 'all') {
-                    refresh({ scope: 'all' })
-                    return
-                  }
-                  if (requireLogin(PAGE_PATHS.authLogin)) refresh({ scope })
-                }}
-              >
-                {scopeLabel(scope)}
               </KdyChip>
             ))}
           </View>

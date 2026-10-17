@@ -6,6 +6,7 @@ import { getContainer } from '../../../../app/container'
 import { PAGE_PATHS, lostFoundDetailPath } from '../../../../app/routes'
 import {
   LOST_FOUND_KINDS,
+  LOST_FOUND_KIND_HINTS,
   LOST_FOUND_KIND_LABELS,
   LOST_FOUND_SORT_LABELS,
   LOST_FOUND_SORTS,
@@ -41,6 +42,16 @@ function statusTone(status: LostFoundStatus): KdyTagTone {
   return status === 'open' ? 'brand' : 'neutral'
 }
 
+/**
+ * 登记卡 —— 失物招领的**定制化**外观。
+ *
+ * 与别的模块不同，这里的信息顺序由「怎么找到东西」决定：
+ *   1. **在哪儿、什么时候**（匹配物品的主线索）紧贴标题，用固定标签对齐，
+ *      扫列表时两列对齐比一句 `图书馆 · 2 小时前` 好读得多；
+ *   2. 描述预览只给一行（细节在详情页）；
+ *   3. 左侧一条**类型色带** + 文字徽标：寻物（品牌黄）/ 招领（中性灰），
+ *      「我把东西丢了」和「我捡到东西了」是两种完全不同的行动，视觉上先分开。
+ */
 function LostFoundCard({ item }: { item: LostFoundItemSummary }) {
   return (
     <KdyCard
@@ -49,31 +60,44 @@ function LostFoundCard({ item }: { item: LostFoundItemSummary }) {
         void navigateTo(lostFoundDetailPath(item.id))
       }}
     >
-      <View className='kdy-lost-card'>
-        {item.thumbnailUrl === null ? (
-          <View className='kdy-lost-card__badge'>{item.badge}</View>
-        ) : (
-          <KdyImageThumb className='kdy-lost-card__cover' url={item.thumbnailUrl} count={item.imageCount} />
-        )}
-        <View className='kdy-lost-card__main'>
+      <View className={item.kind === 'found' ? 'kdy-lost-card is-found' : 'kdy-lost-card is-lost'}>
+        <View className='kdy-lost-card__rail' />
+
+        <View className='kdy-lost-card__body'>
           <View className='kdy-lost-card__head'>
+            <Text className='kdy-lost-card__badge'>{item.badge}</Text>
             <Text className='kdy-lost-card__title'>{item.title}</Text>
             <KdyTag tone={statusTone(item.status)}>{item.statusLabel}</KdyTag>
           </View>
-          <Text className='kdy-lost-card__meta'>
-            {item.kindLabel} · {item.place}
-          </Text>
+
+          <View className='kdy-lost-card__facts'>
+            <View className='kdy-lost-card__fact'>
+              <Text className='kdy-lost-card__fact-key'>地点</Text>
+              <Text className='kdy-lost-card__fact-value'>{item.place}</Text>
+            </View>
+            <View className='kdy-lost-card__fact'>
+              <Text className='kdy-lost-card__fact-key'>时间</Text>
+              <Text className='kdy-lost-card__fact-value'>{item.happenedLabel}</Text>
+            </View>
+          </View>
+
           {item.descriptionPreview === '' ? null : (
             <Text className='kdy-lost-card__preview'>{item.descriptionPreview}</Text>
           )}
-          <View className='kdy-lost-card__foot'>
-            <Text className='kdy-lost-card__time'>事发 {item.happenedLabel}</Text>
-            <Text className='kdy-lost-card__time'>
-              {item.mine ? '我发布的 · ' : ''}
-              {item.createdLabel}
-            </Text>
-          </View>
+
+          <Text className='kdy-lost-card__foot'>
+            {item.mine ? '我发布的 · ' : ''}
+            发布 {item.createdLabel}
+          </Text>
         </View>
+
+        {item.thumbnailUrl === null ? null : (
+          <KdyImageThumb
+            className='kdy-lost-card__cover'
+            url={item.thumbnailUrl}
+            count={item.imageCount}
+          />
+        )}
       </View>
     </KdyCard>
   )
@@ -156,20 +180,26 @@ export default function LostFoundListPage() {
         </KdyButton>
       </View>
 
+      {/* 类型是失物招领的**第一决策**（我在找东西 / 我看到东西），
+          所以从「筛选」里提上来做成两段式切换，并配一句当前口径的说明。 */}
+      <View className='kdy-lost__kinds'>
+        <KdyChip active={filters.kind === undefined} onClick={() => refresh({ kind: undefined })}>
+          全部
+        </KdyChip>
+        {LOST_FOUND_KINDS.map((kind) => (
+          <KdyChip key={kind} active={filters.kind === kind} onClick={() => refresh({ kind })}>
+            {LOST_FOUND_KIND_LABELS[kind]}
+          </KdyChip>
+        ))}
+      </View>
+      <Text className='kdy-lost__kind-hint'>
+        {filters.kind === undefined
+          ? '寻物启事 = 我丢了东西；招领启事 = 我捡到了东西'
+          : LOST_FOUND_KIND_HINTS[filters.kind]}
+      </Text>
+
       {showFilters && (
         <KdyCard elevated={false}>
-          <Text className='kdy-lost__filter-label'>类型</Text>
-          <View className='kdy-lost__chips'>
-            <KdyChip active={filters.kind === undefined} onClick={() => refresh({ kind: undefined })}>
-              全部
-            </KdyChip>
-            {LOST_FOUND_KINDS.map((kind) => (
-              <KdyChip key={kind} active={filters.kind === kind} onClick={() => refresh({ kind })}>
-                {LOST_FOUND_KIND_LABELS[kind]}
-              </KdyChip>
-            ))}
-          </View>
-
           <Text className='kdy-lost__filter-label'>状态</Text>
           <View className='kdy-lost__chips'>
             {STATUS_FILTERS.map((status) => (
