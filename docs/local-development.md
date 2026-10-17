@@ -108,6 +108,8 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 | `DATABASE_URL` | 数据库连接串 |
 | `JWT_SECRET` | 签发/校验 JWT（缺失会直接报错，不会静默降级） |
 | `AUTH_DEV_EXPOSE_CODES` | `"true"` 时**仅开发环境**在发送验证码的响应里回显 `devCode` |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | 邮件发信。本机**不用配**：开发环境默认走日志实现（验证码打控制台）；生产环境不配会让服务起不来（详见 `docs/deploy.md` §5.7） |
+| `MAIL_TRANSPORT` | 不配即可。`console` 强制日志实现（生产环境设了会拒绝启动）；`smtp` 强制真发信 |
 | `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | 访问/刷新令牌有效期（秒） |
 | `CAMPUS_DATA_MODE` | `mock`（默认，模拟校园数据，响应标 `simulated: true`）/ `live`（真实上游，需配 `CAMPUS_*_DATA_URL`） |
 | `CAMPUS_EGATE_DATA_URL` / `CAMPUS_JWC_DATA_URL` / `CAMPUS_CARD_DATA_URL` | 各校园系统上游地址，仅 `live` 模式使用；未配置则明确报错 |
@@ -117,6 +119,12 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 
 `AUTH_DEV_EXPOSE_CODES` 只是为了真机联调方便；生产必须关闭，
 否则任何人都能拿到别人的注册验证码。关闭时验证码会打印到 API 控制台（`ConsoleMailAdapter`）。
+
+想在本机验证**真实发信链路**（邮件组装、SMTP 对话、错误分支），不用去注册邮箱服务商：
+`SMTP_HOST=127.0.0.1 SMTP_PORT=2525 SMTP_ALLOW_INSECURE=true SMTP_FROM=... node <一个假 SMTP 服务器>`，
+然后照样 `POST /auth/account/register/code`，看假服务器收到了什么。
+`services/api/src/modules/auth/data/smtp-mail.adapter.spec.ts` 里就有一台内存假服务器，
+把它的断言读一遍比看文档更快。
 
 ### 3.4 自建账号（邮箱 + 密码）
 

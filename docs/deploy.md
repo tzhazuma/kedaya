@@ -147,6 +147,7 @@ docker push <registry-host>/<namespace>/kedaya-api:v1
 | `DATABASE_URL` | `postgresql://...` | 第 2 节的连接串 |
 | `JWT_SECRET` | 32 字节以上随机串 | 签发自有 JWT。**换掉默认值**，生成方式：`openssl rand -base64 48` |
 | `CAMPUS_SESSION_ENC_KEY` | 64 位 hex | 校园系统 session 的 AES-256-GCM 密钥。生成：`openssl rand -hex 32` |
+| 邮件发信 `SMTP_*` | 见 §5.7 | **没配就起不来**（刻意的，见 §5.7）。校园 CAS 未接通前，邮箱注册是用户唯一能自助走通的登录路径 |
 | `PORT` | `80` | 与容器端口一致 |
 
 `JWT_SECRET` 与 `CAMPUS_SESSION_ENC_KEY` 一旦更换，已签发的 token 与已加密的
@@ -180,6 +181,9 @@ docker push <registry-host>/<namespace>/kedaya-api:v1
 > 唯一做了强校验的 `DATABASE_URL`：生产环境下缺失会**直接启动失败并打印明确错误**
 > （而不是静默用空连接串启动、之后每个请求 500）。
 > **`MEDIA_STORAGE=s3` 同样做了强校验**：缺哪一个变量就在启动时报哪一个，不会带病启动。
+> **邮件发信也做了强校验**：生产环境没有 `SMTP_HOST`（且没有 `MAIL_TRANSPORT=smtp`）时
+> 服务**拒绝启动**，理由见 §5.7 —— 一个「接口说已发送、用户永远收不到」的假功能，
+> 比启动失败危险得多。
 
 ### 5.4 媒体存储（图片上传）
 
@@ -382,6 +386,69 @@ update "ForumReply"    set status = 'removed' where id = '<id>';  -- 论坛回�
 （含举报人 ID 与被举报内容）」的接口是明确的信息泄露 —— 所以举报**只写不读**
 （仅 `GET /reports/mine` 供举报人自己查看）。要做管理后台，先做角色与鉴权。
 
+### 5.7 邮件发信（验证码送达，**没配就起不来**）
+
+邮箱注册、找回密码、绑定邮箱都靠**邮件验证码**。在这之前，本仓库只有一个把验证码写进
+服务端日志的开发用实现 —— 也就是说：部署上线后，用户点「获取验证码」会看到「已发送」，
+但邮箱里**永远收不到**。三条自助功能全部静默失效，而没有任何人会发现。
+
+现在这件事被两道闸门挡住：
+
+1. **生产环境没配邮件 → 服务拒绝启动**（`resolveMailTransport`），错误信息直接指出缺什么；
+2. 真发信的实现会把 SMTP 的错误如实抛给接口 → 客户端显示「发送失败」，不再假装成功。
+
+| 变量 | 示例 | 说明 |
+| --- | --- | --- |
+| `SMTP_HOST` | `smtp.exmail.qq.com` | SMTP 服务器。**配了它就会走真发信** |
+| `SMTP_PORT` | `465` / `587` | 缺省：`SMTP_SECURE=true` 时 465，否则 587 |
+| `SMTP_SECURE` | `true` | `true` = 隐式 TLS（465，推荐）；`false` = 明文 + `STARTTLS`（587） |
+| `SMTP_USER` / `SMTP_PASS` | 发信账号 / 授权码 | **不是**登录密码，是服务商给的「授权码 / 应用专用密码」 |
+| `SMTP_FROM` | `可达鸭 <no-reply@your-domain.com>` | 同时是 `From` 头与 `MAIL FROM`。必须是服务商允许的发信地址 |
+| `SMTP_SERVERNAME` | 默认取 `SMTP_HOST` | 证书 SNI / 校验用的域名，正常不用配 |
+| `SMTP_TIMEOUT_MS` | `10000` | 连接、命令、TLS 握手的统一上限 |
+| `SMTP_ALLOW_INSECURE` | `false` | 服务器**不提供** STARTTLS 时才需要。开了等于接受凭据明文过网，仅限内网自建 MTA |
+| `MAIL_TRANSPORT` | 不配 | `console` = 只写日志（**生产环境设了会拒绝启动**）；`smtp` = 强制真发信 |
+
+#### 选一家 + 配好发信域（决定用户到底收不收得到）
+
+| 服务商 | 备注 |
+| --- | --- |
+| 腾讯企业邮 / QQ 邮箱 | 与云托管同生态；`SMTP_HOST=smtp.exmail.qq.com`，`SMTP_PASS` 用「客户端专用密码」 |
+| 阿里云邮件推送 | 需要先验证发信域名（加 DNS TXT 记录） |
+| Resend / SendGrid 等 | 也提供 SMTP；**发信域必须先验证**，否则只能给账号本人发信 |
+
+无论哪家，都要在域名 DNS 里配好 **SPF / DKIM / DMARC**。不配的后果不是「发不出去」，
+而是「发出去了、进了对方垃圾箱」—— 用户会认为这个产品坏了，而我们这边一切正常。
+
+> ⚠️ 事务类邮件（验证码）用**子域**发信（例如 `no-reply@mail.your-domain.com`）是通行做法：
+> 万一子域信誉受损，不会连累主域的其他邮件。
+
+#### 上线前必做的邮件验收（5 步）
+
+```bash
+# 1) 服务能起来（生产没配 SMTP 会直接起不来，这是对的）
+curl -sS "$BASE/health"
+
+# 2) 用一个**真实邮箱**请求注册验证码（响应里不应有 devCode）
+curl -sS -X POST "$BASE/api/v1/auth/account/register/code" \
+  -H 'content-type: application/json' -d '{"email":"你的邮箱@example.com"}'
+# → 期望：201 且 sent:true，响应里**没有** devCode 字段
+
+# 3) 去邮箱收信：应在 1 分钟内到达（没到先看垃圾箱！）
+
+# 4) 用邮件里的验证码完成注册
+curl -sS -X POST "$BASE/api/v1/auth/account/register" \
+  -H 'content-type: application/json' \
+  -d '{"email":"你的邮箱@example.com","code":"邮件里的6位","password":"Kedaya2026","nickname":"验收"}'
+# → 期望：200 且返回 accessToken
+
+# 5) 收回执：再请一次验证码 → 期望 409 CONFLICT（60 秒冷却），
+#    说明限流也在工作，而不是「谁都能拿这个接口刷垃圾邮件」
+```
+
+**验证码泄露检查**：生产环境 `AUTH_DEV_EXPOSE_CODES` 必须是 `false`
+（代码里 `NODE_ENV=production` 时无条件关闭，见 `local-auth.service.ts`）。
+
 ---
 
 ## 6. 数据库迁移（独立的发布步骤）
@@ -488,6 +555,7 @@ curl -sS "$BASE/api/v1/reports/mine" -H "authorization: Bearer <B 的 accessToke
 | 遥测写入 | 库里有 `ClientEvent` 行 | 迁移没跑（该表由 `20261017072546_telemetry_client_events` 创建） |
 | 举报写入 | 201 且库里有 `ContentReport` 行 | 迁移没跑（该表由 `20261017074007_content_reports` 创建） |
 | 重复举报 | 409 `CONFLICT` | 返回 201 说明唯一索引没建上（迁移没跑全） |
+| 邮件发信 | 真实邮箱收到验证码，且响应里没有 `devCode` | 服务没起来说明邮件没配（刻意的）；收到了但响应里有 `devCode` = `NODE_ENV` 不是 `production` |
 
 ---
 
@@ -525,6 +593,8 @@ curl -sS "$BASE/api/v1/reports/mine" -H "authorization: Bearer <B 的 accessToke
 | 举报链路（小程序端） | **未验证**（需要真机/开发者工具里点一遍） | 导入 `apps/miniapp/dist`，在跳蚤详情点「举报这条内容」→ 选原因 → 提交 → 确认出现「已收到你的举报」，并且重进详情页显示「你已举报…处理中」 |
 | 下架后的详情直链 | **已知限制**（不阻断） | 见 5.6 的说明：列表会立刻消失，但按 id 直接打开的详情页仍可访问；要彻底阻断需删除该行 |
 | R5 的视觉/交互打磨（骨架屏、下拉刷新、图片懒加载、卡片按下反馈） | **未验证**（本机无法在真机或开发者工具里操作） | 导入 `apps/miniapp/dist` 后：列表首屏应看到骨架而不是转圈；下拉应出现刷新转圈并保留筛选；长列表滚动时图片按需加载；点卡片有按下反馈 |
+| 邮箱验证码的**真实投递** | **已用本地假 SMTP 走通全链路**（`AUTH_DEV_EXPOSE_CODES=false` 下请求验证码 → 假服务器收到完整 MIME 邮件 → 用邮件里的验证码注册成功）；**真实服务商未验证**（没有凭据） | 见 §5.7 的 5 步验收。需要额外确认的是**送达率**：SPF / DKIM / DMARC 是否配好、是否进垃圾箱、退信怎么处理 |
+| 生产环境「没配邮件就拒绝启动」 | **已验证**（本机 `NODE_ENV=production` 且无 `SMTP_HOST` → 启动即失败，错误信息指向 §5.7；配上 `SMTP_HOST` 后正常启动） | — |
 
 ---
 
@@ -670,6 +740,9 @@ node -e '
 | 用户报「点进去就崩」但日志里什么都没有 | 先确认构建用的是最新包（错误边界上报要在新包里）；再把用户的 traceId 拿去日志检索。老版本客户端（还没有上报）不会有任何记录 |
 | 举报提交报 400「不支持举报这类内容」 | 客户端与服务端的 `targetType` 白名单漂移了 —— 两边各有一份常量，改一处必须改另一处（服务端 `modules/reports/domain`） |
 | 举报队列里出现大量同一对象的记录 | 正常现象（这正是升级信号）；若同一人反复刷，靠 `@@unique(reporterId,targetType,targetId)` 已经卡住了，多的那条会 409 |
+| 服务起不来，日志说「生产环境必须配置邮件发信」 | 这是**刻意的**：没有 SMTP 时邮箱注册/找回密码会静默失效。按 §5.7 配置，或（仅演示部署）显式承认限制 |
+| 用户说「验证码收不到」 | 顺序排查：① 日志里有没有 `[mail] 已投递给 SMTP`（有 = 已交给服务商，问题在投递侧，查垃圾箱 / SPF / DKIM）；② 有没有 `535`（授权码错，注意不是登录密码）；③ 有没有 `550`（发信域不被服务商允许）。**不要**为了「先让用户注册上」在生产打开 `AUTH_DEV_EXPOSE_CODES`，那等于把验证码公开 |
+| 用户说「验证码提示错误」 | 验证码 10 分钟过期、连续错 5 次作废、60 秒冷却、每小时 5 条。超出即报「请重新获取」，不是 bug |
 
 ---
 
