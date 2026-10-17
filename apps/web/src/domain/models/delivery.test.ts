@@ -29,19 +29,28 @@ describe('模块交付状态', () => {
     }
   });
 
-  it('小程序已上线的模块 = 五个核心模块 + 六个生活模块（拼单走 Web）', () => {
+  it('小程序已上线的模块 = 20 个契约模块里除 facility / groupbuy 之外的 18 个', () => {
+    // 这份清单必须与小程序 `MODULE_ENTRY_PATHS`（真实有页面的模块）逐条对齐：
+    // 端上真的做了才列进来，没做就老实留在 api-only —— 端上页面数对不上这里会红。
     expect(MINIAPP_MODULES.map((m) => m.id).sort()).toEqual([
+      'ai-portrait',
       'auth',
       'buddy',
       'campus-card',
+      'canteen',
       'dorm-harmony',
       'errand',
+      'faq',
       'flea-market',
       'forum',
       'lost-found',
       'notifications',
       'profile',
       'schedule',
+      'takeout-guard',
+      'techpie',
+      'wellbeing',
+      'wildlife',
     ]);
     for (const mod of MINIAPP_MODULES) {
       // 小程序模块在 Web 上没有页面，必须去说明页
@@ -51,11 +60,9 @@ describe('模块交付状态', () => {
     }
   });
 
-  it('其余模块一律只有接口，不算已交付', () => {
+  it('只剩 facility（场馆预约）没有端上页面，仍如实标为 api-only', () => {
     expect(API_ONLY_MODULES).toHaveLength(MODULES.length - DELIVERED_MODULES.length);
-    expect(API_ONLY_MODULES.map((m) => m.id)).toContain('wellbeing');
-    expect(API_ONLY_MODULES.map((m) => m.id)).toContain('canteen');
-    expect(API_ONLY_MODULES.map((m) => m.id)).toContain('takeout-guard');
+    expect(API_ONLY_MODULES.map((m) => m.id)).toEqual(['facility']);
     for (const mod of API_ONLY_MODULES) {
       expect(mod.delivery.stage).toBe('api-only');
       expect(mod.href).toBe(`/m/${mod.id}`);

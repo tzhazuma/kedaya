@@ -291,9 +291,11 @@ Web 是独立的 Next.js 客户端，跟小程序共用后端 API，但界面与
 npm run dev:web           # Next.js dev server → http://localhost:3001
 ```
 
-- 首页宫格 19 个模块都可达，角标**如实**标注可用性：
+- 首页宫格 20 个模块都可达，角标**如实**标注可用性：
   「Web 已上线 / 小程序已上线 / 接口就绪」。判定逻辑只在
   `apps/web/src/domain/models/delivery.ts` 一处，改交付范围就改它。
+  （当前只有 `facility`（场馆预约）还是「接口就绪」：后端已挂脚手架接口，
+  小程序页面待做。）
 - 目前浏览器里真正能点开使用的是拼单垂直切片（`/groupbuy`），
   以及管理后台占位（`/admin`）；其余模块点进 `/m/<id>` 会看到该模块的交付说明。
 - 默认走 mock 数据，不需要后端；要连真实后端时设 `NEXT_PUBLIC_API_BASE_URL`
