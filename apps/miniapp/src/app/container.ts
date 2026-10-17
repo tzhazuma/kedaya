@@ -32,6 +32,8 @@ import { createPrivacyUseCase } from '../application/privacy/privacyUseCases'
 import type { PrivacyUseCase } from '../application/privacy/privacyUseCases'
 import { createAgentUseCase } from '../application/agent/agentUseCases'
 import type { AgentUseCase } from '../application/agent/agentUseCases'
+import { createMediaUseCases } from '../application/media/mediaUseCases'
+import type { MediaUseCases } from '../application/media/mediaUseCases'
 import { createApiClient, createAuthRefresher, createTaroHttpPort, createTracePort } from '../data/api'
 import type { ApiClient } from '../data/api'
 import { createHttpGroupBuyRepository } from '../data/repositories/httpGroupBuyRepository'
@@ -60,8 +62,11 @@ import { createHttpAgentRepository } from '../data/repositories/httpAgentReposit
 import { createMockCampusRepositories } from '../data/repositories/mockCampusRepository'
 import { createMockPrivacyRepository } from '../data/repositories/mockPrivacyRepository'
 import { createMockAgentRepository } from '../data/repositories/mockAgentRepository'
+import { createHttpMediaRepository } from '../data/repositories/httpMediaRepository'
+import { createMockMediaRepository } from '../data/repositories/mockMediaRepository'
 import { mockNow } from '../data/mock/fixtures'
 import { createAvatarPickerPort } from '../platform/avatarPicker'
+import { createImagePickerPort } from '../platform/imagePicker'
 import { createWechatCodePort } from '../platform/wechatLogin'
 import { setUnreadBadge } from '../platform/tabBar'
 import { PAGE_PATHS } from './routes'
@@ -71,7 +76,8 @@ import { createSessionStore, createTokenStore } from '../data/storage/sessionSto
 import { StorageKeys } from '../data/storage/keys'
 import { createTaroStorage } from '../data/storage/taroStorage'
 import type { AuthRepository } from '../domain/ports/authRepository'
-import type { AvatarPickerPort } from '../domain/ports/mediaPort'
+import type { AvatarPickerPort, ImagePickerPort } from '../domain/ports/mediaPort'
+import type { MediaRepository } from '../domain/ports/mediaRepository'
 import type { WechatCodePort } from '../domain/ports/wechatPort'
 import type { CachePort } from '../domain/ports/cachePort'
 import type { ClockPort } from '../domain/ports/clockPort'
@@ -137,6 +143,9 @@ export interface AppContainer {
   wechatCode: WechatCodePort
   /** 本地头像选择（平台能力：`chooseAvatar` → 压缩后的 data URL） */
   avatarPicker: AvatarPickerPort
+  /** 相册选图（平台能力：`chooseMedia` → 逐张压缩后的 data URL） */
+  imagePicker: ImagePickerPort
+  mediaRepository: MediaRepository
   groupBuyRepository: GroupBuyRepository
   notificationRepository: NotificationRepository
   authRepository: AuthRepository
@@ -171,6 +180,7 @@ export interface AppContainer {
     campus: CampusUseCases
     privacy: PrivacyUseCase
     agent: AgentUseCase
+    media: MediaUseCases
   }
 }
 
@@ -181,6 +191,8 @@ export interface ContainerOverrides {
   authRepository?: AuthRepository
   wechatCode?: WechatCodePort
   avatarPicker?: AvatarPickerPort
+  imagePicker?: ImagePickerPort
+  mediaRepository?: MediaRepository
   env?: Partial<AppEnv>
 }
 
@@ -243,6 +255,20 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
 
   const wechatCode = overrides.wechatCode ?? createWechatCodePort()
   const avatarPicker = overrides.avatarPicker ?? createAvatarPickerPort()
+  const imagePicker = overrides.imagePicker ?? createImagePickerPort()
+
+  /**
+   * 媒体仓储：mock 模式下也别把「发图」这条链路断掉 —— mock 实现返回的是
+   * data URL（可直接渲染），于是离线也能把「选图 → 发布 → 看到图」走完，
+   * 而不是画个假占位糊弄过去。
+   */
+  const mediaRepository: MediaRepository =
+    overrides.mediaRepository ??
+    (env.useMock
+      ? createMockMediaRepository({ latencyMs: env.mockLatencyMs })
+      : createHttpMediaRepository(apiClient))
+
+  const media = createMediaUseCases({ repository: mediaRepository, picker: imagePicker })
 
   const session = createSessionUseCase(sessionStore, { now: clock.now })
   const auth = createAuthAccountUseCase({
@@ -441,6 +467,8 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     apiClient,
     wechatCode,
     avatarPicker,
+    imagePicker,
+    mediaRepository,
     groupBuyRepository,
     notificationRepository,
     authRepository,
@@ -474,6 +502,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       campus,
       privacy,
       agent,
+      media,
     },
   }
 }

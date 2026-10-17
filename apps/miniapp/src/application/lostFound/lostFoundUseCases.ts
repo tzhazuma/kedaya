@@ -47,6 +47,8 @@ export interface LostFoundDraft {
   /** 表单里的本地时间文本 `YYYY-MM-DD HH:mm` */
   happenedAtText: string
   contactHint: string
+  /** 已上传成功的图片地址（`useImageAttachments` 的产物） */
+  imageUrls?: string[]
 }
 
 /**
@@ -157,6 +159,7 @@ export function createLostFoundUseCases(deps: LostFoundDeps): LostFoundUseCases 
         place: draft.place.trim(),
         happenedAt: happenedAt.toISOString(),
         contactHint: draft.contactHint.trim() === '' ? null : draft.contactHint.trim(),
+        ...(draft.imageUrls === undefined ? {} : { imageUrls: draft.imageUrls }),
       })
       if (result.ok) list.reset()
       return result

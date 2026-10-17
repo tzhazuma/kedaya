@@ -47,7 +47,7 @@ function defaultSeed(now: Date): FleaItem[] {
   const iso = (minutesAgo: number): string =>
     new Date(now.getTime() - minutesAgo * 60_000).toISOString()
 
-  const items: Array<Omit<FleaItem, 'createdAt' | 'updatedAt'>> = [
+  const items: Array<Omit<FleaItem, 'createdAt' | 'updatedAt' | 'imageUrls'>> = [
     {
       id: 'flea-demo-1',
       sellerId: 'mock-seller-1',
@@ -104,6 +104,8 @@ function defaultSeed(now: Date): FleaItem[] {
 
   return items.map((item, index) => ({
     ...item,
+    // 演示数据不带图：赛道里没有真实图片，塞假图比空着更糟（用户会以为图挂了）
+    imageUrls: [],
     createdAt: iso(120 - index * 20),
     updatedAt: iso(120 - index * 20),
   }))
@@ -224,6 +226,7 @@ export function createMockFleaMarketRepository(
           category: input.category,
           condition: input.condition ?? 'good',
           campusSpot: input.campusSpot ?? null,
+          imageUrls: input.imageUrls ?? [],
           status: 'on-sale',
           reservedById: null,
           soldAt: null,
@@ -255,6 +258,7 @@ export function createMockFleaMarketRepository(
           ...(input.category === undefined ? {} : { category: input.category }),
           ...(input.condition === undefined ? {} : { condition: input.condition }),
           ...(input.campusSpot === undefined ? {} : { campusSpot: input.campusSpot }),
+          ...(input.imageUrls === undefined ? {} : { imageUrls: input.imageUrls }),
           updatedAt: now().toISOString(),
         }
         save(items.map((item) => (item.id === id ? next : item)))

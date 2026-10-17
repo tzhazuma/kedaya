@@ -11,9 +11,9 @@ import {
 } from '../../../../domain/models/lostFound'
 import { validateDraft } from '../../../../application/lostFound/lostFoundUseCases'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyField } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyField, KdyImageUploader } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
-import { useStore } from '../../../hooks'
+import { imageSubmitProblem, useImageAttachments, useStore } from '../../../hooks'
 import './index.scss'
 
 /**
@@ -42,7 +42,22 @@ export default function LostFoundCreatePage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const draft = { kind, title, description, place, happenedAtText, contactHint }
+  /**
+   * 图片：选完立即上传。`draft` 带上 `attachments.urls`，
+   * 「还有图没传成功」由 `imageSubmitProblem` 挡在提交之前（绝不静默丢图）。
+   */
+  const attachments = useImageAttachments()
+  const imageProblem = imageSubmitProblem(attachments)
+
+  const draft = {
+    kind,
+    title,
+    description,
+    place,
+    happenedAtText,
+    contactHint,
+    imageUrls: attachments.urls,
+  }
   const problems = validateDraft(draft, container.clock.now())
 
   /** 快捷时间：用容器时钟（mock 模式下与 mock 仓储同一时钟，不会互相矛盾） */
@@ -157,16 +172,30 @@ export default function LostFoundCreatePage() {
         />
       </KdyCard>
 
+      <KdyCard title='现场照片' elevated={false}>
+        <KdyImageUploader
+          items={attachments.items}
+          availability={attachments.availability}
+          full={attachments.full}
+          maxCount={attachments.maxCount}
+          onAdd={() => void attachments.add()}
+          onRemove={attachments.remove}
+          onRetry={(id) => void attachments.retry(id)}
+          onRetryAvailability={() => void container.useCases.media.ensureAvailability(true)}
+        />
+      </KdyCard>
+
       {problems.length > 0 && (
         <Text className='kdy-lost-create__problems'>还需要完善：{problems.join('、')}</Text>
       )}
+      {imageProblem !== null && <Text className='kdy-lost-create__problems'>{imageProblem}</Text>}
       {error !== null && <Text className='kdy-lost-create__error'>{error}</Text>}
 
       <View className='kdy-lost-create__actions'>
         <KdyButton
           block
           loading={submitting}
-          disabled={problems.length > 0}
+          disabled={problems.length > 0 || imageProblem !== null}
           onClick={() => void handleSubmit()}
         >
           提交登记

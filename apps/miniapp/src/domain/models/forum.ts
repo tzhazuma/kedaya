@@ -2,6 +2,8 @@ import { formatRelativeTime } from '@kedaya/shared'
 
 import type { Page } from '@kedaya/contracts'
 
+import { imageSummary } from './media'
+
 /**
  * 论坛（`forum`）领域模型 —— 纯 TypeScript，零框架依赖（契约 §7）。
  *
@@ -94,6 +96,8 @@ export interface ForumPost {
   anonHandle: string | null
   title: string
   body: string
+  /** 图片地址（只可能是本平台上传的地址；上传时已剥离 EXIF GPS） */
+  imageUrls: string[]
   status: string
   /** 置顶/加精等治理位（0 = 普通） */
   pinnedRank: number
@@ -131,6 +135,8 @@ export interface CreateForumPostInput {
   body: string
   /** 匿名发帖：`authorId` 不落库，改用服务端派生的匿名 handle */
   anonymous?: boolean
+  /** 已上传成功的图片地址（见 `useImageAttachments`） */
+  imageUrls?: string[]
 }
 
 export interface CreateForumReplyInput {
@@ -165,6 +171,9 @@ export interface ForumPostSummary {
   bodyPreview: string
   createdLabel: string
   lastReplyLabel: string | null
+  /** 列表缩略图（第一张；没有图时为 null） */
+  thumbnailUrl: string | null
+  imageCount: number
 }
 
 export interface ForumReplyView {
@@ -222,6 +231,7 @@ export function summarizePost(
   now: Date,
 ): ForumPostSummary {
   const anonymous = post.authorId === null
+  const images = imageSummary(post.imageUrls)
   return {
     id: post.id,
     title: post.title,
@@ -239,6 +249,8 @@ export function summarizePost(
     createdLabel: formatRelativeTime(post.createdAt, now),
     lastReplyLabel:
       post.lastReplyAt === null ? null : `最后回复 ${formatRelativeTime(post.lastReplyAt, now)}`,
+    thumbnailUrl: images.thumbnailUrl,
+    imageCount: images.imageCount,
   }
 }
 

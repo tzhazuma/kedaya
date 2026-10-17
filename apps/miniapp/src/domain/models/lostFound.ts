@@ -1,5 +1,7 @@
 import { formatRelativeTime } from '@kedaya/shared'
 
+import { imageSummary } from './media'
+
 /**
  * 失物招领（`lost-found`）领域模型 —— 纯 TypeScript，零框架依赖（契约 §7）。
  *
@@ -80,6 +82,8 @@ export interface LostFoundItem {
   happenedAt: string
   contactHint: string | null
   status: string
+  /** 图片地址（只可能是本平台上传的地址；上传时已剥离 EXIF GPS） */
+  imageUrls: string[]
   /** 标记已解决的时间（reopen 会清空） */
   resolvedAt: string | null
   createdAt: string
@@ -94,6 +98,8 @@ export interface CreateLostFoundItemInput {
   /** ISO-8601 */
   happenedAt: string
   contactHint?: string | null
+  /** 已上传成功的图片地址（见 `useImageAttachments`） */
+  imageUrls?: string[]
 }
 
 export interface UpdateLostFoundItemInput {
@@ -103,6 +109,7 @@ export interface UpdateLostFoundItemInput {
   place?: string
   happenedAt?: string
   contactHint?: string | null
+  imageUrls?: string[]
 }
 
 /** 列表筛选条件（`mine=1` 由用例翻译成「只看自己」） */
@@ -129,6 +136,9 @@ export interface LostFoundItemSummary {
   createdLabel: string
   descriptionPreview: string
   contactHint: string | null
+  /** 列表缩略图（第一张；没有图时为 null） */
+  thumbnailUrl: string | null
+  imageCount: number
   resolved: boolean
   mine: boolean
 }
@@ -171,6 +181,7 @@ export function summarize(
   viewerId: string | null,
   now: Date,
 ): LostFoundItemSummary {
+  const images = imageSummary(item.imageUrls)
   return {
     id: item.id,
     title: item.title,
@@ -183,6 +194,8 @@ export function summarize(
     createdLabel: formatRelativeTime(item.createdAt, now),
     descriptionPreview: (item.description ?? '').slice(0, 60),
     contactHint: item.contactHint,
+    thumbnailUrl: images.thumbnailUrl,
+    imageCount: images.imageCount,
     resolved: item.status === LOST_FOUND_STATUS.resolved,
     mine: viewerId !== null && item.reporterId === viewerId,
   }

@@ -67,6 +67,13 @@
     font-weight: $kdy-font-weight-medium;
   }
 
+  // 有图时用图当锚点（比文字徽标更能决定"点不点"）
+  &__cover {
+    width: 96px;
+    height: 88px;
+    flex: none;
+  }
+
   &__main {
     flex: 1;
     min-width: 0;

@@ -37,6 +37,7 @@ function item(overrides: Partial<FleaItem> = {}): FleaItem {
     category: 'electronics',
     condition: 'like-new',
     campusSpot: '二号宿舍楼下',
+    imageUrls: [],
     status: 'on-sale',
     reservedById: null,
     soldAt: null,

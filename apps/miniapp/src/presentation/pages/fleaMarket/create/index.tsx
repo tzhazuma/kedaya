@@ -12,9 +12,9 @@ import {
 } from '../../../../domain/models/fleaMarket'
 import { validateDraft } from '../../../../application/fleaMarket/fleaMarketUseCases'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyField } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyField, KdyImageUploader } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
-import { useStore } from '../../../hooks'
+import { imageSubmitProblem, useImageAttachments, useStore } from '../../../hooks'
 import './index.scss'
 
 /**
@@ -40,6 +40,14 @@ export default function FleaMarketCreatePage() {
   const [campusSpot, setCampusSpot] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  /**
+   * 图片：选完立即上传（见 `useImageAttachments` 的注释）。
+   * 页面只需要在提交时把 `attachments.urls` 带上，以及用 `imageSubmitProblem`
+   * 挡住「还有图没传成功就发布」这种会静默丢图的情况。
+   */
+  const attachments = useImageAttachments()
+  const imageProblem = imageSubmitProblem(attachments)
 
   const priceFen = priceText.trim() === '' ? Number.NaN : yuanToFen(priceText.trim())
   const problems = validateDraft({
@@ -84,6 +92,7 @@ export default function FleaMarketCreatePage() {
       category,
       condition,
       campusSpot: campusSpot.trim() === '' ? null : campusSpot,
+      imageUrls: attachments.urls,
     })
     setSubmitting(false)
 
@@ -140,6 +149,19 @@ export default function FleaMarketCreatePage() {
         />
       </KdyCard>
 
+      <KdyCard title='图片' elevated={false}>
+        <KdyImageUploader
+          items={attachments.items}
+          availability={attachments.availability}
+          full={attachments.full}
+          maxCount={attachments.maxCount}
+          onAdd={() => void attachments.add()}
+          onRemove={attachments.remove}
+          onRetry={(id) => void attachments.retry(id)}
+          onRetryAvailability={() => void container.useCases.media.ensureAvailability(true)}
+        />
+      </KdyCard>
+
       <KdyCard title='分类' elevated={false}>
         <View className='kdy-flea-create__chips'>
           {FLEA_CATEGORIES.map((item) => (
@@ -165,13 +187,14 @@ export default function FleaMarketCreatePage() {
           还需要完善：{problems.join('、')}
         </Text>
       )}
+      {imageProblem !== null && <Text className='kdy-flea-create__problems'>{imageProblem}</Text>}
       {error !== null && <Text className='kdy-flea-create__error'>{error}</Text>}
 
       <View className='kdy-flea-create__actions'>
         <KdyButton
           block
           loading={submitting}
-          disabled={problems.length > 0}
+          disabled={problems.length > 0 || imageProblem !== null}
           onClick={() => void handleSubmit()}
         >
           发布

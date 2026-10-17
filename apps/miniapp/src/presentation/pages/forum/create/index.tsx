@@ -12,9 +12,9 @@ import {
   boardLabel,
 } from '../../../../domain/models/forum'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyField } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyField, KdyImageUploader } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
-import { useStore } from '../../../hooks'
+import { imageSubmitProblem, useImageAttachments, useStore } from '../../../hooks'
 import './index.scss'
 
 /**
@@ -39,7 +39,14 @@ export default function ForumCreatePage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const draft = { board, title, body, anonymous }
+  /**
+   * 图片：选完立即上传（匿名帖同样可以带图 —— 图片里没有身份信息，
+   * 且服务端上传时已剥离 EXIF GPS，见契约 A2.5）。
+   */
+  const attachments = useImageAttachments()
+  const imageProblem = imageSubmitProblem(attachments)
+
+  const draft = { board, title, body, anonymous, imageUrls: attachments.urls }
   const problems = validatePostDraft(draft)
 
   if (session.tokens === null) {
@@ -132,16 +139,30 @@ export default function ForumCreatePage() {
         </Text>
       </KdyCard>
 
+      <KdyCard title='配图' elevated={false}>
+        <KdyImageUploader
+          items={attachments.items}
+          availability={attachments.availability}
+          full={attachments.full}
+          maxCount={attachments.maxCount}
+          onAdd={() => void attachments.add()}
+          onRemove={attachments.remove}
+          onRetry={(id) => void attachments.retry(id)}
+          onRetryAvailability={() => void container.useCases.media.ensureAvailability(true)}
+        />
+      </KdyCard>
+
       {problems.length > 0 && (
         <Text className='kdy-forum-create__problems'>还需要完善：{problems.join('、')}</Text>
       )}
+      {imageProblem !== null && <Text className='kdy-forum-create__problems'>{imageProblem}</Text>}
       {error !== null && <Text className='kdy-forum-create__error'>{error}</Text>}
 
       <View className='kdy-forum-create__actions'>
         <KdyButton
           block
           loading={submitting}
-          disabled={problems.length > 0}
+          disabled={problems.length > 0 || imageProblem !== null}
           onClick={() => void handleSubmit()}
         >
           发布主题

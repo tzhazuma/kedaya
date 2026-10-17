@@ -77,7 +77,7 @@ function defaultSeed(now: Date): LostFoundItem[] {
   const iso = (minutesAgo: number): string =>
     new Date(now.getTime() - minutesAgo * 60_000).toISOString()
 
-  const items: Array<Omit<LostFoundItem, 'createdAt' | 'updatedAt'>> = [
+  const items: Array<Omit<LostFoundItem, 'createdAt' | 'updatedAt' | 'imageUrls'>> = [
     {
       id: 'lf-demo-1',
       reporterId: 'mock-reporter-1',
@@ -130,6 +130,8 @@ function defaultSeed(now: Date): LostFoundItem[] {
 
   return items.map((item, index) => ({
     ...item,
+    // 演示数据不带图（详见 mockFleaMarketRepository 里同一处说明）
+    imageUrls: [],
     createdAt: iso(60 + index * 25),
     updatedAt: iso(60 + index * 25),
   }))
@@ -352,6 +354,7 @@ export function createMockLostFoundRepository(
           place: input.place.trim(),
           happenedAt: new Date(input.happenedAt).toISOString(),
           contactHint: normalizeOptionalText(input.contactHint),
+          imageUrls: input.imageUrls ?? [],
           status: LOST_FOUND_STATUS.open,
           resolvedAt: null,
           createdAt: timestamp,
@@ -389,6 +392,7 @@ export function createMockLostFoundRepository(
           ...(input.contactHint === undefined
             ? {}
             : { contactHint: normalizeOptionalText(input.contactHint) }),
+          ...(input.imageUrls === undefined ? {} : { imageUrls: input.imageUrls }),
           updatedAt: now().toISOString(),
         }
         save(items.map((item) => (item.id === id ? next : item)))

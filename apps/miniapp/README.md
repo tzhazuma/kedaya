@@ -96,20 +96,21 @@ apps/miniapp/
     │   ├── common/            #   listUseCase / detailUseCase（列表与详情状态机骨架）
     │   ├── groupbuy/          #   listGroupBuys / myGroupBuys / groupBuyDetail / createGroupBuy / joinGroupBuy
     │   ├── notification/      #   notificationUseCases（站内信列表 + 未读数 store）
+    │   ├── media/             #   mediaUseCases（图片能力状态机 + 选图/上传用例）
     │   └── flee-market…       #   fleaMarket / errand / buddy / lostFound / forum / dormHarmony / schedule / campusCard / privacy / agent
     ├── domain/                # 纯领域：零框架依赖
-    │   ├── models/            #   groupbuy.ts（状态推导/参团资格）、auth.ts、profile.ts、session.ts
-    │   └── ports/             #   GroupBuyRepository / AuthRepository / WechatCodePort / AvatarPickerPort / HttpPort ...
+    │   ├── models/            #   groupbuy.ts（状态推导/参团资格）、auth.ts、profile.ts、media.ts、session.ts
+    │   └── ports/             #   GroupBuyRepository / AuthRepository / WechatCodePort / AvatarPickerPort / ImagePickerPort / MediaRepository / HttpPort ...
     ├── data/                  # adapters：实现 ports
     │   ├── api/               #   request.ts（信封解包 + 401 刷新重试）、taroHttpAdapter.ts
     │   ├── repositories/      #   http / mock 两套 GroupBuyRepository
     │   ├── storage/           #   Taro 同步存储、内存存储、会话存储
     │   └── mock/              #   内存数据库 + 确定性种子数据
-    ├── platform/              # 平台差异适配（订阅消息 / 扫码 / 分享 / 地图 / 导航 / tabBar 红点）
+    ├── platform/              # 平台差异适配（订阅消息 / 扫码 / 分享 / 地图 / 导航 / tabBar 红点 / 相册选图与压缩）
     └── presentation/          # UI
-        ├── components/        #   KdyCard / KdyButton / KdyEmpty / KdyTag / KdyLegalDoc
+        ├── components/        #   KdyCard / KdyButton / KdyEmpty / KdyTag / KdyLegalDoc / KdyImageUploader / KdyImageGallery
         ├── content/           #   legal.ts（用户协议 + 隐私政策文案的唯一真相来源）
-        ├── hooks/             #   useStore（useSyncExternalStore 封装）
+        ├── hooks/             #   useStore（useSyncExternalStore 封装）、useImageAttachments（图片附件状态机）
         ├── theme/tokens.scss  #   设计令牌入口（全局注入）
         └── pages/             #   home / discover / messages / profile / groupbuy / legal / …
 ```
@@ -189,6 +190,7 @@ apps/miniapp/
 | 地图 | `wx.openLocation` 打开微信内置地图（可直接导航） | 高德 Web URI → 再降级复制坐标 | `platform/map.ts` |
 | 微信登录凭证 | `Taro.login()` → code（需服务端配置 AppID/Secret） | 无微信环境 → 稳定的 `dev:<设备标识>` 模拟凭证 | `platform/wechatLogin.ts` |
 | 头像选择 | `chooseAvatar` 临时文件 → `compressImage` → ≤64KB data URL | 无此能力 → 按钮替换为说明文案 | `platform/avatarPicker.ts` |
+| 相册选图（发帖配图） | `chooseMedia` 多选 → 服务端压缩后的图 → 质量梯度压缩（80/60/40）→ 上传 | 无此能力 → 明确提示「相册选图需要在微信小程序内使用」 | `platform/imagePicker.ts` |
 
 失败语义统一为 `PlatformFailure.code ∈ {UNSUPPORTED, REJECTED, FAILED}`，
 UI 可以据此区分「这个端没有」「用户拒绝」「调用出错」。
@@ -238,6 +240,34 @@ npm run build:weapp -w @kedaya/miniapp
 - **tabBar 红点**：未读数是独立于列表的 store（tabBar 红点必须在「消息页没打开」时也正确），
   由装配层经 `platform/tabBar.ts` 同步；该封装吞掉 H5 / 旧基础库的报错 —— 红点失败不影响页面。
 - **订阅消息**保留在消息页底部：微信一次性授权，成团时下发服务通知（订阅失败会原样显示错误码）。
+
+---
+
+## 6.2 图片上传（发布页配图）
+
+跳蚤闲置、失物招领、论坛发帖三个发布页都能配图（最多 9 张）。
+
+- **选完立即上传，提交只带地址**：选图 → 本地压缩 → 逐张串行上传 → 缩略图带状态。
+  提交时请求体里只有已成功的 `imageUrls`，不需要等提交时才批量上传（那样失败一次要重填整张表单）。
+- **失败不静默**：上传失败的缩略图显示红色遮罩 +「点我重试」；
+  `useImageAttachments` 的 `imageSubmitProblem()` 会**挡住提交**并说明原因 ——
+  不然用户以为发出去的照片其实没发出去。
+- **能力取决于部署**（`GET /media/config`）：
+
+  | 服务端状态 | 客户端表现 |
+  | --- | --- |
+  | `enabled:false`（没配对象存储） | **整块不渲染选图入口**，只留一句「为什么不能发图、找谁开」 |
+  | 问不通（断网 / 500） | 入口**保留但禁用** + 「重试」（不是让功能凭空消失） |
+  | 可用 | 正常选图，上限与体积以服务端为准（避免白传一趟） |
+
+- **服务端才是安全边界**：EXIF GPS 由后端**段级剥离**（只删元数据段、不动像素），
+  地址白名单（`MediaUrlPolicy`）拒绝外链。客户端只做压缩与格式预检，不承担安全。
+- **mock 模式离线可用**：mock 仓储返回 data URL 本身，所以不连后端也能看到真图、
+  走完「选图 → 发布 → 列表缩略图 → 详情宫格」。
+  演示种子数据**不带图**（塞假图比空着更糟：用户会以为图挂了）。
+
+本地怎么开、真实对象存储怎么配、上线前必做的验收：见 `docs/local-development.md` §4.0
+与 `docs/deploy.md` §5.4。
 
 ---
 
@@ -291,6 +321,10 @@ npm run test -w @kedaya/miniapp
   统一「列表 → 发布 → 详情」三页结构，列表都有「我的」筛选与真实三态
 - **站内信**（`notifications`）：真实列表 + 未读筛选 + tabBar 红点 + 点击按 `link` 跳转
   （未知页面一律不可点）；订阅消息保留为微信特有的一次性授权
+- **图片上传**（跳蚤 / 失物招领 / 论坛）：选完立即上传 + 逐张状态 + 点图重试 +
+  详情页宫格（点击进微信原生大图预览）+ 列表缩略图；
+  服务端**剥离 EXIF GPS**（契约 A2.5）并拒绝外链地址。
+  存储适配器三选一：`disabled`（默认，客户端隐藏入口）/ `local`（开发）/ `s3`（COS·OSS·MinIO·R2）
 - **我的资产**（`profile/assets`）：内联「我发起的 / 我参与的」拼单 + 其余模块入口
 - **法务页**：用户协议 + 隐私政策（`presentation/content/legal.ts` 是唯一真相来源，
   「我的 → 关于」与隐私与数据页共用同一份文案，不重复维护）
@@ -311,7 +345,7 @@ npm run test -w @kedaya/miniapp
   模型只负责组织语言），**未配置模型也完全可用**（规则回答 + `degraded: true`）；
   失败落带「重试」的消息；会话只在内存
 - 复用组件：`KdyCard` / `KdyButton` / `KdyField` / `KdyChip` / `KdyTag` / `KdyEmpty` / `KdyHeading` / `KdyAvatar` / `KdyAgentFab` / `KdyLegalDoc` / `KdyDemoTools`（全部取自设计令牌）
-- Vitest 测试（node 环境，无需模拟器）：domain / 网络层 / mock 仓储 / 用例 / 会话存储 / 站内信 / 发起拼单 / WXSS 安全
+- Vitest 测试（node 环境，无需模拟器）：domain / 网络层 / mock 仓储 / 用例 / 会话存储 / 站内信 / 发起拼单 / 图片链路 / WXSS 安全
 
 ### ❌ 未实现（诚实清单）
 
@@ -333,17 +367,20 @@ npm run test -w @kedaya/miniapp
   但小程序端**没有页面**。首页/发现页点击会明确提示「契约已登记，页面尚未实现」，
   不会假装可用。
 - **tabBar 图标**：未配置 `iconPath`（品牌图标未就位），当前只显示文字。
-- **分包（subPackages）**：当前 `dist` 约 1.6 MB，全部在主包。**未做分包**是刻意的取舍 ——
+- **分包（subPackages）**：当前 `dist` 约 1.7 MB，全部在主包。**未做分包**是刻意的取舍 ——
   分包需要把 `presentation/pages/**` 整体搬家，会同时改动所有页面的相对 import 深度
-  与 `app.config.ts` 结构，风险高于收益。主包体积目前仍在上限内；
-  后续做分包时请一并更新 `src/app/__tests__/routes.test.ts` 的断言。
+  与 `app.config.ts` 结构，风险高于收益。主包体积目前仍在上限内（2 MB），
+  但**加图片功能后余量只剩约 300 KB**，下一轮（R6）必须做分包。
+  做分包时请一并更新 `src/app/__tests__/routes.test.ts` 的断言。
 - **H5 端未实机验证**：`build:h5` 脚本已就绪，但本轮只验证了 `weapp` 构建。
 - **CI / 真机预览**：未在真机与微信开发者工具中打开验证（本机 IDE 服务端口关闭，
   需手动导入 `apps/miniapp/dist`）。
 - **E2E 测试**：未接入小程序自动化（miniprogram-automator）。
-- **图片上传**：各模块目前是纯文本 + 头像 data URL（≤64KB）。
-  云托管容器**没有持久化存储**，做图片必须接 **COS**，
-  只需替换 `platform/avatarPicker.ts` 的实现并把 URL 落库。
+- **图片上传的「真实对象存储」未验证**：接口、剥离、三模块接线都已实测
+  （`MEDIA_STORAGE=local` 下上传含 GPS 的真实 JPEG，取回后 GPS 段消失），
+  但**没有 COS/OSS 凭据**，`s3` 适配器只有单元测试（SigV4 用 AWS 官方示例逐字节校验过）。
+  配好凭据后按 `docs/deploy.md` §5.4 走一遍验收，才算最终验证。
+  同样待手动验证的还有小程序的**选图真机交互**（`chooseMedia`，§10.4 给了清单）。
 
 ### ⚠️ 已知问题 / 需要在别处修
 

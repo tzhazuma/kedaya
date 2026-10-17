@@ -43,6 +43,7 @@ function item(overrides: Partial<LostFoundItem> = {}): LostFoundItem {
     place: '图书馆一楼大厅',
     happenedAt: '2026-05-01T10:00:00.000Z',
     contactHint: '站内私信',
+    imageUrls: [],
     status: 'open',
     resolvedAt: null,
     createdAt: '2026-05-01T10:05:00.000Z',

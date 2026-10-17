@@ -5,6 +5,7 @@ import { AVATAR_MAX_BYTES, dataUrlBytes } from '../domain/models/profile'
 import type { RepositoryError } from '../domain/ports/errors'
 import type { AvatarPickerPort, PickedAvatar } from '../domain/ports/mediaPort'
 import { isWeapp } from './env'
+import { readFileAsBase64 } from './fileSystem'
 
 /**
  * 头像选择的**平台实现**（微信 `chooseAvatar` → 可持久化的 data URL）。
@@ -29,14 +30,7 @@ const UNSUPPORTED: RepositoryError = {
 }
 
 function readBase64(filePath: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    Taro.getFileSystemManager().readFile({
-      filePath,
-      encoding: 'base64',
-      success: (result) => resolve(String(result.data ?? '')),
-      fail: (error) => reject(new Error(error.errMsg ?? '读取图片失败')),
-    })
-  })
+  return readFileAsBase64(filePath)
 }
 
 export function createAvatarPickerPort(): AvatarPickerPort {

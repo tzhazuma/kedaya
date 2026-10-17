@@ -32,3 +32,9 @@ export type { KdyChipProps } from './KdyChip'
 
 export { KdyAgentFab, agentPathWithContext } from './KdyAgentFab'
 export type { KdyAgentFabProps } from './KdyAgentFab'
+
+export { KdyImageUploader } from './KdyImageUploader'
+export type { KdyImageUploaderProps } from './KdyImageUploader'
+
+export { KdyImageGallery, KdyImageThumb } from './KdyImageGallery'
+export type { KdyImageGalleryProps, KdyImageThumbProps } from './KdyImageGallery'

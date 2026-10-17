@@ -20,7 +20,7 @@ import {
 } from '../../../../domain/models/fleaMarket'
 import type { FleaAction } from '../../../../domain/models/fleaMarket'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyImageGallery, KdyTag } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -189,6 +189,12 @@ export default function FleaMarketDetailPage() {
             </KdyTag>
           </View>
         </View>
+
+        {item.imageUrls.length > 0 && (
+          <View className='kdy-flea-detail__images'>
+            <KdyImageGallery urls={item.imageUrls} />
+          </View>
+        )}
 
         <View className='kdy-flea-detail__rows'>
           <View className='kdy-flea-detail__row'>

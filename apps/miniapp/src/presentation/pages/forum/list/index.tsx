@@ -19,7 +19,7 @@ import type {
   ForumStatus,
 } from '../../../../domain/models/forum'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyImageThumb, KdyTag } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -46,7 +46,11 @@ function ForumCard({ post }: { post: ForumPostSummary }) {
       }}
     >
       <View className='kdy-forum-card'>
-        <View className='kdy-forum-card__badge'>{post.badge}</View>
+        {post.thumbnailUrl === null ? (
+          <View className='kdy-forum-card__badge'>{post.badge}</View>
+        ) : (
+          <KdyImageThumb className='kdy-forum-card__cover' url={post.thumbnailUrl} count={post.imageCount} />
+        )}
         <View className='kdy-forum-card__main'>
           <View className='kdy-forum-card__head'>
             <Text className='kdy-forum-card__title'>{post.title}</Text>

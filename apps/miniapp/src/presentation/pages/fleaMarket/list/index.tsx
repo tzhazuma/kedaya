@@ -11,7 +11,7 @@ import {
 } from '../../../../domain/models/fleaMarket'
 import type { FleaCategory, FleaItemSummary, FleaStatus } from '../../../../domain/models/fleaMarket'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyImageThumb, KdyTag } from '../../../components'
 import type { KdyTagTone } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
@@ -45,7 +45,11 @@ function FleaCard({ item }: { item: FleaItemSummary }) {
       }}
     >
       <View className='kdy-flea-card'>
-        <View className='kdy-flea-card__badge'>{item.badge}</View>
+        {item.thumbnailUrl === null ? (
+          <View className='kdy-flea-card__badge'>{item.badge}</View>
+        ) : (
+          <KdyImageThumb className='kdy-flea-card__cover' url={item.thumbnailUrl} count={item.imageCount} />
+        )}
         <View className='kdy-flea-card__main'>
           <View className='kdy-flea-card__head'>
             <Text className='kdy-flea-card__title'>{item.title}</Text>

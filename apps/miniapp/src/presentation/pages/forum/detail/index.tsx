@@ -16,7 +16,7 @@ import {
 } from '../../../../domain/models/forum'
 import type { ForumPost, ForumPostAction } from '../../../../domain/models/forum'
 import { navigateTo, redirectTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyImageGallery, KdyTag } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -201,6 +201,12 @@ export default function ForumDetailPage() {
         </View>
 
         <Text className='kdy-forum-detail__body'>{post.body}</Text>
+
+        {post.imageUrls.length > 0 && (
+          <View className='kdy-forum-detail__images'>
+            <KdyImageGallery urls={post.imageUrls} />
+          </View>
+        )}
 
         <View className='kdy-forum-detail__rows'>
           <View className='kdy-forum-detail__row'>

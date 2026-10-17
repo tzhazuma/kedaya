@@ -162,14 +162,22 @@ flowchart TB
 | 发现 tab 改造 | 首页/发现不再是演示台；平台能力试跑收进 `KdyDemoTools` | ✅ 发现页现在真实内容在上（六个生活模块 + 校园服务入口），能力试跑与差异矩阵收进折叠的 `KdyDemoTools`；同时**修掉了一句已经在骗人的文案**（旧版写着"拼单是当前唯一跑通的业务模块"） |
 | 拼单后端富视图 | 列表/详情返回可展示视图而非数据库行 | ✅ 顺带修掉一个**静默 bug**：小程序端 `httpGroupBuyRepository` 原先把后端行直接强转成富形状 `GroupBuy`，字段全 `undefined`。现在两边同名同义，且 `description`/`pickupPlace` 的 `null` 会归一化成 `''` |
 
-### R2 · 内容与媒体能力
+### R2 · 内容与媒体能力 —— ✅ 已完成（后端 + 小程序端，2026-10-17）
 
-| 产物 | 验收 |
-| --- | --- |
-| 图片上传链路 | 后端上传端点（适配器模式：本地磁盘 → 可换 OSS）+ 压缩到 1600px + **EXIF GPS 剥离**（契约 A2.5） |
-| 三处接入 | 跳蚤发布可传图；失物招领可传图；论坛发帖可传图；详情页可预览大图 |
-| 举报 UI | 跳蚤/论坛/跑腿详情可举报；举报后该内容对举报人不可见 |
-| 分享 | 跳蚤/拼单/失物详情可转发卡片（带参数直达） |
+| 产物 | 验收 | 结果 |
+| --- | --- | --- |
+| 图片上传链路 | 后端上传端点（适配器模式：本地磁盘 → 可换 OSS）+ 压缩 + **EXIF GPS 剥离**（契约 A2.5） | ✅ 存储端口 + 三种适配器（`disabled` 默认 / `local` 开发 / `s3` 兼容 COS·OSS·MinIO·R2）；**零新依赖**（手写 SigV4，用 AWS 官方文档示例逐字节比对过）；剥离是**段级删除**（只删元数据段、不动像素，无第三方图像库） |
+| 三处接入 | 跳蚤发布可传图；失物招领可传图；论坛发帖可传图；详情页可预览大图 | ✅ 三个模块 `imageUrls` 字段 + 迁移；发布页 Taroify 风格的自绘宫格（逐张状态 + 点图重试）；详情页宫格 + 微信原生大图预览；列表卡片有图时用缩略图取代文字徽标 |
+| 反外链 | 只接受本平台产出的图片地址 | ✅ `MediaUrlPolicy.assertAllowed`（服务端）—— 防止帖子变成外站导流 / 追踪像素载体。实测外链建帖返回 400 |
+| 举报 UI | 跳蚤/论坛/跑腿详情可举报；举报后该内容对举报人不可见 | ⏳ 未做（本轮聚焦媒体能力；举报留到 R6 上线准备一并做：举报是审核材料的一部分） |
+| 分享 | 跳蚤/拼单/失物详情可转发卡片（带参数直达） | ⏳ 未做（同上，留到 R6） |
+
+**本轮的两个关键取舍**（都写进了 `docs/deploy.md` 5.4）：
+
+1. **服务端中转，不做预签名直传**。直传省流量，但无法保证剥离 EXIF（客户端可被抓包替换），
+   而契约 A2.5 明确要求「上传带 GPS 的照片后下载检查，GPS 必须消失」。
+2. **`MEDIA_STORAGE=disabled` 时客户端整块隐藏选图入口**（而不是显示一个点了必然失败的按钮）；
+   问不通时入口**保留但禁用 + 给「重试」**（而不是让功能凭空消失）。
 
 ### R3 · 补齐低敏模块（4 个）
 
@@ -268,4 +276,61 @@ npm run typecheck -w @kedaya/web && npm run test -w @kedaya/web && npm run lint 
 - 后端端到端实测（curl，`PORT=3999`）：拼单列表/详情/创建/参团/满员冲突/权限、
   通知 4 个端点、`/health` 200 —— 详见提交信息。
 - **未做**：Docker 构建、云托管部署、真机预览（环境限制，已在 `docs/deploy.md` 标注）。
+
+---
+
+## 7. 本轮记录（R2 · 2026-10-17）
+
+### 后端：`services/api/src/common/media/**`（新）
+
+| 文件 | 职责 |
+| --- | --- |
+| `image-metadata.ts` | **段级**剥离 JPEG（APP1/APP13/COM/非 ICC 的 APP2）与 PNG（tEXt/zTXt/iTXt/eXIf/tIME）元数据；保留 APP0/ICC/APP14；结构校验失败一律抛 `ImageRejectedError` |
+| `s3-signature.ts` | 零依赖 SigV4（含 canonicalPath 防双重编码、query 排序、sessionToken），**AWS 官方文档 IAM `ListUsers` 示例逐字节复现** |
+| `media.port.ts` / `media-url.ts` | 存储端口、URL 白名单策略（只认本平台产出的地址） |
+| `{disabled,local-disk,s3}-media.storage.ts` | 三种适配器；key 由服务端生成且**不含 `/`**（结构上不可能路径穿越） |
+| `media.service.ts` / `media.controller.ts` / `media.module.ts` | `GET media/config`、`POST media/images`、`DELETE media/images`、`GET media/files/:key`（仅 local）；`@Global()` 基础设施层 |
+| `skip-envelope.decorator.ts` | 让回图片字节的路由不被套信封（否则 `res.send()` 后拦截器再 `res.json()` 会 `Cannot set headers after they are sent`） |
+
+原子性顺序（不可调换）：存储可用性 → base64 解码 + 原始大小拦截 → 魔术字节嗅探 →
+剥离元数据 + 宽高合理性 → 服务端生成 key → 落存储 → 拼绝对地址；剥离失败一律 `VALIDATION_FAILED`。
+
+### 小程序端（新）
+
+| 文件 | 职责 |
+| --- | --- |
+| `domain/models/media.ts` | 上限常量、`sniffBase64Image`（**手写 base64 头解码**，因为小程序没有 Node `Buffer`）、`imageSummary` |
+| `domain/ports/mediaPort.ts` / `mediaRepository.ts` | 相册选图端口 + 媒体仓储端口 |
+| `platform/imagePicker.ts` / `fileSystem.ts` | `chooseMedia` 多选 → 质量梯度压缩（80/60/40）→ base64；**跳过项逐条给出可照做的原因** |
+| `data/repositories/{http,mock}MediaRepository.ts` | 真后端 / mock（mock **返回 data URL 本身**，所以离线也能看到真图） |
+| `application/media/mediaUseCases.ts` | 可用性状态机：`unknown` / `loading` / `enabled` / `disabled(not-configured\|unavailable)`，带并发去重与强制重试 |
+| `presentation/hooks/useImageAttachments.ts` | 选完立即上传、串行上传、逐张状态、点图重试、`imageSubmitProblem`（有图没传成**不允许提交**） |
+| `presentation/components/KdyImageUploader` / `KdyImageGallery` | 发布页宫格 + 详情页宫格 / 列表缩略图（点击进微信原生大图预览） |
+
+### 实测（`MEDIA_STORAGE=local`，`PORT=3999`）
+
+1. 构造一张**注入 GPS EXIF 段的真实 JPEG**（1237 B）上传 → 返回 201，
+   `metadataStripped: true`，落盘 1167 B（少掉的 70 B 就是被删掉的元数据段）。
+2. 取回该图：`Exif\0\0` 与 `GPSLatitude` 均**不存在**，首字节 `FFD8`、尾字节 `FFD9`（仍是合法 JPEG）。
+3. 跳蚤 / 失物招领 / 论坛三个模块**带图发布**均 201 且 `imageUrls` 落库；
+   外链地址 → **400 `VALIDATION_FAILED`**（「只能使用本平台上传的图片」）。
+4. 未登录上传 → 401；`DELETE /media/images` 幂等；非法 key → 400。
+
+### 未完成 / 主动推迟
+
+- **真实对象存储的首次 PUT**：**未验证**（没有 COS/OSS 凭据）。SigV4 已用官方示例逐字节校验，
+  但网络与权限只能配好凭据后验证 —— 步骤写在 `docs/deploy.md` 5.4「上线前必做的图片验收」。
+- **小程序端选图真机验证**：未做（本机开发者工具服务端口关闭）→ `docs/deploy.md` §10.4 给了六步自测清单。
+- **举报 / 分享**：推迟到 R6（属于审核材料的一部分）。
+- **演示数据不带图**：mock 种子 `imageUrls: []` —— 塞假图比空着更糟（用户会以为图挂了）。
+  想验证带图链路请自行选图（mock 模式离线即可）。
+
+### 验证方式
+
+- 门禁：api typecheck + 505 测试 + lint 全绿；miniapp typecheck + 442 测试 + lint 全绿；
+  `build:weapp` 成功（产物 1.7 MB，仍在上限内，**距 2 MB 只剩约 300 KB → 分包必须在 R6 做**）。
+- 媒体模块专项：`image-metadata.spec.ts` 13 项、`s3-signature.spec.ts` 7 项、
+  `media.service.spec.ts` 15 项；小程序端新增 `domain/models/__tests__/media.test.ts`（16 项）、
+  `application/media/__tests__/mediaUseCases.test.ts`（13 项）、`mockMediaRepository.test.ts`（4 项）。
+
 

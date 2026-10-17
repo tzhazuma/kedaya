@@ -242,6 +242,8 @@ function defaultSeed(now: Date): MockForumStore {
       anonHandle: draft.authorId === null ? deriveAnonHandle(`${draft.id}:mock-user-3`) : null,
       title: draft.title,
       body: draft.body,
+      // 演示数据不带图（与其它 mock 仓储一致）
+      imageUrls: [],
       status: draft.status,
       pinnedRank: draft.pinnedRank,
       replyCount: postReplies.length,
@@ -460,6 +462,7 @@ export function createMockForumRepository(options: MockForumRepositoryOptions): 
           anonHandle: anonymous ? deriveAnonHandle(`${id}:${viewer}`) : null,
           title: input.title.trim(),
           body: input.body.trim(),
+          imageUrls: input.imageUrls ?? [],
           status: FORUM_STATUS.published,
           pinnedRank: 0,
           replyCount: 0,

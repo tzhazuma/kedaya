@@ -229,7 +229,6 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 ```bash
 TARO_APP_USE_MOCK=false TARO_APP_API_BASE_URL=http://localhost:3000 ./scripts/dev.sh weapp
 ```
-
 API 客户端会为接口路径自动添加 `/api/v1`。开发者工具访问本地 HTTP 服务时，
 需在「详情 → 本地设置」关闭合法域名校验；真机联调要使用设备可访问的地址，
 发布时配置合法的 HTTPS 域名。
@@ -242,6 +241,38 @@ TARO_APP_USE_MOCK=false TARO_APP_API_BASE_URL=http://localhost:3999 ./scripts/de
 ```
 
 `.env` 里的 `PORT` 不会被 shell 变量覆盖之外的逻辑改写，`PORT=3999` 优先。
+
+### 4.0 本地打通图片上传（`MEDIA_STORAGE=local`）
+
+图片功能默认是**关闭**的（`MEDIA_STORAGE=disabled`）：没有对象存储时，
+后端 `GET /media/config` 会返回 `enabled:false`，小程序就**整块隐藏选图入口**并说明原因 ——
+这是刻意的，避免给用户一个点了必然失败的按钮。
+
+本地想跑通整条链路（选图 → 压缩 → 上传 → 服务端剥离 EXIF → 回图显示），用本地磁盘模式：
+
+```bash
+# services/api/.env
+MEDIA_STORAGE="local"
+MEDIA_LOCAL_DIR=""        # 留空 = <services/api>/.media（已在 .gitignore 中）
+```
+
+```bash
+PORT=3999 npm run build -w @kedaya/api && PORT=3999 npm run start -w @kedaya/api
+curl -sS localhost:3999/api/v1/media/config
+# → {"enabled":true,"kind":"local","maxBytes":2097152,"maxCount":9,"accept":["image/jpeg","image/png"]}
+```
+
+`local` 模式回图走 `GET /api/v1/media/files/:key`（不带 `/api/v1` 前缀的是 `/health`），
+返回的地址是**绝对地址**（从请求头推导，或由 `MEDIA_PUBLIC_BASE_URL` 指定），
+因此小程序 `<Image src>` 可以直接用。
+
+两点必须知道：
+
+- **`local` 只适合开发**：容器/进程重启即丢图，生产环境用它会打警告日志。
+  生产用 `MEDIA_STORAGE=s3`（COS / OSS / MinIO / R2 都行，配置见 `docs/deploy.md` 5.4 节）。
+- **小程序相册只能在微信里用**：H5/浏览器点「添加图片」会提示
+  「相册选图需要在微信小程序内使用」。想看真机效果，要么用开发者工具（勾选「不校验合法域名」），
+  要么用 mock 模式 —— mock 模式下上传返回 data URL 本身，**离线也能看到真图**。
 
 ### 4.1 Web 门户（浏览器预览）
 

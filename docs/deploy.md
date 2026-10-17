@@ -177,8 +177,84 @@ docker push <registry-host>/<namespace>/kedaya-api:v1
 
 > **配置缺失时的行为**：`services/api/src/app.module.ts` 使用 `ConfigModule.forRoot`，
 > 没有 schema 校验。因此「少配一个变量」不一定在启动时暴露。
-> 唯一做了强校验的是 `DATABASE_URL`：生产环境下缺失会**直接启动失败并打印明确错误**
+> 唯一做了强校验的 `DATABASE_URL`：生产环境下缺失会**直接启动失败并打印明确错误**
 > （而不是静默用空连接串启动、之后每个请求 500）。
+> **`MEDIA_STORAGE=s3` 同样做了强校验**：缺哪一个变量就在启动时报哪一个，不会带病启动。
+
+### 5.4 媒体存储（图片上传）
+
+图片走**服务端中转**：客户端把压缩后的图（JPG/PNG，base64 JSON）发给后端，
+后端**剥离元数据**（含 EXIF GPS）后写入对象存储，再把可访问地址回给客户端。
+顺序不可调换 —— 之所以不做「预签名直传」，就是因为直传无法保证剥离
+（客户端可以绕过小程序代码直接 PUT），而契约 A2.5 明确要求「上传带 GPS 的照片后下载检查，GPS 必须消失」。
+
+| `MEDIA_STORAGE` | 行为 | 适用 |
+| --- | --- | --- |
+| `disabled`（默认） | 关闭图片功能；`GET /media/config` 返回 `enabled:false`，**客户端整块隐藏选图入口**并说明原因 | 没有对象存储时 |
+| `local` | 写本地磁盘 `MEDIA_LOCAL_DIR`（默认 `<cwd>/.media`），通过 `GET /media/files/:key` 回图 | **仅本地开发/自测**。云托管容器无持久化存储，重启即丢图（生产环境用它会打警告日志） |
+| `s3` | S3 兼容对象存储 | 生产 |
+
+#### `s3` 模式怎么填（三个云厂商示例）
+
+同一份实现（零依赖手写 SigV4），换 endpoint / region / bucket 即可：
+
+```bash
+# 腾讯云 COS（虚拟主机风格）
+MEDIA_STORAGE="s3"
+MEDIA_S3_ENDPOINT="https://cos.ap-shanghai.myqcloud.com"
+MEDIA_S3_REGION="ap-shanghai"
+MEDIA_S3_BUCKET="kedaya-media-1250000000"
+
+# 阿里云 OSS
+MEDIA_S3_ENDPOINT="https://oss-cn-shanghai.aliyuncs.com"
+MEDIA_S3_REGION="cn-shanghai"
+MEDIA_S3_BUCKET="kedaya-media"
+
+# Cloudflare R2 / MinIO（R2 与自建 MinIO 通常需要路径风格）
+MEDIA_S3_FORCE_PATH_STYLE="true"
+```
+
+**Bucket 权限**：对外**可读**（图片要能被 `<Image>` 直接加载），
+写入只走服务端的 AK/SK。生产建议再挂一层 CDN 并配 `MEDIA_PUBLIC_BASE_URL`
+（配了它就不再从请求头推导 origin，返回的地址稳定，也不会受反向代理的 Host 影响）。
+
+同环境内网互通时可以直接用内网 endpoint（省流量费），只要 `MEDIA_PUBLIC_BASE_URL` 指向公网 CDN。
+
+#### 上线前必做的图片验收（一次真实 PUT 才是最终验证）
+
+单元测试覆盖了 SigV4 签名（AWS 官方文档示例逐字节比对）与元数据剥离，
+但**真实对象存储的第一次 PUT 只能在配好凭据后验证**：
+
+```bash
+BASE='https://<你的云托管默认域名>'
+TOKEN='<登录后的 accessToken>'
+
+# 1) 能力对上了吗（enabled 必须为 true，kind 为 s3）
+curl -sS "$BASE/api/v1/media/config"
+
+# 2) 传一张带 GPS 的真实照片（手机拍的原图即可）
+B64=$(base64 -i gps-photo.jpg | tr -d '\n')
+curl -sS -X POST "$BASE/api/v1/media/images" \
+  -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d "{\"dataUrl\":\"data:image/jpeg;base64,$B64\"}"
+# → 记下返回的 url 与 bytes
+
+# 3) 把返回的 url 下载回来，检查 GPS 是否消失（契约 A2.5 的验收方式）
+curl -sS -o served.jpg "<上一步的 url>"
+grep -c Exif served.jpg || echo 'Exif 已消失'
+# macOS 上也可以直接看：mdls -name kMDItemLatitude -name kMDItemLongitude served.jpg
+
+# 4) 发带图的帖子，确认字段真的落库了
+curl -sS -X POST "$BASE/api/v1/forum/posts" \
+  -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d "{\"board\":\"campus\",\"title\":\"带图测试\",\"body\":\"见图片\",\"imageUrls\":[\"<上一步的 url>\"]}"
+
+# 5) 外链必须被拒（防止帖子变成外站导流 / 追踪载体）
+curl -sS -X POST "$BASE/api/v1/forum/posts" \
+  -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d '{"board":"campus","title":"x","body":"y","imageUrls":["https://evil.example/a.jpg"]}'
+# → 期望 400 VALIDATION_FAILED
+
 
 ---
 
@@ -294,7 +370,9 @@ curl -sS "$BASE/api/v1/notifications/unread-count" -H "authorization: Bearer <to
 | 真实校园系统对接（`live`） | **未验证**（无校方凭据） | 拿到授权后：填 `CAMPUS_*` 三个上游地址 → 切 `CAMPUS_DATA_MODE=live` → 逐系统验证课表/校园卡/身份 |
 | 微信小程序登录（真实 `code2session`） | **未验证**（无 AppSecret） | 填 `WECHAT_MINIAPP_APPID` / `WECHAT_MINIAPP_SECRET` 后真机验证登录 |
 | 可达鸭 LLM | 未配置时功能完整（规则回答） | 需要更好的语言组织时再配 `AGENT_LLM_*` |
-| 图片上传 | **未实现** | 容器无持久化存储，必须接 **COS**；当前各模块只支持文本 + 头像 data URL |
+| 图片上传（接口与剥离） | **已实现并实测**（`MEDIA_STORAGE=local` 下上传含 GPS 的真实 JPEG：Exif/GPS 段消失、字节数减少、仍是合法 JPEG） | — |
+| 图片上传（真实对象存储 COS/OSS） | **未验证**（无可用的云存储凭据） | 按 5.4 节配 `MEDIA_STORAGE=s3` 后跑一遍「上线前必做的图片验收」 |
+| 小程序端选图（`chooseMedia` + 压缩） | **未验证**（需在微信开发者工具/真机操作） | 导入 `apps/miniapp/dist` 后，在发布页选一张带定位的照片，确认发布后图片可显示（详见 10.4） |
 
 ---
 
@@ -341,9 +419,11 @@ grep -r "TARO_APP_USE_MOCK" apps/miniapp/dist | head     # 应该没有输出
 2. **服务类目**：按实际功能选择（工具 / 教育 / 生活服务等）。
    涉及「校园互助」「二手交易」时微信会要求相应的资质说明。
 3. **《小程序用户隐私保护指引》**：在「设置 → 服务内容声明 → 用户隐私保护指引」
-   里如实填写收集的信息（邮箱、昵称头像、微信 openid、可选的位置/相册）。
+   里如实填写收集的信息（邮箱、昵称头像、微信 openid、**相册（选图发帖）**）。
    **必须与本仓库 `apps/miniapp/src/presentation/content/legal.ts` 的隐私政策口径一致** ——
    用户能看到的和后台登记的不一致是常见的驳回原因。
+   > 发帖配图会上传用户相册里的照片，因此必须勾选「相册」这一项，
+   > 并说明「图片在服务端会被剥离位置等元数据」（契约 A2.5）。
 4. **用户协议 / 隐私政策**：小程序内已提供两个页面（我的 → 关于 → 用户协议 / 隐私政策）。
    提交审核时在「功能页面」里指明这两个路径：
 
@@ -379,6 +459,23 @@ grep -r "TARO_APP_USE_MOCK" apps/miniapp/dist | head     # 应该没有输出
 - [ ] 所有列表页都能看到 loading / empty / error / 重试 四态
       （审核会走弱网/断网路径）
 - [ ] 隐私政策与后台登记的《用户隐私保护指引》一致
+- [ ] 发布页配图能用：选一张带定位的照片 → 发布后图片正常显示；
+      同时确认「图片服务未配置」时**不会出现**一个点了必然失败的选图按钮
+
+### 10.4 图片链路真机自测（发布页配图）
+
+`MEDIA_STORAGE=local`（仅自测）或 `s3` 配好之后，按这条路径走一遍 ——
+这是唯一能验证「选图 → 压缩 → 上传 → 剥离 → 显示」整条链路的方式：
+
+1. 后端起在真机/开发者工具能访问的地址（**不能用 `localhost`**：真机把它当自己）。
+   开发者工具里可勾选「不校验合法域名」，真机预览则必须用 HTTPS 域名。
+2. 打开「跳蚤 → 发布闲置」，点「添加图片」→ 从相册选一张**带定位的照片**。
+   - 期望：缩略图立刻出现，右上角一度显示「上传中」，随后变成可点击的大图。
+   - 期望：点缩略图能进微信原生大图预览。
+3. 故意断网再选一张 → 期望显示红色「点我重试」，点它重试；不点的话提交按钮应当被禁用并给出原因。
+4. 发布后在列表卡片上应看到缩略图（有图时缩略图取代文字徽标），详情页顶部是图片宫格。
+5. 到对象存储控制台确认对象确实写入；把图片下载回来确认 **EXIF GPS 已消失**（契约 A2.5）。
+6. 关掉后端再进发布页 → 期望选图入口**禁用 + 说明 + 重试**，而不是静默消失或点了报错。
 
 ---
 
@@ -394,6 +491,10 @@ grep -r "TARO_APP_USE_MOCK" apps/miniapp/dist | head     # 应该没有输出
 | 小程序登录偶发失败 | 是否开启了「开放接口服务」（会让自管 `access_token` 超时） |
 | 小程序请求报「不在以下 request 合法域名列表」 | 微信后台没加域名，或域名不是 HTTPS |
 | 小程序打开是 mock 数据 | `TARO_APP_USE_MOCK` 没设成 `false`，或构建时没加载 `.env.production` |
+| 发布页没有「添加图片」按钮 | 后端 `MEDIA_STORAGE` 还是 `disabled`（`GET /api/v1/media/config` 返回 `enabled:false`）—— 这是**刻意**的：没配存储就不给必然失败的按钮 |
+| 选图后提示「相册选图需要在微信小程序内使用」 | 在 H5/浏览器里点选图。相册能力只在微信小程序内可用（`platform/imagePicker.ts`） |
+| 上传报 `MEDIA_S3_*` 相关启动错误 | 缺变量时的**启动即报错**（与 `DATABASE_URL` 同原则），按提示补齐即可 |
+| 图片地址是 `http://localhost:3999/...` | `MEDIA_STORAGE=local` 且没配 `MEDIA_PUBLIC_BASE_URL`，地址从请求头推导。生产请用 `s3` + `MEDIA_PUBLIC_BASE_URL` |
 | 本地 `npm run build:weapp` 后页面白屏 | `common.wxss` 编译失败 —— 检查是否写了 WXSS 不支持的选择器（`src/presentation/theme/__tests__/wxss-safety.test.ts` 会守） |
 
 ---

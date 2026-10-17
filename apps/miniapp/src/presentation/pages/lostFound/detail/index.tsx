@@ -18,7 +18,7 @@ import {
 } from '../../../../domain/models/lostFound'
 import type { LostFoundAction, LostFoundItem } from '../../../../domain/models/lostFound'
 import { navigateTo, redirectTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyEmpty, KdyField, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyEmpty, KdyField, KdyImageGallery, KdyTag } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -204,6 +204,12 @@ export default function LostFoundDetailPage() {
             {isOwner ? <KdyTag tone='neutral'>我发布的</KdyTag> : null}
           </View>
         </View>
+
+        {item.imageUrls.length > 0 && (
+          <View className='kdy-lost-detail__images'>
+            <KdyImageGallery urls={item.imageUrls} />
+          </View>
+        )}
 
         <View className='kdy-lost-detail__rows'>
           <View className='kdy-lost-detail__row'>

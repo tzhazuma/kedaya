@@ -48,6 +48,7 @@ function post(overrides: Partial<ForumPost> = {}): ForumPost {
     anonHandle: null,
     title: '图书馆周五几点闭馆',
     body: '想去自习，不确定周五是否提前闭馆。',
+    imageUrls: [],
     status: FORUM_STATUS.published,
     pinnedRank: 0,
     replyCount: 0,

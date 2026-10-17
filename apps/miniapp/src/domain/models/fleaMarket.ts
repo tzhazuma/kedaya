@@ -1,5 +1,7 @@
 import { fenToYuan, formatRelativeTime } from '@kedaya/shared'
 
+import { imageSummary } from './media'
+
 /**
  * 跳蚤市场（`flea-market`）领域模型 —— 纯 TypeScript，零框架依赖（契约 §7）。
  *
@@ -71,6 +73,8 @@ export interface FleaItem {
   status: string
   reservedById: string | null
   soldAt: string | null
+  /** 图片地址（只可能是本平台上传的地址；上传时已剥离 EXIF GPS） */
+  imageUrls: string[]
   createdAt: string
   updatedAt: string
 }
@@ -82,6 +86,8 @@ export interface CreateFleaItemInput {
   category: string
   condition?: string
   campusSpot?: string | null
+  /** 已上传成功的图片地址（见 `useImageAttachments`） */
+  imageUrls?: string[]
 }
 
 export interface UpdateFleaItemInput {
@@ -91,6 +97,7 @@ export interface UpdateFleaItemInput {
   category?: string
   condition?: string
   campusSpot?: string | null
+  imageUrls?: string[]
 }
 
 /** 列表筛选条件（`mine=1` 由用例翻译成「只看自己」） */
@@ -117,6 +124,9 @@ export interface FleaItemSummary {
   timeLabel: string
   preference: string
   descriptionPreview: string
+  /** 列表缩略图（第一张；没有图时为 null） */
+  thumbnailUrl: string | null
+  imageCount: number
   /** 是否是我发布的（决定卡片上显不显示「我的」标记） */
   mine: boolean
   /** 是否被我预定 */
@@ -159,6 +169,7 @@ export function isFleaStatus(value: unknown): value is FleaStatus {
 }
 
 export function summarize(item: FleaItem, viewerId: string | null, now: Date): FleaItemSummary {
+  const images = imageSummary(item.imageUrls)
   return {
     id: item.id,
     title: item.title,
@@ -172,6 +183,8 @@ export function summarize(item: FleaItem, viewerId: string | null, now: Date): F
     timeLabel: formatRelativeTime(item.createdAt, now),
     preference: `${conditionLabel(item.condition)} · ${categoryLabel(item.category)}`,
     descriptionPreview: (item.description ?? '').slice(0, 60),
+    thumbnailUrl: images.thumbnailUrl,
+    imageCount: images.imageCount,
     mine: viewerId !== null && item.sellerId === viewerId,
     reservedByMe: viewerId !== null && item.reservedById === viewerId,
     sold: item.status === 'sold',

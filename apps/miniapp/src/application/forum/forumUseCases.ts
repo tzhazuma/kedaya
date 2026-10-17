@@ -50,6 +50,8 @@ export interface ForumPostDraft {
   title: string
   body: string
   anonymous: boolean
+  /** 已上传成功的图片地址（`useImageAttachments` 的产物） */
+  imageUrls?: string[]
 }
 
 export interface ForumReplyDraft {
@@ -153,6 +155,7 @@ export function createForumUseCases(deps: ForumDeps): ForumUseCases {
         title: draft.title.trim(),
         body: draft.body.trim(),
         anonymous: draft.anonymous,
+        ...(draft.imageUrls === undefined ? {} : { imageUrls: draft.imageUrls }),
       })
       if (result.ok) list.reset()
       return result

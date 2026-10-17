@@ -68,6 +68,13 @@
     font-weight: $kdy-font-weight-medium;
   }
 
+  // 有图时用图当锚点（与跳蚤 / 失物列表同一套做法）
+  &__cover {
+    width: 88px;
+    height: 88px;
+    flex: none;
+  }
+
   &__main {
     flex: 1;
     min-width: 0;
