@@ -1837,7 +1837,12 @@ components:
       properties:
         platform:
           type: string
-          enum: [egate, cp-daily, academic, campus-card]
+          # ⚠️ 与 TechpieLink.provider **共用同一套枚举**（契约 §11.20-C）。
+          # 原先是 [egate, cp-daily, academic, campus-card] —— 与 techpie 那套
+          # [cas, egate, cpdaily, ecard, techpie] 是**两套拼法**：
+          # `cp-daily` vs `cpdaily`、`campus-card` vs `ecard`、`academic` vs 无。
+          # 同一概念两种拼法迟早出现"只匹配到一半"的 bug。
+          enum: [cas, egate, cpdaily, jwc, ecard, techpie]
         bound: { type: boolean }
         expiresAt: { type: string, format: date-time }
         lastRenewedAt: { type: string, format: date-time }
@@ -2471,9 +2476,9 @@ components:
       properties:
         provider:
           type: string
-          enum: [cas, egate, cpdaily, ecard, techpie]
+          enum: [cas, egate, cpdaily, jwc, ecard, techpie]
           description: |
-            校园平台标识（契约 §11.10-B 裁决）。
+            校园平台标识（契约 §11.10-B 裁决；§11.20-C 统一了拼法）。
             ⚠️ **Phase 0 只接受 `ecard`**（校园卡走独立 OPENID 通道，与 CASTGC 完全解耦）。
             其余值属 Phase 1，在信息办书面回复前**不实现**（U7）。
         authCode:
@@ -2498,7 +2503,8 @@ components:
         id: { type: string }
         provider:
           type: string
-          enum: [cas, egate, cpdaily, ecard, techpie]
+          # ⚠️ 与 CampusBindingSummary.platform 共用同一套枚举（契约 §11.20-C）
+          enum: [cas, egate, cpdaily, jwc, ecard, techpie]
         status:
           type: string
           enum: [PENDING, ACTIVE, EXPIRED, REVOKED, FAILED]

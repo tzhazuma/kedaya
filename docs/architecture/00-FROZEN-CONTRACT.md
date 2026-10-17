@@ -1064,3 +1064,73 @@ openid 需要服务端用 AppSecret 走 `code2session` 换取。客户端能拿�
 
 > 第 2 条是本次最值得保留的做法：**能力未实现时，用一个机器可见的常量把它标出来，
 > 并让 UI 如实告知**，而不是让它看起来已经能用。
+
+
+### 11.20 TechPie wire 形状**最终收敛**（v1.3.8 · 2026-10-17）
+
+后端实现时发现仓库里同时存在**三套互相矛盾的 techpie wire 形状**，并正确地
+**拒绝自行收敛、上报 Lead**（而不是"以我为准"或"都支持"）。这是对的 —— 三方各写一套
+会让契约彻底失效。
+
+#### 根因：**port 类型与 wire 类型同名**
+
+规格 §4.3 定义 `CampusBindingSummary` 时，它其实是 **`CampusSessionPort` 的返回类型**
+（一个**端口**类型，在进程内部用）；而 §8.1 又说 `GET /techpie/links` 返回
+`CampusBindingSummary[]` —— **把端口类型当成了 wire 类型**。
+与此同时冻结 OpenAPI 里 `CampusBindingSummary` 是 `/auth/campus-bindings` 的
+**另一个 wire 类型**（`{platform, bound, expiresAt, lastRenewedAt}`）。
+
+**同一个名字，跨了两个层（port / wire）、指了两个概念。** 这是本次冲突的总根源 ——
+比"两个 wire 形状不一致"更难发现，因为两边看起来都"有定义"。
+
+#### 裁决（逐条，最终版）
+
+**A. `/techpie/links` 的元素类型 = `TechpieLink`**（不是 `CampusBindingSummary`）
+- 字段用 **`provider`**（不是 `platform`）—— §11.10-B 已冻结该枚举
+- 状态用 **`PENDING \| ACTIVE \| EXPIRED \| REVOKED \| FAILED`** —— §11.19-A 已裁决
+- `CampusBindingSummary` **只属于** `/auth/campus-bindings`，不再被 techpie 引用
+
+**B. 端口类型改名为 `CampusBindingState`**
+
+规格 §4.3 的那个类型是**端口**类型（`CampusSessionPort` 的返回），
+与 wire 类型是两个层的东西，**必须不同名**。
+改名为 `CampusBindingState`，并明确它**不是** wire 契约、**不出现在任何响应里**。
+
+> 规则：**port 类型与 wire 类型不得同名。** 同名会让"这个字段到底按哪个算"
+> 变成一个没有答案的问题，而实现者只能猜 —— 猜错不报错，只静默错。
+
+**C. 校园平台枚举**统一为一套（两个 wire 类型现在用两套，这是错的）
+
+| 原 `/auth` 那套 | 原 `/techpie` 那套 | **统一后** |
+| --- | --- | --- |
+| `egate` | `egate` | `egate` |
+| `cp-daily` | `cpdaily` | **`cpdaily`** |
+| `academic` | （无） | **`jwc`**（教务） |
+| `campus-card` | `ecard` | **`ecard`** |
+| （无） | `cas` | `cas` |
+| （无） | `techpie` | `techpie` |
+
+**最终枚举：`cas \| egate \| cpdaily \| jwc \| ecard \| techpie`**，两个类型共用。
+理由：`cp-daily` 与 `cpdaily` 是同一个东西的两种拼法 —— **同一概念两个拼法，
+迟早会出现"只匹配到一半"的 bug**（`if (p === 'cpdaily')` 漏掉 `cp-daily`）。
+
+**D. 移除全部"加法兼容别名"**
+
+后端为兼容三方，在不违反冻结接口处做了加法（`/capabilities` 同时返回 `items` 与 `capabilities`、
+条目同时给 `id`/`key`、`platform`/`requiredProvider`、`status`/`available`；
+`/webview-session` 同时给 `expiresInSec` 与 `expiresAt`）。
+
+**裁决：全部移除。一个字段只有一个名字。**
+
+理由：加法兼容看起来"无害且友好"，实际是**把一个概念变成两个 owner**：
+- 两个名字会**永久共存** —— 没有任何自然时点去删掉旧的那个（"万一还有人用呢"）；
+- 消费方会**分裂**（一部分读 A、一部分读 B），于是"改一个地方"不再足够；
+- 它让契约**看起来**兼容，实际上把不一致从编译期推到了运行期。
+
+**正确的做法是现在收敛，而不是兼容。** 三端都在同一轮里，没有"存量消费者"需要保护。
+
+**E. `/webview-session` 的形状**（最终版）
+- 入参：`{linkId, targetUrl}`（`linkId` 而非 `platform` —— 票据针对**一条具体绑定**，
+  而不是"某个平台"；用 `platform` 会让"用户有两条同平台绑定"变成歧义）
+- 出参：`{ticket, targetUrl, expiresAt, singleUse: true}`
+- 规格的 `expiresInSec: 30` 作废（绝对时间 `expiresAt` 比相对秒数更适合分布式校验）
