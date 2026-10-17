@@ -8,6 +8,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { ScheduleController } from './schedule.controller';
 import { ScheduleCourseService } from './schedule.service';
+import { CampusBindingGuard } from '../techpie/data/campus-binding.guard';
 import { ScheduleCoursePrismaRepository } from './data/schedule.repository';
 import { SCHEDULE_COURSE_REPOSITORY } from './domain/schedule.domain';
 
@@ -21,7 +22,7 @@ import { SCHEDULE_COURSE_REPOSITORY } from './domain/schedule.domain';
 @Module({
   imports: [AuthModule],
   controllers: [ScheduleController],
-  providers: [ScheduleCourseService, { provide: SCHEDULE_COURSE_REPOSITORY, useClass: ScheduleCoursePrismaRepository }],
+  providers: [CampusBindingGuard, ScheduleCourseService, { provide: SCHEDULE_COURSE_REPOSITORY, useClass: ScheduleCoursePrismaRepository }],
   exports: [ScheduleCourseService],
 })
 export class ScheduleModule {}

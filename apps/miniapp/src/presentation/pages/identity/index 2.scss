@@ -1,0 +1,114 @@
+/**
+ * 身份页样式。色值/间距全部走设计令牌（`$kdy-*`），页面内不写死任何色值。
+ *
+ * 版式要点：这一页文字说明较多（"为什么要绑定"），因此正文统一
+ * `$kdy-font-size-sm` + 宽松行高；说明类文字用 `__muted` 降一级，
+ * 保证用户能一眼分出「事实」与「解释」。
+ */
+
+.kdy-identity {
+  &__notice {
+    margin: $kdy-space-3 $kdy-space-5 0;
+    padding: $kdy-space-3;
+    border-radius: $kdy-radius-lg;
+    background: $kdy-color-brand-soft;
+  }
+
+  &__notice-text {
+    color: $kdy-color-ink;
+    font-size: $kdy-font-size-xs;
+    line-height: $kdy-line-height-loose;
+  }
+
+  &__p {
+    display: block;
+    margin-bottom: $kdy-space-2;
+    color: $kdy-color-text;
+    font-size: $kdy-font-size-sm;
+    line-height: $kdy-line-height-loose;
+  }
+
+  &__muted {
+    display: block;
+    margin-top: $kdy-space-1;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: $kdy-line-height-normal;
+  }
+
+  &__error {
+    display: block;
+    margin: $kdy-space-2 $kdy-space-5;
+    color: $kdy-color-danger;
+    font-size: $kdy-font-size-xs;
+  }
+
+  // 实名信息：标签 + 值的两列表格（值可能较长，允许换行）
+  &__facts {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__fact {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: $kdy-space-2 0;
+    border-bottom: 1px solid $kdy-color-border;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__fact-k {
+    flex: 0 0 80px;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-sm;
+  }
+
+  &__fact-v {
+    flex: 1;
+    color: $kdy-color-text;
+    font-size: $kdy-font-size-sm;
+    font-weight: 500;
+    word-break: break-all;
+  }
+
+  &__platform {
+    padding: $kdy-space-3 0;
+    border-bottom: 1px solid $kdy-color-border;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__platform-head {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__platform-name {
+    color: $kdy-color-ink;
+    font-size: $kdy-font-size-md;
+    font-weight: 600;
+  }
+
+  &__platform-purpose {
+    display: block;
+    margin-top: $kdy-space-1;
+    color: $kdy-color-ink-soft;
+    font-size: $kdy-font-size-sm;
+    line-height: $kdy-line-height-normal;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: $kdy-space-2;
+  }
+}

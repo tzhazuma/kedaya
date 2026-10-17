@@ -1,8 +1,10 @@
-import { Controller, Delete, Get, Headers, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, Headers, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { MODULES, modulePath } from '@kedaya/contracts';
 import { z } from 'zod';
+import { UnauthenticatedError } from '../../common/errors/app-error';
 import { AuthGuard } from '../../common/auth/auth.guard';
+import { USER_REPOSITORY, type UserRepository } from './domain/auth.domain';
 import { CurrentUser } from '../../common/auth/current-user';
 import { ValidationError } from '../../common/errors/app-error';
 import { ZodBody } from '../../common/pipes/zod-validation.pipe';
@@ -52,7 +54,10 @@ const updateProfileSchema = z
 @ApiTags('auth · 身份（两级模型）')
 @Controller(modulePath('auth'))
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+  ) {}
 
   @Post('login')
   @ApiOperation({
@@ -107,7 +112,14 @@ export class AuthController {
     description: '不变式 I1：响应键恰好 `userId` / `name` / `avatarUrl` / `department`。',
   })
   async session(@CurrentUser() userId: string) {
-    const { user } = await this.authService.me(userId);
+    // ⚠️ 这里**不能**走 `authService.me()` —— 它会读校园绑定状态，
+    // 也就是会碰 `CampusSessionPort`（上游）。而 I5 要求本端点
+    // 在上游全超时的情况下 < 50ms 返回 ⇒ 它必须是**纯本地**读。
+    // 用 `users.findById` 直接读自有账户，一次都不碰上游。
+    const user = await this.users.findById(userId);
+    if (!user) {
+      throw new UnauthenticatedError('账号不存在或已注销');
+    }
     // 显式逐字段组装，**不要**用展开运算符 —— 展开会把将来新增的字段自动带出去。
     return {
       userId: user.id,

@@ -1,0 +1,37 @@
+.kdy-techpie-create__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+}
+
+.kdy-techpie-create__actions {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-3;
+  margin-top: $kdy-space-5;
+}
+
+.kdy-techpie-create__hint {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-techpie-create__problems,
+.kdy-techpie-create__error {
+  display: block;
+  margin-top: $kdy-space-3;
+  padding: $kdy-space-2 $kdy-space-3;
+  color: $kdy-color-text-muted;
+  background: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-sm;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-techpie-create__error {
+  color: $kdy-color-danger;
+  background: rgba(211, 63, 63, 0.08);
+}

@@ -1,0 +1,12 @@
+.kdy-profile-edit__avatar {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-4;
+}
+
+.kdy-profile-edit__avatar-action {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: $kdy-space-2;
+}

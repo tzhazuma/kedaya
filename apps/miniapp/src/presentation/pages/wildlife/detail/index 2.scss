@@ -1,0 +1,97 @@
+/**
+ * 校园动物观察点详情页样式。
+ *
+ * 行布局与失物招领详情页保持一致（左标签右内容），让"详情页"在小程序里长得像同一个东西。
+ */
+
+.kdy-wildlife-detail__hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-3;
+  margin-bottom: $kdy-space-3;
+}
+
+// 文字徽标（不是 emoji / 图片）：物种名本身就是最好的视觉锚点
+.kdy-wildlife-detail__badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  min-height: 120px;
+  padding: $kdy-space-3;
+  overflow: hidden;
+  background: $kdy-color-brand-soft;
+  border-radius: $kdy-radius-lg;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-lg;
+  font-weight: $kdy-font-weight-semibold;
+  text-align: center;
+  word-break: break-word;
+}
+
+.kdy-wildlife-detail__status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: $kdy-space-2;
+}
+
+.kdy-wildlife-detail__rows {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+}
+
+.kdy-wildlife-detail__row {
+  display: flex;
+  gap: $kdy-space-3;
+}
+
+.kdy-wildlife-detail__k {
+  width: 140px;
+  flex: none;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-wildlife-detail__v {
+  flex: 1;
+  min-width: 0;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.kdy-wildlife-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-3;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-wildlife-detail__hint {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-wildlife-detail__guard {
+  display: block;
+  margin: $kdy-space-3 0;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-medium;
+  text-align: center;
+}
+
+.kdy-wildlife-detail__error {
+  display: block;
+  margin-top: $kdy-space-3;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}

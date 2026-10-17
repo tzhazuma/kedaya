@@ -4,6 +4,7 @@
  * 本文件由 scripts/scaffold.mjs 生成；要改形状请改脚本里的 SPEC 表，
  * 改完重跑 `npm run scaffold`，避免 15 个模块各写一套。
  */
+import { CampusBindingGuard, RequireCampusBinding } from '../techpie/data/campus-binding.guard';
 import { Controller, Delete, Get, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { modulePath } from '@kedaya/contracts';

@@ -1,0 +1,17 @@
+{
+  "description": "可达鸭微信小程序（仓库根目录入口，先运行 npm run dev:weapp）",
+  "miniprogramRoot": "apps/miniapp/dist/",
+  "projectname": "kedaya-miniapp",
+  "appid": "touristappid",
+  "compileType": "miniprogram",
+  "libVersion": "3.5.5",
+  "setting": {
+    "urlCheck": false,
+    "es6": false,
+    "enhance": false,
+    "postcss": false,
+    "minified": false,
+    "nodeModules": false,
+    "uploadWithSourceMap": true
+  }
+}

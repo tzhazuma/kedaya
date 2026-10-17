@@ -1,0 +1,143 @@
+/**
+ * AI 校园画像首页样式。
+ *
+ * 视觉遵循「可达鸭黄 + 暖白 + 深色文字 + 扁平卡片」，色值全部来自设计令牌
+ * （`$kdy-*` 由 sass.resource 全局注入），本文件不写死任何色值。
+ *
+ * 这是高敏感模块：说明文字多，因此正文行高放宽、块间距统一走 `$kdy-space-*`；
+ * 标签列表用扁平行（不叠卡片阴影），保证长标签在窄屏下也可读。
+ */
+
+.kdy-portrait {
+  // 一句话定位：始终出现在主内容之前
+  &__positioning {
+    display: block;
+    margin: $kdy-space-2 0 $kdy-space-3;
+    color: $kdy-color-ink-soft;
+    font-size: $kdy-font-size-sm;
+    line-height: $kdy-line-height-loose;
+  }
+
+  &__p,
+  &__li {
+    display: block;
+    color: $kdy-color-text;
+    font-size: $kdy-font-size-sm;
+    line-height: $kdy-line-height-loose;
+  }
+
+  &__p {
+    margin-bottom: $kdy-space-2;
+  }
+
+  &__li {
+    padding: $kdy-space-1 0;
+    color: $kdy-color-ink-soft;
+  }
+
+  &__muted {
+    display: block;
+    margin-top: $kdy-space-2;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: $kdy-line-height-normal;
+  }
+
+  &__error {
+    display: block;
+    margin-top: $kdy-space-2;
+    color: $kdy-color-danger;
+    font-size: $kdy-font-size-xs;
+    line-height: $kdy-line-height-normal;
+  }
+
+  // 「心理支持与宿舍矛盾不参与画像」：常驻事实，用高对比底块而不是黄色小字
+  &__notice {
+    display: block;
+    margin-top: $kdy-space-2;
+    padding: $kdy-space-3;
+    background: $kdy-color-surface-alt;
+    border-left: 3px solid $kdy-color-danger;
+    border-radius: $kdy-radius-md;
+    color: $kdy-color-ink;
+    font-size: $kdy-font-size-xs;
+    line-height: $kdy-line-height-loose;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    margin-top: $kdy-space-4;
+  }
+
+  &__traits {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-3;
+    margin-top: $kdy-space-2;
+  }
+
+  &__trait {
+    padding: $kdy-space-3;
+    background: $kdy-color-surface-alt;
+    border-radius: $kdy-radius-lg;
+  }
+
+  &__trait-label {
+    display: block;
+    color: $kdy-color-ink;
+    font-size: $kdy-font-size-md;
+    font-weight: $kdy-font-weight-semibold;
+    line-height: $kdy-line-height-normal;
+  }
+
+  &__trait-detail {
+    display: block;
+    margin-top: $kdy-space-1;
+    color: $kdy-color-text;
+    font-size: $kdy-font-size-xs;
+    line-height: $kdy-line-height-loose;
+    word-break: break-all;
+  }
+
+  &__trait-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $kdy-space-2;
+    margin-top: $kdy-space-2;
+  }
+
+  // 来源标签：名称就地可见（不点开也能知道这条结论来自哪里）
+  &__trait-sources {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: $kdy-space-1;
+    min-width: 0;
+  }
+
+  &__excluded {
+    padding: $kdy-space-2 0;
+
+    & + & {
+      border-top: 1px solid $kdy-color-border;
+    }
+  }
+
+  &__excluded-name {
+    display: block;
+    color: $kdy-color-ink;
+    font-size: $kdy-font-size-sm;
+    font-weight: $kdy-font-weight-medium;
+  }
+
+  &__excluded-reason {
+    display: block;
+    margin-top: $kdy-space-1;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: $kdy-line-height-loose;
+  }
+}

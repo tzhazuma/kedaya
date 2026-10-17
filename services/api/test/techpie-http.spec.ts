@@ -6,6 +6,9 @@ import { Test } from '@nestjs/testing';
 import { API_BASE_PATH, IDEMPOTENCY_HEADER, TRACE_HEADER } from '@kedaya/contracts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { AddressInfo } from 'node:net';
+import { CAMPUS_SESSION_PORT } from '../src/modules/auth/domain/auth.domain';
+import { CAMPUS_DATA_PORT } from '../src/modules/auth/domain/campus-data.domain';
+import { CLOCK, MAIL_PORT } from '../src/modules/auth/domain/local-account.domain';
 import type { NextFunction, Request, Response } from 'express';
 import { signJwt } from '../src/common/auth/jwt';
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
@@ -115,6 +118,22 @@ const fakeConfig = {
     })[key],
 };
 
+const fakeCampusSession = {
+  listBindings: async () => [],
+  getBinding: async () => null,
+  bind: async () => {
+    throw new Error('本测试不应发生绑定');
+  },
+  unbind: async () => undefined,
+  renew: async () => {
+    throw new Error('本测试不应发生续期');
+  },
+  acquireSession: async () => null,
+  cookieHeaderFor: async () => {
+    throw new Error('本测试不应产出 cookie header');
+  },
+};
+
 const usersById = new Map<string, UserRecord>();
 
 const fakeUsers: UserRepository = {
@@ -194,6 +213,14 @@ const fakeCampusCardRepo: CampusCardTransactionRepository = {
   providers: [
     { provide: PrismaService, useValue: fakePrisma },
     { provide: ConfigService, useValue: fakeConfig },
+    // ⚠️ 合并同学分支后，`AuthModule` 又多依赖了 4 个二级端口
+    // （他们的 auth 自带一套校园会话/取数/邮件/时钟能力）。
+    // 本测试只验证 techpie 的 wire 行为，这些端口给**最小可用替身**即可 ——
+    // 关键是**不能**让它们被真的调用（I5 的因果判据会断言上游调用计数为 0）。
+    { provide: CAMPUS_SESSION_PORT, useValue: fakeCampusSession },
+    { provide: CAMPUS_DATA_PORT, useValue: { fetchAll: async () => ({}) } },
+    { provide: CLOCK, useValue: { now: () => new Date('2026-10-17T00:00:00.000Z') } },
+    { provide: MAIL_PORT, useValue: { send: async () => undefined } },
   ],
   exports: [PrismaService, ConfigService],
 })

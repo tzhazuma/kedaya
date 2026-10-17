@@ -1,0 +1,101 @@
+.kdy-assets__hint {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-assets__actions {
+  margin-top: $kdy-space-3;
+}
+
+.kdy-assets__scopes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-assets__more {
+  display: flex;
+  justify-content: center;
+  margin: $kdy-space-4 0;
+}
+
+.kdy-assets__card {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+}
+
+.kdy-assets__card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+}
+
+.kdy-assets__card-title {
+  flex: 1;
+  min-width: 0;
+  font-size: $kdy-font-size-md;
+  font-weight: $kdy-font-weight-medium;
+  color: $kdy-color-ink;
+}
+
+.kdy-assets__card-meta {
+  display: block;
+  font-size: $kdy-font-size-sm;
+  color: $kdy-color-ink-soft;
+}
+
+.kdy-assets__card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+  flex-wrap: wrap;
+}
+
+.kdy-assets__card-deadline {
+  font-size: $kdy-font-size-xs;
+  color: $kdy-color-warning;
+}
+
+.kdy-assets__card-place {
+  font-size: $kdy-font-size-xs;
+  color: $kdy-color-text-muted;
+}
+
+.kdy-assets__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-3;
+  padding: $kdy-space-3 0;
+  border-bottom: 1px solid $kdy-color-border;
+}
+
+.kdy-assets__nav-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.kdy-assets__nav-title {
+  display: block;
+  font-size: $kdy-font-size-md;
+  color: $kdy-color-ink;
+}
+
+.kdy-assets__nav-detail {
+  display: block;
+  margin-top: $kdy-space-1;
+  font-size: $kdy-font-size-xs;
+  color: $kdy-color-text-muted;
+}
+
+.kdy-assets__nav-arrow {
+  font-size: $kdy-font-size-lg;
+  color: $kdy-color-text-muted;
+}

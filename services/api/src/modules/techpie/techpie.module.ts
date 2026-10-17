@@ -24,6 +24,12 @@ import { TechpieLinkPrismaRepository, TechpieSyncJobPrismaRepository } from './d
 import { WebviewTicketStore } from './data/webview-session/ticket.store';
 import { DisabledCookieDelivery, WebviewSessionService, WEBVIEW_COOKIE_DELIVERY } from './data/webview-session/webview-session.service';
 import { CAMPUS_SESSION_PORT } from './domain/ports/campus-session.port';
+// ⚠️ 合并同学分支后，auth 与 techpie 各有一套 `CAMPUS_SESSION_PORT` 符号。
+// `CampusBindingGuard` 用的是 **auth 的**符号（它要能同时在 ScheduleModule 里解析），
+// 而 TechpieModule 提供的是 techpie 的符号 —— 于是与守卫同模块时解析不到。
+// 这里把 auth 的符号**别名**到同一个实例，两个符号指向同一份实现。
+// 根治办法是统一两套 port 与枚举（记录为待办）。
+import { CAMPUS_SESSION_PORT as AUTH_CAMPUS_SESSION_PORT } from '../auth/domain/auth.domain';
 import { WEBVIEW_ALLOWLIST_PORT, type WebviewAllowlistPort } from './domain/ports/webview-allowlist.port';
 import {
   TECHPIE_LINK_REPOSITORY,
@@ -41,6 +47,7 @@ import { TechpieService } from './techpie.service';
     { provide: TECHPIE_SYNC_JOB_REPOSITORY, useClass: TechpieSyncJobPrismaRepository },
     CampusSessionService,
     { provide: CAMPUS_SESSION_PORT, useExisting: CampusSessionService },
+    { provide: AUTH_CAMPUS_SESSION_PORT, useExisting: CampusSessionService },
     // 校园绑定守卫（不变式 I4 的通用落点）：schedule 等校园能力模块用它，
     // 因此必须 export，否则 `@UseGuards(CampusBindingGuard)` 在别的模块里解析不到。
     CampusBindingGuard,

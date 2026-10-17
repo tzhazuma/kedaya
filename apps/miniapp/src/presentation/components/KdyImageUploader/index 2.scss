@@ -1,0 +1,172 @@
+/**
+ * KdyImageUploader 样式。
+ *
+ * ⚠️ WXSS 约束（见 apps/miniapp/AGENTS.md）：不使用 `>` 组合选择器、`> :first-child`
+ * 或裸 `*` —— 它们会让 common.wxss 编译失败、全部页面白屏。
+ * 因此所有选择器都是**单类名**或后代选择器。
+ */
+
+.kdy-uploader {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.kdy-uploader__grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -#{$kdy-space-2};
+  margin-bottom: -#{$kdy-space-2};
+}
+
+.kdy-uploader__tile {
+  position: relative;
+  box-sizing: border-box;
+  width: 96px;
+  height: 96px;
+  margin-right: $kdy-space-2;
+  margin-bottom: $kdy-space-2;
+  overflow: hidden;
+  background: $kdy-color-surface-alt;
+  border: 1px solid $kdy-color-border;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-uploader__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.kdy-uploader__mask {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: $kdy-color-ink-soft;
+  opacity: 0.82;
+}
+
+.kdy-uploader__mask--failed {
+  background: $kdy-color-danger;
+  opacity: 0.86;
+}
+
+.kdy-uploader__spinner {
+  color: $kdy-color-surface;
+  font-size: $kdy-font-size-lg;
+}
+
+.kdy-uploader__fail-icon {
+  color: $kdy-color-surface;
+  font-size: $kdy-font-size-lg;
+}
+
+.kdy-uploader__mask-text {
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-inverse;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-uploader__remove {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: $kdy-color-ink-soft;
+  border-bottom-left-radius: $kdy-radius-md;
+  opacity: 0.86;
+}
+
+.kdy-uploader__remove-icon {
+  color: $kdy-color-text-inverse;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-uploader__add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 96px;
+  height: 96px;
+  margin-right: $kdy-space-2;
+  margin-bottom: $kdy-space-2;
+  background: $kdy-color-brand-soft;
+  border: 1px dashed $kdy-color-brand;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-uploader__add--disabled {
+  background: $kdy-color-surface-alt;
+  border-color: $kdy-color-border;
+  opacity: 0.6;
+}
+
+.kdy-uploader__add-icon {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-xl;
+}
+
+.kdy-uploader__add-text {
+  margin-top: $kdy-space-1;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-uploader__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: $kdy-space-1;
+}
+
+.kdy-uploader__count {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-uploader__failed {
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-uploader__note {
+  display: flex;
+  align-items: flex-start;
+  margin-top: $kdy-space-2;
+  padding: $kdy-space-2 $kdy-space-3;
+  background: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-uploader__note-text {
+  flex: 1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-uploader__note-action {
+  margin-left: $kdy-space-3;
+  color: $kdy-color-brand-strong;
+  font-size: $kdy-font-size-xs;
+  font-weight: $kdy-font-weight-medium;
+}
+
+.kdy-uploader__hint {
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}

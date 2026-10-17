@@ -1,0 +1,211 @@
+.kdy-wb-detail__boundary {
+  display: block;
+  margin: $kdy-space-3 0;
+  padding: $kdy-space-2 $kdy-space-3;
+  color: $kdy-color-text-muted;
+  background: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-sm;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-wb-detail__li {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.7;
+}
+
+.kdy-wb-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-3;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-wb-detail__hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-wb-detail__hero-time {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-wb-detail__rows {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+}
+
+.kdy-wb-detail__row {
+  display: flex;
+  gap: $kdy-space-3;
+}
+
+.kdy-wb-detail__k {
+  width: 140px;
+  flex: none;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-wb-detail__v {
+  flex: 1;
+  min-width: 0;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.7;
+  word-break: break-all;
+}
+
+.kdy-wb-detail__flag {
+  display: block;
+  margin-top: $kdy-space-3;
+  color: $kdy-color-warning;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-wb-detail__cancelled {
+  display: block;
+  margin-bottom: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-wb-detail__timeline {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-3;
+}
+
+.kdy-wb-detail__step {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-1;
+  padding-left: $kdy-space-3;
+  border-left: 3px solid $kdy-color-border;
+}
+
+.kdy-wb-detail__step--current {
+  border-left-color: $kdy-color-brand;
+}
+
+.kdy-wb-detail__step--done {
+  border-left-color: $kdy-color-success;
+}
+
+.kdy-wb-detail__step-label {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-wb-detail__step--todo .kdy-wb-detail__step-label {
+  color: $kdy-color-text-muted;
+  font-weight: $kdy-font-weight-regular;
+}
+
+.kdy-wb-detail__step-desc {
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-wb-detail__hint {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-wb-detail__error {
+  display: block;
+  margin-top: $kdy-space-3;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}
+
+/* ---------------- 危机出口卡片（醒目但克制） ---------------- */
+
+.kdy-wb-crisis {
+  margin-bottom: $kdy-space-3;
+  border-left: 3px solid $kdy-color-warning;
+}
+
+.kdy-wb-crisis__message {
+  display: block;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.7;
+}
+
+.kdy-wb-crisis__hotlines {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-wb-crisis__hotline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-3;
+  padding: $kdy-space-2 $kdy-space-3;
+  background: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-sm;
+}
+
+.kdy-wb-crisis__hotline-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.kdy-wb-crisis__name {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-wb-crisis__number {
+  margin-top: 2px;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-wb-crisis__channels {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-wb-crisis__channel {
+  display: flex;
+  flex-direction: column;
+}
+
+.kdy-wb-crisis__instruction {
+  margin-top: 2px;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-wb-crisis__stale {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
