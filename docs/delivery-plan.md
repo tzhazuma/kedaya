@@ -580,16 +580,18 @@ R5 是「好看 + 丝滑」。按「**用户能感觉到**」这条线选了四�
 
 首页宫格上 8 个「开发中 / 需二次同意」模块，后端**都已有真实实现**（NestJS + Prisma 落库）：
 
-| 模块 | 后端 | 本轮之前的小程序端 |
-| --- | --- | --- |
-| 通知 `notifications` | ✅ 已实现 | ✅ 页面在（tabBar「消息」），**只是没登记模块入口** |
-| 偷外卖 `takeout-guard` | ✅ CRUD + escalate | ❌ 无 |
-| 食堂营养 `canteen` | ✅ CRUD + 按食堂聚合热量 | ❌ 无 |
-| 常见问题 `faq` | ✅ CRUD + 有帮助 | ❌ 无 |
-| 猫鸟黑天鹅 `wildlife` | ✅ CRUD + confirm | ❌ 无 |
-| TechPie `techpie` | ✅ CRUD + sync | ❌ 无（本轮仍未做） |
-| AI 校园画像 `ai-portrait` | ✅ 同意 / 来源 / 开关 | ❌ 无（本轮仍未做） |
-| 心理支持 `wellbeing` | ✅ 同意 / 危机热线 / 预约 | ❌ 无（本轮仍未做） |
+| 模块 | 后端 | 本轮之前的小程序端 | 本轮结果 |
+| --- | --- | --- | --- |
+| 通知 `notifications` | ✅ 已实现 | ✅ 页面在（tabBar「消息」），**只是没登记模块入口** | ✅ 一行修好 |
+| 偷外卖 `takeout-guard` | ✅ CRUD + escalate | ❌ 无 | ✅ 见 §10.3 |
+| 食堂营养 `canteen` | ✅ CRUD + 按食堂聚合热量 | ❌ 无 | ✅ 见 §10.3 |
+| 常见问题 `faq` | ✅ CRUD + 有帮助 | ❌ 无 | ✅ 见 §10.3 |
+| 猫鸟黑天鹅 `wildlife` | ✅ CRUD + confirm | ❌ 无 | ✅ 见 §10.3 |
+| TechPie `techpie` | ✅ CRUD + sync | ❌ 无 | ✅ 见 §10.5 |
+| AI 校园画像 `ai-portrait` | ✅ 同意 / 来源 / 开关 | ❌ 无 | ✅ 见 §10.5 |
+| 心理支持 `wellbeing` | ✅ 同意 / 危机热线 / 预约 | ❌ 无 | ✅ 见 §10.5 |
+
+**8 个全部做完**：小程序端首页宫格上已没有「开发中」入口。
 
 但后 7 个的后端是**脚手架生成的通用 CRUD**：没有筛选、列表按 `id asc`（最旧在前），
 而且 `takeout-guard` 的 `create` 接收客户端传来的 `reporterId` —— 任何人可以冒充他人归属。
@@ -646,21 +648,98 @@ R5 是「好看 + 丝滑」。按「**用户能感觉到**」这条线选了四�
    - FAQ 种子用了 `identity / groupbuy / errand / content` 等白名单外的分类。
      白名单补 `privacy`（隐私与数据）与 `life`（校园生活），种子同步对齐。
 
-### 10.5 验证证据
+### 10.5 后三个模块（TechPie / 心理支持 / AI 校园画像）
 
-- `npm run typecheck/test/lint -w @kedaya/api` → **624 测试**（43 文件）全绿
-- `npm run typecheck/test/lint -w @kedaya/miniapp` → **603 测试**（32 文件）全绿
-- `npm run build:weapp` → exit 0；主包 **1110 KB / 2048 KB**，11 个子包、31 页
+三者都是「通用 CRUD 骨架 → 真实可用」，但产品形态差别很大，逐一说明取舍。
+
+**TechPie 整合**（`techpie`）—— 同学共建的服务目录。
+
+真正的"整合"需要对方系统提供接口与凭据，我们**拿不到**，所以**不做假的自动同步**：
+`POST /items/:id/sync` 只是把 `status` 写成 `synced`，页面据此显示「**已核对**」而不是「已同步」
+（这词是有意的），并常驻一行「本目录由同学共建维护，状态为人工核对结果，不代表学校官方」。
+外链**不做 `web-view`**：打开外部地址需要业务域名 + 备案，是提审硬门槛；
+改为「复制服务地址」（新增平台能力 `platform/clipboard.ts` 的 `copyText`）+ 一句
+「复制后在浏览器里打开」。举报入口放页面最底部（共建目录最容易被塞广告/钓鱼链接）。
+
+**心理支持**（`wellbeing`）—— 本仓库最敏感的模块，按"宁可少做，不可做错"设计。
+
+- **命名**：契约里的中文名是「心理治疗」，而"治疗"是医疗承诺。已把 `nameZh` 改为
+  **「心理支持」**、`summary` 改为「倾听与预约入口，危机出口在首屏；不做诊断、不做治疗」，
+  并同步到 README / 架构文档 / OpenAPI / Web 文案（页面文案里"治疗""诊断"只出现在**否定句**里）。
+- **危机出口**：`GET /wellbeing/crisis-line` **公开**（无登录、无同意），返回
+  `prominence: primary` 要求前端强制首屏渲染，含 `110`/`120` 与「辅导员 / 保卫处」这类
+  打不了电话时的下一步（**不是**只写"请寻求专业帮助"）。号码抽成可运营配置
+  （`WELLBEING_CRISIS_*` 环境变量可覆盖，换学校不必发版），代码里留了
+  `WELLBEING_CRISIS_VERIFY_NOTE`：**上线前必须逐个拨通核实**。
+  接口失败时用 `CRISIS_FALLBACK` 兜底 —— 绝不允许"拿不到数据就不显示危机信息"。
+  拨号走新增的 `platform/dialer.ts`：区分 `UNSUPPORTED` / `REJECTED`（用户点取消）/ `FAILED`，
+  用户自己取消时**不弹错误**（把三种失败压成一个 catch 就会对着取消报错）。
+- **同意门**：在**加载任何预约数据之前**（服务端 fail-closed，撤回后立刻 `CONSENT_REQUIRED`）；
+  本地留痕按模块**合并写回**（`StorageKeys.consent` 是多模块共用的，整块覆盖会踩掉别人）。
+- **归属**：请求体没有 `userId`，归属只从 JWT 取；列表强制按主体过滤；非本人 **404**。
+  `status`/`crisisFlag` 不在任何 PATCH schema 里 —— 状态只能经领域动作（`/cancel`、`/crisis`）跃迁。
+- **量表（PHQ-9 / GAD-7）与风险分级刻意不做**（那是医疗行为）；**不接分享、不接举报**。
+
+**AI 校园画像**（`ai-portrait`）—— 只读两页，因为三页模板在这里不适用。
+
+画像既没有「别人的列表」（按主体寻址，没有可分页的画像列表端点），也没有「用户发布」
+（**不允许客户端编造标签**），所以做「画像主页 + 数据来源与开关」而不是硬凑列表/发布/详情。
+- **可解释**：每条标签必须带自己的来源；来源越界（含禁读域）→ **整条丢弃**并计数，
+  超长也丢弃而不是截断（截断会改写结论的意思）。
+- **明示排除**：`wellbeing` / `dorm-harmony` 在来源清单里是**带 `exclusionReason` 的禁止项**，
+  页面用**客户端常量**渲染这段（离线、断网、未同意时也说得出口）。后端另有 `FORBIDDEN` 护栏。
+- **如实标注现状**：`generation.implemented: false`、`connectedSources: 0` —— 后端**还没有**
+  画像生成逻辑，`GET /me` 返回 `null` 是常态。页面给**空态**（「目前还没有足够的数据生成画像」），
+  绝不编造标签。`PortraitSourceDescriptor.connected` 是**字面量 `false`**：
+  将来接线时改不动就说明没真接。
+- **可撤回**：本地留痕 + 服务端 `consents` 双轨（先服务端后本地，无乐观更新）；
+  画像本体**不落盘**，只离线缓存公开的来源清单。
+
+**顺带把契约漂移对齐了**（这次没有和稀泥）：OpenAPI 里 `wellbeing` 那几段是早先的草稿，
+与实际实现不一致 —— 已按实现改为 `/wellbeing/crisis-line`（对象形状，不是数组）、
+`/wellbeing/consents` 的 GET/POST/DELETE（与 `privacy` / `dorm-harmony` / `ai-portrait`
+同一约定，而不是草稿里的 `POST /wellbeing/consent {module, granted}`），
+`CrisisResource` schema 换成 `CrisisLine` + 新增 `ConsentRecord`。
+`docs/architecture/03-api-contract.md` §6.6 的端点表也重写成"以实现为准"，
+并标注**量表类端点不做**（原文列了 `/wellbeing/assessments` PHQ-9/GAD-7，是设计草稿）。
+
+### 10.6 验证证据
+
+- `npm run typecheck/test/lint -w @kedaya/api` → **670 测试**（44 文件）全绿
+- `npm run typecheck/test/lint -w @kedaya/miniapp` → **693 测试**（35 文件）全绿
+- `npm run test -w @kedaya/contracts` → **33 测试**（3 文件）全绿（改了 OpenAPI 与模块名）
+- `npm run typecheck/test/lint -w @kedaya/web` → **88 测试**（7 文件）全绿
+- `npm run build:weapp` → exit 0；主包 **1172 KB / 2048 KB**，14 个子包、57 页
   （按文件字节求和；`dist/app.json` 与 `PAGE_PATHS` 由 `routes.test.ts` 四方核对）
 - 数据库实测（迁移 + 重新 seed 后查库）：偷外卖 4 行状态全在白名单（demo 拥有 3 行，覆盖三态）、
   `status='reported'` 存量行 **0**；FAQ 分类全部落在白名单内。
 
-### 10.6 未完成 / 决策待定
+**端到端验证**（对**真实运行的后端**打接口 —— 单测证明不了的部分，脚本已删）：
 
-- **还剩 3 个模块没有页面**：TechPie（外链目录 + 同步状态，真实"整合"取决于对方系统是否给接口）、
-  AI 校园画像、心理支持。后两个是高敏模块，需要二次同意与合规定位，值得单独把关：
-  - 心理模块的**命名**：契约里叫「心理治疗」，但"治疗"是医疗承诺。页面文案必须写成
-    「心理支持 / 咨询预约」，并明确「不做诊断与治疗，紧急情况请拨热线」，危机出口必须在首屏。
-  - AI 画像必须有「数据来源可解释 + 明确哪些数据不参与（心理、宿舍矛盾）」。
+| 轮次 | 覆盖 | 结果 |
+| --- | --- | --- |
+| 1 | 食堂/FAQ/动物筛选与排序、偷外卖归属安全、举报白名单 | **24/24** |
+| 2 | TechPie 筛选/`sync` 语义/举报新类型 | **15/15** |
+| 3 | 心理支持同意门与危机出口、AI 画像护栏 | **40/40** |
+
+其中"证明代码真的拦得住"的几条：
+- 在 body 里塞 `reporterId: 'seed_u_chen'` 冒充他人归属 → **被忽略**，记录落在自己名下；
+  别人的「偷外卖」记录 → **404**（不是 403）；未登录读写 → **401**
+- `wellbeing`：未同意 → **403 CONSENT_REQUIRED**（同意门在数据之前）；撤回同意后立刻 403（fail-closed）；
+  body 里的 `status: 'completed'` / `crisisFlag: true` **被 schema 剥掉**；
+  另一账号（已同意）读我的预约 → **404**，且它自己的列表里没有我的预约
+- `ai-portrait`：来源里塞 `wellbeing` → **403 FORBIDDEN**；无画像行时开关 → **404**（不假装成功）；
+  未同意读 → **403**；`GET /me` 无画像时返回 **null**（空态，不编造标签）
+- 危机出口**无需登录**即可读，`prominence: primary`，号码含 `110` / `120`
+
+### 10.7 未完成 / 决策待定
+
+- **契约中文名「心理治疗」已改**，但 README「关键能力」等处的措辞是历史文本，
+  若还有遗漏，以 `packages/contracts/src/modules.ts` 为准（`wellbeing` = 心理支持）。
+- **两处未接线**（如实记录）：
+  - `profile.allowAiPortrait` 这层开关**没有任何后端逻辑强制执行**（只被存储/回显/展示）。
+    页面文案因此只说"两层互相独立"，**没有**声称它会阻止生成 —— 接线前不要写反。
+  - `wellbeing` 的 `POST /items/:id/crisis`（一键请中心介入）只在后端，
+    小程序端只展示「曾触发紧急渠道」标记；开放它需要产品先定"谁来接"。
 - **仍无法在本机验证的部分**（与之前一致）：真机上的视觉/交互、分包跳转、分享按钮、
   举报弹层、错误边界兜底 —— 本机微信开发者工具服务端口关闭，需手动导入 `apps/miniapp/dist`。

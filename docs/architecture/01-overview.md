@@ -342,7 +342,7 @@ flowchart TB
 | `canteen` | 食堂营养 | `domain:content` | 低 | `auth` |
 | `forum` | 论坛 | `domain:social` | 中 | `auth` `notifications` `profile` |
 | `ai-portrait` | AI 校园画像 | `domain:protected` | **高** | `auth` `profile` |
-| `wellbeing` | 心理治疗 | `domain:wellbeing` | **最高** | `auth` `notifications` |
+| `wellbeing` | 心理支持 | `domain:wellbeing` | **最高** | `auth` `notifications` |
 | `faq` | 常见问题 | `domain:content` | 低 | — |
 | `techpie` | TechPie 整合 | `domain:social` | 中 | `auth` |
 | `wildlife` | 猫鸟黑天鹅 | `domain:content` | 低 | — |

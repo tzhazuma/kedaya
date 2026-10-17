@@ -63,7 +63,7 @@ export default function HomePage() {
           </h1>
           <p className="max-w-xl text-sm text-muted">
             上海科技大学统一校园服务平台：把散落在各处的校园服务入口聚合成一个门户 ——
-            拼单、偷外卖、跳蚤、宿舍矛盾、跑腿、找搭子、失物招领、食堂营养、论坛、心理治疗……
+            拼单、偷外卖、跳蚤、宿舍矛盾、跑腿、找搭子、失物招领、食堂营养、论坛、心理支持……
             共 {PORTAL_MODULES.length} 个模块（{PORTAL_MODULE_GROUPS.core.length} 基础 +{' '}
             {PORTAL_MODULE_GROUPS.business.length} 业务）。
           </p>

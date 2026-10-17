@@ -560,15 +560,21 @@ X-KedaYa-Trace: 7d2c1b0a9e8f7a65
 
 实现方式：`AuditInterceptor` 的字段白名单 + 日志中间件的脱敏规则，两者都在 `services/api/src/platform/audit/` 与 `.../logging/`。审计字段完整定义见 [05-security-privacy.md](./05-security-privacy.md) §5。
 
-### 6.6 相关端点
+### 6.6 相关端点（**以实现为准**）
 
 | Method | Path | 认证 | 说明 |
 | --- | --- | --- | --- |
-| `GET` | `/wellbeing/slots?from=&to=` | 必需 | 可用时段。**不返回其它预约人的任何信息** |
-| `GET` | `/wellbeing/appointments` | 必需 | 我的预约（只返回自己的） |
-| `POST` | `/wellbeing/appointments/{id}/cancel` | 必需 | 取消 |
-| `POST` | `/wellbeing/assessments` | 必需 | 提交量表（PHQ-9 / GAD-7 / PSS-10） |
-| `GET` | `/wellbeing/crisis-resources` | **无需登录** | 危机资源。公开是有意为之 |
+| `GET` | `/wellbeing/crisis-line` | **无需登录** | 危机出口（热线 + 可执行的下一步）。公开、无需同意，前端**必须首屏**渲染 |
+| `GET/POST/DELETE` | `/wellbeing/consents` | 必需 | 二次同意：列（含已撤回历史）/ 授予（幂等）/ 撤回（幂等） |
+| `GET` | `/wellbeing/items?status=` | 必需 + 已同意 | 我的预约（**强制按登录主体过滤**，非本人一律 404） |
+| `POST` | `/wellbeing/items` | 必需 + 已同意 | 创建预约（归属只从 JWT 取，请求体没有 `userId`） |
+| `GET/PATCH/DELETE` | `/wellbeing/items/{id}` | 必需 + 已同意 + 本人 | 详情 / 更新 / 删除 |
+| `POST` | `/wellbeing/items/{id}/cancel` | 同上 | 取消（`requested/confirmed → cancelled`） |
+| `POST` | `/wellbeing/items/{id}/crisis` | 同上 | 标记紧急渠道，**不改状态**，返回热线 |
+
+> ⚠️ 本节早先的草稿列过 `/wellbeing/slots`、`/wellbeing/appointments`、`/wellbeing/assessments`（PHQ-9 / GAD-7 量表）。
+> **量表与诊断不做**——那是医疗行为，可达鸭只做倾听与预约入口。上面的表以 `services/api/src/modules/wellbeing/` 的
+> 实际路由为准，端到端可用性验证见 `docs/delivery-plan.md` 的本轮记录。
 
 ---
 

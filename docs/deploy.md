@@ -350,9 +350,10 @@ delete from "ClientEvent" where "createdAt" < now() - interval '30 days';
 提供举报入口并处理举报。代码已就位，**运维侧还需要有人定期看队列**。
 
 举报 → 落 `ContentReport` 表 → 打一条 `WARN` 日志（前缀 `[moderation]`）。
-九个可举报对象：`flea-item` / `errand-task` / `buddy-group` / `lost-found-item` /
-`forum-post` / `forum-reply` / `canteen-dish` / `faq-entry` / `wildlife-spot`
-（后三个是同学共建的内容：食堂菜品、常见问题、动物观察点 —— 公开 UGC 可能被塞广告或诈骗引导）；
+十个可举报对象：`flea-item` / `errand-task` / `buddy-group` / `lost-found-item` /
+`forum-post` / `forum-reply` / `canteen-dish` / `faq-entry` / `wildlife-spot` / `techpie-link`
+（后四个是同学共建的内容：食堂菜品、常见问题、动物观察点、技术服务链接 ——
+公开 UGC 可能被塞广告或诈骗引导；服务目录尤其如此）；
 七个原因：诈骗 / 违法违规 / 色情低俗 / 侮辱谩骂 / 泄露隐私 / 垃圾广告 / 其它。
 共建内容没有作者字段，`targetAuthorId` 记为 null。
 注意 `takeout-guard`（偷外卖）**不在可举报范围内**：它是本人可见的报备记录，
@@ -673,7 +674,7 @@ node -e '
   const kb=(n)=>(n/1024).toFixed(0);
   console.log("dist 总计 "+kb(total)+" KB / 子包 "+kb(sub)+" KB / 主包 "+kb(total-sub)+" KB（上限 2048 KB）");
 '
-# 期望：主包 ≈ 1010 KB，余量约 1 MB
+# 期望：主包 ≈ 1172 KB，余量约 870 KB
 ```
 
 > 分包配置在 `apps/miniapp/src/app.config.ts`：六个生活模块 + 宿舍矛盾各成一个子包，
