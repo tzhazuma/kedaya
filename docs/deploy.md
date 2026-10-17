@@ -160,9 +160,33 @@ docker push <registry-host>/<namespace>/kedaya-api:v1
 | `CAMPUS_DATA_MODE` | `mock` → 拿到校方授权后改 `live` | `mock` 是**确定性模拟数据**，所有校园数据响应带 `simulated: true`，UI 会如实标注「演示数据」 |
 | `CAMPUS_EGATE_DATA_URL` / `CAMPUS_JWC_DATA_URL` / `CAMPUS_CARD_DATA_URL` | `live` 时必填 | 未配置时 `live` 模式对该平台的请求**明确报错**（宁可报错，也不返回空数据让用户以为「我这学期没课」） |
 | `CAMPUS_CAS_URL` / `CAMPUS_SSO_CLIENT_ID` / `CAMPUS_SSO_CLIENT_SECRET` | 校方提供后填写 | 今天是开发用 Mock 适配器，真实对接点见 `services/api/src/modules/auth/data/mock-campus-auth.provider.ts` 顶部注释 |
+| `CAMPUS_CAS_MOCK_ALLOWED` | **不要配** | 生产环境的 Mock 校园登录默认**关闭**。设 `true` 才打开，等于暂时放弃这一级的身份校验，见下方的红色警告 |
 
 > 校园数据 `mock` 模式下，小程序在课表 / 校园卡页面会显示「演示数据」标记。
 > **上线前如果还没拿到校方授权，请与审核说明保持一致**：不要宣称已对接真实教务/一卡通。
+
+#### ⚠️ 生产环境的 Mock 校园登录是默认关闭的（这是安全闸门，不是功能开关）
+
+Mock 身份提供方的 `authenticateTicket` 会**直接采信** `mock-<8 位学号>` 形式的票据
+（`externalId` 就等于学号）；而 `POST /api/v1/auth/login` 按设计是**公开**接口
+（登录当然不需要先登录）。两者放在一起就是一条完整的身份伪造路径：
+
+```bash
+# 如果生产环境允许 Mock 校园登录，这一条命令就能拿到某位同学的令牌
+curl -X POST "https://你的域名/api/v1/auth/login" \
+  -H 'content-type: application/json' -d '{"ticket":"mock-20230001"}'
+```
+
+所以生产环境（`NODE_ENV=production`）里它**默认返回 401**：
+「校园统一身份认证仍在向校方申请对接中，暂不可用。请改用邮箱密码或微信登录」。
+
+- 正常上线：**不要**配置这个变量。校园登录入口会告诉用户「暂不可用」，
+  而邮箱密码与微信登录照常工作 —— 这是可用且诚实的降级。
+- 演示部署（要给老师/评审看完整链路）：显式 `CAMPUS_CAS_MOCK_ALLOWED=true`，
+  并**在部署记录里写下这一条**。工程上没有别的办法替你兜住这个风险：
+  一旦打开，任何人都能冒充任何学号。**演示结束后请立刻关掉。**
+- 拿到校方授权后：实现真实 `AuthPort` 替换 Mock（对接说明写在该文件顶部注释里），
+  这个开关就再也不需要了。
 
 ### 5.3 其它（可选）
 
@@ -556,6 +580,7 @@ curl -sS "$BASE/api/v1/reports/mine" -H "authorization: Bearer <B 的 accessToke
 | 举报写入 | 201 且库里有 `ContentReport` 行 | 迁移没跑（该表由 `20261017074007_content_reports` 创建） |
 | 重复举报 | 409 `CONFLICT` | 返回 201 说明唯一索引没建上（迁移没跑全） |
 | 邮件发信 | 真实邮箱收到验证码，且响应里没有 `devCode` | 服务没起来说明邮件没配（刻意的）；收到了但响应里有 `devCode` = `NODE_ENV` 不是 `production` |
+| **Mock 校园登录必须被拒**（安全验收） | 401 `UNAUTHENTICATED` | 返回 201 = 生产环境能被任意学号冒充，**立即关停**并检查 `NODE_ENV` 与 `CAMPUS_CAS_MOCK_ALLOWED`（§5.2） |
 
 ---
 
@@ -595,6 +620,7 @@ curl -sS "$BASE/api/v1/reports/mine" -H "authorization: Bearer <B 的 accessToke
 | R5 的视觉/交互打磨（骨架屏、下拉刷新、图片懒加载、卡片按下反馈） | **未验证**（本机无法在真机或开发者工具里操作） | 导入 `apps/miniapp/dist` 后：列表首屏应看到骨架而不是转圈；下拉应出现刷新转圈并保留筛选；长列表滚动时图片按需加载；点卡片有按下反馈 |
 | 邮箱验证码的**真实投递** | **已用本地假 SMTP 走通全链路**（`AUTH_DEV_EXPOSE_CODES=false` 下请求验证码 → 假服务器收到完整 MIME 邮件 → 用邮件里的验证码注册成功）；**真实服务商未验证**（没有凭据） | 见 §5.7 的 5 步验收。需要额外确认的是**送达率**：SPF / DKIM / DMARC 是否配好、是否进垃圾箱、退信怎么处理 |
 | 生产环境「没配邮件就拒绝启动」 | **已验证**（本机 `NODE_ENV=production` 且无 `SMTP_HOST` → 启动即失败，错误信息指向 §5.7；配上 `SMTP_HOST` 后正常启动） | — |
+| Mock 校园登录在生产环境被拒 | **已验证**（生产模式 + `mock-20230001` → 401 与明确文案；加 `CAMPUS_CAS_MOCK_ALLOWED=true` → 201；开发模式 → 201） | 真实 CAS 对接后的行为仍未验证（没有校方凭据） |
 
 ---
 
@@ -742,6 +768,7 @@ node -e '
 | 举报队列里出现大量同一对象的记录 | 正常现象（这正是升级信号）；若同一人反复刷，靠 `@@unique(reporterId,targetType,targetId)` 已经卡住了，多的那条会 409 |
 | 服务起不来，日志说「生产环境必须配置邮件发信」 | 这是**刻意的**：没有 SMTP 时邮箱注册/找回密码会静默失效。按 §5.7 配置，或（仅演示部署）显式承认限制 |
 | 用户说「验证码收不到」 | 顺序排查：① 日志里有没有 `[mail] 已投递给 SMTP`（有 = 已交给服务商，问题在投递侧，查垃圾箱 / SPF / DKIM）；② 有没有 `535`（授权码错，注意不是登录密码）；③ 有没有 `550`（发信域不被服务商允许）。**不要**为了「先让用户注册上」在生产打开 `AUTH_DEV_EXPOSE_CODES`，那等于把验证码公开 |
+| 用户说「校园统一身份认证暂不可用」 | 这是**预期行为**（§5.2）：没有校方授权时，生产环境的 Mock 校园登录是关着的。请引导用户用邮箱或微信登录；只有演示部署才临时打开 `CAMPUS_CAS_MOCK_ALLOWED` |
 | 用户说「验证码提示错误」 | 验证码 10 分钟过期、连续错 5 次作废、60 秒冷却、每小时 5 条。超出即报「请重新获取」，不是 bug |
 
 ---

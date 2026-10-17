@@ -112,6 +112,7 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 | `MAIL_TRANSPORT` | 不配即可。`console` 强制日志实现（生产环境设了会拒绝启动）；`smtp` 强制真发信 |
 | `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | 访问/刷新令牌有效期（秒） |
 | `CAMPUS_DATA_MODE` | `mock`（默认，模拟校园数据，响应标 `simulated: true`）/ `live`（真实上游，需配 `CAMPUS_*_DATA_URL`） |
+| `CAMPUS_CAS_MOCK_ALLOWED` | 本机不用配：开发环境下 Mock 校园登录本来就可用（`ticket` 传 `mock-<8 位学号>`）。它在**生产环境**是关闭的，要演示整条链路才临时打开 —— 理由见 `docs/deploy.md` §5.2 |
 | `CAMPUS_EGATE_DATA_URL` / `CAMPUS_JWC_DATA_URL` / `CAMPUS_CARD_DATA_URL` | 各校园系统上游地址，仅 `live` 模式使用；未配置则明确报错 |
 | `CAMPUS_UPSTREAM_TIMEOUT_MS` | 校园上游请求超时（毫秒，默认 6000） |
 | `AGENT_LLM_BASE_URL` / `AGENT_LLM_API_KEY` / `AGENT_LLM_MODEL` | 可达鸭的 OpenAI 兼容模型；**全部留空即走规则回答**，功能完整 |
