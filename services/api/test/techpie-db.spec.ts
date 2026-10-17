@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createPglitePrisma, seedUser, type PglitePrisma } from './fixtures/pglite-prisma';
 
 /**
- * TechPie Phase 0 · **真库**验收（PGlite = PostgreSQL 的 WASM 构建）
+ * TechPie Phase 0 · **真库**验收（状态枚举按 §11.19-A 为 ACTIVE）（PGlite = PostgreSQL 的 WASM 构建）
  *
  * ## 为什么必须有这一层
  *
@@ -60,7 +60,7 @@ describe('TechPie Phase 0 · 真库（迁移 + 约束 + 密文）', () => {
       data: {
         userId: 'user-db-1',
         provider: 'ecard',
-        status: 'LINKED',
+        status: 'ACTIVE',
         externalUserId: 'openid-db-1',
       },
     });
@@ -111,7 +111,7 @@ describe('TechPie Phase 0 · 真库（迁移 + 约束 + 密文）', () => {
   it('@@unique([userId, provider]) 真的生效', async () => {
     await expect(
       ctx.prisma.techpieLink.create({
-        data: { userId: 'user-db-1', provider: 'ecard', status: 'LINKED' },
+        data: { userId: 'user-db-1', provider: 'ecard', status: 'ACTIVE' },
       }),
     ).rejects.toThrow();
   });
@@ -127,7 +127,7 @@ describe('TechPie Phase 0 · 真库（迁移 + 约束 + 密文）', () => {
 
   it('TechpieSyncJob 的 lastError 列存在（脱敏由应用层保证，列本身只是文本）', async () => {
     await ctx.prisma.techpieLink.create({
-      data: { userId: 'user-db-2', provider: 'ecard', status: 'LINKED' },
+      data: { userId: 'user-db-2', provider: 'ecard', status: 'ACTIVE' },
     });
     const link = await ctx.prisma.techpieLink.findFirst({ where: { userId: 'user-db-2' } });
 
@@ -143,7 +143,7 @@ describe('TechPie Phase 0 · 真库（迁移 + 约束 + 密文）', () => {
   it('解绑即**硬删**：deleteMany 之后行真的没了（不是软删）', async () => {
     const link = await ctx.prisma.techpieLink.findFirst({ where: { userId: 'user-db-2' } });
     await ctx.prisma.techpieLink.create({
-      data: { userId: 'user-db-2', provider: 'cas', status: 'LINKED' },
+      data: { userId: 'user-db-2', provider: 'cas', status: 'ACTIVE' },
     });
     await ctx.prisma.campusSession.create({
       data: {

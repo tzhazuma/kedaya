@@ -6,10 +6,7 @@ import {
   RateLimitedError,
   ValidationError,
 } from '../../../../common/errors/app-error';
-import type {
-  CampusBindingSummary,
-  CampusSessionPort,
-} from '../../domain/ports/campus-session.port';
+import type { CampusBindingState, CampusSessionPort } from '../../domain/ports/campus-session.port';
 import { WebviewTicketStore } from './ticket.store';
 import {
   DisabledCookieDelivery,
@@ -19,33 +16,39 @@ import {
 } from './webview-session.service';
 
 /**
- * 契约 §11.4 I3 + 规格 §8.4 + 裁决 §11.18-B / §11.10-F
+ * 契约 §11.4 I3 + 规格 §8.4 + 裁决 §11.18-B / §11.21-A / §11.20-E / §11.22-C / §11.10-F
  *
  * 这组测试要证明的核心命题是**否定性**的：
  *   Phase 0 下没有任何客户端能通过 HTTP 拿到校园 cookie。
+ *
+ * 以及本轮收敛的三条**形状**要求：
+ *   · 入参只收 `{linkId, targetUrl}`（§11.20-E：删掉 `platform` / `provider` 兼容）；
+ *   · 出参只保留 `{ticket, targetUrl, expiresAt, singleUse}`（删掉 `expiresInSec` / `targetHost`）；
+ *   · 兑换端形状 `{url, targetUrl, mode:'direct', cookieInjected:false, reason:'W4_PHASE_0'}`（§11.22-C）。
  */
 
 const TARGET = 'https://ecourse.shanghaitech.edu.cn/';
+const LINK_ID = 'link-1';
 
-function binding(platform: 'ecard' | 'cpdaily' = 'cpdaily'): CampusBindingSummary {
+function binding(provider: 'ecard' | 'cpdaily' = 'cpdaily'): CampusBindingState {
   return {
-    id: 'link-1',
-    platform,
-    status: 'LINKED',
+    id: LINK_ID,
+    provider,
+    status: 'ACTIVE',
     externalUserId: null,
     expiresAt: null,
     lastSyncAt: null,
-    phase: platform === 'ecard' ? 'phase0' : 'phase1',
+    phase: provider === 'ecard' ? 'phase0' : 'phase1',
   };
 }
 
-function makeCampusSession(bindings: CampusBindingSummary[] = []): CampusSessionPort {
+function makeCampusSession(bindings: CampusBindingState[] = []): CampusSessionPort {
   return {
     listBindings: vi.fn().mockResolvedValue(bindings),
     getBinding: vi
       .fn()
-      .mockImplementation(async (_userId: string, platform: string) =>
-        bindings.find((item) => item.platform === platform) ?? null,
+      .mockImplementation(async (_userId: string, provider: string) =>
+        bindings.find((item) => item.provider === provider) ?? null,
       ),
     bind: vi.fn(),
     unbind: vi.fn(),
@@ -54,7 +57,7 @@ function makeCampusSession(bindings: CampusBindingSummary[] = []): CampusSession
   } as unknown as CampusSessionPort;
 }
 
-function build(options: { bindings?: CampusBindingSummary[]; delivery?: CookieDeliveryPort } = {}) {
+function build(options: { bindings?: CampusBindingState[]; delivery?: CookieDeliveryPort } = {}) {
   const campusSession = makeCampusSession(options.bindings ?? []);
   const tickets = new WebviewTicketStore();
   const delivery = options.delivery ?? new DisabledCookieDelivery();
@@ -62,45 +65,42 @@ function build(options: { bindings?: CampusBindingSummary[]; delivery?: CookieDe
   return { service, campusSession, tickets, delivery };
 }
 
-describe('webview-session · 一次性票据（规格 §8.4）', () => {
-  it('白名单内的地址签发一次性票据：30 秒、singleUse、绑定 host', async () => {
+describe('webview-session · 一次性票据（规格 §8.4 / §11.20-E）', () => {
+  it('白名单内的地址签发一次性票据：30 秒、singleUse，且**只有四个键**', async () => {
     const { service, tickets } = build({ bindings: [binding()] });
 
-    const result = await service.issue('user-1', { platform: 'cpdaily', targetUrl: TARGET });
+    const result = await service.issue('user-1', { linkId: LINK_ID, targetUrl: TARGET });
 
     expect(result.ticket.startsWith('wvt_')).toBe(true);
-    expect(result.expiresInSec).toBe(30);
     expect(result.singleUse).toBe(true);
     expect(result.targetUrl).toBe(TARGET);
-    expect(result.targetHost).toBe('ecourse.shanghaitech.edu.cn');
-    // OpenAPI 形状的别名也给了
     expect(Date.parse(result.expiresAt)).toBeGreaterThan(Date.now());
+    // §11.20-E：**只保留**这四个键 —— `expiresInSec` / `targetHost` 已删除
+    expect(Object.keys(result).sort()).toEqual(['expiresAt', 'singleUse', 'targetUrl', 'ticket']);
     expect(tickets.size()).toBe(1);
   });
 
   it('票据**不含 cookie** —— 它是引用，不是凭证（客户端从未拿到 cookie）', async () => {
     const { service } = build({ bindings: [binding()] });
-    const result = await service.issue('user-1', { platform: 'cpdaily', targetUrl: TARGET });
+    const result = await service.issue('user-1', { linkId: LINK_ID, targetUrl: TARGET });
 
     const serialized = JSON.stringify(result);
     expect(serialized).not.toMatch(/CASTGC|JSESSIONID|EGATE=/i);
     expect(serialized).not.toMatch(/cookie/i);
   });
 
-  /* ---------------- 白名单：fail-closed ---------------- */
+  /* ---------------- 白名单：fail-closed（§11.18-B + §11.21-A） ---------------- */
 
-  it('非白名单域名 → 403 FORBIDDEN（P0-7）', async () => {
+  it('非白名单 origin → 403 FORBIDDEN（P0-7）', async () => {
     const { service } = build();
     await expect(
-      service.issue('user-1', { platform: 'cpdaily', targetUrl: 'https://evil.com/' }),
+      service.issue('user-1', { targetUrl: 'https://evil.com/' }),
     ).rejects.toBeInstanceOf(ForbiddenError);
   });
 
   it('403 的 details 里带机器可读的 reason / check（规格 §8.4）', async () => {
     const { service } = build();
-    await expect(
-      service.issue('user-1', { platform: 'cpdaily', targetUrl: 'https://evil.com/' }),
-    ).rejects.toMatchObject({
+    await expect(service.issue('user-1', { targetUrl: 'https://evil.com/' })).rejects.toMatchObject({
       code: 'FORBIDDEN',
       status: 403,
       details: { reason: 'TARGET_URL_NOT_ALLOWED', check: 'NOT_ALLOWLISTED' },
@@ -110,26 +110,32 @@ describe('webview-session · 一次性票据（规格 §8.4）', () => {
   it('http 明文 → 422 VALIDATION_FAILED（规格 §8.4 的校验表）', async () => {
     const { service } = build();
     await expect(
-      service.issue('user-1', { platform: 'cpdaily', targetUrl: 'http://ecourse.shanghaitech.edu.cn/' }),
+      service.issue('user-1', { targetUrl: 'http://ecourse.shanghaitech.edu.cn/' }),
     ).rejects.toMatchObject({ code: 'VALIDATION_FAILED', status: 422 });
   });
 
   it.each([
     ['userinfo 绕过', 'https://shanghaitech.edu.cn@evil.com/'],
-    ['非 443 端口', 'https://ecourse.shanghaitech.edu.cn:8443/'],
+    ['未登记的端口（origin 不同）', 'https://ecourse.shanghaitech.edu.cn:8443/'],
     ['IP 字面量', 'https://127.0.0.1/'],
     ['后缀通配绕过', 'https://ecourse.shanghaitech.edu.cn.evil.com/'],
   ])('服务端独立再校验一次（不信任客户端）：%s', async (_label, url) => {
     const { service } = build();
-    await expect(service.issue('user-1', { platform: 'cpdaily', targetUrl: url })).rejects.toBeInstanceOf(
-      ForbiddenError,
-    );
+    await expect(service.issue('user-1', { targetUrl: url })).rejects.toBeInstanceOf(ForbiddenError);
   });
 
-  it('校验在**服务端**做：客户端传什么都会被重新判一遍（同一 URL 两次结果一致）', async () => {
+  it('§11.21-A：白名单里登记的 `:8080` origin **通过**（旧规则会误杀它）', async () => {
+    const { service } = build();
+    const result = await service.issue('user-1', {
+      targetUrl: 'https://ecourse.shanghaitech.edu.cn:8080/',
+    });
+    expect(result.ticket).toBeTruthy();
+  });
+
+  it('校验在**服务端**做：客户端传什么都会被重新判一遍', async () => {
     const { service } = build();
     const good = await service.issue('user-1', { targetUrl: TARGET });
-    expect(good.targetHost).toBe('ecourse.shanghaitech.edu.cn');
+    expect(good.ticket).toBeTruthy();
     await expect(service.issue('user-1', { targetUrl: 'https://evil.com/' })).rejects.toBeInstanceOf(
       ForbiddenError,
     );
@@ -137,51 +143,51 @@ describe('webview-session · 一次性票据（规格 §8.4）', () => {
 
   /* ---------------- 绑定门（I4：409 而不是 401） ---------------- */
 
-  it('指定了平台但未绑定 → 409 CAMPUS_BINDING_REQUIRED（**不是** 401）', async () => {
+  it('指定了 `linkId` 但该绑定不存在 → 404（不泄漏"这个 id 存在"）', async () => {
     const { service } = build({ bindings: [] });
     await expect(
-      service.issue('user-1', { platform: 'cpdaily', targetUrl: TARGET }),
-    ).rejects.toMatchObject({ code: 'CAMPUS_BINDING_REQUIRED', status: 409 });
+      service.issue('user-1', { linkId: LINK_ID, targetUrl: TARGET }),
+    ).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  it('绑定存在但已过期 → 同样是 409（引导重绑，不是登出）', async () => {
+  it('绑定存在但不是 ACTIVE（EXPIRED）→ 409 CAMPUS_BINDING_REQUIRED（**不是** 401）', async () => {
     const { service } = build({ bindings: [{ ...binding(), status: 'EXPIRED' }] });
     await expect(
-      service.issue('user-1', { platform: 'cpdaily', targetUrl: TARGET }),
+      service.issue('user-1', { linkId: LINK_ID, targetUrl: TARGET }),
+    ).rejects.toMatchObject({ code: 'CAMPUS_BINDING_REQUIRED', status: 409 });
+    await expect(
+      service.issue('user-1', { linkId: LINK_ID, targetUrl: TARGET }),
     ).rejects.toBeInstanceOf(CampusBindingRequiredError);
   });
 
-  it('已绑定 → 放行', async () => {
+  it('已绑定（ACTIVE）→ 放行', async () => {
     const { service } = build({ bindings: [binding()] });
-    await expect(service.issue('user-1', { platform: 'cpdaily', targetUrl: TARGET })).resolves.toBeDefined();
+    await expect(
+      service.issue('user-1', { linkId: LINK_ID, targetUrl: TARGET }),
+    ).resolves.toBeDefined();
   });
 
-  it('不指定平台（W4 公开入口，如课程录播）→ 不要求绑定', async () => {
+  it('不给 `linkId`（W4 直连）→ **不要求绑定**（§11.21-D：不给出入加权限门）', async () => {
     const { service } = build({ bindings: [] });
     const result = await service.issue('user-1', { targetUrl: 'https://elrc.shanghaitech.edu.cn/' });
     expect(result.ticket).toBeTruthy();
   });
 
-  /* ---------------- 三端形状的并集 ---------------- */
-
-  it('接受冻结 OpenAPI 的 `linkId` 写法（反查该绑定的平台，且必须是自己）', async () => {
-    const { service } = build({ bindings: [binding()] });
-    const result = await service.issue('user-1', { linkId: 'link-1', targetUrl: TARGET });
-    expect(result.ticket).toBeTruthy();
-  });
-
-  it('linkId 不是本人的 → 404（不泄漏"这个 id 存在"）', async () => {
-    const { service } = build({ bindings: [binding()] });
-    await expect(service.issue('user-1', { linkId: 'someone-else', targetUrl: TARGET })).rejects.toBeInstanceOf(
-      NotFoundError,
-    );
-  });
-
-  it('未知平台 → 422（不是 500，也不是静默放行）', async () => {
+  it('`linkId` 非空字符串之外的取值 → 422（不是 500，也不是静默放行）', async () => {
     const { service } = build();
     await expect(
-      service.issue('user-1', { platform: 'gradescope', targetUrl: TARGET }),
+      service.issue('user-1', { linkId: '   ', targetUrl: TARGET }),
     ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('§11.20-E：`platform` / `provider` 已**不是**入参（类型上就没有这两个键）', async () => {
+    const { service } = build({ bindings: [binding()] });
+    // 传了也不会被读 —— 因此它既不生效、也不会误判成"已绑定"
+    const result = await service.issue('user-1', {
+      targetUrl: TARGET,
+      ...({ platform: 'cpdaily' } as Record<string, unknown>),
+    } as never);
+    expect(result.ticket).toBeTruthy();
   });
 
   /* ---------------- 限流 ---------------- */
@@ -203,21 +209,22 @@ describe('webview-session · 一次性票据（规格 §8.4）', () => {
   });
 });
 
-describe('webview-session · 票据兑换（规格 §8.4 的「换取方式」行）', () => {
-  it('Phase 0 返回 `mode: "direct"`（W4：用户自登录，我们不接触 cookie）', async () => {
+describe('webview-session · 票据兑换（§11.22-C 的正式形状）', () => {
+  it('Phase 0 返回 `mode: "direct"` + `cookieInjected: false`（W4：我们不接触 cookie）', async () => {
     const { service } = build({ bindings: [binding()] });
-    const { ticket } = await service.issue('user-1', { platform: 'cpdaily', targetUrl: TARGET });
+    const { ticket } = await service.issue('user-1', { linkId: LINK_ID, targetUrl: TARGET });
 
     const launch = await service.redeem('user-1', ticket);
 
+    // §11.22-D：`expiresAt` 在 direct 模式下没有值 → **整个键不出现**（不下发 null）
     expect(launch).toEqual({
       url: TARGET,
       targetUrl: TARGET,
       mode: 'direct',
-      expiresAt: null,
       cookieInjected: false,
       reason: 'W4_PHASE_0',
     });
+    expect('expiresAt' in launch).toBe(false);
   });
 
   it('**用后即焚**：同一票据第二次兑换 → 404', async () => {
@@ -246,7 +253,7 @@ describe('webview-session · 票据兑换（规格 §8.4 的「换取方式」�
 
   it('⚠️ Phase 0 下 `cookieHeaderFor` **根本不会被执行**（闸门在读取凭证之前）', async () => {
     const { service, campusSession } = build({ bindings: [binding()] });
-    const { ticket } = await service.issue('user-1', { platform: 'cpdaily', targetUrl: TARGET });
+    const { ticket } = await service.issue('user-1', { linkId: LINK_ID, targetUrl: TARGET });
 
     const launch = await service.redeem('user-1', ticket);
 
@@ -273,14 +280,13 @@ describe('webview-session · 票据兑换（规格 §8.4 的「换取方式」�
       url: TARGET,
       targetUrl: TARGET,
       mode: 'injected' as const,
-      expiresAt: null,
       cookieInjected: true,
       reason: 'COOKIE_INJECTED' as const,
     }));
     const delivery: CookieDeliveryPort = { enabled: true, deliver };
 
     const { service, campusSession } = build({ bindings: [binding()], delivery });
-    const { ticket } = await service.issue('user-1', { platform: 'cpdaily', targetUrl: TARGET });
+    const { ticket } = await service.issue('user-1', { linkId: LINK_ID, targetUrl: TARGET });
 
     const launch = await service.redeem('user-1', ticket);
 

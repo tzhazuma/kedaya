@@ -796,10 +796,10 @@ model FacilityBooking {
 model TechpieLink {
   id             String    @id @default(cuid())
   userId         String
-  /// 校园平台：cas | egate | cpdaily | ecard | techpie（契约 §11.10-B）
+  /// 校园平台：cas | egate | cpdaily | jwc | ecard | techpie（契约 §11.20-C 统一枚举）
   provider       String
-  /// UNLINKED | LINKING | LINKED | EXPIRED | REVOKED（契约 §2.9 冻结）
-  status         String    @default("UNLINKED")
+  /// PENDING | ACTIVE | EXPIRED | REVOKED | FAILED（契约 §11.19-A：以 OpenAPI 为准）
+  status         String    @default("PENDING")
   /// 对端标识（校园卡的 OPENID / 学号）。**不是**凭证。
   externalUserId String?
   /// 对端 token（加密）。⚠️ Phase 0 **没有任何写入者** ——
@@ -862,7 +862,7 @@ model TechpieSyncJob {
 model CampusSession {
   id             String    @id @default(cuid())
   userId         String
-  /// 校园平台：cas | egate | cpdaily | ecard | techpie（契约 §11.10-B）
+  /// 校园平台：cas | egate | cpdaily | jwc | ecard | techpie（契约 §11.20-C 统一枚举）
   platform       String
   /// ACTIVE | EXPIRED | REVOKED
   status         String    @default("ACTIVE")
@@ -1225,16 +1225,16 @@ model CampusCardTransaction {
   userId          String
   /// 金额，**分**。direction 决定正负语义
   amountFen       Int
-  /// in | out
+  /// DEBIT | CREDIT（契约 §11.21-B：out/in 有方向歧义 —— “out” 是从谁的角度？）
   direction       String
   merchant        String
-  happenedAt      DateTime
+  occurredAt      DateTime
   balanceAfterFen Int
   createdAt       DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, happenedAt])
+  @@index([userId, occurredAt])
 }
 
 /// 我的 · profile（中敏感）—— 隐私开关集中存放

@@ -15,32 +15,42 @@ import { TraceMiddleware } from '../src/common/middleware/trace.middleware';
 import { AuthModule } from '../src/modules/auth/auth.module';
 import { AUTH_PORT, USER_REPOSITORY, type UserRecord, type UserRepository } from '../src/modules/auth/domain/auth.domain';
 import { CampusCardModule } from '../src/modules/campus-card/campus-card.module';
-import { CAMPUS_CARD_TRANSACTION_REPOSITORY } from '../src/modules/campus-card/domain/campus-card.domain';
+import {
+  CAMPUS_CARD_TRANSACTION_REPOSITORY,
+  type CampusCardTransactionRepository,
+} from '../src/modules/campus-card/domain/campus-card.domain';
 import { ScheduleModule } from '../src/modules/schedule/schedule.module';
 import { TechpieModule } from '../src/modules/techpie/techpie.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createInMemoryDelegate, type InMemoryDelegate } from './fixtures/fake-prisma';
 
 /**
- * TechPie 整合 **Phase 0 端到端验收**（规格 §9.1 的 P0-1 … P0-8）
+ * TechPie Phase 0 + 校园卡 · 端到端验收（规格 §9.1 的 P0-1 … P0-8；契约 §11.21-B / §11.22）
  *
  * ## 这组测试为什么走真实 HTTP
  *
  * 它装配**真实的**控制器 / 守卫 / 拦截器 / 异常过滤器 / 仓储 / 用例，
- * 只把两样东西换成假的：
+ * 只把三样东西换成假的：
  *   · `PrismaService`  → 内存版（本机没有 PostgreSQL，先例见 `wildlife-http.spec.ts`）；
- *   · `USER_REPOSITORY` → 内存账户表（避免 `include` 关系查询）。
+ *   · `USER_REPOSITORY` → 内存账户表（避免 `include` 关系查询）；
+ *   · `CAMPUS_CARD_TRANSACTION_REPOSITORY` → 固定流水的内存仓储。
  *
- * 因此"409 而不是 401"、"白名单 403"、"响应里没有凭证键名"这些结论
- * 是**在真实请求/响应上**验证的，不是对着 mock 断言。
+ * 因此"409 而不是 401"、"白名单 403"、"响应里没有凭证键名"、"付款码不给假数据"
+ * 这些结论是**在真实请求/响应上**验证的，不是对着 mock 断言。
+ *
+ * ## 本轮收敛后断言的是**新形状**（不是兼容并集）
+ *
+ * · `/techpie/links` 元素用 `provider` + `PENDING|ACTIVE|EXPIRED|REVOKED|FAILED`；
+ * · `/techpie/capabilities` **只有 `capabilities` 一个键**，条目只有单一键名；
+ * · `/techpie/webview-session` 入参只收 `{linkId, targetUrl}`、出参只有四个键；
+ * · 校园卡五条端点按 §11.21-B。
  *
  * ## 上游**全超时**的环境是刻意的（I5）
  *
  * `AUTH_PORT` 与校园会话表的读操作都被注入 300ms 延迟。
  * 于是：
  *   · `GET /auth/session` 必须 < 50ms（它**不得**碰任何上游）；
- *   · `GET /auth/me` 会被拖慢（它**确实**要读绑定）—— 这一条是**对照**，
- *     用来证明"延迟是真的存在"，否则 I5 的断言可能只是测了个空环境。
+ *   · `GET /auth/me` 会被拖慢（它**确实**要读绑定）—— 这一条是**对照**。
  */
 
 const JWT_SECRET = process.env.JWT_SECRET ?? 'test-secret-please-change-me-32-chars';
@@ -60,10 +70,6 @@ const delay = <T>(value: T, ms = UPSTREAM_LATENCY_MS): Promise<T> =>
 
 /**
  * I5 的**因果**证据（不只是计时）：记录"读取校园会话表"的次数。
- *
- * `GET /auth/session` 是**纯本地读取** —— 它必须一次都不碰校园会话表。
- * 计时断言在负载高时会抖，所以真正的判据是这些计数器（确定性的），
- * 计时只是同一命题的旁证。
  */
 const campusSessionReads = { count: 0 };
 
@@ -88,12 +94,14 @@ const slowCampusSession: InMemoryDelegate = {
 const techpieLink = createInMemoryDelegate([], 'link');
 const techpieSyncJob = createInMemoryDelegate([], 'job');
 const scheduleCourse = createInMemoryDelegate([], 'course');
+const campusCardTransaction = createInMemoryDelegate([], 'cardTxn');
 
 const fakePrisma = {
   techpieLink,
   techpieSyncJob,
   campusSession: slowCampusSession,
   scheduleCourse,
+  campusCardTransaction,
   $transaction: (ops: Array<Promise<unknown>>) => Promise.all(ops),
 };
 
@@ -138,18 +146,24 @@ const hangingAuthPort = {
   },
 };
 
-/** 校园卡汇总：e2e 只关心"绑定后可读"，用固定值代替聚合查询 */
-const fakeCampusCardRepo = {
-  list: async () => ({ items: [], nextCursor: null }),
-  findById: async () => null,
-  create: async () => {
-    throw new Error('not used');
-  },
-  update: async () => {
-    throw new Error('not used');
-  },
-  remove: async () => undefined,
-  summarize: async () => ({ totalOutFen: 1234, totalInFen: 5000, count: 3 }),
+/**
+ * 校园卡流水仓储（内存版）：固定一条流水，用来验证
+ * 「余额由最新流水的 `balanceAfterFen` **推导**」（§11.19-D 接受的推导）。
+ */
+const LATEST_TXN = {
+  id: 'txn-1',
+  userId: USER_ID,
+  amountFen: 1234,
+  direction: 'DEBIT' as const,
+  balanceAfterFen: 8766,
+  occurredAt: new Date('2026-10-15T02:00:00.000Z'),
+  merchant: '第一食堂',
+  createdAt: new Date('2026-10-15T02:00:01.000Z'),
+};
+
+const fakeCampusCardRepo: CampusCardTransactionRepository = {
+  listByUser: async () => ({ items: [LATEST_TXN], nextCursor: null }),
+  latestByUser: async () => LATEST_TXN,
 };
 
 @Global()
@@ -204,14 +218,14 @@ function collectKeys(value: unknown, acc: string[] = []): string[] {
 /**
  * P0-8：响应体里绝不允许出现的键名。
  *
- * ⚠️ **已登记的规格内部冲突**：契约 §11.4 I1 与规格 §8.3 把 `ticket` 列为禁用键，
- * 而规格 §8.4 的 `POST /webview-session` 响应**明文要求**返回 `ticket`。
- * 我们按 I1 的**本意**执行 —— 禁令保护的是**一级身份会话**与**绑定摘要**
- * （"别把二级凭证混进一级通道"）—— 而 WebView 票据是一个**独立的一次性资源**，
- * 它本身不是校园凭证（不含任何 cookie 材料，30 秒、一次性、绑定 host）。
- *
- * 因此：`ticket` 只在那一个端点的响应里被**显式放行**，其余一律禁止。
- * 这条冲突已写进交付说明的未决问题，需要 Lead 收敛契约措辞。
+ * ⚠️ 契约 §11.22-A **已把 I1 的措辞精确化**：它约束的对象是
+ * `KedaYaIdentitySession` 及 `/auth/*` 的**全部响应**，
+ * **不是全仓每一个叫 `ticket` 的字段**。
+ * 因此：
+ *   · `/auth/*` 的响应 —— 8 个键**一个都不许有**（`expectNoCredentialKeys`）；
+ *   · `POST /techpie/webview-session` 的 `ticket` 是**合法领域字段**，
+ *     用 `expectNoCredentialKeys(..., ['ticket'])` 显式放行
+ *     —— 它仍然必须满足自己的约束（不缓存 / 不进日志 / 不进 URL / 用后即焚）。
  */
 function expectNoCredentialKeys(body: unknown, label: string, allow: readonly string[] = []): void {
   const keys = collectKeys(body);
@@ -226,7 +240,7 @@ interface Envelope<T> {
   traceId: string;
 }
 
-describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）', () => {
+describe('TechPie Phase 0 + 校园卡 · 端到端验收', () => {
   let app: NestExpressApplication;
   let baseUrl: string;
   let token: string;
@@ -324,7 +338,6 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
 
   describe('P0-5 · I5：启动路径不被上游拖死（契约 §8 首帧）', () => {
     it('⚠️ 因果判据：GET /auth/session 一次都不碰上游身份与校园会话表', async () => {
-      // 预热一次（首次请求含路由解析/懒加载，不算进预算）
       await fetch(`${baseUrl}/auth/session`, { headers: auth() });
 
       const authBefore = upstreamAuthCalls.count;
@@ -333,7 +346,6 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
       const response = await fetch(`${baseUrl}/auth/session`, { headers: auth() });
       expect(response.status).toBe(200);
 
-      // 这才是 I5 的真正内容："不得触发任何上游调用"
       expect(upstreamAuthCalls.count).toBe(authBefore);
       expect(campusSessionReads.count).toBe(sessionBefore);
     });
@@ -349,14 +361,10 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
         expect(response.status).toBe(200);
       }
 
-      // 取最优值：这台机器同时跑着 55 个 vitest worker + PGlite，
-      // 单次测量的抖动与"有没有调上游"无关（后者由上面的因果判据钉死）。
       expect(best).toBeLessThan(50);
     });
 
     it('对照组：POST /auth/login 确实会被上游拖慢（证明"超时环境"是真的）', async () => {
-      // `AUTH_PORT` 被替换成"300ms 后超时"的假上游。
-      // 如果 I5 的断言只是在空环境里跑得快，这条对照就会一起变快 —— 于是 I5 失效。
       const started = performance.now();
       const response = await fetch(`${baseUrl}/auth/login`, {
         method: 'POST',
@@ -388,7 +396,9 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
       const response = await fetch(`${baseUrl}/schedule/items`, { headers: auth() });
       const body = (await response.json()) as Envelope<never>;
 
-      expect(body.error!.details).toMatchObject({ platform: 'cpdaily', next: 'GO_BIND' });
+      // §11.20-A：字段名是 `provider`（不是 `platform`）
+      expect(body.error!.details).toMatchObject({ provider: 'cpdaily', next: 'GO_BIND' });
+      expect(body.error!.details).not.toHaveProperty('platform');
     });
 
     it('完全没有 JWT → 401 UNAUTHENTICATED（两种状态必须区分开）', async () => {
@@ -408,7 +418,8 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
         id: 'seed-cpdaily',
         userId: USER_ID,
         provider: 'cpdaily',
-        status: 'LINKED',
+        // §11.19-A：可用状态是 ACTIVE
+        status: 'ACTIVE',
         externalUserId: '20260001',
         tokenCipher: null,
         expiresAt: null,
@@ -421,7 +432,6 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
       const response = await fetch(`${baseUrl}/schedule/items`, { headers: auth() });
       expect(response.status).toBe(200);
 
-      // 清理，避免影响后续用例
       const index = techpieLink.rows.findIndex((row) => row.id === 'seed-cpdaily');
       if (index >= 0) techpieLink.rows.splice(index, 1);
     });
@@ -432,27 +442,35 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
    * ================================================================ */
 
   describe('P0-6 · 校园卡走 OPENID 通道（与 CASTGC 完全解耦）', () => {
-    it('POST /techpie/links（ecard + openid）→ 201 LINKED', async () => {
+    it('POST /techpie/links（`{provider, authCode}`）→ 201，返回 `TechpieLink` 形状', async () => {
       const response = await fetch(`${baseUrl}/techpie/links`, {
         method: 'POST',
         headers: { ...jsonAuth(), [IDEMPOTENCY_HEADER]: 'bind-ecard-1' },
+        body: JSON.stringify({ provider: 'ecard', authCode: 'wx-code-20260001' }),
+      });
+      const body = (await response.json()) as Envelope<Record<string, unknown>>;
+
+      expect(response.status).toBe(201);
+      expect(body.data).toMatchObject({ provider: 'ecard', status: 'ACTIVE', phase: 'phase0' });
+      // §11.20-A：**没有** `platform` 这个名字
+      expect(body.data).not.toHaveProperty('platform');
+      // §11.20-A：对端标识**不下发**
+      expect(body.data).not.toHaveProperty('externalUserId');
+    });
+
+    it('§11.20-D：旧别名（`platform` / `credential` / `openid`）→ 400 VALIDATION_FAILED', async () => {
+      const response = await fetch(`${baseUrl}/techpie/links`, {
+        method: 'POST',
+        headers: { ...jsonAuth(), [IDEMPOTENCY_HEADER]: 'bind-alias-1' },
         body: JSON.stringify({
           platform: 'ecard',
           credential: { kind: 'openid', channel: 'wechat', openId: 'openid-20260001' },
         }),
       });
-      const body = (await response.json()) as Envelope<{ platform: string; status: string }>;
+      const body = (await response.json()) as Envelope<never>;
 
-      expect(response.status).toBe(201);
-      expect(body.data).toMatchObject({ platform: 'ecard', status: 'LINKED' });
-    });
-
-    it('绑定后余额查询成功（第二级能力可用）', async () => {
-      const response = await fetch(`${baseUrl}/campus-card/summary`, { headers: auth() });
-      const body = (await response.json()) as Envelope<{ totalOutFen: number }>;
-
-      expect(response.status).toBe(200);
-      expect(body.data!.totalOutFen).toBe(1234);
+      expect(response.status).toBe(400);
+      expect(body.error!.code).toBe('VALIDATION_FAILED');
     });
 
     it('⚠️ 数据库断言：CampusSession 只有 ecard 行，**没有任何 cpdaily 行**', () => {
@@ -472,16 +490,140 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
       expect(dump).not.toMatch(/castgc|CASTGC|tgc=/);
     });
 
-    it('密文落库（库里看不到 OPENID 明文）', () => {
+    it('密文落库（库里看不到 authCode 明文）', () => {
       const row = campusSessionDelegate.rows.find((item) => item.platform === 'ecard')!;
       expect(String(row.sessionCipher)).toMatch(/^v1\./);
-      expect(String(row.sessionCipher)).not.toContain('openid-20260001');
+      expect(String(row.sessionCipher)).not.toContain('wx-code-20260001');
     });
 
-    it('绑定响应里不含 8 个禁用键名（P0-8 的一部分）', async () => {
+    it('GET /techpie/links 的响应里不含 8 个禁用键名（P0-8 的一部分）', async () => {
       const response = await fetch(`${baseUrl}/techpie/links`, { headers: auth() });
       const body = await response.json();
       expectNoCredentialKeys(body, 'GET /techpie/links');
+    });
+  });
+
+  /* ================================================================ *
+   * 校园卡 · §11.21-B 的五条端点（真实 HTTP）
+   * ================================================================ */
+
+  describe('§11.21-B · 校园卡五条端点', () => {
+    it('GET /campus-card/account → `{activated, balanceFen, updatedAt}`（金额整数分）', async () => {
+      const response = await fetch(`${baseUrl}/campus-card/account`, { headers: auth() });
+      const body = (await response.json()) as Envelope<Record<string, unknown>>;
+
+      expect(response.status).toBe(200);
+      expect(body.data).toEqual({
+        activated: true,
+        balanceFen: 8766,
+        updatedAt: '2026-10-15T02:00:00.000Z',
+      });
+      // 旧 scaffold 形状的 `summary` 必须**不存在**（"汇总"与"余额"是两个概念）
+      expect(body.data).not.toHaveProperty('summary');
+      expect(body.data).not.toHaveProperty('totalOutFen');
+    });
+
+    it('GET /campus-card/transactions → 游标分页，字段是 `occurredAt` + `DEBIT|CREDIT`', async () => {
+      const response = await fetch(`${baseUrl}/campus-card/transactions`, { headers: auth() });
+      const body = (await response.json()) as Envelope<{ items: Array<Record<string, unknown>>; nextCursor: unknown }>;
+
+      expect(response.status).toBe(200);
+      expect(body.data!.items).toHaveLength(1);
+      expect(body.data!.items[0]).toEqual({
+        id: 'txn-1',
+        amountFen: 1234,
+        direction: 'DEBIT',
+        balanceAfterFen: 8766,
+        occurredAt: '2026-10-15T02:00:00.000Z',
+        merchant: '第一食堂',
+      });
+      // §11.21-B：时间字段是 `occurredAt`（**不是** `happenedAt`）
+      expect(body.data!.items[0]).not.toHaveProperty('happenedAt');
+      expect(body.data!.items[0]).not.toHaveProperty('userId');
+      expect(body.data!.nextCursor).toBeNull();
+    });
+
+    it('GET /campus-card/payment-code → 503 UPSTREAM_UNAVAILABLE（**不给假数据**）', async () => {
+      const response = await fetch(`${baseUrl}/campus-card/payment-code`, { headers: auth() });
+      const body = (await response.json()) as Envelope<never>;
+
+      expect(response.status).toBe(503);
+      expect(body.error!.code).toBe('UPSTREAM_UNAVAILABLE');
+      // 机器可见地说明"通道未打通"，而不是含糊的"暂不可用"
+      expect(body.error!.details).toMatchObject({
+        reason: 'CAMPUS_CARD_PAYMENT_CODE_NOT_WIRED',
+        upstreamReady: false,
+      });
+      // 绝不下发任何 `code` 字段
+      expect(JSON.stringify(body)).not.toContain('"code":"');
+    });
+
+    it('付款码响应带 `Cache-Control: no-store`（§10.3：禁止缓存）', async () => {
+      const response = await fetch(`${baseUrl}/campus-card/payment-code`, { headers: auth() });
+      expect(response.headers.get('cache-control')).toBe('no-store');
+    });
+
+    it('未登录 → 401（五条端点都要求一级身份）', async () => {
+      for (const [method, path] of [
+        ['GET', 'account'],
+        ['POST', 'account/activate'],
+        ['DELETE', 'account'],
+        ['GET', 'transactions'],
+        ['GET', 'payment-code'],
+      ] as const) {
+        const response = await fetch(`${baseUrl}/campus-card/${path}`, { method });
+        expect(response.status, `${method} /campus-card/${path}`).toBe(401);
+      }
+    });
+
+    it('⚠️ 旧 scaffold 路由**已不存在**（`/items` / `/summary` 不再有任何出口）', async () => {
+      for (const path of ['items', 'summary']) {
+        const response = await fetch(`${baseUrl}/campus-card/${path}`, { headers: auth() });
+        expect(response.status, `GET /campus-card/${path}`).toBe(404);
+      }
+    });
+
+    it('DELETE /campus-card/account → 硬删凭证副本（幂等）', async () => {
+      const response = await fetch(`${baseUrl}/campus-card/account`, { method: 'DELETE', headers: auth() });
+      const body = (await response.json()) as Envelope<{ activated: boolean; unbound: boolean }>;
+
+      expect(response.status).toBe(200);
+      expect(body.data).toEqual({ activated: false, unbound: true });
+      expect(campusSessionDelegate.rows.filter((row) => row.userId === USER_ID)).toHaveLength(0);
+    });
+
+    it('解绑后 account → 409 CAMPUS_BINDING_REQUIRED（不是登出）', async () => {
+      const response = await fetch(`${baseUrl}/campus-card/account`, { headers: auth() });
+      const body = (await response.json()) as Envelope<never>;
+
+      expect(response.status).toBe(409);
+      expect(body.error!.code).toBe('CAMPUS_BINDING_REQUIRED');
+      expect(body.error!.details).toMatchObject({ provider: 'ecard', next: 'GO_ACTIVATE' });
+    });
+
+    it('POST /campus-card/account/activate → 200（OPENID 通道，重新开通）', async () => {
+      const response = await fetch(`${baseUrl}/campus-card/account/activate`, {
+        method: 'POST',
+        headers: { ...jsonAuth(), [IDEMPOTENCY_HEADER]: 'cc-activate-1' },
+        body: JSON.stringify({ authCode: 'wx-code-reactivate' }),
+      });
+      const body = (await response.json()) as Envelope<{ activated: boolean; balanceFen: number }>;
+
+      expect(response.status).toBe(201);
+      expect(body.data).toMatchObject({ activated: true, balanceFen: 8766 });
+    });
+
+    it('activate 入参只有 `authCode`（明文密码 / 旧别名 → 400，结构性拒绝 U12）', async () => {
+      const response = await fetch(`${baseUrl}/campus-card/account/activate`, {
+        method: 'POST',
+        headers: { ...jsonAuth(), [IDEMPOTENCY_HEADER]: 'cc-activate-2' },
+        body: JSON.stringify({ credential: { kind: 'password', password: 'hunter2' } }),
+      });
+      const raw = await response.text();
+
+      expect(response.status).toBe(400);
+      // 明文密码**绝不出现在响应里**
+      expect(raw).not.toContain('hunter2');
     });
   });
 
@@ -496,10 +638,7 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
       const response = await fetch(`${baseUrl}/techpie/links`, {
         method: 'POST',
         headers: { ...jsonAuth(), [IDEMPOTENCY_HEADER]: 'bind-cpdaily-1' },
-        body: JSON.stringify({
-          platform: 'cpdaily',
-          credential: { kind: 'openid', channel: 'wechat', openId: 'x' },
-        }),
+        body: JSON.stringify({ provider: 'cpdaily', authCode: 'x' }),
       });
       const body = (await response.json()) as Envelope<never>;
 
@@ -510,27 +649,28 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
       expect(campusSessionDelegate.rows.length).toBe(before.sessions);
     });
 
-    it('POST /techpie/links（明文密码）→ 403，且密码**不出现在响应里**', async () => {
+    it('POST /techpie/links（明文密码形状）→ 400，且密码**不出现在响应里**（U12 结构性拒绝）', async () => {
       const response = await fetch(`${baseUrl}/techpie/links`, {
         method: 'POST',
         headers: { ...jsonAuth(), [IDEMPOTENCY_HEADER]: 'bind-password-1' },
         body: JSON.stringify({
-          platform: 'ecard',
+          provider: 'ecard',
           credential: { kind: 'password', studentId: '20260001', password: 'hunter2' },
         }),
       });
       const raw = await response.text();
 
-      expect(response.status).toBe(403);
+      // 明文密码在 wire 上**根本没有位置** —— 因此拒绝发生在 schema 层（400），
+      // 服务端连读都没读到。这比"读了再拒"更强（U12）。
+      expect(response.status).toBe(400);
       expect(raw).not.toContain('hunter2');
-      expect(raw).toContain('PLAIN_PASSWORD_REFUSED');
     });
 
-    it('POST /auth/campus-bindings（cpdaily）同样被拒绝（兼容端点不绕过合规闸门）', async () => {
+    it('POST /auth/campus-bindings（cpdaily）同样被拒绝（另一个入口不绕过合规闸门）', async () => {
       const response = await fetch(`${baseUrl}/auth/campus-bindings`, {
         method: 'POST',
         headers: jsonAuth(),
-        body: JSON.stringify({ platform: 'cpdaily', credential: { kind: 'openid', channel: 'wechat', openId: 'x' } }),
+        body: JSON.stringify({ provider: 'cpdaily', authCode: 'x' }),
       });
       const body = (await response.json()) as Envelope<never>;
 
@@ -543,12 +683,12 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
    * P0-7：webview-session 的白名单（fail-closed）
    * ================================================================ */
 
-  describe('P0-7 · POST /techpie/webview-session 的白名单校验', () => {
-    it('非白名单域名 → 403 FORBIDDEN（P0-7）', async () => {
+  describe('P0-7 · POST /techpie/webview-session 的 origin 白名单校验', () => {
+    it('非白名单 origin → 403 FORBIDDEN（P0-7）', async () => {
       const response = await fetch(`${baseUrl}/techpie/webview-session`, {
         method: 'POST',
         headers: { ...jsonAuth(), [IDEMPOTENCY_HEADER]: 'wv-evil-1' },
-        body: JSON.stringify({ platform: 'ecard', targetUrl: 'https://evil.com/' }),
+        body: JSON.stringify({ targetUrl: 'https://evil.com/' }),
       });
       const body = (await response.json()) as Envelope<never>;
 
@@ -559,7 +699,7 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
 
     it.each([
       ['userinfo 绕过', 'https://shanghaitech.edu.cn@evil.com/'],
-      ['非 443 端口', 'https://ecourse.shanghaitech.edu.cn:8443/'],
+      ['未登记的端口 origin', 'https://ecourse.shanghaitech.edu.cn:8443/'],
       ['IP 字面量', 'https://127.0.0.1/'],
       ['后缀通配绕过', 'https://ecourse.shanghaitech.edu.cn.evil.com/'],
       ['学校根域（不允许通配整个 shanghaitech.edu.cn）', 'https://shanghaitech.edu.cn/'],
@@ -567,7 +707,7 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
       const response = await fetch(`${baseUrl}/techpie/webview-session`, {
         method: 'POST',
         headers: { ...jsonAuth(), [IDEMPOTENCY_HEADER]: `wv-${encodeURIComponent(url)}` },
-        body: JSON.stringify({ platform: 'ecard', targetUrl: url }),
+        body: JSON.stringify({ targetUrl: url }),
       });
       expect(response.status).toBe(403);
     });
@@ -576,7 +716,7 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
       const response = await fetch(`${baseUrl}/techpie/webview-session`, {
         method: 'POST',
         headers: { ...jsonAuth(), [IDEMPOTENCY_HEADER]: 'wv-http-1' },
-        body: JSON.stringify({ platform: 'ecard', targetUrl: 'http://ecourse.shanghaitech.edu.cn/' }),
+        body: JSON.stringify({ targetUrl: 'http://ecourse.shanghaitech.edu.cn/' }),
       });
       const body = (await response.json()) as Envelope<never>;
 
@@ -584,29 +724,43 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
       expect(body.error!.code).toBe('VALIDATION_FAILED');
     });
 
-    it('白名单内的地址 → 201 一次性票据（30 秒 / singleUse / 不含 cookie）', async () => {
+    it('§11.21-A：白名单里的 `:8080` origin **通过**（旧规则会误杀它）', async () => {
+      const response = await fetch(`${baseUrl}/techpie/webview-session`, {
+        method: 'POST',
+        headers: { ...jsonAuth(), [IDEMPOTENCY_HEADER]: 'wv-8080-1' },
+        body: JSON.stringify({ targetUrl: 'https://ecourse.shanghaitech.edu.cn:8080/' }),
+      });
+      expect(response.status).toBe(201);
+    });
+
+    it('白名单内的地址 → 201，出参**只有四个键**（§11.20-E）', async () => {
       const response = await fetch(`${baseUrl}/techpie/webview-session`, {
         method: 'POST',
         headers: { ...jsonAuth(), [IDEMPOTENCY_HEADER]: 'wv-ok-1' },
-        body: JSON.stringify({ platform: 'ecard', targetUrl: 'https://ecourse.shanghaitech.edu.cn/' }),
+        body: JSON.stringify({ targetUrl: 'https://ecourse.shanghaitech.edu.cn/' }),
       });
-      const body = (await response.json()) as Envelope<{
-        ticket: string;
-        expiresInSec: number;
-        singleUse: boolean;
-        targetHost: string;
-      }>;
+      const body = (await response.json()) as Envelope<Record<string, unknown>>;
 
       expect(response.status).toBe(201);
-      expect(body.data!.ticket.startsWith('wvt_')).toBe(true);
-      expect(body.data!.expiresInSec).toBe(30);
+      expect(String(body.data!.ticket).startsWith('wvt_')).toBe(true);
       expect(body.data!.singleUse).toBe(true);
-      expect(body.data!.targetHost).toBe('ecourse.shanghaitech.edu.cn');
-      // `ticket` 是规格 §8.4 明文规定的响应字段（见上面 expectNoCredentialKeys 的说明）
+      expect(body.data!.targetUrl).toBe('https://ecourse.shanghaitech.edu.cn/');
+      expect(Date.parse(String(body.data!.expiresAt))).toBeGreaterThan(Date.now());
+      // `expiresInSec` / `targetHost` 已删除（§11.20-E：出参只保留四个键）
+      expect(Object.keys(body.data!).sort()).toEqual(['expiresAt', 'singleUse', 'targetUrl', 'ticket']);
+      // `ticket` 是 §8.4 明文规定的响应字段（§11.22-A 已精确化 I1 的措辞）
       expectNoCredentialKeys(body, 'POST /techpie/webview-session', ['ticket']);
-      // 但它**绝不含**任何 cookie 材料 —— 票据是引用，不是凭证
       expect(JSON.stringify(body)).not.toMatch(/CASTGC|JSESSIONID|EGATE=/i);
       expect(JSON.stringify(body)).not.toMatch(/cookie/i);
+    });
+
+    it('§11.20-D：旧的 `platform` 兼容入参 → 400（不再被静默忽略）', async () => {
+      const response = await fetch(`${baseUrl}/techpie/webview-session`, {
+        method: 'POST',
+        headers: { ...jsonAuth(), [IDEMPOTENCY_HEADER]: 'wv-platform-alias-1' },
+        body: JSON.stringify({ platform: 'ecard', targetUrl: 'https://elrc.shanghaitech.edu.cn/' }),
+      });
+      expect(response.status).toBe(400);
     });
 
     it('用票据换一次性打开地址 → mode=direct（W4：用户自登录，我们不接触 cookie）', async () => {
@@ -621,10 +775,12 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
         method: 'POST',
         headers: auth(),
       });
-      const body = (await response.json()) as Envelope<{ mode: string; cookieInjected: boolean }>;
+      const body = (await response.json()) as Envelope<Record<string, unknown>>;
 
       expect(response.status).toBe(200);
-      expect(body.data).toMatchObject({ mode: 'direct', cookieInjected: false });
+      expect(body.data).toMatchObject({ mode: 'direct', cookieInjected: false, reason: 'W4_PHASE_0' });
+      // §11.22-D：`expiresAt` 在 direct 模式下没有值 → **整个键不出现**
+      expect(body.data).not.toHaveProperty('expiresAt');
     });
 
     it('票据**用后即焚**：第二次兑换 → 404', async () => {
@@ -657,36 +813,50 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
    * ================================================================ */
 
   describe('P0-8 · techpie 与 campus-card 的全部响应都不含凭证键名', () => {
-    it('GET /techpie/capabilities（含 allowlistPlaceholder 机器可见标记）', async () => {
+    it('GET /techpie/capabilities（**只有 `capabilities`**，含 allowlistPlaceholder）', async () => {
       const response = await fetch(`${baseUrl}/techpie/capabilities`, { headers: auth() });
-      const body = (await response.json()) as Envelope<{
-        items: unknown[];
-        allowlistPlaceholder: boolean;
-        unboundCount: number;
-      }>;
+      const body = (await response.json()) as Envelope<Record<string, unknown>>;
 
       expect(response.status).toBe(200);
       expect(body.data!.allowlistPlaceholder).toBe(true);
-      expect(body.data!.items.length).toBeGreaterThan(0);
+      const capabilities = body.data!.capabilities as Array<Record<string, unknown>>;
+      expect(capabilities.length).toBeGreaterThan(0);
+      // §11.20-D：同值的 `items` 别名**已删除**
+      expect(body.data).not.toHaveProperty('items');
       expectNoCredentialKeys(body, 'GET /techpie/capabilities');
     });
 
-    it('未绑定项以 CAMPUS_BINDING_REQUIRED **引导**返回，而不是报错', async () => {
+    it('能力条目**只有单一键名**（`key`/`available`/`requiredProvider`/`blockedReason`）', async () => {
+      const response = await fetch(`${baseUrl}/techpie/capabilities`, { headers: auth() });
+      const body = (await response.json()) as Envelope<{
+        capabilities: Array<Record<string, unknown>>;
+      }>;
+
+      const balance = body.data!.capabilities.find((item) => item.key === 'ecard.balance')!;
+      expect(balance).toBeDefined();
+      for (const alias of ['id', 'platform', 'status', 'guidance']) {
+        expect(balance).not.toHaveProperty(alias);
+      }
+      expect(typeof balance.available).toBe('boolean');
+      expect(balance.requiredProvider).toBe('ecard');
+    });
+
+    it('未绑定项以 `available: false` + `blockedReason` **引导**返回，而不是报错', async () => {
       // 用一个没绑定的用户（OTHER_USER_ID）
       const response = await fetch(`${baseUrl}/techpie/capabilities`, { headers: auth(otherToken) });
       const body = (await response.json()) as Envelope<{
-        items: Array<{ id: string; status: string; guidance: string | null }>;
+        capabilities: Array<{ key: string; available: boolean; blockedReason?: string }>;
         unboundCount: number;
       }>;
 
       expect(response.status).toBe(200); // 200 而不是 409 —— 清单本身不是校园能力
-      const balance = body.data!.items.find((item) => item.id === 'ecard.balance')!;
-      expect(balance.status).toBe('CAMPUS_BINDING_REQUIRED');
-      expect(balance.guidance).toBeTruthy();
+      const balance = body.data!.capabilities.find((item) => item.key === 'ecard.balance')!;
+      expect(balance.available).toBe(false);
+      expect(balance.blockedReason).toBeTruthy();
       expect(body.data!.unboundCount).toBeGreaterThan(0);
     });
 
-    it('GET /techpie/links / GET /techpie/links/:id / GET /techpie/sync-jobs 都不含凭证键名', async () => {
+    it('GET /techpie/links / :id / sync-jobs 都不含凭证键名', async () => {
       const listResponse = await fetch(`${baseUrl}/techpie/links`, { headers: auth() });
       const list = (await listResponse.json()) as Envelope<{ items: Array<{ id: string }> }>;
       expect(listResponse.status).toBe(200);
@@ -702,15 +872,17 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
       expectNoCredentialKeys(await jobsResponse.json(), 'GET /techpie/sync-jobs');
     });
 
-    it('GET /campus-card/summary 不含凭证键名', async () => {
-      const response = await fetch(`${baseUrl}/campus-card/summary`, { headers: auth() });
-      expect(response.status).toBe(200);
-      expectNoCredentialKeys(await response.json(), 'GET /campus-card/summary');
+    it('GET /campus-card/account 与 /transactions 都不含凭证键名', async () => {
+      for (const path of ['account', 'transactions']) {
+        const response = await fetch(`${baseUrl}/campus-card/${path}`, { headers: auth() });
+        expect(response.status, path).toBe(200);
+        expectNoCredentialKeys(await response.json(), `GET /campus-card/${path}`);
+      }
     });
   });
 
   /* ================================================================ *
-   * 其余端点的行为（规格 §8.1 的 8 个端点逐一覆盖）
+   * 其余端点的行为
    * ================================================================ */
 
   describe('规格 §8.1 · 其余端点的行为', () => {
@@ -739,24 +911,6 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
       expect(body.error!.details).toMatchObject({ reason: 'RENEW_NOT_SUPPORTED' });
     });
 
-    it('DELETE /techpie/links/:id → 真正删除凭证副本（CampusSession 整行消失）', async () => {
-      const listResponse = await fetch(`${baseUrl}/techpie/links`, { headers: auth() });
-      const list = (await listResponse.json()) as Envelope<{ items: Array<{ id: string }> }>;
-      const linkId = list.data!.items[0]!.id;
-      expect(campusSessionDelegate.rows.length).toBeGreaterThan(0);
-
-      const response = await fetch(`${baseUrl}/techpie/links/${linkId}`, { method: 'DELETE', headers: auth() });
-      expect(response.status).toBe(200);
-
-      // 硬删：凭证副本**真的没了**
-      expect(campusSessionDelegate.rows.filter((row) => row.userId === USER_ID)).toHaveLength(0);
-      // 解绑后能力回到"需绑定"（不是登出）
-      const summary = await fetch(`${baseUrl}/campus-card/summary`, { headers: auth() });
-      const body = (await summary.json()) as Envelope<never>;
-      expect(summary.status).toBe(409);
-      expect(body.error!.code).toBe('CAMPUS_BINDING_REQUIRED');
-    });
-
     it('GET /techpie/links 走游标分页（limit 生效、nextCursor 形状正确）', async () => {
       const response = await fetch(`${baseUrl}/techpie/links?limit=1`, { headers: auth() });
       const body = (await response.json()) as Envelope<{ items: unknown[]; nextCursor: string | null }>;
@@ -782,16 +936,23 @@ describe('TechPie Phase 0 · 端到端验收（规格 §9.1 的 P0-1 … P0-8）
   });
 
   /* ================================================================ *
-   * 兼容端点：/auth/campus-bindings 仍然可用（冻结 OpenAPI 已登记）
+   * `/auth/campus-bindings`：**自己的形状**（§11.19-C）
    * ================================================================ */
 
-  describe('兼容端点 · /auth/campus-bindings', () => {
-    it('GET /auth/campus-bindings 返回绑定摘要（**不含凭证**）', async () => {
+  describe('§11.19-C · /auth/campus-bindings 与 /techpie/links 形状不同', () => {
+    it('GET /auth/campus-bindings 用 `{platform, bound}`（**不是** techpie 的 `provider`/`status`）', async () => {
       const response = await fetch(`${baseUrl}/auth/campus-bindings`, { headers: auth() });
-      const body = (await response.json()) as Envelope<unknown[]>;
+      const body = (await response.json()) as Envelope<Array<Record<string, unknown>>>;
 
       expect(response.status).toBe(200);
       expect(Array.isArray(body.data)).toBe(true);
+      expect(body.data!.length).toBeGreaterThan(0);
+      const first = body.data![0]!;
+      expect(first.platform).toBe('ecard');
+      expect(first.bound).toBe(true);
+      expect(first).not.toHaveProperty('provider');
+      expect(first).not.toHaveProperty('status');
+      expect(first).not.toHaveProperty('id');
       expectNoCredentialKeys(body, 'GET /auth/campus-bindings');
     });
 

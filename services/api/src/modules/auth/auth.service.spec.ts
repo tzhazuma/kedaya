@@ -14,7 +14,7 @@ import {
   type UserRecord,
   type UserRepository,
 } from './domain/auth.domain';
-import type { CampusBindingSummary, CampusSessionPort } from '../techpie/domain/ports/campus-session.port';
+import type { CampusBindingState, CampusSessionPort } from '../techpie/domain/ports/campus-session.port';
 
 /**
  * 契约 §5「两级身份模型」的回归测试。
@@ -63,13 +63,13 @@ function makeUsers(): UserRepository {
   } as unknown as UserRepository;
 }
 
-function makeBindings(): CampusBindingSummary[] {
+function makeBindings(): CampusBindingState[] {
   return [
     {
       id: 'bind-1',
-      platform: 'ecard',
-      status: 'LINKED',
-      externalUserId: 'openid-abc',
+      provider: 'ecard',
+      status: 'ACTIVE',
+      externalUserId: 'authcode-abc',
       expiresAt: '2026-12-01T00:00:00.000Z',
       lastSyncAt: null,
       phase: 'phase0',
@@ -77,15 +77,15 @@ function makeBindings(): CampusBindingSummary[] {
   ];
 }
 
-function makeCampusSession(options: { bindings?: CampusBindingSummary[] } = {}): CampusSessionPort {
+function makeCampusSession(options: { bindings?: CampusBindingState[] } = {}): CampusSessionPort {
   const bindings = options.bindings ?? [];
   return {
     bind: vi.fn(),
     listBindings: vi.fn().mockResolvedValue(bindings),
     getBinding: vi
       .fn()
-      .mockImplementation(async (_userId: string, platform: string) =>
-        bindings.find((binding) => binding.platform === platform) ?? null,
+      .mockImplementation(async (_userId: string, provider: string) =>
+        bindings.find((binding) => binding.provider === provider) ?? null,
       ),
     unbind: vi.fn(),
     renew: vi.fn(),
@@ -296,4 +296,63 @@ describe('契约 §5 · 两级身份模型解耦', () => {
       expect(await service.campusCapability(USER.id, 'cpdaily')).toEqual({ available: false });
     });
   });
+  /* ================================================================ *
+   * 契约 §11.19-C / §11.20-A：`/auth/campus-bindings` 用**自己的**形状
+   * ================================================================ */
+
+  describe('§11.19-C · /auth/campus-bindings 与 TechpieLink **不共用名字**', () => {
+    it('绑定摘要用 `platform` + `bound`（**不是** techpie 的 `provider` + `status`）', async () => {
+      const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
+      const { service } = build(authPort, makeCampusSession({ bindings: makeBindings() }));
+
+      const [summary] = await service.listCampusBindings(USER.id);
+
+      expect(summary).toEqual({
+        platform: 'ecard',
+        bound: true,
+        expiresAt: '2026-12-01T00:00:00.000Z',
+      });
+      expect(Object.keys(summary!).sort()).toEqual(['bound', 'expiresAt', 'platform']);
+      // §11.20-A：techpie 的那套名字**不出现**在 `/auth/*` 的形状里
+      expect(Object.keys(summary!)).not.toContain('provider');
+      expect(Object.keys(summary!)).not.toContain('status');
+      expect(Object.keys(summary!)).not.toContain('id');
+    });
+
+    it('§11.22-D：`expiresAt` 为空时**省略键**（不下发 `null`）', async () => {
+      const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
+      const { service } = build(
+        authPort,
+        makeCampusSession({ bindings: [{ ...makeBindings()[0]!, expiresAt: null }] }),
+      );
+
+      const [summary] = await service.listCampusBindings(USER.id);
+      expect('expiresAt' in summary!).toBe(false);
+      expect(Object.values(summary!).every((value) => value !== null)).toBe(true);
+    });
+
+    it('非 ACTIVE 的绑定 → `bound: false`（不是错误，是合法状态）', async () => {
+      const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
+      for (const status of ['PENDING', 'EXPIRED', 'REVOKED', 'FAILED'] as const) {
+        const { service } = build(
+          authPort,
+          makeCampusSession({ bindings: [{ ...makeBindings()[0]!, status }] }),
+        );
+        const [summary] = await service.listCampusBindings(USER.id);
+        expect(summary!.bound).toBe(false);
+      }
+    });
+
+    it('I1（§11.22-A 精确化后）：`/auth/*` 的绑定摘要**不含 8 个禁用键名**', async () => {
+      const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
+      const { service } = build(authPort, makeCampusSession({ bindings: makeBindings() }));
+
+      const summaries = await service.listCampusBindings(USER.id);
+      const keys = collectKeys(summaries).map((key) => key.toLowerCase());
+      for (const forbidden of IDENTITY_SESSION_FORBIDDEN_KEYS) {
+        expect(keys).not.toContain(forbidden.toLowerCase());
+      }
+    });
+  });
+
 });

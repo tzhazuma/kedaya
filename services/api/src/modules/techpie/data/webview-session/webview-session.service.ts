@@ -3,7 +3,10 @@
  *
  * 规格 `docs/features/techpie-integration.md` §8.4；
  * 裁决 `00-FROZEN-CONTRACT.md` §11.10-F（U4：小程序 `web-view` **不能**注入 cookie）、
- * §11.18-A（接受 `POST /webview-session` 的创建式形状）、§11.18-B（白名单 fail-closed）。
+ * §11.18-A（接受 `POST /webview-session` 的创建式形状）、
+ * §11.18-B + **§11.21-A**（白名单 fail-closed，按**完整 origin** 精确匹配）、
+ * §11.20-E（入参只收 `{linkId, targetUrl}`、出参只保留 `{ticket, targetUrl, expiresAt, singleUse}`）、
+ * §11.22-C（兑换端的正式形状）、§11.22-D（可空字段省略键）。
  *
  * ## 本目录是 I3 的唯一出口 —— 为什么这很重要
  *
@@ -21,7 +24,8 @@
  * W3（表单 POST）取决于校园系统且**必须在信息办确认后**才做（Phase 2）。
  *
  * 因此 `redeem()` 在 Phase 0 返回的是 `mode: 'direct'` 的一次性打开地址，
- * **不含**任何 cookie。`cookieHeaderFor(` 这条路径由 `CookieDeliveryPort` 把关：
+ * **不含**任何 cookie，且 `cookieInjected` **恒为 false**。
+ * `cookieHeaderFor(` 这条路径由 `CookieDeliveryPort` 把关：
  * Phase 0 的实现 `enabled === false`，闸门在**读取凭证之前**就短路 ——
  * 于是 Phase 0 下 `cookieHeaderFor` **根本不会被执行**，
  * 但它是全仓唯一的调用点，I3 的扫描因此**非空且可审计**。
@@ -38,7 +42,7 @@ import {
 } from '../../../../common/errors/app-error';
 import {
   CAMPUS_SESSION_PORT,
-  isCampusPlatform,
+  isActiveLinkStatus,
   type CampusPlatform,
   type CampusSessionPort,
 } from '../../domain/ports/campus-session.port';
@@ -55,37 +59,55 @@ import {
 /** 限流（规格 §8.4：10 次/分钟） */
 export const WEBVIEW_SESSION_RATE_LIMIT = { windowMs: 60_000, max: 10 } as const;
 
-/** 换票请求（三端形状的并集，见 `techpie.controller.ts` 的说明） */
+/**
+ * 换票请求（契约 §11.20-E：**只收** `{linkId, targetUrl}`）。
+ *
+ * ⚠️ 旧的 `platform` / `provider` 兼容写法已删除（§11.20-D）——
+ * 控制器 schema 用 `.strict()`，带它们的请求在进入本服务之前就是
+ * `400 VALIDATION_FAILED`，而**不是**被静默忽略。
+ * 静默忽略才是真正的危险：客户端以为自己在指定平台，服务端其实没读。
+ */
 export interface IssueWebviewSessionInput {
-  platform?: unknown;
-  provider?: unknown;
+  /** 针对**一条具体绑定**（不是"某个平台"—— 用平台会让"两条同平台绑定"变成歧义） */
   linkId?: unknown;
   targetUrl: unknown;
 }
 
-/** `POST /webview-session` 的响应（规格 §8.4 + OpenAPI 形状的并集） */
+/**
+ * `POST /webview-session` 的响应（契约 §11.20-E 的**唯一**形状）。
+ *
+ * ⚠️ 删掉了 `expiresInSec`（相对秒数）与 `targetHost` 两个别名/附加字段：
+ *   · 绝对时间 `expiresAt` 比相对秒数更适合分布式校验；
+ *   · 票据绑定的 origin 是**服务端内部**的防重放手段，不必下发给客户端。
+ */
 export interface WebviewTicketResult {
   ticket: string;
-  /** 规格 §8.4 冻结为 30 秒 */
-  expiresInSec: number;
   targetUrl: string;
-  /** OpenAPI 形状的别名 */
   expiresAt: string;
-  /** OpenAPI 形状的别名：恒为 `true`（用后即焚） */
+  /** 恒为 `true`（用后即焚） */
   singleUse: true;
-  /** 票据绑定到的 host（防票据被用于其它域名） */
-  targetHost: string;
 }
 
-/** 用票据换到的**一次性打开地址**（规格 §8.4「换取方式」行） */
+/**
+ * 用票据换到的**一次性打开地址**（契约 §11.22-C 的正式形状）。
+ *
+ * `cookieInjected` 在 Phase 0 下**恒为 false** —— W4 的定义就是"我们不接触 cookie"。
+ * 这个字段存在的意义是**让"我们没注入 cookie"这件事可被机器断言**，
+ * 而不是靠文档承诺。
+ */
 export interface WebviewLaunch {
   /** 最终要打开的地址（服务端签发；客户端不得改写） */
   url: string;
   targetUrl: string;
   /** `direct` = 用户自登录（Phase 0 / W4）；`injected` = 服务端注入 cookie（Phase 2，未实现） */
   mode: 'direct' | 'injected';
-  /** 打开地址自身的有效期（Phase 0 的 `direct` 模式没有额外时效） */
-  expiresAt: string | null;
+  /**
+   * 打开地址自身的有效期。
+   *
+   * ⚠️ §11.22-D 通用规则：**可空的可选字段为空时省略键，而不是下发 `null`**。
+   * Phase 0 的 `direct` 模式没有额外时效，因此该键**不出现**。
+   */
+  expiresAt?: string;
   /** 本次打开是否携带了注入的 cookie。**Phase 0 恒为 false** */
   cookieInjected: boolean;
   /** 机器可读的原因（Phase 0 恒为 `W4_PHASE_0`） */
@@ -193,19 +215,23 @@ export class WebviewSessionService implements WebviewAllowlistPort {
   /**
    * 换取一次性票据。
    *
-   * 校验顺序（规格 §8.4 的校验表 + §11.18-B）：
+   * 校验顺序（规格 §8.4 的校验表 + §11.18-B + §11.21-A）：
    *   1. 限流（10 次/分钟/用户）→ 429 `RATE_LIMITED`；
-   *   2. `targetUrl` 白名单 / https / 无 userinfo / 443 / 非 IP —— **fail-closed**；
-   *   3. 若指定了平台，该平台必须**已绑定且 LINKED** → 否则 409 `CAMPUS_BINDING_REQUIRED`。
+   *   2. `targetUrl` 按**完整 origin** 精确匹配白名单（fail-closed）→ 403/422；
+   *   3. 若指定了 `linkId`，该绑定必须**属于本人且 ACTIVE** → 否则 409 `CAMPUS_BINDING_REQUIRED`。
    *
    * ⚠️ 第 2 步在**服务端**做。客户端传入的 `targetUrl` 一律不可信
    * （§11.18-B 第 4 条）—— 三端各自的客户端白名单只是纵深防御。
+   *
+   * ⚠️ 不给 `linkId` 是**合法**的：W4 直连**不要求绑定**（§11.21-D 的原话 ——
+   * "要求先绑定才能直连，等于给一个不需要权限的功能加了权限门"）。
+   * 但**直连不需要绑定 ≠ 直连不需要登录** —— 一级身份仍然必需（`UNAUTHENTICATED`）。
    */
   async issue(userId: string, input: IssueWebviewSessionInput): Promise<WebviewTicketResult> {
     this.assertWithinRateLimit(userId);
 
     const check = checkCampusTargetUrl(input.targetUrl);
-    if (!check.allowed || check.host === null) {
+    if (!check.allowed || check.origin === null) {
       const reason = check.reason ?? 'MALFORMED';
       const details = {
         // 规格 §8.4 登记的 details.reason
@@ -218,18 +244,21 @@ export class WebviewSessionService implements WebviewAllowlistPort {
       if (statusForRejection(reason) === 422) {
         throw new ValidationError('targetUrl 必须是白名单内的 https 地址', details, 422);
       }
-      throw new ForbiddenError('targetUrl 不在校园域名白名单内（fail-closed，不做后缀通配）', details);
+      throw new ForbiddenError(
+        'targetUrl 不在校园 origin 白名单内（fail-closed，按完整 origin 精确匹配，不做后缀通配）',
+        details,
+      );
     }
 
     const platform = await this.resolvePlatform(userId, input);
 
-    // 需要绑定的入口：必须是 LINKED（否则 409 —— **不是** 401，契约不变式 I4）
+    // 需要绑定的入口：必须是 ACTIVE（否则 409 —— **不是** 401，契约不变式 I4）
     if (platform !== null) {
       const binding = await this.campusSession.getBinding(userId, platform);
-      if (!binding || binding.status !== 'LINKED') {
+      if (!binding || !isActiveLinkStatus(binding.status)) {
         throw new CampusBindingRequiredError(`该入口需要先绑定校园系统（${platform}）`, {
-          platform,
-          status: binding?.status ?? 'UNLINKED',
+          provider: platform,
+          status: binding?.status ?? 'UNBOUND',
         });
       }
     }
@@ -238,23 +267,22 @@ export class WebviewSessionService implements WebviewAllowlistPort {
       userId,
       platform,
       targetUrl: String(input.targetUrl),
-      host: check.host,
+      origin: check.origin,
     });
 
     return {
       ticket,
-      expiresInSec: Math.round((expiresAt.getTime() - Date.now()) / 1000),
       targetUrl: String(input.targetUrl),
       expiresAt: expiresAt.toISOString(),
       singleUse: true,
-      targetHost: check.host,
     };
   }
 
   /**
    * 用票据换一次性打开地址（**用后即焚**）。
    *
-   * Phase 0 返回 `mode: 'direct'`（W4：用户自登录，我们不接触 cookie）。
+   * Phase 0 返回 `mode: 'direct'`（W4：用户自登录，我们不接触 cookie），
+   * `cookieInjected: false`、`reason: 'W4_PHASE_0'`（契约 §11.22-C）。
    */
   async redeem(userId: string, ticket: string): Promise<WebviewLaunch> {
     // 先**看**归属再消费。两条理由：
@@ -277,7 +305,6 @@ export class WebviewSessionService implements WebviewAllowlistPort {
         url: record.targetUrl,
         targetUrl: record.targetUrl,
         mode: 'direct',
-        expiresAt: null,
         cookieInjected: false,
         reason: 'W4_PHASE_0',
       };
@@ -298,35 +325,26 @@ export class WebviewSessionService implements WebviewAllowlistPort {
   /* ---------------- 内部 ---------------- */
 
   /**
-   * 解析请求里的平台。
+   * 解析请求里的绑定（契约 §11.20-E：用 `linkId`，**不是** `platform`）。
    *
-   * 接受三种写法（三端形状的并集，见 `techpie.controller.ts` 的说明）：
-   *   · `platform`（规格 §8.4 / Web / 移动端）；
-   *   · `provider`（冻结 OpenAPI 的写法，与小程序的 `provider` 对齐）；
-   *   · `linkId`（冻结 OpenAPI 的写法）→ 反查该绑定的平台（**必须是自己的**）。
+   * 理由（§11.20-E 的原话）：票据针对**一条具体绑定**，而不是"某个平台" ——
+   * 用 `platform` 会让"用户有两条同平台绑定"变成歧义。
    *
-   * 都不给 → `null`，表示 W4 公开入口（不需要绑定）。
+   * 不给 `linkId` → `null`，表示 W4 公开入口（不需要绑定）。
    */
   private async resolvePlatform(userId: string, input: IssueWebviewSessionInput): Promise<CampusPlatform | null> {
-    const raw = input.platform ?? input.provider;
-    if (raw !== undefined && raw !== null) {
-      if (!isCampusPlatform(raw)) {
-        throw new ValidationError('platform 不是受支持的校园平台', { reason: 'UNKNOWN_PLATFORM' });
-      }
-      return raw;
+    const raw = input.linkId;
+    if (raw === undefined || raw === null) return null;
+
+    if (typeof raw !== 'string' || raw.trim().length === 0) {
+      throw new ValidationError('linkId 必须是非空字符串', { reason: 'UNKNOWN_LINK' });
     }
 
-    if (input.linkId !== undefined && input.linkId !== null) {
-      if (typeof input.linkId !== 'string' || input.linkId.trim().length === 0) {
-        throw new ValidationError('linkId 必须是非空字符串', { reason: 'UNKNOWN_PLATFORM' });
-      }
-      const bindings = await this.campusSession.listBindings(userId);
-      const found = bindings.find((item) => item.id === input.linkId);
-      if (!found) throw new NotFoundError('绑定不存在或非本人');
-      return found.platform;
-    }
-
-    return null;
+    const bindings = await this.campusSession.listBindings(userId);
+    const found = bindings.find((item) => item.id === raw);
+    // 不区分"不存在"与"不是你的" —— 否则等于泄漏"这个 id 存在"
+    if (!found) throw new NotFoundError('绑定不存在或非本人');
+    return found.provider;
   }
 
   /**

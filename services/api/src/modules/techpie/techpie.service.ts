@@ -2,30 +2,36 @@
  * TechPie 整合 · 用例层（契约 §7：只编排，不含 IO）
  *
  * 规格 `docs/features/techpie-integration.md` §8.1（8 个端点）；
- * 裁决 `00-FROZEN-CONTRACT.md` §11.18。
+ * 裁决 `00-FROZEN-CONTRACT.md` §11.18 / §11.19 / §11.20 / §11.21 / §11.22。
  *
  * 依赖通过**显式 token** 注入（而非 `design:paramtypes`），
- * 这样在 vitest 等不做 `emitDecoratorMetadata` 的转译器下 DI 依然成立。
+ * 这样在 vitest 等不做 emitDecoratorMetadata 的转译器下 DI 依然成立。
  *
  * ## 本服务不做的事（同样是设计）
  *
  * · **不**自己碰 cookie / session —— 唯一的出口是 `webview-session/`（不变式 I3）；
  * · **不**接受明文密码（U12）；**不**为需要 CASTGC 的平台建立任何绑定路径（U7）；
  * · **不**谎称续期成功（失败模式 F3）。
+ *
+ * ## 本轮收敛（§11.20-E 的原话：后端需按 §11.20 收敛）
+ *
+ * · `/techpie/links` 的元素是 **`TechpieLink`**（`provider` + `PENDING|ACTIVE|EXPIRED|REVOKED|FAILED`）；
+ * · `/capabilities` **只返回 `capabilities`**（删掉同值的 `items` 别名）；
+ * · 能力条目**只保留单一键名**（`key` / `nameZh` / `phase` / `available` /
+ *   `requiredProvider` / `blockedReason` + 非别名的结构性字段）。
  */
 
 import { Inject, Injectable } from '@nestjs/common';
 import type { Page } from '@kedaya/contracts';
 import {
   CampusBindingRequiredError,
-  ConflictError,
-  ForbiddenError,
   NotFoundError,
   ValidationError,
 } from '../../common/errors/app-error';
 import {
   TECHPIE_CAPABILITIES,
   buildCapabilities,
+  countUnbound,
   type TechpieCapabilitiesResult,
 } from './domain/capabilities';
 import {
@@ -33,7 +39,6 @@ import {
   isCampusPlatform,
   translateCampusSessionError,
   type BindCredential,
-  type CampusBindingSummary,
   type CampusPlatform,
   type CampusSessionPort,
 } from './domain/ports/campus-session.port';
@@ -41,7 +46,8 @@ import { WEBVIEW_ALLOWLIST_PORT, type WebviewAllowlistPort } from './domain/port
 import {
   TECHPIE_LINK_REPOSITORY,
   TECHPIE_SYNC_JOB_REPOSITORY,
-  toBindingSummary,
+  toTechpieLinkFromBindingState, toTechpieLinkFromModel,
+  type TechpieLink,
   type TechpieLinkModel,
   type TechpieLinkRepository,
   type TechpieListParams,
@@ -49,10 +55,15 @@ import {
   type TechpieSyncJobRepository,
 } from './domain/techpie.domain';
 
-/** `POST /techpie/links` 的输入（形状见控制器里的 Zod schema） */
+/**
+ * `POST /techpie/links` 的输入（形状见控制器里的 Zod schema）。
+ *
+ * ⚠️ 契约 §11.19-B：字段是 **`authCode`**（一次性凭证交换码），**不是** `openid`。
+ * 契约 §11.20-D：**没有** `platform` / `credential` 等兼容别名 —— 一个概念一个名字。
+ */
 export interface CreateLinkCommand {
-  platform: unknown;
-  credential: unknown;
+  provider: unknown;
+  authCode: unknown;
 }
 
 @Injectable()
@@ -67,19 +78,19 @@ export class TechpieService {
   /* ---------------- 1/3. 绑定列表与详情 ---------------- */
 
   /**
-   * `GET /techpie/links` —— 返回 `CampusBindingSummary[]`，**不含任何凭证**（规格 §8.3）。
+   * `GET /techpie/links` —— 返回 `TechpieLink[]`，**不含任何凭证**（规格 §8.3）。
    *
-   * 游标分页（契约 §6.1）。投影统一走 domain 的 `toBindingSummary`
-   * （逐字段挑选 + 运行时禁用键名断言），因此这里**结构上**不可能泄漏 `tokenCipher`。
+   * 游标分页（契约 §6.1）。投影统一走 domain 的 `toTechpieLink`
+   * （逐字段挑选），因此这里**结构上**不可能泄漏 `tokenCipher` / `externalUserId`。
    */
-  async listLinks(userId: string, params: TechpieListParams): Promise<Page<CampusBindingSummary>> {
+  async listLinks(userId: string, params: TechpieListParams): Promise<Page<TechpieLink>> {
     const page = await this.links.listByUser(userId, params);
-    return { items: page.items.map(toBindingSummary), nextCursor: page.nextCursor };
+    return { items: page.items.map(toTechpieLinkFromModel), nextCursor: page.nextCursor };
   }
 
   /** `GET /techpie/links/:id` —— 绑定详情。**非本人一律 404**（不泄漏"这个 id 存在"）。 */
-  async getLink(userId: string, id: string): Promise<CampusBindingSummary> {
-    return toBindingSummary(await this.requireOwnedLink(userId, id));
+  async getLink(userId: string, id: string): Promise<TechpieLink> {
+    return toTechpieLinkFromModel(await this.requireOwnedLink(userId, id));
   }
 
   /* ---------------- 2. 发起绑定 ---------------- */
@@ -87,7 +98,7 @@ export class TechpieService {
   /**
    * `POST /techpie/links` —— 发起绑定。
    *
-   * Phase 0 **只接受 `ecard` + `openid`**（校园卡走独立 OPENID 通道，规格 §2.5）。
+   * Phase 0 **只接受 `ecard` + `authCode`**（校园卡走独立 OPENID 通道，规格 §2.5）。
    * 其余组合由 `CampusSessionPort.bind` 拒绝，错误在这里翻译成契约错误码：
    *
    * | 端口原因 | HTTP | `code` | `details.reason` |
@@ -97,12 +108,12 @@ export class TechpieService {
    * | `ALREADY_LINKED` | 409 | `CONFLICT` | `ALREADY_LINKED` |
    * | `INVALID_CREDENTIAL` | 409 | `CONFLICT` | `INVALID_CREDENTIAL` |
    */
-  async createLink(userId: string, command: CreateLinkCommand): Promise<CampusBindingSummary> {
-    const platform = this.parsePlatform(command.platform);
-    const credential = this.parseCredential(command.credential);
+  async createLink(userId: string, command: CreateLinkCommand): Promise<TechpieLink> {
+    const provider = this.parseProvider(command.provider);
+    const credential = this.parseCredential(command.authCode);
 
     try {
-      return await this.campusSession.bind(userId, platform, credential);
+      return toTechpieLinkFromBindingState(await this.campusSession.bind(userId, provider, credential));
     } catch (error) {
       throw translateCampusSessionError(error);
     }
@@ -135,10 +146,10 @@ export class TechpieService {
    * `409 CONFLICT` + `details.reason = 'RENEW_NOT_SUPPORTED'`。
    * **绝不谎称"已续期"**（失败模式 F3）。
    */
-  async renewLink(userId: string, id: string): Promise<CampusBindingSummary> {
+  async renewLink(userId: string, id: string): Promise<TechpieLink> {
     const link = await this.requireOwnedLink(userId, id);
     try {
-      return await this.campusSession.renew(userId, link.provider);
+      return toTechpieLinkFromBindingState(await this.campusSession.renew(userId, link.provider));
     } catch (error) {
       throw translateCampusSessionError(error);
     }
@@ -156,17 +167,13 @@ export class TechpieService {
    */
   async capabilities(userId: string): Promise<TechpieCapabilitiesResult> {
     const bindings = await this.campusSession.listBindings(userId);
-    const items = buildCapabilities(
-      TECHPIE_CAPABILITIES,
-      bindings.map((binding) => ({ platform: binding.platform, status: binding.status })),
-    );
+    const view = bindings.map((binding) => ({ provider: binding.provider, status: binding.status }));
 
     return {
-      items,
-      // 与 `items` 同值的别名（冻结 OpenAPI 形状）—— 见 capabilities.ts 的说明
-      capabilities: items,
+      // ⚠️ 契约 §11.20-D：只有 `capabilities` 一个名字 —— 删掉了同值的 `items` 别名
+      capabilities: buildCapabilities(TECHPIE_CAPABILITIES, view),
       allowlistPlaceholder: this.allowlist.allowlistPlaceholder,
-      unboundCount: items.filter((item) => item.status === 'CAMPUS_BINDING_REQUIRED').length,
+      unboundCount: countUnbound(TECHPIE_CAPABILITIES, view),
     };
   }
 
@@ -188,51 +195,40 @@ export class TechpieService {
     return link;
   }
 
-  private parsePlatform(raw: unknown): CampusPlatform {
-    // 兼容 `platform`（规格 §8.4 / 三端）与 `provider`（冻结 OpenAPI）两种写法
-    const value = typeof raw === 'string' ? raw : undefined;
-    if (!isCampusPlatform(value)) {
-      throw new ValidationError('platform 不是受支持的校园平台', {
+  /**
+   * 解析 `provider`。
+   *
+   * ⚠️ 只接受**一个**键名（§11.20-D）：旧的 `platform` 兼容写法已删除 ——
+   * 控制器 schema 用 `.strict()`，因此带 `platform` 的请求在**进入本函数之前**
+   * 就已经是 `400 VALIDATION_FAILED`，而不是被静默忽略。
+   */
+  private parseProvider(raw: unknown): CampusPlatform {
+    if (!isCampusPlatform(raw)) {
+      throw new ValidationError('provider 不是受支持的校园平台', {
         reason: 'UNKNOWN_PLATFORM',
-        supported: ['cas', 'egate', 'cpdaily', 'ecard', 'techpie'],
+        supported: ['cas', 'egate', 'cpdaily', 'jwc', 'ecard', 'techpie'],
       });
     }
-    return value;
+    return raw;
   }
 
   /**
    * 解析绑定凭证。
    *
-   * ⚠️ **明文密码在这里就被丢弃**：只把 `kind` 传下去，`studentId` / `password`
-   * **一个字段都不读**、不进 details、不进日志（规格 §10.3）。
-   * 真正的拒绝在 `CampusSessionPort.bind` 里（保持"拒绝逻辑只有一处"）。
+   * ⚠️ 契约 §11.19-B：wire 上是 `authCode`（一次性交换码），**不是** `openid`。
+   * ⚠️ 明文密码在 wire 上**根本没有位置**（`TechpieLinkCreate` 只有 `provider` + `authCode`），
+   * 因此 U12 的拒绝是**结构性**的：请求里出现 `password` / `credential`
+   * 会在 schema 的 `.strict()` 处直接失败，连**读**都不会读到。
+   * 端口层仍保留 `password` 变体的拒绝逻辑（纵深防御，"拒绝逻辑只有一处"）。
    */
   private parseCredential(raw: unknown): BindCredential {
-    if (raw === null || typeof raw !== 'object') {
-      throw new ValidationError('credential 必须是对象', { reason: 'INVALID_CREDENTIAL' });
+    if (typeof raw !== 'string' || raw.trim().length === 0) {
+      throw new ValidationError('authCode 必须是非空字符串（wx.login() 的一次性 code）', {
+        reason: 'INVALID_CREDENTIAL',
+      });
     }
-    const record = raw as Record<string, unknown>;
-
-    if (record.kind === 'password') {
-      // 只传 kind：**不**从请求里读取 studentId / password，因此明文密码不会流进任何下游。
-      return { kind: 'password', studentId: '', password: '' };
-    }
-    if (record.kind === 'openid') {
-      const openId = typeof record.openId === 'string' ? record.openId : '';
-      // `channel` 省略时默认 `wechat`（Phase 0 唯一支持的通道）；
-      // 显式给了别的值才拒绝 —— 不把"没写"当成"写错了"。
-      const channel = record.channel === undefined || record.channel === null ? 'wechat' : record.channel;
-      if (channel !== 'wechat') {
-        throw new ValidationError('OPENID 凭证的 channel 必须是 wechat（Phase 0 唯一支持的通道）', {
-          reason: 'INVALID_CREDENTIAL',
-          channel,
-        });
-      }
-      return { kind: 'openid', channel: 'wechat', openId };
-    }
-    throw new ValidationError('credential.kind 必须是 openid（Phase 0 唯一支持的通道）', {
-      reason: 'INVALID_CREDENTIAL',
-    });
+    // Phase 0 唯一支持的通道是 wechat（校园卡 OPENID 通道，规格 §2.5）。
+    return { kind: 'openid', channel: 'wechat', authCode: raw.trim() };
   }
 }
 

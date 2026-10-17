@@ -42,6 +42,9 @@ const MIGRATION_DIRS = [
   // TechPie 整合 Phase 0（规格 §5 / §9.1）：重塑 TechpieLink + 新增
   // TechpieSyncJob / CampusSession。**建表，不产生任何凭证副本**。
   '20261017060000_techpie',
+  // 校园卡（契约 §11.21-B / §11.19-A）：happenedAt → occurredAt、
+  // TechpieLink.status 默认值 UNLINKED → PENDING。
+  '20261017070000_campus_card',
 ];
 
 /** 定位 `services/api/prisma/migrations`（从仓库根或从 services/api 调用都能找到） */

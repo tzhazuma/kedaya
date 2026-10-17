@@ -1,32 +1,41 @@
 /**
- * TechPie 整合 · 控制器（规格 §8.1 的 8 个端点 + 票据兑换）
+ * TechPie 整合 · 控制器（规格 §8.1 的 8 个端点 + §11.22-C 登记的兑换端 = 第 9 个）
  *
  * 前缀 `/api/v1/techpie`，**全部需要登录**（否则 `401 UNAUTHENTICATED`）。
  *
  * | # | 方法 | 路径 | 说明 |
  * | --- | --- | --- | --- |
- * | 1 | `GET` | `/links` | 列出我的全部绑定（`CampusBindingSummary[]`，**不含凭证**） |
- * | 2 | `POST` | `/links` | 发起绑定（Phase 0 只接受 `ecard` + `openid`） |
+ * | 1 | `GET` | `/links` | 列出我的全部绑定（`TechpieLink[]`，**不含凭证**） |
+ * | 2 | `POST` | `/links` | 发起绑定（Phase 0 只接受 `ecard` + `authCode`） |
  * | 3 | `GET` | `/links/:id` | 绑定详情 |
  * | 4 | `DELETE` | `/links/:id` | 解绑（**硬删**凭证副本） |
  * | 5 | `POST` | `/links/:id/renew` | 手动续期（契约 §11.2 冻结 action） |
- * | 6 | `GET` | `/capabilities` | 能力清单（含未绑定项的 `CAMPUS_BINDING_REQUIRED` **引导**） |
+ * | 6 | `GET` | `/capabilities` | 能力清单（含未绑定项的**引导**，不是报错） |
  * | 7 | `GET` | `/sync-jobs` | 我的同步任务状态（游标分页） |
  * | 8 | `POST` | `/webview-session` | 换取**一次性**票据（I3 的唯一出口） |
- * | 9 | `POST` | `/webview-session/:ticket` | 用票据换一次性打开地址（规格 §8.4「换取方式」） |
+ * | 9 | `POST` | `/webview-session/:ticket` | 用票据换一次性打开地址（**用后即焚**） |
  *
- * ## 第 9 个端点为什么存在
+ * ## 第 9 个端点为什么存在（契约 §11.22-C）
  *
  * 规格 §8.4 的"票据语义"表明确写了换取方式（客户端用票据换一次性 URL）。
- * 冻结 OpenAPI 只登记了签发端；这里补上兑换端，否则票据**用不掉**。
- * 它同样不返回任何 cookie（Phase 0 走 W4：用户自登录）。
+ * 早期冻结 OpenAPI 只登记了签发端；没有兑换端，票据**根本用不掉** ——
+ * 这是契约自身的缺口，不是实现多余。§11.22-C 已把它登记为**正式端点**。
  *
- * ## ⚠️ 关于请求/响应字段的"并集"
+ * ## ✅ 本轮的收敛（§11.20-E 要求的正是这里）
  *
- * 仓库里**同时存在两套互相矛盾的 techpie wire 形状**（已提交的冻结 OpenAPI
- * 与三端客户端各自的模型，见交付说明的未决问题）。为了让三端都不被打断，
- * 本控制器**接受**两种入参写法、**返回**两套同义字段。Lead 收敛契约后应删掉一半。
- * 这是**已知的技术债**，不是设计品味 —— 每一处都标了注释。
+ * 上一轮为兼容三方，本文件在**入参与出参上都返回了并集**（加法兼容别名）。
+ * §11.20-D 已裁决**全部移除** —— 理由是加法兼容"把一个概念变成两个 owner"：
+ * 两个名字会永久共存、消费方会分裂、并把不一致从编译期推到运行期。
+ *
+ * 现在的形状：
+ *   · 入参**只收** `{provider, authCode}` / `{linkId?, targetUrl}`；
+ *   · 平台枚举**只有一套** `cas | egate | cpdaily | jwc | ecard | techpie`（§11.20-C）；
+ *   · 出参**只有一个名字**（`capabilities` / `expiresAt` / `provider` …）。
+ *
+ * ⚠️ 两个请求 schema 都是 **`.strict()`**：带旧别名（`platform` / `provider` 之外的
+ * 兼容写法、`credential`、`openid`、`expiresInSec` 请求侧对应物）的请求会得到
+ * **400 `VALIDATION_FAILED`**，而**不是**被静默忽略。
+ * 静默忽略才是真正的危险：客户端以为自己在指定平台，服务端其实没读。
  */
 
 import {
@@ -47,60 +56,46 @@ import { modulePath } from '@kedaya/contracts';
 import { z } from 'zod';
 import { AuthGuard } from '../../common/auth/auth.guard';
 import { CurrentUser } from '../../common/auth/current-user';
-import { ValidationError } from '../../common/errors/app-error';
 import { IdempotencyInterceptor } from '../../common/idempotency/idempotency.interceptor';
 import { normalizeLimit, readCursor } from '../../common/pagination/cursor';
 import { ZodBody } from '../../common/pipes/zod-validation.pipe';
 import { WebviewSessionService } from './data/webview-session/webview-session.service';
-import { CAMPUS_PLATFORMS } from './domain/ports/campus-session.port';
 import { TechpieService } from './techpie.service';
 
-/** 平台枚举（契约 §11.10-B 冻结值）。`platform`（三端）与 `provider`（OpenAPI）都接受。 */
-const platformEnum = z.enum(['cas', 'egate', 'cpdaily', 'ecard', 'techpie']);
+/** 校园平台枚举（契约 §11.20-C 统一后的**唯一**一套）。 */
+const platformEnum = z.enum(['cas', 'egate', 'cpdaily', 'jwc', 'ecard', 'techpie']);
 
 /**
- * `POST /links` 的入参。
+ * `POST /techpie/links` 的入参（冻结 OpenAPI `TechpieLinkCreate`）。
  *
- * 三种写法都接受（**并集**，见文件头说明）：
- *   · `{ platform, credential: { kind:'openid', channel:'wechat', openId } }` —— Web / 移动端；
- *   · `{ provider, openid }` —— 冻结 OpenAPI 的扁平写法；
- *   · `{ platform, credential: { kind:'password', ... } }` —— **服务端一律拒绝**（U12）。
+ * ⚠️ **只有两个键**：`provider` + `authCode`。
+ *   · `platform` 别名已删除（§11.20-D）；
+ *   · `credential` / `openid` 别名已删除 —— §11.19-B 已把字段定为 `authCode`
+ *     （**一次性**凭证交换码，不是任何长期标识）；
+ *   · 明文密码在 wire 上**没有位置**：U12 的拒绝因此是**结构性**的
+ *     （`.strict()` 直接拒绝，服务端连读都不读），比"读了再拒"更强。
  */
 const createLinkSchema = z
   .object({
-    platform: platformEnum.optional(),
-    provider: platformEnum.optional(),
-    credential: z
-      .object({
-        kind: z.enum(['openid', 'password']),
-        channel: z.string().min(1).max(32).optional(),
-        openId: z.string().min(1).max(512).optional(),
-        studentId: z.string().max(128).optional(),
-        password: z.string().max(512).optional(),
-      })
-      .optional(),
-    openid: z.string().min(1).max(512).optional(),
+    provider: platformEnum,
+    authCode: z.string().min(1).max(512),
   })
-  .refine((value) => value.platform !== undefined || value.provider !== undefined, {
-    message: '必须提供 platform（或兼容写法 provider）',
-    path: ['platform'],
-  })
-  .refine((value) => value.credential !== undefined || value.openid !== undefined, {
-    message: '必须提供 credential（或兼容写法 openid）',
-    path: ['credential'],
-  });
+  .strict();
 
+/**
+ * `POST /techpie/webview-session` 的入参（契约 §11.20-E / §11.22-D）。
+ *
+ * · **只收** `{linkId, targetUrl}` —— `platform` / `provider` 兼容写法已删除；
+ * · `linkId` 是**可选**的：W4 直连**不要求绑定**（§11.21-D 的原话 ——
+ *   "要求先绑定才能直连，等于给一个不需要权限的功能加了权限门"）；
+ * · `targetUrl` 必填，且在**服务端**做 fail-closed 白名单校验（§11.18-B 第 4 条）。
+ */
 const webviewSessionSchema = z
   .object({
-    platform: platformEnum.optional(),
-    provider: platformEnum.optional(),
     linkId: z.string().min(1).max(64).optional(),
     targetUrl: z.string().min(1).max(2048),
   })
-  .refine((value) => value.targetUrl.trim().length > 0, {
-    message: 'targetUrl 不能为空',
-    path: ['targetUrl'],
-  });
+  .strict();
 
 @ApiTags('techpie · TechPie 整合（Phase 0）')
 @Controller(modulePath('techpie'))
@@ -116,9 +111,10 @@ export class TechpieController {
 
   @Get('links')
   @ApiOperation({
-    summary: '列出我的全部绑定（`CampusBindingSummary[]`，**不含任何凭证**）',
+    summary: '列出我的全部绑定（`TechpieLink[]`，**不含任何凭证**）',
     description:
-      '契约 §11.4 I1 的镜像断言：响应里绝不出现 cookie / session / tgc / castgc / ticket / tenant。',
+      '元素用 `provider`（不是 `platform`），状态用 `PENDING|ACTIVE|EXPIRED|REVOKED|FAILED`（§11.19-A / §11.20-A）。' +
+      '响应里不出现对端标识与凭证 —— 投影是逐字段白名单。',
   })
   listLinks(@CurrentUser() userId: string, @Query() query: Record<string, unknown>) {
     return this.service.listLinks(userId, { cursor: readCursor(query), limit: normalizeLimit(query.limit) });
@@ -129,17 +125,14 @@ export class TechpieController {
   @Post('links')
   @UseInterceptors(IdempotencyInterceptor)
   @ApiOperation({
-    summary: '发起绑定（Phase 0 **只接受** `ecard` + `openid`）',
+    summary: '发起绑定（Phase 0 **只接受** `ecard` + `authCode`）',
     description:
-      '需要 CASTGC 的平台（egate / cpdaily / cas / techpie）**没有任何绑定路径** —— ' +
+      '需要 CASTGC 的平台（egate / cpdaily / jwc / cas / techpie）**没有任何绑定路径** —— ' +
       '它们阻塞于信息办对「学校是否允许第三方代持校园会话」的**书面回复**（U7）。' +
-      '明文密码一律拒绝（U12）。',
+      '明文密码在 wire 上**没有位置**（U12：结构性拒绝，强于读了再拒）。',
   })
   createLink(@CurrentUser() userId: string, @ZodBody(createLinkSchema) body: z.infer<typeof createLinkSchema>) {
-    return this.service.createLink(userId, {
-      platform: body.platform ?? body.provider,
-      credential: normalizeCredential(body),
-    });
+    return this.service.createLink(userId, { provider: body.provider, authCode: body.authCode });
   }
 
   /* ---------------- 3. 绑定详情 ---------------- */
@@ -182,7 +175,9 @@ export class TechpieController {
     summary: '当前用户可用的校园能力清单（未绑定项给**引导**，不是报错）',
     description:
       '契约 §5 硬规则 3 / ADR §5.4：`CAMPUS_BINDING_REQUIRED` 是**合法状态**的呈现。' +
-      '响应里的 `allowlistPlaceholder` 机器可见地标注「校园域名白名单内容仍是占位」（U11）。',
+      '响应**只有 `capabilities` 一个名字**（§11.20-D 删掉了同值的 `items` 别名）；' +
+      '条目**只有单一键名**（`key` / `available` / `requiredProvider` / `blockedReason` …）；' +
+      '`allowlistPlaceholder` 机器可见地标注「校园域名白名单内容仍是占位」（U11）。',
   })
   capabilities(@CurrentUser() userId: string) {
     return this.service.capabilities(userId);
@@ -203,21 +198,18 @@ export class TechpieController {
   @ApiOperation({
     summary: '换取**一次性** WebView 票据（契约不变式 I3 的唯一出口）',
     description:
-      '`targetUrl` 在**服务端**做 fail-closed 白名单校验（契约 §11.18-B）：' +
-      '不在白名单 → `403 FORBIDDEN`；只允许 https（否则 422）；' +
-      '禁止 IP 字面量 / 非 443 端口 / `@` userinfo；**不做**后缀通配。' +
+      '`targetUrl` 在**服务端**做 fail-closed 白名单校验（契约 §11.18-B + §11.21-A）：' +
+      '白名单条目是**完整 origin** 且做**精确匹配**（scheme + host + port 三者全等）；' +
+      '不在白名单 → `403 FORBIDDEN`；非 https → `422`；' +
+      '禁止 IP 字面量 / `@` userinfo / 通配子域。' +
+      '出参**只有** `{ticket, targetUrl, expiresAt, singleUse}`（§11.20-E：删掉 `expiresInSec` 与 `targetHost`）。' +
       '票据 30 秒、一次性、绑定 host，且**不含任何 cookie**（它是引用，不是凭证）。',
   })
   createWebviewSession(
     @CurrentUser() userId: string,
     @ZodBody(webviewSessionSchema) body: z.infer<typeof webviewSessionSchema>,
   ) {
-    return this.webview.issue(userId, {
-      platform: body.platform,
-      provider: body.provider,
-      linkId: body.linkId,
-      targetUrl: body.targetUrl,
-    });
+    return this.webview.issue(userId, { linkId: body.linkId, targetUrl: body.targetUrl });
   }
 
   /* ---------------- 9. 票据兑换 ---------------- */
@@ -228,27 +220,12 @@ export class TechpieController {
     summary: '用票据换**一次性打开地址**（用后即焚）',
     description:
       'Phase 0 返回 `mode: "direct"`（规格 §8.4 方案 W4）：让用户在校园系统页面**自己登录**，' +
-      '可达鸭**不接触** cookie。`mode: "injected"` 需要信息办书面确认后才可能启用（Phase 2）。',
+      '可达鸭**不接触** cookie。`cookieInjected` **恒为 false** —— ' +
+      '该字段存在的意义是让"我们没注入 cookie"这件事**可被机器断言**，而不是靠文档承诺。' +
+      '`mode: "injected"` 需要信息办书面确认后才可能启用（Phase 2）。' +
+      '⚠️ 票据一次性：兑换成功后立即作废，**重复兑换必须失败**（404）。',
   })
   redeemWebviewSession(@CurrentUser() userId: string, @Param('ticket') ticket: string) {
     return this.webview.redeem(userId, ticket);
   }
-}
-
-/**
- * 把"并集"入参归一成端口要的 `BindCredential`。
- *
- * ⚠️ 明文密码分支**不搬运** `studentId` / `password` —— 它们连**读**都不读
- * （规格 §10.3：明文密码绝不落库、绝不落日志）。
- */
-function normalizeCredential(body: {
-  credential?: { kind: 'openid' | 'password'; channel?: string; openId?: string };
-  openid?: string;
-}): unknown {
-  if (body.credential) {
-    if (body.credential.kind === 'password') return { kind: 'password' };
-    return { kind: 'openid', channel: body.credential.channel ?? 'wechat', openId: body.credential.openId ?? '' };
-  }
-  if (body.openid !== undefined) return { kind: 'openid', channel: 'wechat', openId: body.openid };
-  throw new ValidationError('缺少绑定凭证', { reason: 'INVALID_CREDENTIAL', supported: [...CAMPUS_PLATFORMS] });
 }

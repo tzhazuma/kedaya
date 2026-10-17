@@ -74,7 +74,7 @@ export class TechpieModule {}
  * 这个缺陷真实发生过一次（`GET /techpie/capabilities` 的 `allowlistPlaceholder`），
  * 由 `test/techpie-http.spec.ts` 抓出来。现在它会在 `npm run typecheck` 阶段就失败。
  */
-type AssertAssignable<Target, Actual extends Target> = true;
+type AssertAssignable<Target, _Actual extends Target> = true;
 export type WebviewSessionServiceSatisfiesAllowlistPort = AssertAssignable<
   WebviewAllowlistPort,
   WebviewSessionService

@@ -8,7 +8,8 @@ import {
  * TechPie 整合 · 第二级（能力层）端口 —— `CampusSessionPort`
  *
  * 规格 `docs/features/techpie-integration.md` §4.3；
- * 契约 `00-FROZEN-CONTRACT.md` §5（两级身份）+ §11.4（不变式 I1–I5）+ §11.18（裁决）。
+ * 契约 `00-FROZEN-CONTRACT.md` §5（两级身份）+ §11.4（不变式 I1–I5）+
+ * §11.18 / §11.19 / §11.20 / §11.21 / §11.22（裁决）。
  *
  * ## 为什么这个文件在 `techpie/` 而不是 `auth/`
  *
@@ -17,6 +18,21 @@ import {
  * `modules/auth/data/**` **不得** import 本文件。
  * 把端口定义放在能力层（`techpie`），身份层就**在类型上**拿不到它 ——
  * 这比"文档里写一句别用"强得多（ADR 0004 §2.2 的 L2/L3 教训）。
+ *
+ * ## ⚠️ port 类型与 wire 类型**不得同名**（契约 §11.20-B 的根因裁决）
+ *
+ * 本轮冲突的**总根源**是：规格 §4.3 把 `CampusBindingSummary` 用作
+ * `CampusSessionPort` 的返回类型（**端口**类型），而 §8.1 又让
+ * `GET /techpie/links` 返回 `CampusBindingSummary[]`（把它当**wire** 类型），
+ * 同时冻结 OpenAPI 里 `CampusBindingSummary` 是 `/auth/campus-bindings` 的
+ * **另一个 wire 类型**。**同一个名字跨了两个层、指了两个概念。**
+ *
+ * 现在三者的名字互不相同：
+ * | 名字 | 层 | 形状 |
+ * | --- | --- | --- |
+ * | `CampusBindingState` | **port**（本文件） | `{id, provider, status, …}`，不出现在任何响应里 |
+ * | `TechpieLink` | wire（`/techpie/links`） | 见 `domain/techpie.domain.ts` |
+ * | `CampusBindingSummary` | wire（`/auth/campus-bindings`） | 见 `modules/auth/domain/auth.domain.ts` |
  *
  * ## ⚠️ 关于 `cookieHeaderFor` 的写法（与 I3 的静态扫描有关）
  *
@@ -40,19 +56,37 @@ import {
  */
 
 /* ------------------------------------------------------------------ *
- * 校园平台（契约 §11.10-B 冻结枚举）
+ * 校园平台（契约 §11.20-C 统一后的**唯一**一套枚举）
  * ------------------------------------------------------------------ */
 
 /**
- * 契约 §11.10-B：`TechpieLink.provider` 与 `CampusBinding.platform` **同一套**枚举。
+ * 契约 §11.20-C：**统一后**的校园平台枚举 ——
+ * `cas | egate | cpdaily | jwc | ecard | techpie`。
+ *
+ * ⚠️ 仓库里曾经并存**两套拼法**：
+ *   · `/auth` 那套 `egate | cp-daily | academic | campus-card`；
+ *   · `/techpie` 那套 `cas | egate | cpdaily | ecard | techpie`。
+ * `cp-daily` vs `cpdaily`、`campus-card` vs `ecard`、`academic` vs `jwc` ——
+ * **同一概念两种拼法，迟早出现"只匹配到一半"的 bug**（§11.20-C 的原话：
+ * `if (p === 'cpdaily')` 会漏掉 `cp-daily`）。
+ *
+ * 现在只有这一套，`TechpieLink.provider` 与 `/auth/campus-bindings` 的
+ * 绑定摘要**共用**它。
  *
  * ⚠️ 规格 §4.3 的草案还列了 `gradescope` / `hydro`（第三方 token）。
- * 它们**不在** §11.10-B 的冻结枚举里，且属 Phase 1+（U13「建议 M4 再评估」），
+ * 它们**不在**冻结枚举里，且属 Phase 1+（U13「建议 M4 再评估」），
  * 因此**不放进类型** —— 加了就等于私自扩枚举。
  */
-export type CampusPlatform = 'cas' | 'egate' | 'cpdaily' | 'ecard' | 'techpie';
+export type CampusPlatform = 'cas' | 'egate' | 'cpdaily' | 'jwc' | 'ecard' | 'techpie';
 
-export const CAMPUS_PLATFORMS: readonly CampusPlatform[] = ['cas', 'egate', 'cpdaily', 'ecard', 'techpie'];
+export const CAMPUS_PLATFORMS: readonly CampusPlatform[] = [
+  'cas',
+  'egate',
+  'cpdaily',
+  'jwc',
+  'ecard',
+  'techpie',
+];
 
 export function isCampusPlatform(value: unknown): value is CampusPlatform {
   return typeof value === 'string' && (CAMPUS_PLATFORMS as readonly string[]).includes(value);
@@ -64,7 +98,7 @@ export function isCampusPlatform(value: unknown): value is CampusPlatform {
  * 校园卡走独立的 **OPENID 通道**（规格 §2.5），与 CASTGC 完全解耦 ——
  * 这正是 Phase 0 可以零合规风险开工的原因。
  *
- * 其余平台（`cas` / `egate` / `cpdaily` / `techpie`）的绑定需要代持校园会话，
+ * 其余平台（`cas` / `egate` / `cpdaily` / `jwc` / `techpie`）的绑定需要代持校园会话，
  * **阻塞于信息办对「学校是否允许第三方代持校园会话」的书面回复**
  * （契约 §11.9 第 1 项 / 规格 U7）。裁决 §11.18-D 的原话：
  * **不是"先做着等批准"，而是根本不做** ——
@@ -90,26 +124,40 @@ export const PHASE1_BINDING_BLOCKED_REASON =
   '不是"先做着等批准"，而是根本不做。';
 
 /* ------------------------------------------------------------------ *
- * 绑定状态（契约 §2.9 冻结）
+ * 绑定状态（契约 §11.19-A：**以冻结 OpenAPI 为准**）
  * ------------------------------------------------------------------ */
 
 /**
- * `UNLINKED | LINKING | LINKED | EXPIRED | REVOKED`（契约 §2.9）。
+ * `PENDING | ACTIVE | EXPIRED | REVOKED | FAILED`（契约 §11.19-A）。
  *
- * ⚠️ 已登记的跨作用域缺口：`packages/contracts/openapi/kedaya.v1.yaml` 的
- * `TechpieLink.status` 写的是 `PENDING | ACTIVE | EXPIRED | REVOKED | FAILED`。
- * 两者不一致（见交付说明的未决问题）。本实现采用**契约 §2.9 冻结的枚举**，
- * 因为它是领域模型文档里的冻结值，且三端客户端都已做了兼容归一化。
+ * ⚠️ 规格 §2.9 那套 `UNLINKED | LINKING | LINKED | EXPIRED | REVOKED` **作废**。理由：
+ *   · 规格那套**无法表达失败** —— 只能把失败塞进 `UNLINKED`，于是
+ *     "从没绑过"与"绑过但失败了"不可区分，而这两种状态对用户的意义完全不同
+ *     （前者引导绑定，后者要显示失败原因）；
+ *   · `UNLINKED` 是**冗余**的：没有 link 记录本身就是"未绑定"，
+ *     不需要一个专门的记录状态来表达它。
+ *
+ * 归一化：`LINKING` → `PENDING`，`LINKED` → `ACTIVE`。
  */
-export type TechpieLinkStatus = 'UNLINKED' | 'LINKING' | 'LINKED' | 'EXPIRED' | 'REVOKED';
+export type TechpieLinkStatus = 'PENDING' | 'ACTIVE' | 'EXPIRED' | 'REVOKED' | 'FAILED';
 
 export const TECHPIE_LINK_STATUSES: readonly TechpieLinkStatus[] = [
-  'UNLINKED',
-  'LINKING',
-  'LINKED',
+  'PENDING',
+  'ACTIVE',
   'EXPIRED',
   'REVOKED',
+  'FAILED',
 ];
+
+/**
+ * 判定"这条绑定当前可用"的**唯一**谓词。
+ *
+ * 存在的意义是让 `=== 'LINKED'` 这种**旧拼法**无处可藏 ——
+ * 它只在这一个文件里出现一次，改枚举时编译器会指向这里。
+ */
+export function isActiveLinkStatus(status: string): boolean {
+  return status === 'ACTIVE';
+}
 
 /** 绑定阶段（能力清单与 UI 的"能不能点"依据） */
 export type TechpiePhase = 'phase0' | 'phase1' | 'phase2';
@@ -121,6 +169,8 @@ export const CAMPUS_PLATFORM_PHASE: Readonly<Record<CampusPlatform, TechpiePhase
   // §9.2：结构化校园数据阻塞于信息办（U7 / U12）
   egate: 'phase1',
   cpdaily: 'phase1',
+  // §11.20-C：旧拼法 `academic` 统一为 `jwc`（教务）—— 与课表同一条会话通道
+  jwc: 'phase1',
   // §9.2 / U6：一级身份对接学校 CAS 未获批
   cas: 'phase1',
   // §9.3 / M4：与 GeekPie 体系互联
@@ -128,23 +178,31 @@ export const CAMPUS_PLATFORM_PHASE: Readonly<Record<CampusPlatform, TechpiePhase
 };
 
 /* ------------------------------------------------------------------ *
- * 绑定摘要 —— 业务层唯一能拿到的形状
+ * 端口类型 CampusBindingState —— **业务层唯一能拿到的形状**
  * ------------------------------------------------------------------ */
 
 /**
- * 绑定摘要（规格 §4.3 / §8.3）。
+ * 绑定状态（**port 类型**，契约 §11.20-B）。
+ *
+ * ⚠️ 它**不是** wire 契约、**不出现在任何响应里**。
+ *   · `/techpie/links` 的元素是 `TechpieLink`（`domain/techpie.domain.ts`）；
+ *   · `/auth/campus-bindings` 的元素是 `CampusBindingSummary`
+ *     （`modules/auth/domain/auth.domain.ts`）。
+ *
+ * 三者形状不同、名字不同 —— 这是 §11.20 根因裁决的直接结果。
  *
  * **严禁出现** `cookie` / `cookies` / `session` / `sessionToken` / `tgc` /
  * `castgc` / `ticket` / `tenant`（契约 §11.4 I1 的镜像断言）。
  *
  * 该约束由三层手段保证（不是文档警告）：
  *   1. 类型上没有这些字段；
- *   2. `assertBindingSummaryHasNoCredentialKeys()` 运行时兜底；
+ *   2. `assertNoCredentialKeys()` 运行时兜底；
  *   3. `test/techpie-arch.spec.ts` 对**真实 HTTP 响应体**做递归键名扫描。
  */
-export interface CampusBindingSummary {
+export interface CampusBindingState {
   id: string;
-  platform: CampusPlatform;
+  /** 契约 §11.20-A：字段用 `provider`（不是 `platform`）—— 与 `TechpieLink.provider` 同名同义 */
+  provider: CampusPlatform;
   status: TechpieLinkStatus;
   /** 对端标识（校园卡的 OPENID / 学号）。**不是**凭证。 */
   externalUserId: string | null;
@@ -154,7 +212,16 @@ export interface CampusBindingSummary {
   phase: TechpiePhase;
 }
 
-/** 绑定摘要里绝不允许出现的 8 个键名（契约 §11.4 I1） */
+/** 绑定状态里绝不允许出现的 8 个键名（契约 §11.4 I1） */
+export const CAMPUS_PLATFORM_LABEL: Readonly<Record<CampusPlatform, string>> = {
+  ecard: '校园一卡通',
+  egate: 'eGate 校园门户',
+  cpdaily: 'CpDaily 今日校园',
+  jwc: '教务系统',
+  cas: '统一身份认证（CAS）',
+  techpie: 'GeekPie / TechPie 体系',
+};
+
 export const FORBIDDEN_CREDENTIAL_KEYS: readonly string[] = [
   'cookie',
   'cookies',
@@ -167,12 +234,18 @@ export const FORBIDDEN_CREDENTIAL_KEYS: readonly string[] = [
 ];
 
 /**
- * 运行时兜底：绑定摘要（及其嵌套结构）里一旦出现禁用键名就抛 `INTERNAL`。
+ * 运行时兜底：绑定状态（及其嵌套结构）里一旦出现禁用键名就抛错。
  *
  * 键名比较**大小写不敏感**且忽略 `_` / `-`：`session_token` / `sessionToken` /
  * `SESSION-TOKEN` 是同一个东西。这比黑名单过滤安全（规格 §4.2 的手法）。
+ *
+ * ⚠️ 契约 §11.22-A 已把 I1 的**措辞精确化**：它约束的对象是
+ * `KedaYaIdentitySession` 及 `/auth/*` 的全部响应，**不是全仓每一个叫
+ * `ticket` 的字段**。本函数因此只用于**身份侧投影**（`/auth/*` 与绑定摘要），
+ * **不**用于 `POST /techpie/webview-session` 的票据响应 ——
+ * 那里的 `ticket` 是合法领域字段（见 `webview-session.service.ts`）。
  */
-export function assertBindingSummaryHasNoCredentialKeys(value: unknown, where = 'CampusBindingSummary'): void {
+export function assertNoCredentialKeys(value: unknown, where = 'CampusBindingState'): void {
   const normalize = (key: string): string => key.toLowerCase().replace(/[_-]/g, '');
   const wanted = new Set(FORBIDDEN_CREDENTIAL_KEYS.map(normalize));
 
@@ -195,13 +268,21 @@ export function assertBindingSummaryHasNoCredentialKeys(value: unknown, where = 
 }
 
 /* ------------------------------------------------------------------ *
- * 绑定凭证（Phase 0 只允许 OPENID）
+ * 绑定凭证（Phase 0 只允许 OPENID 通道的一次性 authCode）
  * ------------------------------------------------------------------ */
 
 /**
  * 绑定凭证。
  *
- * ⚠️ **Phase 0 只允许 `openid`**（校园卡，规格 §2.5）。
+ * ⚠️ 字段叫 **`authCode`**（契约 §11.19-B），**不是** `openid`。
+ *
+ * 理由（§11.19-B 的原话）：小程序在**密码学上拿不到 openid** ——
+ * openid 需要服务端用 AppSecret 走 `code2session` 换取，客户端能拿到的只有
+ * `wx.login()` 的**一次性 code**。**命名会塑造行为**：叫 `openid` 会诱导客户端
+ * 把某个**长期标识**填进去（甚至缓存复用），而它应该是一次性的。
+ * 服务端必须**立即用掉并丢弃**该 code，且**不得**把 code 或换来的 openid 写进日志（§10.3）。
+ *
+ * ⚠️ **Phase 0 只允许 `authCode`**（校园卡，规格 §2.5）。
  *
  * `password` 变体**刻意留在类型里但服务端拒绝**：
  * 规格 §11.18-D / U12 —— 绑定时接受明文密码**风险极高**，
@@ -210,7 +291,7 @@ export function assertBindingSummaryHasNoCredentialKeys(value: unknown, where = 
  * 且明文密码**绝不落库、绝不落日志**）。
  */
 export type BindCredential =
-  | { kind: 'openid'; channel: 'wechat'; openId: string }
+  | { kind: 'openid'; channel: 'wechat'; authCode: string }
   | { kind: 'password'; studentId: string; password: string };
 
 /** 端口调用时的错误原因（服务层翻译成契约错误码，见 §8.5 / §8.6） */
@@ -242,21 +323,24 @@ export class CampusSessionError extends Error {
  * 第二级 · 能力层端口（规格 §4.3 + 契约 §11.4）。
  *
  * 契约 §11.4 的能力集：列出绑定 / 取得绑定 / 绑定 / 解绑 / 续期 / **取得 cookie 注入串**。
+ *
+ * ⚠️ 返回类型是 **port 类型 `CampusBindingState`**（§11.20-B），
+ * 两个 wire 类型（`TechpieLink` / `CampusBindingSummary`）在各自的投影函数里生成。
  */
 export interface CampusSessionPort {
   /** 列出我的全部绑定 —— 只含状态，**绝不含凭证** */
-  listBindings(userId: string): Promise<CampusBindingSummary[]>;
+  listBindings(userId: string): Promise<CampusBindingState[]>;
   /** 取单个绑定；不存在返回 `null` */
-  getBinding(userId: string, platform: CampusPlatform): Promise<CampusBindingSummary | null>;
+  getBinding(userId: string, platform: CampusPlatform): Promise<CampusBindingState | null>;
 
   /**
    * 发起绑定。
    *
-   * Phase 0 **只接受 `ecard` + `openid`**。其余组合一律
+   * Phase 0 **只接受 `ecard` + `authCode`**。其余组合一律
    * `CampusSessionError('PHASE_BLOCKED' | 'PLAIN_PASSWORD_REFUSED')` ——
    * 也就是说，**需要 CASTGC 的绑定路径在代码里根本不存在**。
    */
-  bind(userId: string, platform: CampusPlatform, credential: BindCredential): Promise<CampusBindingSummary>;
+  bind(userId: string, platform: CampusPlatform, credential: BindCredential): Promise<CampusBindingState>;
 
   /** 解绑。必须**硬删**凭证副本（`CampusSession` 整行），不是只标记失效。 */
   unbind(userId: string, platform: CampusPlatform): Promise<void>;
@@ -268,7 +352,7 @@ export interface CampusSessionPort {
    * 我们无法假定它对我们开放）→ 抛 `RENEW_NOT_SUPPORTED`，
    * **绝不谎称"已续期"**（失败模式 F3）。
    */
-  renew(userId: string, platform: CampusPlatform): Promise<CampusBindingSummary>;
+  renew(userId: string, platform: CampusPlatform): Promise<CampusBindingState>;
 
   /**
    * 契约 §11.4 **I3** —— 校园 cookie 的唯一受限出口，**仅供 WebView 注入使用**。

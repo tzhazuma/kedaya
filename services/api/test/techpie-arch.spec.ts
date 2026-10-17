@@ -3,7 +3,7 @@ import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * 架构不变式 **I1 / I2 / I3**（契约 §11.4 + 裁决 §11.18-H）
+ * 架构不变式 **I1 / I2 / I3**（契约 §11.4 + 裁决 §11.18-H / §11.22-A / §11.22-B）
  *
  * 这个文件的存在本身就是设计的一部分。ADR 0004 §2.2 的结论是：
  *
@@ -15,9 +15,9 @@ import { describe, expect, it } from 'vitest';
  *
  * | 不变式 | 内容 |
  * | --- | --- |
- * | **I1** | `KedaYaIdentitySession` 的序列化**不含** 8 个禁用键 |
+ * | **I1** | `KedaYaIdentitySession` **及 `/auth/*` 的全部响应**不含 8 个禁用键（§11.22-A 精确化） |
  * | **I2** | `modules/auth/data/**` **不 import** `campus-session.port` |
- * | **I3** | 全仓 `cookieHeaderFor(` 的**全部调用点**都在 `webview-session/` 内 |
+ * | **I3** | 全仓 `cookieHeaderFor(` 的**全部调用点**都在 `webview-session/` 内（豁免面**只有 `*.spec.ts`**） |
  *
  * I4 / I5 是行为不变式，在 `test/techpie-http.spec.ts` 里用真实 HTTP 验证。
  */
@@ -65,48 +65,82 @@ const FORBIDDEN_KEYS = [
   'tenant',
 ] as const;
 
+/** 从 `export interface X { … }` 里抽出声明的键名 */
+function declaredKeys(source: string, interfaceName: string): string[] {
+  const match = new RegExp(`export interface ${interfaceName} \\{([\\s\\S]*?)\\n\\}`).exec(source);
+  expect(match, `找不到 ${interfaceName} 的声明`).not.toBeNull();
+  return [...match![1]!.matchAll(/^\s*(\w+)\s*[?]?:/gm)].map((item) => item[1]!);
+}
+
 describe('架构不变式 I1–I3（契约 §11.4）', () => {
   /* ================================================================ *
-   * I1 —— 一级身份会话的序列化不含 8 个禁用键
+   * I1 —— 一级身份会话与 `/auth/*` 的序列化不含 8 个禁用键
    * ================================================================ */
 
-  describe('I1 · KedaYaIdentitySession 的键名集合', () => {
-    const domainFile = join(API_DIR, 'src/modules/auth/domain/auth.domain.ts');
-    const source = readFileSync(domainFile, 'utf8');
+  describe('I1 · 约束对象是 `KedaYaIdentitySession` 与 `/auth/*` 的响应（§11.22-A）', () => {
+    const authDomainFile = join(API_DIR, 'src/modules/auth/domain/auth.domain.ts');
+    const authDomainSource = readFileSync(authDomainFile, 'utf8');
 
     it('接口声明里只有 4 个允许的键（类型上就没有第 5 个位置）', () => {
-      const match = /export interface KedaYaIdentitySession \{([\s\S]*?)\n\}/.exec(source);
-      expect(match).not.toBeNull();
-
-      const declared = [...match![1]!.matchAll(/^\s*(\w+)\s*[?]?:/gm)].map((item) => item[1]!);
-      expect(declared.sort()).toEqual(['department', 'name', 'studentId', 'userId']);
+      expect(declaredKeys(authDomainSource, 'KedaYaIdentitySession').sort()).toEqual([
+        'department',
+        'name',
+        'studentId',
+        'userId',
+      ]);
     });
 
     it.each(FORBIDDEN_KEYS)('接口声明里没有 %s 字段', (key) => {
-      const match = /export interface KedaYaIdentitySession \{([\s\S]*?)\n\}/.exec(source)!;
-      const declared = [...match[1]!.matchAll(/^\s*(\w+)\s*[?]?:/gm)].map((item) => item[1]!.toLowerCase());
+      const declared = declaredKeys(authDomainSource, 'KedaYaIdentitySession').map((item) =>
+        item.toLowerCase(),
+      );
       expect(declared).not.toContain(key.toLowerCase());
     });
 
-    it('`CampusBindingSummary` 的键名集合同样与 8 个禁用键不相交（P0-8 的静态侧）', () => {
-      const portFile = join(API_DIR, 'src/modules/techpie/domain/ports/campus-session.port.ts');
-      const portSource = readFileSync(portFile, 'utf8');
-      const match = /export interface CampusBindingSummary \{([\s\S]*?)\n\}/.exec(portSource);
-      expect(match).not.toBeNull();
+    it('`/auth/campus-bindings` 的 wire 类型 `CampusBindingSummary` 同样与 8 个禁用键不相交', () => {
+      const declared = declaredKeys(authDomainSource, 'CampusBindingSummary');
+      expect(declared.sort()).toEqual(['bound', 'expiresAt', 'lastRenewedAt', 'platform']);
+      for (const forbidden of FORBIDDEN_KEYS) {
+        expect(declared.map((key) => key.toLowerCase())).not.toContain(forbidden.toLowerCase());
+      }
+    });
 
-      const declared = [...match![1]!.matchAll(/^\s*(\w+)\s*[?]?:/gm)].map((item) => item[1]!);
+    it('port 类型 `CampusBindingState` 的键名集合也与 8 个禁用键不相交（P0-8 的静态侧）', () => {
+      const portFile = join(API_DIR, 'src/modules/techpie/domain/ports/campus-session.port.ts');
+      const declared = declaredKeys(readFileSync(portFile, 'utf8'), 'CampusBindingState');
       expect(declared.sort()).toEqual([
         'expiresAt',
         'externalUserId',
         'id',
         'lastSyncAt',
         'phase',
-        'platform',
+        'provider',
         'status',
       ]);
       for (const forbidden of FORBIDDEN_KEYS) {
         expect(declared.map((key) => key.toLowerCase())).not.toContain(forbidden.toLowerCase());
       }
+    });
+
+    it('§11.22-A：`ticket` 在 `webview-session` 里是**合法领域字段**（不是全仓禁词）', () => {
+      // I1 的本意是"一级身份会话的序列化不得夹带二级凭证"。
+      // 把它扩大成"全仓禁用某个词"会让合法字段被迫改名，而改名**不减少任何风险** ——
+      // 风险来自"值泄漏"，不来自"键叫什么"。
+      const webviewFile = join(API_DIR, 'src/modules/techpie/data/webview-session/webview-session.service.ts');
+      const webviewSource = readFileSync(webviewFile, 'utf8');
+      expect(webviewSource).toContain('ticket: string');
+      // 但它必须满足**自己的**约束：不缓存 / 不进日志 / 用后即焚
+      expect(webviewSource).toContain('singleUse');
+      expect(webviewSource).not.toMatch(/new Logger\(|console\.(log|info|warn|error|debug)/);
+    });
+
+    it('I1 的运行时断言确实被**两个** `/auth/*` 投影调用（不是只写在文档里）', () => {
+      expect(authDomainSource).toContain('assertIdentitySessionHasNoCredentialKeys(session)');
+      expect(authDomainSource).toContain(
+        "assertIdentitySessionHasNoCredentialKeys(summary, 'CampusBindingSummary')",
+      );
+      // 8 个禁用键只有**一处**定义（auth.domain.ts），避免两套黑名单漂移
+      expect(authDomainSource).toContain('IDENTITY_SESSION_FORBIDDEN_KEYS');
     });
 
     it('运行时投影与类型一致（toIdentitySession 的输出键恰好 4 个）', async () => {
@@ -120,6 +154,15 @@ describe('架构不变式 I1–I3（契约 §11.4）', () => {
         createdAt: new Date(),
       });
       expect(Object.keys(session).sort()).toEqual(['department', 'name', 'studentId', 'userId']);
+    });
+
+    it('`/auth/*` 的响应级扫描存在（真实 HTTP 侧，见 techpie-http.spec.ts）', () => {
+      const httpSpec = readFileSync(join(API_DIR, 'test/techpie-http.spec.ts'), 'utf8');
+      // 断言"扫描的是 /auth/* 的响应"，而不是"全仓不许出现 ticket 这个词"
+      expect(httpSpec).toContain("expectNoCredentialKeys(body, 'GET /auth/session')");
+      expect(httpSpec).toContain("expectNoCredentialKeys(body, 'GET /auth/campus-bindings')");
+      // 并且对 webview-session 的 `ticket` 是**显式放行**
+      expect(httpSpec).toContain("['ticket']");
     });
   });
 
@@ -149,7 +192,6 @@ describe('架构不变式 I1–I3（契约 §11.4）', () => {
     it('身份层的 data 目录里**不再**有校园会话的实现（结构性，而非文本性）', () => {
       const names = files.map((file) => rel(file));
       expect(names.some((name) => /campus-session|campus-binding|prisma-campus/i.test(name))).toBe(false);
-      // 曾经的违规实现：必须已经搬走
       expect(existsSync(join(authDataDir, 'prisma-campus-session.adapter.ts'))).toBe(false);
     });
 
@@ -170,7 +212,7 @@ describe('架构不变式 I1–I3（契约 §11.4）', () => {
   });
 
   /* ================================================================ *
-   * I3 —— cookie 的唯一出口
+   * I3 —— cookie 的唯一出口（豁免面**只有** `*.spec.ts`）
    * ================================================================ */
 
   describe('I3 · `cookieHeaderFor(` 的调用点全在 webview-session/ 内', () => {
@@ -179,26 +221,24 @@ describe('架构不变式 I1–I3（契约 §11.4）', () => {
      * 「`cookieHeaderFor(` 出现」⟺「有人真的在调用它」。
      *
      * 之所以能做到这一点，是因为端口声明与实现都刻意写成
-     * 「属性 + 函数类型」（`cookieHeaderFor: (…) => …`）而不是方法简写 ——
-     * 方法简写会让声明与调用在文本上无法区分，扫描就只能退化成启发式规则，
-     * 而启发式规则可以被解构 / `Reflect.get` / 字符串拼接绕过。
+     * 「属性 + 函数类型」（`cookieHeaderFor: (…) => …`）而不是方法简写。
      */
     const allFiles = sourceFiles(REPO_ROOT);
 
     /**
-     * ⚠️ 豁免：`*.spec.ts` / `*.test.ts`。
+     * ⚠️ 豁免面**恰好**是 `*.spec.ts`（契约 §11.22-B）。
      *
-     * 不变式管的是**运行时的出口** —— 测试代码不构成出口（它不随产物发布），
-     * 而且端口**必须**能被测试直接调用，否则"唯一出口"就成了"不可验证的出口"。
-     * 豁免是**显式**的：下面单独有一条测试确认豁免集合里没有生产文件。
+     * §11.22-B 的原话：豁免面**只有** `*.spec.ts`
+     * （**不能**是"任何测试相关文件"或目录级豁免）。
+     * 因此这里刻意**不**写成 `*.test.ts` / `__tests__` / `testing/` ——
+     * 一旦放宽到"测试文件"这种模糊集合，I3 就从"结构保证"退化成"看起来像保证"。
      */
-    const isTestFile = (file: string): boolean => /\.(spec|test)\.tsx?$/.test(file);
-    const productionFiles = allFiles.filter((file) => !isTestFile(file));
+    const isExemptSpecFile = (file: string): boolean => /\.spec\.tsx?$/.test(file);
+    const productionFiles = allFiles.filter((file) => !isExemptSpecFile(file));
 
     it('扫描范围覆盖整个仓库（不含 node_modules / dist）', () => {
       expect(allFiles.length).toBeGreaterThan(100);
       expect(allFiles.some((file) => rel(file).startsWith('services/api/src'))).toBe(true);
-      // 豁免的只有测试文件 —— 生产文件一个都不能少
       expect(productionFiles.some((file) => rel(file).includes('modules/techpie'))).toBe(true);
     });
 
@@ -217,26 +257,31 @@ describe('架构不变式 I1–I3（契约 §11.4）', () => {
       expect(offenders).toEqual([]);
     });
 
-    it('豁免是安全的：测试文件**不随产物发布**（构建显式排除了它们）', () => {
-      const buildConfig = JSON.parse(readFileSync(join(API_DIR, 'tsconfig.build.json'), 'utf8')) as {
-        exclude?: string[];
-      };
-      expect(buildConfig.exclude).toContain('src/**/*.spec.ts');
-      expect(buildConfig.exclude).toContain('src/**/*.test.ts');
-    });
-
-    it('命中集合 = webview-session/ 内的生产文件 ∪ 测试文件（没有第三类）', () => {
+    it('§11.22-B 条件 1：豁免面**恰好**是 `*.spec.ts`（没有第二类豁免）', () => {
       const hits = allFiles.filter((file) => readFileSync(file, 'utf8').includes('cookieHeaderFor('));
       const unexplained = hits
         .map(rel)
-        .filter((file) => !file.includes('webview-session/') && !/\.(spec|test)\.tsx?$/.test(file));
+        .filter((file) => !file.includes('webview-session/') && !/\.spec\.tsx?$/.test(file));
       expect(unexplained).toEqual([]);
+
+      // 反过来：命中集合里**没有**被误当成豁免的 `.test.ts`
+      const testTsHits = hits.map(rel).filter((file) => /\.test\.tsx?$/.test(file));
+      expect(testTsHits).toEqual([]);
+    });
+
+    it('§11.22-B 条件 2：豁免的测试**不随产物发布**（`tsconfig.build.json` 的 exclude 钉死）', () => {
+      const buildConfig = JSON.parse(readFileSync(join(API_DIR, 'tsconfig.build.json'), 'utf8')) as {
+        exclude?: string[];
+      };
+      // `exclude` 必须**显式**排除 `*.spec.ts`（而不是靠"测试目录"这种模糊边界）
+      expect(buildConfig.exclude).toContain('src/**/*.spec.ts');
+      // 并且 build 的 include 只覆盖 src（test/ 根本不进产物）
+      expect(buildConfig.include).toEqual(['src/**/*.ts']);
     });
 
     it('端口声明与实现用「属性 + 函数类型」写法（让上面的裸子串扫描保持完备）', () => {
       const portFile = join(API_DIR, 'src/modules/techpie/domain/ports/campus-session.port.ts');
       const portText = readFileSync(portFile, 'utf8');
-      // 声明处必须是 `cookieHeaderFor: (` 而不是 `cookieHeaderFor(`
       expect(portText).toContain('cookieHeaderFor: (userId: string, platform: CampusPlatform) => Promise<string>');
       expect(portText).not.toContain('cookieHeaderFor(');
 
@@ -252,7 +297,6 @@ describe('架构不变式 I1–I3（契约 §11.4）', () => {
       expect(portText).not.toContain('acquireSession');
       expect(portText).not.toContain('sessionRef');
 
-      // 全仓也不该再有 `acquireSession(` 的调用（旧端口已退休）
       const offenders = allFiles.filter((file) => {
         const text = readFileSync(file, 'utf8');
         return text.includes('acquireSession(') && !rel(file).includes('.spec.');
@@ -285,9 +329,31 @@ describe('架构不变式 I1–I3（契约 §11.4）', () => {
           offenders.push(rel(file));
         }
       }
-      // 需要日志时**必须**走 `common/logging/redact.ts` 的 toSafeLogLine ——
-      // 那条路是白名单式剔除，而不是"记得别打印凭证"。
       expect(offenders).toEqual([]);
+    });
+
+    it('campus-card 模块里同样**没有任何**日志语句（付款码是凭证，绝不进日志）', () => {
+      const files = sourceFiles(join(API_DIR, 'src/modules/campus-card')).filter(
+        (file) => !/\.spec\.tsx?$/.test(file),
+      );
+      expect(files.length).toBeGreaterThan(0);
+
+      const offenders: string[] = [];
+      for (const file of files) {
+        const text = readFileSync(file, 'utf8');
+        if (/\bnew Logger\(|\bconsole\.(log|info|warn|error|debug)\b|\bLogger\b/.test(text)) {
+          offenders.push(rel(file));
+        }
+      }
+      expect(offenders).toEqual([]);
+    });
+
+    it('付款码端点显式禁止缓存（`Cache-Control: no-store`）', () => {
+      const controller = readFileSync(
+        join(API_DIR, 'src/modules/campus-card/campus-card.controller.ts'),
+        'utf8',
+      );
+      expect(controller).toContain("@Header('Cache-Control', 'no-store')");
     });
 
     it('全局异常过滤器**不打印** `details`（它可能带请求上下文）', () => {
@@ -306,7 +372,6 @@ describe('架构不变式 I1–I3（契约 §11.4）', () => {
       const redact = readFileSync(join(API_DIR, 'src/common/logging/redact.ts'), 'utf8');
       expect(redact).toContain('LOG_FORBIDDEN_KEYS');
       expect(redact).toContain('REDACTED');
-      // 文本层面的清洗也必须存在（凭证常以"拼好的 header 串"出现）
       expect(redact).toContain('redactText');
       expect(redact).toMatch(/CASTGC/);
     });
@@ -317,8 +382,9 @@ describe('架构不变式 I1–I3（契约 §11.4）', () => {
       );
       for (const file of files) {
         const text = readFileSync(file, 'utf8');
-        // 典型的"把请求体拼进错误消息"写法
-        expect(text).not.toMatch(/new \w*Error\(`[^`]*\$\{(?:.*(?:password|credential|openId|targetUrl|cookie).*)\}/);
+        expect(text).not.toMatch(
+          /new \w*Error\(`[^`]*\$\{(?:.*(?:password|credential|authCode|targetUrl|cookie).*)\}/,
+        );
       }
     });
   });
@@ -335,7 +401,6 @@ describe('架构不变式 I1–I3（契约 §11.4）', () => {
         const text = readFileSync(file, 'utf8');
         expect(text).not.toMatch(/\.dart\b/);
         expect(text).not.toContain('flutter');
-        // 不引用上游仓库的文件路径（那是"复制"的典型痕迹）
         expect(text).not.toContain('techpie-ref');
       }
     });
@@ -346,6 +411,55 @@ describe('架构不变式 I1–I3（契约 §11.4）', () => {
         expect(text).not.toContain('ecard_bind_hijack');
         expect(text).not.toMatch(/dns.*tunnel|tunnel.*dns/i);
       }
+    });
+  });
+
+  /* ================================================================ *
+   * 脚手架与手写实现的边界（任务：把 campus-card / schedule 移出 SPEC）
+   * ================================================================ */
+
+  describe('脚手架边界 · `scripts/scaffold.mjs` 不得覆盖手写实现', () => {
+    const scaffoldSource = readFileSync(join(API_DIR, 'scripts/scaffold.mjs'), 'utf8');
+
+    /** 从 `const SPEC = [ … ];` 里抽出模块 id */
+    function specIds(): string[] {
+      const match = /const SPEC = \[([\s\S]*?)\n\];/.exec(scaffoldSource);
+      expect(match).not.toBeNull();
+      return [...match![1]!.matchAll(/^\s{4}id: '([^']+)'/gm)].map((item) => item[1]!);
+    }
+
+    it('SPEC 表里**没有** campus-card / schedule / techpie（否则重跑 scaffold 会覆盖手写实现）', () => {
+      const ids = specIds();
+      expect(ids).not.toContain('campus-card');
+      expect(ids).not.toContain('schedule');
+      expect(ids).not.toContain('techpie');
+      // 表本身非空（否则这条断言是空转）
+      expect(ids.length).toBeGreaterThan(0);
+    });
+
+    it('campus-card 是手写实现（有 §11.21-B 的五条端点，没有 `items` / `summary`）', () => {
+      const controller = readFileSync(
+        join(API_DIR, 'src/modules/campus-card/campus-card.controller.ts'),
+        'utf8',
+      );
+      for (const route of ["@Get('account')", "@Post('account/activate')", "@Delete('account')", "@Get('transactions')", "@Get('payment-code')"]) {
+        expect(controller).toContain(route);
+      }
+      expect(controller).not.toContain("@Get('items')");
+      expect(controller).not.toContain("@Get('summary')");
+    });
+
+    it('`AssertAssignable` 只有**一种**拼法（生成器与产物不再漂移）', () => {
+      // 生成器（scaffold.mjs）是这些文件的声明式来源，因此以它为准。
+      expect(scaffoldSource).toContain('type AssertAssignable<Target, _Actual extends Target> = true;');
+      expect(scaffoldSource).not.toContain('AssertAssignable<Target, Actual');
+
+      const offenders: string[] = [];
+      for (const file of sourceFiles(join(API_DIR, 'src'))) {
+        const text = readFileSync(file, 'utf8');
+        if (text.includes('AssertAssignable<Target, Actual')) offenders.push(rel(file));
+      }
+      expect(offenders).toEqual([]);
     });
   });
 });

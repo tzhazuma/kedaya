@@ -1,4 +1,9 @@
 import { InternalError } from '../../../common/errors/app-error';
+import {
+  isActiveLinkStatus,
+  type CampusBindingState,
+  type CampusPlatform,
+} from '../../techpie/domain/ports/campus-session.port';
 
 /* ================================================================== *
  * 第一级 · 身份层（Identity）
@@ -179,4 +184,56 @@ export function assertIdentityOnly(
     );
   }
   return identity;
+}
+
+/* ================================================================== *
+ * `/auth/campus-bindings` 的 wire 类型（契约 §11.19-C / §11.20-A）
+ * ================================================================== */
+
+/**
+ * 校园系统绑定的**摘要**（`/auth/*` 的 wire 类型，冻结 OpenAPI `CampusBindingSummary`）。
+ *
+ * ## ⚠️ 这个名字**只属于** `/auth/campus-bindings`
+ *
+ * §11.19-C / §11.20-A 的裁决：`/techpie/links` 的元素用 **`TechpieLink`**，
+ * 本类型**不再被 techpie 引用**。同名两形状是**最坏的一类契约缺陷** ——
+ * 它会让实现者按名字去猜，而猜错不会报错、只会静默错。
+ * 两者本来就是不同概念：
+ *   · `CampusBindingSummary`（`/auth/*`）= **二级身份绑定状态摘要**（面向登录态）；
+ *   · `TechpieLink`（`/techpie/*`）= **一条可管理的绑定资源**（有 id、可解绑、可续期）。
+ *
+ * 端口类型叫 **`CampusBindingState`**（§11.20-B）—— port / wire 不得同名。
+ *
+ * ⚠️ §11.22-D 通用规则：**可空的可选字段为空时省略键，而不是下发 `null`**。
+ *
+ * ⚠️ 契约 §11.22-A 精确化后的 **I1** 直接约束本类型所在的端点：
+ * `/auth/*` 的全部响应序列化键名不得包含
+ * `cookie` / `cookies` / `session` / `sessionToken` / `tgc` / `castgc` / `ticket` / `tenant`。
+ */
+export interface CampusBindingSummary {
+  platform: CampusPlatform;
+  /** 该校园系统当前是否可用（= 绑定状态为 `ACTIVE`） */
+  bound: boolean;
+  /** 绑定到期时刻；无到期时间时**省略该键**（§11.22-D） */
+  expiresAt?: string;
+  /** 上次续期时刻；Phase 0 从不续期（`RENEW_NOT_SUPPORTED`），因此通常省略该键 */
+  lastRenewedAt?: string;
+}
+
+/**
+ * 端口状态 → `/auth/campus-bindings` 的 wire 摘要（**唯一**的投影实现）。
+ *
+ * 逐字段挑选 + 运行时断言（I1）：即便将来端口类型加了字段，
+ * 也不会顺着这个函数漏进 `/auth/*` 的响应。
+ */
+export function toCampusBindingSummary(state: CampusBindingState): CampusBindingSummary {
+  const summary: CampusBindingSummary = {
+    platform: state.provider,
+    bound: isActiveLinkStatus(state.status),
+  };
+  // §11.22-D：为空则**省略键**，不下发 `null`
+  if (state.expiresAt !== null) summary.expiresAt = state.expiresAt;
+
+  assertIdentitySessionHasNoCredentialKeys(summary, 'CampusBindingSummary');
+  return summary;
 }

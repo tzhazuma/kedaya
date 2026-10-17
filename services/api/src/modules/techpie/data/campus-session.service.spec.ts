@@ -39,23 +39,23 @@ describe('Phase 0 · 校园会话保管库（规格 §2.5 / §5.3；裁决 §11.
    * 1. 唯一被允许的写入者：ecard + OPENID
    * ================================================================ */
 
-  it('校园卡（ecard）走 OPENID 通道可以绑定，且状态是 LINKED', async () => {
+  it('校园卡（ecard）走 OPENID 通道可以绑定，且状态是 ACTIVE', async () => {
     const { service, techpieLink, campusSession } = build();
 
-    const summary = await service.bind('user-1', 'ecard', {
+    const state = await service.bind('user-1', 'ecard', {
       kind: 'openid',
       channel: 'wechat',
-      openId: 'openid-20260001',
+      authCode: 'openid-20260001',
     });
 
-    expect(summary).toMatchObject({ platform: 'ecard', status: 'LINKED', phase: 'phase0' });
+    expect(state).toMatchObject({ provider: 'ecard', status: 'ACTIVE', phase: 'phase0' });
     expect(techpieLink.rows).toHaveLength(1);
     expect(campusSession.rows).toHaveLength(1);
   });
 
-  it('落库的是**密文**：库里看不到 openId 明文，也不会有任何 CASTGC', async () => {
+  it('落库的是**密文**：库里看不到 authCode 明文，也不会有任何 CASTGC', async () => {
     const { service, campusSession } = build();
-    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', openId: 'openid-20260001' });
+    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', authCode: 'openid-20260001' });
 
     const row = campusSession.rows[0]!;
     expect(String(row.sessionCipher)).not.toContain('openid-20260001');
@@ -67,7 +67,7 @@ describe('Phase 0 · 校园会话保管库（规格 §2.5 / §5.3；裁决 §11.
 
   it('**绝不**写 `TechpieLink.tokenCipher`（Phase 0 没有第三方 token 通道，U13）', async () => {
     const { service, techpieLink } = build();
-    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', openId: 'openid-1' });
+    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', authCode: 'openid-1' });
 
     expect(techpieLink.rows[0]!.tokenCipher ?? null).toBeNull();
   });
@@ -76,13 +76,13 @@ describe('Phase 0 · 校园会话保管库（规格 §2.5 / §5.3；裁决 §11.
    * 2. 需要 CASTGC 的平台：**没有任何写入路径**
    * ================================================================ */
 
-  it.each(['egate', 'cpdaily', 'cas', 'techpie'] as const)(
+  it.each(['egate', 'cpdaily', 'jwc', 'cas', 'techpie'] as const)(
     'bind(%s) 被拒绝，且**一行都不写库**（不是"先做着等批准"）',
     async (platform) => {
       const { service, techpieLink, campusSession } = build();
 
       await expect(
-        service.bind('user-1', platform, { kind: 'openid', channel: 'wechat', openId: 'x' }),
+        service.bind('user-1', platform, { kind: 'openid', channel: 'wechat', authCode: 'x' }),
       ).rejects.toMatchObject({ reason: 'PHASE_BLOCKED' });
 
       // 最关键的两条断言：**没有 link、没有 session**
@@ -94,7 +94,7 @@ describe('Phase 0 · 校园会话保管库（规格 §2.5 / §5.3；裁决 §11.
   it('PHASE_BLOCKED 的错误信息里带未决问题编号（机器可见地指向 U7 / U12）', async () => {
     const { service } = build();
     await expect(
-      service.bind('user-1', 'cpdaily', { kind: 'openid', channel: 'wechat', openId: 'x' }),
+      service.bind('user-1', 'cpdaily', { kind: 'openid', channel: 'wechat', authCode: 'x' }),
     ).rejects.toMatchObject({
       reason: 'PHASE_BLOCKED',
       details: { blockedBy: ['U7', 'U12'], phase0BindablePlatforms: [...PHASE0_BINDABLE_PLATFORMS] },
@@ -149,32 +149,32 @@ describe('Phase 0 · 校园会话保管库（规格 §2.5 / §5.3；裁决 §11.
    * 4. 绑定 / 查询 / 解绑 / 续期
    * ================================================================ */
 
-  it('重复绑定已 LINKED 的平台 → ALREADY_LINKED（不静默覆盖）', async () => {
+  it('重复绑定已 ACTIVE 的平台 → ALREADY_LINKED（不静默覆盖）', async () => {
     const { service } = build();
-    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', openId: 'a' });
+    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', authCode: 'a' });
 
     await expect(
-      service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', openId: 'b' }),
+      service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', authCode: 'b' }),
     ).rejects.toMatchObject({ reason: 'ALREADY_LINKED' });
   });
 
-  it('OPENID 凭证不合法（channel 不对 / openId 为空）→ INVALID_CREDENTIAL', async () => {
+  it('OPENID 凭证不合法（channel 不对 / authCode 为空）→ INVALID_CREDENTIAL', async () => {
     const { service, techpieLink } = build();
     await expect(
-      service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', openId: '   ' }),
+      service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', authCode: '   ' }),
     ).rejects.toMatchObject({ reason: 'INVALID_CREDENTIAL' });
     expect(techpieLink.rows).toHaveLength(0);
   });
 
-  it('listBindings / getBinding 返回的摘要**不含任何凭证键名**（I1 的镜像）', async () => {
+  it('listBindings / getBinding 返回的 port 状态**不含任何凭证键名**（I1 的镜像）', async () => {
     const { service } = build();
-    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', openId: 'openid-1' });
+    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', authCode: 'openid-1' });
 
     const list = await service.listBindings('user-1');
     const single = await service.getBinding('user-1', 'ecard');
 
     expect(list).toHaveLength(1);
-    expect(single).toMatchObject({ platform: 'ecard', status: 'LINKED' });
+    expect(single).toMatchObject({ provider: 'ecard', status: 'ACTIVE' });
     const keys = Object.keys(single!).map((key) => key.toLowerCase());
     for (const forbidden of ['cookie', 'cookies', 'session', 'sessiontoken', 'tgc', 'castgc', 'ticket', 'tenant']) {
       expect(keys).not.toContain(forbidden);
@@ -185,7 +185,7 @@ describe('Phase 0 · 校园会话保管库（规格 §2.5 / §5.3；裁决 §11.
 
   it('别人的绑定查不到（按 userId 隔离）', async () => {
     const { service } = build();
-    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', openId: 'a' });
+    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', authCode: 'a' });
 
     expect(await service.getBinding('user-2', 'ecard')).toBeNull();
     expect(await service.listBindings('user-2')).toEqual([]);
@@ -193,7 +193,7 @@ describe('Phase 0 · 校园会话保管库（规格 §2.5 / §5.3；裁决 §11.
 
   it('解绑**硬删**凭证副本（整行），并把 link 标成 REVOKED', async () => {
     const { service, techpieLink, campusSession } = build();
-    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', openId: 'a' });
+    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', authCode: 'a' });
     expect(campusSession.rows).toHaveLength(1);
 
     await service.unbind('user-1', 'ecard');
@@ -207,10 +207,10 @@ describe('Phase 0 · 校园会话保管库（规格 §2.5 / §5.3；裁决 §11.
 
   it('解绑后再绑：不会残留旧凭证（新密文覆盖 + 旧行已删）', async () => {
     const { service, campusSession } = build();
-    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', openId: 'a' });
+    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', authCode: 'a' });
     const firstCipher = String(campusSession.rows[0]!.sessionCipher);
     await service.unbind('user-1', 'ecard');
-    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', openId: 'b' });
+    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', authCode: 'b' });
 
     expect(campusSession.rows).toHaveLength(1);
     expect(String(campusSession.rows[0]!.sessionCipher)).not.toBe(firstCipher);
@@ -218,7 +218,7 @@ describe('Phase 0 · 校园会话保管库（规格 §2.5 / §5.3；裁决 §11.
 
   it('续期 → RENEW_NOT_SUPPORTED（**绝不谎称已续期**，失败模式 F3）', async () => {
     const { service } = build();
-    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', openId: 'a' });
+    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', authCode: 'a' });
 
     await expect(service.renew('user-1', 'ecard')).rejects.toMatchObject({
       reason: 'RENEW_NOT_SUPPORTED',
@@ -237,7 +237,7 @@ describe('Phase 0 · 校园会话保管库（规格 §2.5 / §5.3；裁决 §11.
 
   it('OPENID 通道**没有**可注入的 cookie —— 如实报错，而不是编一个假的 header 串', async () => {
     const { service } = build();
-    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', openId: 'a' });
+    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', authCode: 'a' });
 
     await expect(service.cookieHeaderFor('user-1', 'ecard')).rejects.toMatchObject({
       reason: 'NOT_FOUND',
@@ -251,7 +251,7 @@ describe('Phase 0 · 校园会话保管库（规格 §2.5 / §5.3；裁决 §11.
 
   it('解绑后取 cookie → NOT_FOUND（凭证副本已被硬删）', async () => {
     const { service } = build();
-    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', openId: 'a' });
+    await service.bind('user-1', 'ecard', { kind: 'openid', channel: 'wechat', authCode: 'a' });
     await service.unbind('user-1', 'ecard');
 
     await expect(service.cookieHeaderFor('user-1', 'ecard')).rejects.toMatchObject({ reason: 'NOT_FOUND' });

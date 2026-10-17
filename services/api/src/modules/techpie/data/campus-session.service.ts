@@ -2,7 +2,7 @@
  * TechPie 整合 · `CampusSessionPort` 的 Phase 0 实现
  *
  * 规格 `docs/features/techpie-integration.md` §5.3 / §9.1；
- * 裁决 `00-FROZEN-CONTRACT.md` §11.18-D / E。
+ * 裁决 `00-FROZEN-CONTRACT.md` §11.18-D / E、§11.19-A/B、§11.20-B。
  *
  * ## 这个文件为什么在 `techpie/data/` 而不是 `auth/data/`
  *
@@ -15,7 +15,7 @@
  * ## ⚠️ 合规硬约束（本文件最重要的事）
  *
  * **Phase 0 只有 `ecard`（OPENID 通道）一个写入者。**
- * 需要代持 CASTGC 的平台（`egate` / `cpdaily` / `cas` / `techpie`）在信息办
+ * 需要代持 CASTGC 的平台（`egate` / `cpdaily` / `jwc` / `cas` / `techpie`）在信息办
  * **书面回复**（U7）之前**没有任何写入路径** —— `bind()` 的第一行就把它们拒掉。
  *
  * 这不是"先做着等批准"，而是**根本不做**：一旦落库就有了未经授权的凭证副本，
@@ -24,6 +24,11 @@
  *
  * 明文密码（U12）同样：`bind()` 在**碰它之前**就拒绝，
  * 且**绝不**写进数据库、日志、审计正文或错误信息（规格 §10.3）。
+ *
+ * ## ⚠️ 状态枚举已按 §11.19-A 收敛
+ *
+ * 落库的 `TechpieLink.status` 现在是 **`ACTIVE`**（旧拼法 `LINKED` 已作废）。
+ * 判定"可用"统一走 `isActiveLinkStatus()` —— 全仓只有那一处 `=== 'ACTIVE'`。
  */
 
 import { Inject, Injectable } from '@nestjs/common';
@@ -32,14 +37,15 @@ import type { CampusSession as CampusSessionRow } from '@prisma/client';
 import { decryptSecret, encryptSecret, fingerprintSecret } from '../../../common/crypto/secret-box';
 import { InternalError } from '../../../common/errors/app-error';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { toBindingSummary } from '../domain/techpie.domain';
+import { toCampusBindingState } from '../domain/techpie.domain';
 import {
   CAMPUS_PLATFORM_PHASE,
   CampusSessionError,
   PHASE0_BINDABLE_PLATFORMS,
+  isActiveLinkStatus,
   isPhase0Bindable,
   type BindCredential,
-  type CampusBindingSummary,
+  type CampusBindingState,
   type CampusPlatform,
   type CampusSessionPort,
 } from '../domain/ports/campus-session.port';
@@ -48,10 +54,19 @@ import { toLinkModel } from './techpie.repository';
 /** 校园卡 OPENID 绑定的默认有效期（30 天）。OPENID 通道没有会话过期概念，这里只做卫生。 */
 const ECARD_OPENID_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-/** 密文里存的东西：**只有** OPENID 通道的绑定标识，没有任何 CASTGC。 */
+/**
+ * 密文里存的东西：**只有** OPENID 通道的绑定标识，没有任何 CASTGC。
+ *
+ * ⚠️ **如实声明 Phase 0 的缺口**：真实通道下这里应该存
+ * `code2session` 换来的 `openid`，而 `authCode` 必须**立即用掉并丢弃**
+ * （§11.19-B 第 2 条）。Phase 0 没有 AppSecret、也没有可用的 `code2session`
+ * 上游，因此这里存的是**一次性 authCode 本身**，仅作为"这条绑定对应哪个用户"
+ * 的**占位标识**。真实通道打通后必须改掉，且**不得**把 authCode 写进日志（§10.3）。
+ */
 interface EcardOpenIdSecret {
   channel: 'wechat';
-  openId: string;
+  /** Phase 0 是占位（见上）；真实通道下应是 code2session 的 openid */
+  authCode: string;
   /** 仅当上游确实给了一个可注入的 cookie header 时才有值（Phase 0 恒为 null） */
   cookieHeader: string | null;
 }
@@ -65,22 +80,22 @@ export class CampusSessionService implements CampusSessionPort {
 
   /* ---------------- 读 ---------------- */
 
-  async listBindings(userId: string): Promise<CampusBindingSummary[]> {
+  async listBindings(userId: string): Promise<CampusBindingState[]> {
     const rows = await this.prisma.techpieLink.findMany({
       where: { userId, deletedAt: null },
       orderBy: { createdAt: 'asc' },
     });
-    return rows.map(toSummary);
+    return rows.map(toState);
   }
 
-  async getBinding(userId: string, platform: CampusPlatform): Promise<CampusBindingSummary | null> {
+  async getBinding(userId: string, platform: CampusPlatform): Promise<CampusBindingState | null> {
     const row = await this.prisma.techpieLink.findUnique({
       where: { userId_provider: { userId, provider: platform } },
     });
     // 用真值判断而不是 `!== null`：离线测试夹具（内存版 Prisma）不会为可空列补
     // `null`，而语义上「未软删」就是「该字段没有值」。生产 Prisma 返回 null，同样成立。
     if (!row || row.deletedAt) return null;
-    return toSummary(row);
+    return toState(row);
   }
 
   /* ---------------- 写 ---------------- */
@@ -97,7 +112,7 @@ export class CampusSessionService implements CampusSessionPort {
     userId: string,
     platform: CampusPlatform,
     credential: BindCredential,
-  ): Promise<CampusBindingSummary> {
+  ): Promise<CampusBindingState> {
     if (!isPhase0Bindable(platform)) {
       throw new CampusSessionError(
         'PHASE_BLOCKED',
@@ -121,22 +136,24 @@ export class CampusSessionService implements CampusSessionPort {
       );
     }
 
-    if (credential.channel !== 'wechat' || credential.openId.trim().length === 0) {
-      throw new CampusSessionError('INVALID_CREDENTIAL', 'OPENID 凭证不合法（channel 必须是 wechat，openId 不能为空）', {
-        platform,
-      });
+    if (credential.channel !== 'wechat' || credential.authCode.trim().length === 0) {
+      throw new CampusSessionError(
+        'INVALID_CREDENTIAL',
+        'authCode 不合法（channel 必须是 wechat，authCode 不能为空）',
+        { platform },
+      );
     }
 
     const existing = await this.prisma.techpieLink.findUnique({
       where: { userId_provider: { userId, provider: platform } },
     });
-    if (existing && !existing.deletedAt && existing.status === 'LINKED') {
+    if (existing && !existing.deletedAt && isActiveLinkStatus(existing.status)) {
       throw new CampusSessionError('ALREADY_LINKED', '该校园平台已经绑定，请先解绑再重新绑定', { platform });
     }
 
-    const openId = credential.openId.trim();
+    const authCode = credential.authCode.trim();
     const expiresAt = new Date(Date.now() + ECARD_OPENID_TTL_MS);
-    const secret: EcardOpenIdSecret = { channel: 'wechat', openId, cookieHeader: null };
+    const secret: EcardOpenIdSecret = { channel: 'wechat', authCode, cookieHeader: null };
     const sessionCipher = encryptSecret(JSON.stringify(secret), this.encryptionKey());
 
     // 两步写在一个事务里：**绝不允许**出现"link 说已绑定、凭证表却没有行"
@@ -147,14 +164,15 @@ export class CampusSessionService implements CampusSessionPort {
         create: {
           userId,
           provider: platform,
-          status: 'LINKED',
-          externalUserId: openId,
+          // §11.19-A：可用状态是 ACTIVE（旧拼法 LINKED 已作废）
+          status: 'ACTIVE',
+          externalUserId: authCode,
           expiresAt,
           lastSyncAt: new Date(),
         },
         update: {
-          status: 'LINKED',
-          externalUserId: openId,
+          status: 'ACTIVE',
+          externalUserId: authCode,
           expiresAt,
           lastSyncAt: new Date(),
           deletedAt: null,
@@ -168,21 +186,21 @@ export class CampusSessionService implements CampusSessionPort {
           status: 'ACTIVE',
           sessionCipher,
           cipherKeyId: this.cipherKeyId(),
-          externalUserId: openId,
+          externalUserId: authCode,
           expiresAt,
         },
         update: {
           status: 'ACTIVE',
           sessionCipher,
           cipherKeyId: this.cipherKeyId(),
-          externalUserId: openId,
+          externalUserId: authCode,
           expiresAt,
           renewFailCount: 0,
         },
       }),
     ]);
 
-    return toSummary(link);
+    return toState(link);
   }
 
   /**
@@ -210,7 +228,7 @@ export class CampusSessionService implements CampusSessionPort {
    * （规格 §6.3 R4 / U8），我们无法假定它对我们开放。
    * 因此这里**如实报错**，绝不谎称"已续期"（失败模式 F3）。
    */
-  async renew(userId: string, platform: CampusPlatform): Promise<CampusBindingSummary> {
+  async renew(userId: string, platform: CampusPlatform): Promise<CampusBindingState> {
     const binding = await this.getBinding(userId, platform);
     if (!binding) {
       throw new CampusSessionError('NOT_FOUND', '绑定不存在或已解绑', { platform });
@@ -281,14 +299,14 @@ export class CampusSessionService implements CampusSessionPort {
 }
 
 /**
- * 行 → 对外摘要。
+ * 行 → **port 类型** `CampusBindingState`。
  *
- * 复用 domain 的 `toBindingSummary`（**唯一**的投影实现）——
+ * 复用 domain 的 `toCampusBindingState`（**唯一**的投影实现）——
  * 本文件不再自己拼一份，否则两处映射迟早漂移。
  * 它逐字段显式挑选并跑运行时断言（I1 的镜像）。
  */
-function toSummary(row: Parameters<typeof toLinkModel>[0]): CampusBindingSummary {
-  return toBindingSummary(toLinkModel(row));
+function toState(row: Parameters<typeof toLinkModel>[0]): CampusBindingState {
+  return toCampusBindingState(toLinkModel(row));
 }
 
 function parseSecret(plaintext: string): EcardOpenIdSecret {
@@ -296,7 +314,7 @@ function parseSecret(plaintext: string): EcardOpenIdSecret {
     const parsed = JSON.parse(plaintext) as Partial<EcardOpenIdSecret>;
     return {
       channel: parsed.channel === 'wechat' ? 'wechat' : 'wechat',
-      openId: typeof parsed.openId === 'string' ? parsed.openId : '',
+      authCode: typeof parsed.authCode === 'string' ? parsed.authCode : '',
       cookieHeader: typeof parsed.cookieHeader === 'string' ? parsed.cookieHeader : null,
     };
   } catch {
@@ -307,5 +325,5 @@ function parseSecret(plaintext: string): EcardOpenIdSecret {
 }
 
 /** 供测试断言用的导出（**不是**运行时依赖） */
-export const __testing = { ECARD_OPENID_TTL_MS, toSummary, parseSecret };
+export const __testing = { ECARD_OPENID_TTL_MS, toState, parseSecret };
 export type { CampusSessionRow };

@@ -29,7 +29,7 @@ const updateSchema = z.object({
 
 const mediatorSchema = z.object({ mediatorId: z.string().min(1).max(64) });
 
-type AssertAssignable<Target, Actual extends Target> = true;
+type AssertAssignable<Target, _Actual extends Target> = true;
 export type CreateSchemaMatchesDomain = AssertAssignable<
   CreateDormHarmonyCaseInput,
   z.infer<typeof createSchema>

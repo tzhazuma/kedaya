@@ -18,30 +18,29 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(1, 'refreshToken 不能为空').max(2048),
 });
 
-/** 契约 §11.10-B 冻结的校园平台枚举（与 `TechpieLink.provider` 同一套） */
-const platformEnum = z.enum(['cas', 'egate', 'cpdaily', 'ecard', 'techpie']);
+/** 契约 §11.20-C 统一后的校园平台枚举（与 `TechpieLink.provider` **同一套**） */
+const platformEnum = z.enum(['cas', 'egate', 'cpdaily', 'jwc', 'ecard', 'techpie']);
 
 /**
  * `POST /auth/campus-bindings` 的入参。
  *
- * ⚠️ 与 `POST /techpie/links` 是**同一件事**的两种入口（本组端点在冻结 OpenAPI 里
- * 已登记，保留以兼容）。**Phase 0 只接受 `ecard` + `openid`**；
- * 明文密码（`kind: 'password'`）一律拒绝（U12），需要 CASTGC 的平台一律拒绝（U7）。
+ * ⚠️ 与 `POST /techpie/links` 是**同一件事**的另一个入口，因此**同一套字段名**
+ * （§11.20-D：一个概念只有一个名字）：
+ *   · `provider`（不是 `platform`）；
+ *   · `authCode`（§11.19-B：一次性凭证交换码，不是任何长期标识）；
+ *   · 明文密码在 wire 上**没有位置**（U12：结构性拒绝，强于读了再拒）。
+ *
+ * ⚠️ 两个端点的**响应**形状不同（§11.19-C）：
+ * 这里是 `CampusBindingSummary`（`{platform, bound, expiresAt?}`），
+ * `/techpie/links` 是 `TechpieLink`（`{id, provider, status, …}`）。
+ * 它们**不共用名字**，因此实现者不会按名字猜错。
  */
-const bindSchema = z.object({
-  platform: platformEnum.optional(),
-  provider: platformEnum.optional(),
-  credential: z
-    .object({
-      kind: z.enum(['openid', 'password']),
-      channel: z.string().min(1).max(32).optional(),
-      openId: z.string().min(1).max(512).optional(),
-      studentId: z.string().max(128).optional(),
-      password: z.string().max(512).optional(),
-    })
-    .optional(),
-  openid: z.string().min(1).max(512).optional(),
-});
+const bindSchema = z
+  .object({
+    provider: platformEnum,
+    authCode: z.string().min(1).max(512),
+  })
+  .strict();
 
 @ApiTags('auth · 身份（两级模型）')
 @Controller(modulePath('auth'))
@@ -83,7 +82,9 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: '当前身份 + 校园系统绑定状态（两者是独立的）',
-    description: '`campusBound: false` 表示"已登录但未绑定"，这是合法状态（契约 §5 硬规则 3）。',
+    description:
+      '`campusBound: false` 表示"已登录但未绑定"，这是合法状态（契约 §5 硬规则 3）。' +
+      '`campusBindings` 用 `/auth/*` 自己的形状（`CampusBindingSummary`），**不是** `TechpieLink`（§11.19-C）。',
   })
   me(@CurrentUser() userId: string) {
     return this.authService.me(userId);
@@ -92,7 +93,12 @@ export class AuthController {
   @Get('campus-bindings')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '第二级：列出已绑定的校园系统（不含任何 session）' })
+  @ApiOperation({
+    summary: '第二级：列出已绑定的校园系统（不含任何 session）',
+    description:
+      '形状是 `CampusBindingSummary`：`{platform, bound, expiresAt?}` —— ' +
+      '**只描述登录态下的绑定状态**，与 `/techpie/links` 的可管理资源（`TechpieLink`）是两个概念（§11.19-C）。',
+  })
   listBindings(@CurrentUser() userId: string) {
     return this.authService.listCampusBindings(userId);
   }
@@ -101,20 +107,24 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: '第二级：绑定校园系统（Phase 0 **只接受** `ecard` + `openid`）',
+    summary: '第二级：绑定校园系统（Phase 0 **只接受** `ecard` + `authCode`）',
     description:
-      '与 `POST /techpie/links` 是同一件事的兼容入口。' +
+      '与 `POST /techpie/links` 是同一件事的另一个入口（**字段名相同**，见 bindSchema 的说明）。' +
       '需要 CASTGC 的平台在信息办书面回复（U7）前**没有任何绑定路径**；明文密码一律拒绝（U12）。',
   })
   bind(@CurrentUser() userId: string, @ZodBody(bindSchema) body: z.infer<typeof bindSchema>) {
-    const platform = body.platform ?? body.provider;
-    if (!isCampusPlatform(platform)) {
-      throw new ValidationError('platform 不是受支持的校园平台', {
+    const provider = body.provider;
+    if (!isCampusPlatform(provider)) {
+      throw new ValidationError('provider 不是受支持的校园平台', {
         reason: 'UNKNOWN_PLATFORM',
         supported: [...CAMPUS_PLATFORMS],
       });
     }
-    return this.authService.bindCampus(userId, platform, normalizeCredential(body));
+    return this.authService.bindCampus(userId, provider, {
+      kind: 'openid',
+      channel: 'wechat',
+      authCode: body.authCode,
+    });
   }
 
   @Delete('campus-bindings/:platform')
@@ -163,22 +173,4 @@ export class AuthController {
       basePath: `/api/v1/${module.route}`,
     }));
   }
-}
-
-/**
- * 归一化绑定凭证（与 `techpie.controller.ts` 同一套并集写法）。
- *
- * ⚠️ 明文密码分支**不搬运** `studentId` / `password` —— 它们连**读**都不读
- * （规格 §10.3：明文密码绝不落库、绝不落日志）。真正的拒绝在能力层端口里。
- */
-function normalizeCredential(body: {
-  credential?: { kind: 'openid' | 'password'; channel?: string; openId?: string };
-  openid?: string;
-}): unknown {
-  if (body.credential) {
-    if (body.credential.kind === 'password') return { kind: 'password' };
-    return { kind: 'openid', channel: body.credential.channel ?? 'wechat', openId: body.credential.openId ?? '' };
-  }
-  if (body.openid !== undefined) return { kind: 'openid', channel: 'wechat', openId: body.openid };
-  throw new ValidationError('缺少绑定凭证', { reason: 'INVALID_CREDENTIAL' });
 }

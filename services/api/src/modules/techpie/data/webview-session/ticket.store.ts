@@ -7,7 +7,7 @@
  * | --- | --- | --- |
  * | **一次性** | 用后即焚 | 防重放 |
  * | **短时效** | **30 秒** | 只需覆盖"换取 → 打开 WebView"的时间 |
- * | **绑定 host** | 票据绑定到签发时的 `targetUrl` host | 防止票据被用于其它域名 |
+ * | **绑定 origin** | 票据绑定到签发时的 `targetUrl` **完整 origin** | 防止票据被用于其它域名**或同一域名的其它端口**（§11.21-A） |
  * | **不含 cookie** | 票据是**引用**，不是凭证 | 客户端**从未拿到** cookie |
  *
  * ## ⚠️ 已知限制（如实声明，不假装它是分布式的）
@@ -32,8 +32,14 @@ export interface WebviewTicketRecord {
   /** 需要绑定才能换取的平台；`null` = W4 公开入口（用户自登录，不需要绑定） */
   platform: CampusPlatform | null;
   targetUrl: string;
-  /** 票据绑定到的 host（防止票据被用于其它域名） */
-  host: string;
+  /**
+   * 票据绑定到的**完整 origin**（`scheme://host[:port]`）。
+   *
+   * ⚠️ 绑定 origin 而不是 host，是 §11.21-A 的直接结果：
+   * 白名单按 origin 精确匹配，因此"同一个 host 的另一个端口"也是**另一个**目标，
+   * 票据不应该能跨过去。
+   */
+  origin: string;
   issuedAt: number;
   expiresAt: number;
 }

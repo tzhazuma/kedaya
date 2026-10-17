@@ -4,8 +4,8 @@ import { InternalError, UnauthenticatedError } from '../../common/errors/app-err
 import { signJwt, verifyJwt } from '../../common/auth/jwt';
 import {
   CAMPUS_SESSION_PORT,
+  isActiveLinkStatus,
   translateCampusSessionError,
-  type CampusBindingSummary,
   type CampusPlatform,
   type CampusSessionPort,
 } from '../techpie/domain/ports/campus-session.port';
@@ -13,8 +13,10 @@ import {
   AUTH_PORT,
   USER_REPOSITORY,
   assertIdentityOnly,
+  toCampusBindingSummary,
   toIdentitySession,
   type AuthPort,
+  type CampusBindingSummary,
   type KedaYaIdentitySession,
   type UserRecord,
   type UserRepository,
@@ -34,6 +36,11 @@ export interface LoginResult {
 
 export interface MeResult {
   user: UserRecord;
+  /**
+   * `/auth/*` 的 wire 形状（`CampusBindingSummary`）—— **不是** `TechpieLink`。
+   *
+   * §11.19-C / §11.20-A：两个名字属于两个端点，形状不同、**不共用**。
+   */
   campusBindings: CampusBindingSummary[];
   /** 已登录但未绑定时为 false —— 这是合法状态，不是错误 */
   campusBound: boolean;
@@ -52,7 +59,7 @@ export interface RefreshResult {
  * 它**只**依赖 `AuthPort`（身份）与 `UserRepository`（自有账户）来**签发身份**。
  * 第二级的 `CampusSessionPort` 也注入了，但用途被严格限制为：
  *   · `me()` 把绑定状态作为**独立字段**返回；
- *   · `/auth/campus-bindings` 这组**已在冻结 OpenAPI 里登记**的兼容端点。
+ *   · `/auth/campus-bindings` 这组**已在冻结 OpenAPI 里登记**的端点。
  *
  * 它**绝不**参与签发 JWT，也**绝不**把 session 混进 login 的返回值。
  *
@@ -68,6 +75,12 @@ export interface RefreshResult {
  * 它只读 `UserRepository.findById`（本地账户表），
  * **不得**触发任何上游调用 —— 否则首帧会被网络阻塞（契约 §8）。
  * 由 `test/techpie-http.spec.ts` 在"mock 上游全超时"环境下断言 < 50ms。
+ *
+ * ## ⚠️ 契约 §11.22-A：I1 只约束 `KedaYaIdentitySession` 与 `/auth/*`
+ *
+ * 本模块的**全部**响应投影（`toIdentitySession` / `toCampusBindingSummary`）
+ * 都跑禁用键名断言。`/techpie/webview-session` 的 `ticket` 是**合法领域字段**，
+ * 不受该禁令约束 —— 用词禁令只能约束它真正要约束的那个对象。
  */
 @Injectable()
 export class AuthService {
@@ -146,22 +159,24 @@ export class AuthService {
     const user = await this.users.findById(userId);
     if (!user) throw new UnauthenticatedError('账户不存在，请重新登录');
 
-    const campusBindings = await this.campusSession.listBindings(userId);
+    const campusBindings = await this.listCampusBindings(userId);
 
     return {
       user,
       campusBindings,
-      campusBound: campusBindings.some((binding) => binding.status === 'LINKED'),
+      campusBound: campusBindings.some((binding) => binding.bound),
     };
   }
 
-  /* ---------------- 第二级：校园系统绑定（兼容端点，见冻结 OpenAPI） ---------------- */
+  /* ---------------- 第二级：校园系统绑定（`/auth/campus-bindings`） ---------------- */
 
   /**
-   * 兼容端点用的薄封装。
+   * `POST /auth/campus-bindings`。
    *
-   * ⚠️ 它**不**返回任何凭证：`CampusBindingSummary` 里只有状态。
+   * ⚠️ 它**不**返回任何凭证：`CampusBindingSummary` 里只有"绑没绑上 + 到期时刻"。
    * 校园 cookie 的唯一出口在 `modules/techpie/data/webview-session/`（不变式 I3）。
+   *
+   * ⚠️ 契约 §11.19-C：本端点的**形状与 `/techpie/links` 不同**（不共用名字）。
    */
   async bindCampus(
     userId: string,
@@ -169,7 +184,8 @@ export class AuthService {
     credential: unknown,
   ): Promise<CampusBindingSummary> {
     try {
-      return await this.campusSession.bind(userId, platform, credential as never);
+      const state = await this.campusSession.bind(userId, platform, credential as never);
+      return toCampusBindingSummary(state);
     } catch (error) {
       // 与 `TechpieService.createLink` 用**同一份**翻译：
       // 不翻译的话 `PHASE_BLOCKED` 会变成 500（客户端会以为服务坏了，
@@ -178,8 +194,9 @@ export class AuthService {
     }
   }
 
-  listCampusBindings(userId: string): Promise<CampusBindingSummary[]> {
-    return this.campusSession.listBindings(userId);
+  async listCampusBindings(userId: string): Promise<CampusBindingSummary[]> {
+    const states = await this.campusSession.listBindings(userId);
+    return states.map(toCampusBindingSummary);
   }
 
   async unbindCampus(userId: string, platform: CampusPlatform): Promise<void> {
@@ -196,6 +213,6 @@ export class AuthService {
    */
   async campusCapability(userId: string, platform: CampusPlatform): Promise<{ available: boolean }> {
     const binding = await this.campusSession.getBinding(userId, platform);
-    return { available: binding?.status === 'LINKED' };
+    return { available: binding !== null && isActiveLinkStatus(binding.status) };
   }
 }

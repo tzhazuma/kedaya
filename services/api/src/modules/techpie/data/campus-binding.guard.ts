@@ -28,6 +28,7 @@ import { currentContext } from '../../../common/context/request-context';
 import { CampusBindingRequiredError, UnauthenticatedError } from '../../../common/errors/app-error';
 import {
   CAMPUS_SESSION_PORT,
+  isActiveLinkStatus,
   type CampusPlatform,
   type CampusSessionPort,
 } from '../domain/ports/campus-session.port';
@@ -63,10 +64,12 @@ export class CampusBindingGuard implements CanActivate {
     if (!userId) throw new UnauthenticatedError();
 
     const binding = await this.campusSession.getBinding(userId, platform);
-    if (!binding || binding.status !== 'LINKED') {
+    // §11.19-A：可用状态是 ACTIVE（旧拼法 LINKED 已作废）。
+    // 判定只走 `isActiveLinkStatus` 一处，避免 `=== 'LINKED'` 散落各处。
+    if (!binding || !isActiveLinkStatus(binding.status)) {
       throw new CampusBindingRequiredError(`请先绑定校园系统（${platform}）后再使用该功能`, {
-        platform,
-        status: binding?.status ?? 'UNLINKED',
+        provider: platform,
+        status: binding?.status ?? 'UNBOUND',
         // 机器可读：这不是认证问题，客户端应**跳绑定引导页**而不是跳登录页
         next: 'GO_BIND',
       });

@@ -9,23 +9,48 @@
  *    **没有校园网能力**（U1）。因此本清单里**不出现**校园网，也不出现
  *    Piazza / CourseBench（TechPie 自身未实现，规格 N3）。
  * 2. **不假装 Phase 1–3 只是"待接线"**：它们阻塞于信息办 / GeekPie 的**书面回复**
- *    （U6 / U7 / U8 / U12），因此状态是 `PHASE_BLOCKED` + **明确的阻塞原因**，
+ *    （U6 / U7 / U8 / U12），因此 `blockedReason` 是**明确的阻塞原因**，
  *    而不是"暂不可用"。
  *
- * ## 关于 `CAMPUS_BINDING_REQUIRED`
+ * ## wire 形状（契约 §11.20-D / §11.21-F 收敛后）
  *
- * 它**不是错误**（契约 §5 硬规则 3、ADR §5.4）：它是「已登录但未绑定」这一
- * **合法状态**的呈现，UI 必须给**引导**而不是报错。本文件把它作为能力条目的
- * `status` 值返回，客户端据此渲染引导卡片。
+ * ⚠️ 本轮删除了全部**加法兼容别名**（§11.20-D：两个名字会永久共存、
+ * 消费方分裂、把不一致从编译期推到运行期）：
+ *
+ * | 被删除的别名 | 保留的**唯一**名字 |
+ * | --- | --- |
+ * | `id` | **`key`** |
+ * | `platform` | **`requiredProvider`** |
+ * | `status`（5 值枚举） | **`available`**（布尔） |
+ * | `guidance` | **`blockedReason`** |
+ *
+ * 条目上**保留**的非别名结构性字段：`moduleId`（归属模块，规格 §3.1 映射表是
+ * 按模块组织的）、`summary`（人可读描述）、`access`（openid / webview /
+ * server_proxy —— 决定 UI 给"去绑定"还是"打开校园系统"）、`targetUrl`
+ * （`access: 'webview'` 的白名单地址，`POST /techpie/webview-session` 的
+ * `targetUrl` **唯一**合法来源，§11.18-B）。
+ * 它们**不是**任何字段的同义别名，删掉会让 WebView 直连在契约上无法表达。
+ *
+ * ⚠️ §11.22-D 通用规则：**可空的可选字段为空时省略键，而不是下发 `null`**。
+ * 因此 `requiredProvider` / `blockedReason` / `targetUrl` 为空时**整个键都不出现**。
  */
 
-import type { CampusPlatform, TechpiePhase } from './ports/campus-session.port';
+import {
+  CAMPUS_PLATFORM_LABEL,
+  isActiveLinkStatus,
+  type CampusPlatform,
+  type TechpiePhase,
+} from './ports/campus-session.port';
+
+// `CAMPUS_PLATFORM_LABEL` 现在**只有一处定义**（端口文件，与枚举同住）——
+// 这里重新导出，保持既有的 import 路径仍然可用（一个概念一个 owner）。
+export { CAMPUS_PLATFORM_LABEL };
 
 /** 能力的访问方式（决定 UI 给"去绑定"还是"打开校园系统"） */
 export type TechpieCapabilityAccess = 'openid' | 'webview' | 'server_proxy';
 
 /**
- * 服务端判定的能力状态。
+ * 服务端判定的能力状态（**内部**判定，wire 上只暴露 `available: boolean`）。
  *
  * ⚠️ `CAMPUS_BINDING_REQUIRED` 与 `ApiErrorCode` 里的同名错误码是**同一个语义**，
  * 字符串刻意保持一致（三端可以复用同一个判定分支）。
@@ -38,20 +63,13 @@ export type TechpieCapabilityStatus =
   | 'UPSTREAM_UNAVAILABLE';
 
 /**
- * 一条校园能力。
+ * 一条校园能力（**wire 类型**，冻结 OpenAPI `CampusCapability` 的超集）。
  *
- * ⚠️ **字段是两套客户端形状的并集**（如实登记，不是设计品味）：
- *   · 冻结 OpenAPI `CampusCapability` 用 `key` / `available` / `requiredProvider` / `blockedReason`；
- *   · 规格 §8.1 与 Web 端 `TechpieCapability` 用 `id` / `platform` / `status` / `guidance`。
- * 两者在**同一份已提交的仓库里同时存在**且互相矛盾（见交付说明的未决问题）。
- * 为了让三端都不被打断，本实现返回**并集**：同一语义的字段成对出现
- * （`id`/`key`、`platform`/`requiredProvider`、`status`/`available`、`guidance`/`blockedReason`）。
- * Lead 收敛契约后应删掉其中一半。
+ * 别名已删除：只有 `key` / `requiredProvider` / `available` / `blockedReason`，
+ * 没有 `id` / `platform` / `status` / `guidance`（§11.20-D / §11.21-F）。
  */
 export interface TechpieCapability {
-  /** 冻结能力 id，如 `ecard.balance`（规格 §3.1 的能力行） */
-  id: string;
-  /** 与 `id` 同值的别名（OpenAPI 形状） */
+  /** 能力标识，如 `ecard.balance`（规格 §3.1 的能力行） */
   key: string;
   /** 归属的契约模块 id（`campus-card` / `schedule` / ...） */
   moduleId: string;
@@ -59,32 +77,28 @@ export interface TechpieCapability {
   summary: string;
   phase: TechpiePhase;
   access: TechpieCapabilityAccess;
-  /** 需要哪个平台的绑定（`null` = 不需要绑定） */
-  platform: CampusPlatform | null;
-  /** 与 `platform` 同值的别名（OpenAPI 形状） */
-  requiredProvider: CampusPlatform | null;
+  /** 需要哪个平台的绑定；**不需要绑定时整个键不出现**（§11.22-D） */
+  requiredProvider?: CampusPlatform;
   /**
-   * WebView 能力的**目标地址**。
+   * WebView 能力的**目标地址**（`access === 'webview'` 时必有）。
    *
    * ⚠️ 契约 §11.18-B：它**必须来自服务端白名单**，客户端**不得自行拼接任意 URL**。
    * 客户端只把这个值**原样**透传给 `POST /techpie/webview-session`。
    */
-  targetUrl: string | null;
-  /** 服务端判定的状态（客户端不自己推导，只做降级展示） */
-  status: TechpieCapabilityStatus;
-  /** 与 `status === 'AVAILABLE'` 同值的别名（OpenAPI 形状） */
+  targetUrl?: string;
+  /** 当前用户是否可用。**`false` 不是错误** —— 客户端据此**引导绑定**（不变式 I4） */
   available: boolean;
-  /** 服务端可覆盖的引导文案 */
-  guidance: string | null;
-  /** 与 `guidance` 同值的别名（OpenAPI 形状） */
-  blockedReason: string | null;
+  /** 不可用的人可读原因；可用时**整个键不出现**（§11.22-D） */
+  blockedReason?: string;
 }
 
 /** 能力清单响应（含白名单占位标记 —— 裁决 §11.18-B 第 2 条：必须机器可见） */
 export interface TechpieCapabilitiesResult {
-  /** 权威字段（规格 §8.1 / Web 端） */
-  items: TechpieCapability[];
-  /** 与 `items` **同值**的别名（冻结 OpenAPI 形状） */
+  /**
+   * 权威字段（冻结 OpenAPI 的形状）。
+   *
+   * ⚠️ 契约 §11.20-D：**删掉了同值的 `items` 别名** —— 一个字段只有一个名字。
+   */
   capabilities: TechpieCapability[];
   /** 校园域名白名单**内容仍为占位**（§11.18-B / U11） */
   allowlistPlaceholder: boolean;
@@ -98,13 +112,15 @@ export interface TechpieCapabilitiesResult {
  * 顺序即 UI 展示顺序：Phase 0 的可用能力在前，被阻塞的在后。
  */
 export interface TechpieCapabilityDefinition {
-  id: string;
+  /** 能力标识（wire 上的 `key`） */
+  key: string;
   moduleId: string;
   nameZh: string;
   summary: string;
   phase: TechpiePhase;
   access: TechpieCapabilityAccess;
-  platform: CampusPlatform | null;
+  /** 需要绑定的平台（`null` = 不需要绑定） */
+  requiredProvider: CampusPlatform | null;
   targetUrl: string | null;
   /** 被阻塞时的**诚实**原因（§11.18-D：不得含糊成"暂不可用"） */
   blockedReason: string | null;
@@ -144,152 +160,152 @@ export const CAMPUS_WEB_ENTRY_TARGETS = {
 export const TECHPIE_CAPABILITIES: readonly TechpieCapabilityDefinition[] = [
   /* ---------------- Phase 0 · 校园卡（OPENID 通道，零合规风险） ---------------- */
   {
-    id: 'ecard.balance',
+    key: 'ecard.balance',
     moduleId: 'campus-card',
     nameZh: '校园卡余额',
     summary: '一卡通余额查询。走 eCard 的 OPENID 通道，**不需要** CASTGC。',
     phase: 'phase0',
     access: 'openid',
-    platform: 'ecard',
+    requiredProvider: 'ecard',
     targetUrl: null,
     blockedReason: null,
   },
   {
-    id: 'ecard.transactions',
+    key: 'ecard.transactions',
     moduleId: 'campus-card',
     nameZh: '校园卡流水',
     summary: '一卡通消费流水。走 eCard 的 OPENID 通道，**不需要** CASTGC。',
     phase: 'phase0',
     access: 'openid',
-    platform: 'ecard',
+    requiredProvider: 'ecard',
     targetUrl: null,
     blockedReason: null,
   },
   {
-    id: 'ecard.payment_code',
+    key: 'ecard.payment_code',
     moduleId: 'campus-card',
     nameZh: '校园卡付款码',
     summary: '付款码（60 秒 TTL、一次性、不进日志）。走 eCard 的 OPENID 通道。',
     phase: 'phase0',
     access: 'openid',
-    platform: 'ecard',
+    requiredProvider: 'ecard',
     targetUrl: null,
     blockedReason: null,
   },
 
   /* ---------------- Phase 0 · WebView 直连（W4：用户自登录，我们不接触 cookie） ---------------- */
   {
-    id: 'webview.ecourse',
+    key: 'webview.ecourse',
     moduleId: 'techpie',
     nameZh: 'E云课堂',
     summary: '在校园系统页面**自己登录**后使用；可达鸭不接触 cookie（规格 §8.4 方案 W4）。',
     phase: 'phase0',
     access: 'webview',
-    platform: null,
+    requiredProvider: null,
     targetUrl: CAMPUS_WEB_ENTRY_TARGETS.ecourse,
     blockedReason: null,
   },
   {
-    id: 'webview.student_leave',
+    key: 'webview.student_leave',
     moduleId: 'techpie',
     nameZh: '学生请假',
     summary: '在校园系统页面**自己登录**后使用；可达鸭不接触 cookie（规格 §8.4 方案 W4）。',
     phase: 'phase0',
     access: 'webview',
-    platform: null,
+    requiredProvider: null,
     targetUrl: CAMPUS_WEB_ENTRY_TARGETS.studentLeave,
     blockedReason: null,
   },
   {
-    id: 'webview.student_activity',
+    key: 'webview.student_activity',
     moduleId: 'techpie',
     nameZh: '学生活动',
     summary: '在校园系统页面**自己登录**后使用；可达鸭不接触 cookie（规格 §8.4 方案 W4）。',
     phase: 'phase0',
     access: 'webview',
-    platform: null,
+    requiredProvider: null,
     targetUrl: CAMPUS_WEB_ENTRY_TARGETS.studentActivity,
     blockedReason: null,
   },
   {
-    id: 'webview.elrc',
+    key: 'webview.elrc',
     moduleId: 'techpie',
     nameZh: '课程录播（ELRC）',
     summary: '纯外链 WebView，无 cookie 注入（规格 §3.1 第 8 项）。',
     phase: 'phase0',
     access: 'webview',
-    platform: null,
+    requiredProvider: null,
     targetUrl: CAMPUS_WEB_ENTRY_TARGETS.elrc,
     blockedReason: null,
   },
 
   /* ---------------- Phase 1 · 结构化校园数据（阻塞于信息办书面回复） ---------------- */
   {
-    id: 'schedule.courses',
+    key: 'schedule.courses',
     moduleId: 'schedule',
     nameZh: '课程表',
     summary: '结构化课表数据需要调用 CpDaily API（即需要代持校园会话）。',
     phase: 'phase1',
     access: 'server_proxy',
-    platform: 'cpdaily',
+    requiredProvider: 'cpdaily',
     targetUrl: null,
     blockedReason: PHASE_BLOCKED_REASON,
   },
   {
-    id: 'schedule.exams',
+    key: 'schedule.exams',
     moduleId: 'schedule',
     nameZh: '考试表',
     summary: '考试表与课程表同一会话（规格 §3.1 第 2 项）。',
     phase: 'phase1',
     access: 'server_proxy',
-    platform: 'cpdaily',
+    requiredProvider: 'cpdaily',
     targetUrl: null,
     blockedReason: PHASE_BLOCKED_REASON,
   },
   {
-    id: 'schedule.deadlines',
+    key: 'schedule.deadlines',
     moduleId: 'schedule',
     nameZh: 'DDL 聚合',
     summary: 'Blackboard / 考试 / Gradescope / Hydro 的 DDL 聚合（规格 §3.1 第 3 项）。',
     phase: 'phase1',
     access: 'server_proxy',
-    platform: 'cpdaily',
+    requiredProvider: 'cpdaily',
     targetUrl: null,
     blockedReason: PHASE_BLOCKED_REASON,
   },
   {
-    id: 'auth.school_cas',
+    key: 'auth.school_cas',
     moduleId: 'auth',
     nameZh: '学校统一身份认证直连',
     summary: '一级身份直连学校 CAS（规格 §4.2 方案 A 的目标形态）。',
     phase: 'phase1',
     access: 'server_proxy',
-    platform: 'cas',
+    requiredProvider: 'cas',
     targetUrl: null,
     blockedReason: PHASE_BLOCKED_REASON,
   },
 
   /* ---------------- Phase 2 · 高级能力（依赖 Phase 1 + 上游确认） ---------------- */
   {
-    id: 'facility.reservation',
+    key: 'facility.reservation',
     moduleId: 'facility',
     nameZh: '场馆预约',
     summary: '学校 OA 的场馆预约能力，需要 OA 会话（规格 §2.6 / §3.3）。',
     phase: 'phase2',
     access: 'server_proxy',
-    platform: 'cpdaily',
+    requiredProvider: 'cpdaily',
     targetUrl: null,
     blockedReason: PHASE2_BLOCKED_REASON,
   },
   {
-    id: 'techpie.auto_renew',
+    key: 'techpie.auto_renew',
     moduleId: 'techpie',
     nameZh: '会话自动续期',
     summary:
       '自动续期依赖 `/api/auth/renew`（TechPie 自建后端的能力）—— 我们**无法假定它对我们开放**（规格 §6.3 R4 / U8）。',
     phase: 'phase2',
     access: 'server_proxy',
-    platform: 'techpie',
+    requiredProvider: 'techpie',
     targetUrl: null,
     blockedReason: PHASE2_BLOCKED_REASON,
   },
@@ -297,7 +313,7 @@ export const TECHPIE_CAPABILITIES: readonly TechpieCapabilityDefinition[] = [
 
 /** 用户当前的绑定情况（由 `CampusSessionPort.listBindings` 提供） */
 export interface TechpieBindingView {
-  platform: CampusPlatform;
+  provider: CampusPlatform;
   status: string;
 }
 
@@ -308,22 +324,22 @@ export interface TechpieBindingView {
  *   1. `phase !== 'phase0'` → `PHASE_BLOCKED`（**先于**绑定判定：
  *      未开放的能力不该提示用户"去绑定"，因为绑了也用不了）；
  *   2. 需要绑定且没有可用绑定 → `CAMPUS_BINDING_REQUIRED`（**不是错误**）；
- *   3. 需要绑定且绑定存在但不可用（EXPIRED/REVOKED/UNLINKED）→ `EXPIRED`；
+ *   3. 需要绑定且绑定存在但不可用（EXPIRED/REVOKED/PENDING/FAILED）→ `EXPIRED`；
  *   4. 其余 → `AVAILABLE`。
  *
  * `UPSTREAM_UNAVAILABLE` 在 Phase 0 不会出现 —— Phase 0 的能力**不发上游请求**。
  * 保留该值是为了 Phase 1+ 与失败模式 F4/F7 的语义完整。
  */
 export function resolveCapabilityStatus(
-  definition: Pick<TechpieCapabilityDefinition, 'phase' | 'platform'>,
+  definition: Pick<TechpieCapabilityDefinition, 'phase' | 'requiredProvider'>,
   bindings: readonly TechpieBindingView[],
 ): TechpieCapabilityStatus {
   if (definition.phase !== 'phase0') return 'PHASE_BLOCKED';
-  if (definition.platform === null) return 'AVAILABLE';
+  if (definition.requiredProvider === null) return 'AVAILABLE';
 
-  const binding = bindings.find((item) => item.platform === definition.platform);
+  const binding = bindings.find((item) => item.provider === definition.requiredProvider);
   if (!binding) return 'CAMPUS_BINDING_REQUIRED';
-  if (binding.status !== 'LINKED') return 'EXPIRED';
+  if (!isActiveLinkStatus(binding.status)) return 'EXPIRED';
   return 'AVAILABLE';
 }
 
@@ -337,19 +353,15 @@ export function expiredGuidance(platform: CampusPlatform): string {
   return `「${CAMPUS_PLATFORM_LABEL[platform]}」的绑定已过期，需要重新绑定。**你的可达鸭登录状态不受影响** —— 校园会话失效与登录过期是两件事。`;
 }
 
-export const CAMPUS_PLATFORM_LABEL: Readonly<Record<CampusPlatform, string>> = {
-  ecard: '校园一卡通',
-  egate: 'eGate 校园门户',
-  cpdaily: 'CpDaily 今日校园',
-  cas: '统一身份认证（CAS）',
-  techpie: 'GeekPie / TechPie 体系',
-};
+
 
 /**
  * 把能力目录 + 用户绑定情况投影成响应条目。
  *
  * **纯函数**：不碰数据库、不碰网络 —— 因此能力清单端点天然满足
  * 契约 §8 的"启动不被上游拖死"（不变式 I5 的同源要求）。
+ *
+ * ⚠️ 为空的可选字段**省略键**而不是下发 `null`（§11.22-D 通用规则）。
  */
 export function buildCapabilities(
   definitions: readonly TechpieCapabilityDefinition[],
@@ -357,28 +369,38 @@ export function buildCapabilities(
 ): TechpieCapability[] {
   return definitions.map((definition) => {
     const status = resolveCapabilityStatus(definition, bindings);
-    const platform = definition.platform;
+    const provider = definition.requiredProvider;
 
-    let guidance: string | null = definition.blockedReason;
-    if (status === 'CAMPUS_BINDING_REQUIRED' && platform) guidance = bindingRequiredGuidance(platform);
-    if (status === 'EXPIRED' && platform) guidance = expiredGuidance(platform);
-    if (status === 'AVAILABLE') guidance = null;
+    let blockedReason: string | null = definition.blockedReason;
+    if (status === 'CAMPUS_BINDING_REQUIRED' && provider) blockedReason = bindingRequiredGuidance(provider);
+    if (status === 'EXPIRED' && provider) blockedReason = expiredGuidance(provider);
+    if (status === 'AVAILABLE') blockedReason = null;
 
-    return {
-      id: definition.id,
-      key: definition.id,
+    const item: TechpieCapability = {
+      key: definition.key,
       moduleId: definition.moduleId,
       nameZh: definition.nameZh,
       summary: definition.summary,
       phase: definition.phase,
       access: definition.access,
-      platform,
-      requiredProvider: platform,
-      targetUrl: definition.targetUrl,
-      status,
       available: status === 'AVAILABLE',
-      guidance,
-      blockedReason: guidance,
     };
+
+    // §11.22-D：可空的可选字段为空时**省略该键**，不下发 `null`
+    if (provider !== null) item.requiredProvider = provider;
+    if (definition.targetUrl !== null) item.targetUrl = definition.targetUrl;
+    if (blockedReason !== null) item.blockedReason = blockedReason;
+
+    return item;
   });
+}
+
+/** 需要先绑定才能用的能力数（`unboundCount`） */
+export function countUnbound(
+  definitions: readonly TechpieCapabilityDefinition[],
+  bindings: readonly TechpieBindingView[],
+): number {
+  return definitions.filter(
+    (definition) => resolveCapabilityStatus(definition, bindings) === 'CAMPUS_BINDING_REQUIRED',
+  ).length;
 }

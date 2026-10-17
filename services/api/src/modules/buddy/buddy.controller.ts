@@ -228,7 +228,7 @@ const questionnaireListQuerySchema = z.object({ section: sectionSchema.optional(
  * 编译期防漂移断言：Zod 推导出的类型必须兼容 domain 声明的输入类型。
  * 只改了一边就会直接编译失败（沿用 `scripts/scaffold.mjs` 的做法）。
  */
-type AssertAssignable<Target, Actual extends Target> = Actual extends Target ? true : never;
+type AssertAssignable<Target, _Actual extends Target> = _Actual extends Target ? true : never;
 export type CreateSchemaMatchesDomain = AssertAssignable<
   CreateBuddyPostInput,
   z.infer<typeof createPostSchema>

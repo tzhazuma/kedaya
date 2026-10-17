@@ -3,14 +3,13 @@ import type { Page } from '@kedaya/contracts';
 import {
   CampusBindingRequiredError,
   ConflictError,
-  ForbiddenError,
   NotFoundError,
   ValidationError,
 } from '../../common/errors/app-error';
 import {
   CampusSessionError,
   translateCampusSessionError,
-  type CampusBindingSummary,
+  type CampusBindingState,
   type CampusSessionPort,
 } from './domain/ports/campus-session.port';
 import type { WebviewAllowlistPort } from './domain/ports/webview-allowlist.port';
@@ -22,7 +21,7 @@ import type {
 import { TechpieService } from './techpie.service';
 
 /**
- * 用例层测试：**错误码映射**与**不泄漏**是重点。
+ * 用例层测试：**错误码映射**、**不泄漏**、**形状收敛**是重点。
  * 规格 §8.5 / §8.6 的错误表是契约，不是建议。
  */
 
@@ -31,14 +30,27 @@ function link(overrides: Partial<TechpieLinkModel> = {}): TechpieLinkModel {
     id: 'link-1',
     userId: 'user-1',
     provider: 'ecard',
-    status: 'LINKED',
-    externalUserId: 'openid-1',
+    status: 'ACTIVE',
+    externalUserId: 'authcode-1',
     tokenCipher: null,
     expiresAt: null,
     lastSyncAt: null,
     createdAt: new Date('2026-10-01T00:00:00.000Z'),
     updatedAt: new Date('2026-10-01T00:00:00.000Z'),
     deletedAt: null,
+    ...overrides,
+  };
+}
+
+function state(overrides: Partial<CampusBindingState> = {}): CampusBindingState {
+  return {
+    id: 'link-1',
+    provider: 'ecard',
+    status: 'ACTIVE',
+    externalUserId: 'authcode-1',
+    expiresAt: null,
+    lastSyncAt: null,
+    phase: 'phase0',
     ...overrides,
   };
 }
@@ -88,16 +100,33 @@ function build(options: { links?: TechpieLinkModel[]; campus?: CampusSessionPort
   return { service, links, jobs, campus };
 }
 
-describe('techpie 用例层（规格 §8.1 / §8.5 / §8.6）', () => {
+describe('techpie 用例层（规格 §8.1 / §8.5 / §8.6；§11.20-E 收敛）', () => {
   /* ---------------- 列表与详情 ---------------- */
 
-  it('listLinks 返回 CampusBindingSummary[]，**不含凭证**', async () => {
+  it('listLinks 返回 `TechpieLink[]`（用 `provider`，不是 `platform`），**不含凭证**', async () => {
     const { service } = build({ links: [link()] });
     const page = await service.listLinks('user-1', { limit: 20 });
 
     expect(page.items).toHaveLength(1);
-    expect(page.items[0]).toMatchObject({ id: 'link-1', platform: 'ecard', status: 'LINKED', phase: 'phase0' });
-    expect(JSON.stringify(page)).not.toMatch(/tokenCipher|sessionCipher|cookie|castgc/i);
+    expect(page.items[0]).toMatchObject({
+      id: 'link-1',
+      provider: 'ecard',
+      status: 'ACTIVE',
+      phase: 'phase0',
+    });
+    // §11.20-A：**没有** `platform` 这个名字
+    expect(Object.keys(page.items[0]!)).not.toContain('platform');
+    // 对端标识与凭证都**没有**出口
+    expect(JSON.stringify(page)).not.toMatch(/tokenCipher|sessionCipher|cookie|castgc|externalUserId/i);
+  });
+
+  it('§11.22-D：`expiresAt` / `lastSyncAt` 为空时**省略键**（不下发 `null`）', async () => {
+    const { service } = build({ links: [link()] });
+    const page = await service.listLinks('user-1', { limit: 20 });
+
+    expect('expiresAt' in page.items[0]!).toBe(false);
+    expect('lastSyncAt' in page.items[0]!).toBe(false);
+    expect(Object.values(page.items[0]!).every((value) => value !== null)).toBe(true);
   });
 
   it('getLink：非本人 → 404（不泄漏"这个 id 存在"）', async () => {
@@ -110,12 +139,12 @@ describe('techpie 用例层（规格 §8.1 / §8.5 / §8.6）', () => {
     await expect(service.getLink('user-1', 'link-1')).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  /* ---------------- 绑定 ---------------- */
+  /* ---------------- 绑定（§11.19-B：`authCode`；§11.20-D：无别名） ---------------- */
 
-  it('未知平台 → 422 VALIDATION_FAILED（UNKNOWN_PLATFORM）', async () => {
+  it('未知 provider → 422 VALIDATION_FAILED（UNKNOWN_PLATFORM）', async () => {
     const { service } = build();
     await expect(
-      service.createLink('user-1', { platform: 'gradescope', credential: { kind: 'openid', openId: 'x' } }),
+      service.createLink('user-1', { provider: 'gradescope', authCode: 'x' }),
     ).rejects.toMatchObject({ code: 'VALIDATION_FAILED', details: { reason: 'UNKNOWN_PLATFORM' } });
   });
 
@@ -128,25 +157,30 @@ describe('techpie 用例层（规格 §8.1 / §8.5 / §8.6）', () => {
     const { service } = build({ campus });
 
     await expect(
-      service.createLink('user-1', { platform: 'cpdaily', credential: { kind: 'openid', openId: 'x' } }),
+      service.createLink('user-1', { provider: 'cpdaily', authCode: 'x' }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN', status: 403, details: { reason: 'PHASE_BLOCKED' } });
   });
 
-  it('明文密码 → 403 FORBIDDEN，且**不把密码搬到下游**（只传 kind）', async () => {
-    const bind = vi.fn().mockRejectedValue(new CampusSessionError('PLAIN_PASSWORD_REFUSED', '不接受明文密码'));
+  it('`authCode` 传进端口时就是**一次性凭证**，字段名是 `authCode`（不是 `openId`）', async () => {
+    const bind = vi.fn().mockResolvedValue(state());
     const { service } = build({ campus: makeCampusSession({ bind }) });
 
-    await expect(
-      service.createLink('user-1', {
-        platform: 'ecard',
-        credential: { kind: 'password', studentId: '20260001', password: 'hunter2' },
-      }),
-    ).rejects.toBeInstanceOf(ForbiddenError);
+    await service.createLink('user-1', { provider: 'ecard', authCode: 'wx-code-1' });
 
-    // 关键：端口收到的 credential 里**没有**明文密码
     const passed = bind.mock.calls[0]![2] as Record<string, unknown>;
-    expect(passed).toEqual({ kind: 'password', studentId: '', password: '' });
-    expect(JSON.stringify(bind.mock.calls)).not.toContain('hunter2');
+    expect(passed).toEqual({ kind: 'openid', channel: 'wechat', authCode: 'wx-code-1' });
+    // §11.19-B：端口层**没有** `openId` 这个名字
+    expect(Object.keys(passed)).not.toContain('openId');
+  });
+
+  it('`authCode` 为空 / 非字符串 → 422（不静默当有效凭证处理）', async () => {
+    const { service } = build();
+    await expect(service.createLink('user-1', { provider: 'ecard', authCode: '   ' })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+    await expect(service.createLink('user-1', { provider: 'ecard', authCode: null })).rejects.toBeInstanceOf(
+      ValidationError,
+    );
   });
 
   it('重复绑定 → 409 CONFLICT（ALREADY_LINKED）', async () => {
@@ -156,7 +190,7 @@ describe('techpie 用例层（规格 §8.1 / §8.5 / §8.6）', () => {
     const { service } = build({ campus });
 
     await expect(
-      service.createLink('user-1', { platform: 'ecard', credential: { kind: 'openid', channel: 'wechat', openId: 'a' } }),
+      service.createLink('user-1', { provider: 'ecard', authCode: 'a' }),
     ).rejects.toMatchObject({ code: 'CONFLICT', status: 409, details: { reason: 'ALREADY_LINKED' } });
   });
 
@@ -167,25 +201,8 @@ describe('techpie 用例层（规格 §8.1 / §8.5 / §8.6）', () => {
     const { service } = build({ campus });
 
     await expect(
-      service.createLink('user-1', { platform: 'ecard', credential: { kind: 'openid', channel: 'wechat', openId: '' } }),
+      service.createLink('user-1', { provider: 'ecard', authCode: 'a' }),
     ).rejects.toBeInstanceOf(ConflictError);
-  });
-
-  it('credential 不是对象 / kind 不认识 → 422（不静默当 openid 处理）', async () => {
-    const { service } = build();
-    await expect(service.createLink('user-1', { platform: 'ecard', credential: null })).rejects.toBeInstanceOf(
-      ValidationError,
-    );
-    await expect(
-      service.createLink('user-1', { platform: 'ecard', credential: { kind: 'sms' } }),
-    ).rejects.toBeInstanceOf(ValidationError);
-  });
-
-  it('OPENID 的 channel 必须是 wechat（Phase 0 只有这一条通道）', async () => {
-    const { service } = build();
-    await expect(
-      service.createLink('user-1', { platform: 'ecard', credential: { kind: 'openid', channel: 'alipay', openId: 'a' } }),
-    ).rejects.toBeInstanceOf(ValidationError);
   });
 
   /* ---------------- 解绑 ---------------- */
@@ -221,26 +238,38 @@ describe('techpie 用例层（规格 §8.1 / §8.5 / §8.6）', () => {
     await expect(service.renewLink('user-1', 'link-1')).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  /* ---------------- 能力清单 ---------------- */
+  /* ---------------- 能力清单（§11.20-D：只剩 `capabilities`） ---------------- */
 
-  it('capabilities：两套客户端字段都在，且带白名单占位标记（§11.18-B 第 2 条）', async () => {
+  it('capabilities：**只有 `capabilities` 一个名字**，且带白名单占位标记', async () => {
     const { service } = build();
     const result = await service.capabilities('user-1');
 
     expect(result.allowlistPlaceholder).toBe(true);
-    expect(result.items).toBe(result.capabilities); // 同一份数组（并集别名）
-    expect(result.items.length).toBeGreaterThan(0);
+    expect(result.capabilities.length).toBeGreaterThan(0);
     expect(result.unboundCount).toBeGreaterThan(0);
-    expect(result.items.every((item) => item.key === item.id)).toBe(true);
+    // §11.20-D：同值的 `items` 别名**已删除**
+    expect(Object.keys(result)).not.toContain('items');
   });
 
-  it('capabilities：未绑定项是**引导**而不是错误（CAMPUS_BINDING_REQUIRED 在 items 里，不是抛异常）', async () => {
+  it('capabilities：未绑定项是**引导**而不是错误（`available: false` + `blockedReason`）', async () => {
     const { service } = build();
     const result = await service.capabilities('user-1');
 
-    const required = result.items.filter((item) => item.status === 'CAMPUS_BINDING_REQUIRED');
+    const required = result.capabilities.filter(
+      (item) => !item.available && item.requiredProvider === 'ecard',
+    );
     expect(required.length).toBeGreaterThan(0);
-    for (const item of required) expect(item.guidance).toBeTruthy();
+    for (const item of required) expect(item.blockedReason).toBeTruthy();
+  });
+
+  it('capabilities：已绑定（ACTIVE）的 ecard 能力变成 `available: true`', async () => {
+    const campus = makeCampusSession({ listBindings: vi.fn().mockResolvedValue([state()]) });
+    const { service } = build({ campus });
+    const result = await service.capabilities('user-1');
+
+    const balance = result.capabilities.find((item) => item.key === 'ecard.balance')!;
+    expect(balance.available).toBe(true);
+    expect('blockedReason' in balance).toBe(false);
   });
 
   /* ---------------- 同步任务 ---------------- */
@@ -260,7 +289,7 @@ describe('techpie 用例层（规格 §8.1 / §8.5 / §8.6）', () => {
   });
 
   it('bindingRequired() 是 409（I4：**不是** 401）', () => {
-    const error = new CampusBindingRequiredError('需要绑定', { platform: 'cpdaily' });
+    const error = new CampusBindingRequiredError('需要绑定', { provider: 'cpdaily' });
     expect(error.status).toBe(409);
     expect(error.code).toBe('CAMPUS_BINDING_REQUIRED');
   });
