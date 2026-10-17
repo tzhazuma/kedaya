@@ -168,7 +168,8 @@ export default function DiscoverPage() {
           ))}
         </View>
         <Text className='kdy-discover__hint'>
-          上排之外的模块若显示为「开发中」，点它会明确告知状态，不会假装可用。
+          六个生活模块都可直接进入。尚未实现的模块（当前是「场馆预约」）点开会如实说明状态，
+          不会给你一个白屏或假的可用入口。
         </Text>
       </KdyCard>
 
@@ -188,9 +189,10 @@ export default function DiscoverPage() {
         ))}
       </KdyCard>
 
-      <KdyCard title='提示' elevated={false}>
+      <KdyCard title='数据来源' elevated={false}>
         <Text className='kdy-discover__hint'>
-          已跑通的业务模块之一，含列表 / 详情 / 参团，默认走 mock 数据。
+          当前为演示模式：校园数据（课表、校园卡、实名）来自确定性模拟数据源，界面会如实标注；
+          生活模块的数据也可在本地演示。接入校方授权后切到真实数据源，权限与审计逻辑不变。
         </Text>
       </KdyCard>
 

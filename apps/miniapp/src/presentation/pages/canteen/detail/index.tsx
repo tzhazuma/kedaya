@@ -9,6 +9,7 @@ import {
   calorieLevelLabel,
   caloriesLabel,
   macroLabel,
+  macroShares,
   priceLabel,
 } from '../../../../domain/models/canteen'
 import type { CanteenCalorieSummary, CanteenDish } from '../../../../domain/models/canteen'
@@ -17,6 +18,7 @@ import {
   KdyButton,
   KdyCard,
   KdyEmpty,
+  KdyProgress,
   KdyReportEntry,
   KdyShareEntry,
   KdyTag,
@@ -38,6 +40,16 @@ import './index.scss'
  * （两边白名单必须同步：漂移的后果是提交时 400，不是静默失败）。
  */
 const CANTEEN_REPORT_TARGET_TYPE: ReportTargetType = 'canteen-dish'
+
+/**
+ * 三大营养素的行定义 —— 顺序固定为「蛋白 / 脂肪 / 碳水」，与列表卡一致。
+ * 色调是**展示层**决定，因此留在页面（domain 不 import 任何 UI 类型）。
+ */
+const MACRO_ROWS = [
+  { key: 'protein', label: '蛋白', tone: 'brand', grams: (dish: CanteenDish): number => dish.proteinG },
+  { key: 'fat', label: '脂肪', tone: 'warning', grams: (dish: CanteenDish): number => dish.fatG },
+  { key: 'carb', label: '碳水', tone: 'success', grams: (dish: CanteenDish): number => dish.carbG },
+] as const
 
 export default function CanteenDetailPage() {
   const container = getContainer()
@@ -125,6 +137,8 @@ export default function CanteenDetailPage() {
 
   // 已经过 null 校验：用非空局部变量，闭包里也能安全取用
   const dish: CanteenDish = detail.data
+  // 克数占比：与列表卡同一份口径（domain 层 `macroShares`），详情页不再自己算
+  const shares = macroShares(dish)
 
   return (
     <View className='kdy-page kdy-canteen-detail'>
@@ -145,6 +159,22 @@ export default function CanteenDetailPage() {
             <KdyTag tone='neutral'>{calorieLevelLabel(dish.caloriesKcal)}</KdyTag>
           </View>
         </View>
+
+        {/* 克数占比条：先给"这盘菜是偏蛋白还是偏碳水"的整体印象，再给精确克数 */}
+        <View className='kdy-canteen-detail__macros'>
+          {MACRO_ROWS.map((row) => (
+            <View className='kdy-canteen-detail__macro-row' key={row.key}>
+              <Text className='kdy-canteen-detail__macro-key'>{row.label}</Text>
+              <KdyProgress
+                className='kdy-canteen-detail__macro-bar'
+                percent={shares[row.key]}
+                tone={row.tone}
+              />
+              <Text className='kdy-canteen-detail__macro-value'>{row.grams(dish)}g</Text>
+            </View>
+          ))}
+        </View>
+        <Text className='kdy-canteen-detail__macro-note'>按克数占比 · 仅作参考</Text>
 
         <View className='kdy-canteen-detail__rows'>
           <View className='kdy-canteen-detail__row'>
