@@ -5,13 +5,11 @@
  * 改完重跑 `npm run scaffold`，避免 15 个模块各写一套。
  */
 import { Controller, Delete, Get, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { modulePath } from '@kedaya/contracts';
 import { z } from 'zod';
-import { AuthGuard } from '../../common/auth/auth.guard';
-import { CurrentUser } from '../../common/auth/current-user';
-import { ApiBearerAuth } from '@nestjs/swagger';
-import { CampusBindingGuard, RequireCampusBinding } from '../techpie/data/campus-binding.guard';
+import { AuthGuard, OptionalAuthGuard } from '../../common/auth/auth.guard';
+import { CurrentUser, OptionalCurrentUser } from '../../common/auth/current-user';
 import { ValidationError } from '../../common/errors/app-error';
 import { normalizeLimit, readCursor } from '../../common/pagination/cursor';
 import { ZodBody } from '../../common/pipes/zod-validation.pipe';
@@ -45,25 +43,20 @@ export type UpdateSchemaMatchesDomain = AssertAssignable<UpdateScheduleCourseInp
  */
 @ApiTags('schedule · 课表')
 @Controller(modulePath('schedule'))
-// 契约 §5 硬规则 3 / 不变式 I4：课表是**校园能力**，需要第二级绑定。
-// 未登录 → 401 UNAUTHENTICATED；**已登录但未绑定 → 409 CAMPUS_BINDING_REQUIRED**（不是 401）。
-// 顺序不能反：AuthGuard 必须先解出身份，CampusBindingGuard 才有 userId 可用。
-@UseGuards(AuthGuard, CampusBindingGuard)
-@RequireCampusBinding('cpdaily')
-@ApiBearerAuth()
+@UseGuards(OptionalAuthGuard)
 export class ScheduleController {
   constructor(@Inject(ScheduleCourseService) private readonly service: ScheduleCourseService) {}
 
   @Get('items')
   @ApiOperation({ summary: '列表（游标分页，契约 §6.1 不用 offset）' })
-  list(@CurrentUser() _userId: string, @Query() query: Record<string, unknown>) {
+  list(@Query() query: Record<string, unknown>) {
     return this.service.list({ cursor: readCursor(query), limit: normalizeLimit(query.limit) });
   }
 
   @Post('items')
   @ApiOperation({ summary: '创建' })
   create(
-    @CurrentUser() actorId: string,
+    @OptionalCurrentUser() actorId: string | undefined,
     @ZodBody(createSchema) body: CreateScheduleCourseInput,
   ) {
     return this.service.create(body, actorId);
@@ -97,4 +90,65 @@ export class ScheduleController {
     }
     return this.service.listByWeekday(term, parsed);
   }
+
+  /* ================================================================ *
+   * 领域端点：用户真正会用的四个视图
+   *
+   * 这些都必须登录（class 级 OptionalAuthGuard + 方法级 AuthGuard 叠加，
+   * 未带 token 会在方法级被拦下），因为它们回答的都是"**我**的课"。
+   * ================================================================ */
+
+  @Get('today')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: '今日课表 + 「正在上 / 下一节 / 还有几分钟」',
+    description:
+      '时间信息由服务端按自身时钟算好下发（客户端时钟不准也不会显示错误的倒计时）。' +
+      '`term` 缺省为当前学期。',
+  })
+  today(@CurrentUser() userId: string, @Query('term') term?: string) {
+    return this.service.today(userId, readTerm(term));
+  }
+
+  @Get('week')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: '本周课表（7 天一次拉齐 + 时间冲突 + 可切换学期）',
+    description: '移动端一次请求渲染整屏，避免按天请求 7 次造成的"部分加载"观感。',
+  })
+  week(@CurrentUser() userId: string, @Query('term') term?: string) {
+    return this.service.week(userId, readTerm(term));
+  }
+
+  @Get('next')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '下一节课（供可达鸭 agent / 桌面组件复用）' })
+  next(@CurrentUser() userId: string) {
+    return this.service.nextClass(userId);
+  }
+
+  @Post('sync')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: '从教务系统（JWC）同步课表',
+    description:
+      '未绑定 JWC → CAMPUS_BINDING_REQUIRED（客户端展示"去绑定"引导）。' +
+      '上游失败时**不清空**本地课表，用户看到的仍是上次同步成功的结果。',
+  })
+  sync(@CurrentUser() userId: string, @Query('term') term?: string) {
+    return this.service.syncFromCampus(userId, readTerm(term));
+  }
+}
+
+/** 学期参数只允许 `YYYY-YYYY-1|2` 形状，避免把任意字符串拼进查询 */
+function readTerm(raw: string | undefined): string | undefined {
+  if (raw === undefined || raw === '') return undefined;
+  if (!/^\d{4}-\d{4}-[12]$/.test(raw)) {
+    throw new ValidationError('term 形状应为 2026-2027-1', { term: raw });
+  }
+  return raw;
 }

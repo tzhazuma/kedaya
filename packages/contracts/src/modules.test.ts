@@ -79,7 +79,7 @@ describe('模块注册表', () => {
     }
   });
 
-  it('心理治疗是最高敏感级', () => {
+  it('心理支持是最高敏感级', () => {
     expect(getModule('wellbeing')?.sensitivity).toBe('critical');
   });
 

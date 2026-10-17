@@ -701,9 +701,12 @@ stateDiagram-v2
 **关键用例**：`EnablePortrait`（需同意）/ `RebuildPortrait` / `GiveFeedback` / `DisablePortrait`。
 **依赖**：`auth`、`profile`。
 
-### 2.7 `wellbeing` 心理治疗（敏感级：**最高**，独立同意）
+### 2.7 `wellbeing` 心理支持（敏感级：**最高**，独立同意）
 
 这是全系统敏感度最高的模块。**默认最小化**：`wellbeing` 的存在本身在其它模块不可见。
+定位是**倾听与预约入口**（危机出口在首屏），**不做诊断、不做治疗**。
+> ⚠️ 本节下列 `WellbeingAssessment`（PHQ-9 / GAD-7 等量表）与风险分级**未实现也不打算实现** ——
+> 量表作答属于医疗行为。已交付范围见 `docs/delivery-plan.md` 与 `docs/architecture/03-api-contract.md` §6.6。
 
 **核心实体**
 

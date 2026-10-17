@@ -5,9 +5,15 @@
 //          → packages/design-tokens/dist/tokens.scss
 // 因此这里（以及任何组件样式）可以直接使用 $kdy-* 变量，且**不得手写色值**（契约 §6.2）。
 
+@import './presentation/theme/appearance.scss';
+
+// 图标字体的本地内联在 `presentation/theme/taroify-icon-style.ts`（由 config 的 alias 接管），
+// 不能放在这里：app.scss 会编译进 `app-origin.wxss`，而它被 `app.wxss` 在 `common.wxss` **之前**引入，
+// 覆盖不了 common.wxss 里 Taroify 的外链 @font-face。
+
 page,
 .kdy-root {
-  background-color: $kdy-color-bg;
+  background-color: color.mix($kdy-color-brand-soft, $kdy-color-bg, 18%);
   color: $kdy-color-text;
   font-family: $kdy-font-family-sans;
   font-size: $kdy-font-size-sm;
@@ -27,7 +33,12 @@ page,
 .kdy-page {
   box-sizing: border-box;
   min-height: 100vh;
-  padding-bottom: $kdy-space-6;
+  padding-bottom: calc(#{$kdy-space-6} + env(safe-area-inset-bottom));
+  background: linear-gradient(
+    180deg,
+    rgba($kdy-color-brand-soft, 0.6),
+    transparent 240px
+  );
 }
 
 .kdy-section-title {
@@ -35,4 +46,20 @@ page,
   color: $kdy-color-ink;
   font-size: $kdy-font-size-md;
   font-weight: 600;
+}
+
+.kdy-demo-tools {
+  display: block;
+  margin: $kdy-space-4 $kdy-space-5;
+  border-radius: $kdy-radius-xl;
+  overflow: hidden;
+  --collapse-item-content-padding: #{$kdy-space-3};
+}
+.kdy-demo-tools .kdy-card {
+  margin: $kdy-space-2 0;
+  box-shadow: none;
+}
+.kdy-demo-tools .kdy-gb-list__demo {
+  padding: $kdy-space-2 0;
+  flex-wrap: wrap;
 }

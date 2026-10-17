@@ -118,7 +118,10 @@ export class UpstreamUnavailableError extends AppError {
  * 触发限流（契约 §6.1 的 `RATE_LIMITED`）。
  *
  * 用途：`POST /techpie/webview-session`（10 次/分钟/用户，规格 §8.4）、
- * 以及 Phase 1+ 的绑定尝试限流（5 次/小时/用户，规格 §8.5 —— 防密码暴力破解）。
+ * Phase 1+ 的绑定尝试限流（5 次/小时/用户，规格 §8.5 —— 防密码暴力破解），
+ * 以及验证码发送过频、上游返回限流、微信 jscode2session 被限频。
+ *
+ * `details.retryAfterSeconds` 有值时，客户端应据此展示倒计时。
  * `details` 里只放**限流参数**，绝不放被限流的请求内容（规格 §10.3）。
  */
 export class RateLimitedError extends AppError {

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, Headers, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { MODULES, modulePath } from '@kedaya/contracts';
 import { z } from 'zod';
@@ -6,7 +6,8 @@ import { AuthGuard } from '../../common/auth/auth.guard';
 import { CurrentUser } from '../../common/auth/current-user';
 import { ValidationError } from '../../common/errors/app-error';
 import { ZodBody } from '../../common/pipes/zod-validation.pipe';
-import { CAMPUS_PLATFORMS, isCampusPlatform } from '../techpie/domain/ports/campus-session.port';
+import { CAMPUS_PLATFORMS, type CampusPlatform } from './domain/auth.domain';
+import { readAuthContext } from './request-context';
 import { AuthService } from './auth.service';
 
 const loginSchema = z.object({
@@ -18,29 +19,35 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(1, 'refreshToken 不能为空').max(2048),
 });
 
-/** 契约 §11.20-C 统一后的校园平台枚举（与 `TechpieLink.provider` **同一套**） */
-const platformEnum = z.enum(['cas', 'egate', 'cpdaily', 'jwc', 'ecard', 'techpie']);
+const bindSchema = z.object({
+  platform: z.enum(['EGATE', 'CPDAILY', 'JWC', 'CARD']),
+  /**
+   * 上游回调拿到的 session cookie；服务端加密后落库，绝不明文存储。
+   *
+   * 可省略：`CAMPUS_DATA_MODE=mock`（默认）且非生产环境时，
+   * 服务端会签发一份**演示凭据**（`demo:<platform>:<userId>`）让
+   * 「绑定 → 取数 → 解绑」全链路在没有官方授权时也能跑通，
+   * 响应里会如实标注 `simulated: true`。真实模式（`live`）下必填。
+   */
+  sessionCookie: z.string().min(1).max(4096).optional(),
+  scopes: z.array(z.string().min(1).max(64)).max(20).optional(),
+  ttlSeconds: z
+    .number()
+    .int()
+    .positive()
+    .max(30 * 24 * 60 * 60)
+    .optional(),
+});
 
-/**
- * `POST /auth/campus-bindings` 的入参。
- *
- * ⚠️ 与 `POST /techpie/links` 是**同一件事**的另一个入口，因此**同一套字段名**
- * （§11.20-D：一个概念只有一个名字）：
- *   · `provider`（不是 `platform`）；
- *   · `authCode`（§11.19-B：一次性凭证交换码，不是任何长期标识）；
- *   · 明文密码在 wire 上**没有位置**（U12：结构性拒绝，强于读了再拒）。
- *
- * ⚠️ 两个端点的**响应**形状不同（§11.19-C）：
- * 这里是 `CampusBindingSummary`（`{platform, bound, expiresAt?}`），
- * `/techpie/links` 是 `TechpieLink`（`{id, provider, status, …}`）。
- * 它们**不共用名字**，因此实现者不会按名字猜错。
- */
-const bindSchema = z
+const updateProfileSchema = z
   .object({
-    provider: platformEnum,
-    authCode: z.string().min(1).max(512),
+    /** 昵称：去空白后 1–24 字（服务层用 `sanitizeDisplayName` 再规范一次） */
+    displayName: z.string().min(1).max(64).optional(),
+    /** 头像 data URL（≤64KB）。传 null 表示清空 */
+    avatarUrl: z.string().max(200_000).nullable().optional(),
+    department: z.string().max(64).nullable().optional(),
   })
-  .strict();
+  .refine((value) => Object.keys(value).length > 0, { message: '没有需要更新的字段' });
 
 @ApiTags('auth · 身份（两级模型）')
 @Controller(modulePath('auth'))
@@ -49,32 +56,26 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({
-    summary: '第一级登录：上科大统一身份认证 → KedaYa 自有 JWT',
+    summary: '第一级登录（上科大 CAS）：ticket → KedaYa 自有 JWT',
     description:
       '只返回身份与自有令牌。校园系统 session **不在**此响应中（契约 §5 硬规则 1）。',
   })
-  login(@ZodBody(loginSchema) body: z.infer<typeof loginSchema>) {
-    return this.authService.login(body.ticket);
+  login(
+    @ZodBody(loginSchema) body: z.infer<typeof loginSchema>,
+    @Headers() headers: Record<string, string | string[] | undefined>,
+  ) {
+    return this.authService.login(body.ticket, readAuthContext(headers));
   }
 
   @Post('refresh')
-  @ApiOperation({ summary: '用 refreshToken 换取新的 accessToken' })
-  refresh(@ZodBody(refreshSchema) body: z.infer<typeof refreshSchema>) {
-    return this.authService.refresh(body.refreshToken);
-  }
-
-  @Get('session')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({
-    summary: '第一级身份会话（契约 §11.4 I1：**不含** 8 个禁用键名）',
-    description:
-      '只返回 `userId` / `studentId` / `name` / `department`。' +
-      '**纯本地读取**（契约 §8 首帧要求）：不触发任何上游调用 —— ' +
-      '由不变式 I5 的测试在「mock 上游全超时」环境下断言 < 50ms。',
+    summary: '用 refreshToken 换取新的令牌对（轮换 + 旧令牌立即失效）',
   })
-  session(@CurrentUser() userId: string) {
-    return this.authService.session(userId);
+  refresh(
+    @ZodBody(refreshSchema) body: z.infer<typeof refreshSchema>,
+    @Headers() headers: Record<string, string | string[] | undefined>,
+  ) {
+    return this.authService.refresh(body.refreshToken, readAuthContext(headers));
   }
 
   @Get('me')
@@ -82,23 +83,57 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: '当前身份 + 校园系统绑定状态（两者是独立的）',
-    description:
-      '`campusBound: false` 表示"已登录但未绑定"，这是合法状态（契约 §5 硬规则 3）。' +
-      '`campusBindings` 用 `/auth/*` 自己的形状（`CampusBindingSummary`），**不是** `TechpieLink`（§11.19-C）。',
+    description: '`campusBound: false` 表示"已登录但未绑定"，这是合法状态（契约 §5 硬规则 3）。',
   })
   me(@CurrentUser() userId: string) {
     return this.authService.me(userId);
   }
 
-  @Get('campus-bindings')
+  /**
+   * `GET /auth/session` —— 一级身份的**最小投影**（契约 §5 + 不变式 I1）。
+   *
+   * 与 `GET /auth/me` 分开：`me` 返回身份 **+ 校园绑定状态**，`session` 只返回身份。
+   * 分开是因为 `session` 要被**高频**调用（启动恢复登录态），且必须满足 **I5**：
+   * 上游全超时下 < 50ms 返回 —— 因此它**不得**碰 `CampusSessionPort`，一次都不许。
+   *
+   * 恰好 4 个字段：多一个就多一份泄漏面；`studentId` 这类可跨系统关联的标识
+   * **不该**出现在高频端点上。
+   */
+  @Get('session')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: '第二级：列出已绑定的校园系统（不含任何 session）',
-    description:
-      '形状是 `CampusBindingSummary`：`{platform, bound, expiresAt?}` —— ' +
-      '**只描述登录态下的绑定状态**，与 `/techpie/links` 的可管理资源（`TechpieLink`）是两个概念（§11.19-C）。',
+    summary: '一级身份的最小投影（4 个字段，不碰任何上游，< 50ms）',
+    description: '不变式 I1：响应键恰好 `userId` / `name` / `avatarUrl` / `department`。',
   })
+  async session(@CurrentUser() userId: string) {
+    const { user } = await this.authService.me(userId);
+    // 显式逐字段组装，**不要**用展开运算符 —— 展开会把将来新增的字段自动带出去。
+    return {
+      userId: user.id,
+      name: user.displayName,
+      avatarUrl: user.avatarUrl,
+      department: user.department,
+    };
+  }
+
+  @Patch('me')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: '更新我的展示资料（昵称 / 头像 / 院系）',
+    description:
+      '三个客户端共用一个入口。「更正权」（隐私文档 §7.2）在这里落地：' +
+      '邮箱与学号由凭据/上游决定，不允许在此修改。',
+  })
+  updateMe(@CurrentUser() userId: string, @ZodBody(updateProfileSchema) body: z.infer<typeof updateProfileSchema>) {
+    return this.authService.updateProfile(userId, body);
+  }
+
+  @Get('campus-bindings')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '第二级：列出已绑定的校园系统（不含任何 session）' })
   listBindings(@CurrentUser() userId: string) {
     return this.authService.listCampusBindings(userId);
   }
@@ -107,40 +142,37 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: '第二级：绑定校园系统（Phase 0 **只接受** `ecard` + `authCode`）',
+    summary: '第二级：绑定校园系统（session 加密存储）',
     description:
-      '与 `POST /techpie/links` 是同一件事的另一个入口（**字段名相同**，见 bindSchema 的说明）。' +
-      '需要 CASTGC 的平台在信息办书面回复（U7）前**没有任何绑定路径**；明文密码一律拒绝（U12）。',
+      '与身份层物理分离；绑定失败不影响已登录状态。' +
+      'mock 模式（默认、非生产）可省略 sessionCookie，服务端签发演示凭据并在响应里标注。',
   })
-  bind(@CurrentUser() userId: string, @ZodBody(bindSchema) body: z.infer<typeof bindSchema>) {
-    const provider = body.provider;
-    if (!isCampusPlatform(provider)) {
-      throw new ValidationError('provider 不是受支持的校园平台', {
-        reason: 'UNKNOWN_PLATFORM',
-        supported: [...CAMPUS_PLATFORMS],
-      });
-    }
-    return this.authService.bindCampus(userId, provider, {
-      kind: 'openid',
-      channel: 'wechat',
-      authCode: body.authCode,
+  bind(
+    @CurrentUser() userId: string,
+    @ZodBody(bindSchema) body: z.infer<typeof bindSchema>,
+  ) {
+    return this.authService.bindCampus(userId, body.platform, {
+      ...(body.sessionCookie === undefined ? {} : { sessionCookie: body.sessionCookie }),
+      ...(body.scopes === undefined ? {} : { scopes: body.scopes }),
+      ...(body.ttlSeconds === undefined ? {} : { ttlSeconds: body.ttlSeconds }),
     });
   }
 
   @Delete('campus-bindings/:platform')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '第二级：解绑校园系统（**硬删**凭证副本）' })
+  @ApiOperation({ summary: '第二级：解绑校园系统' })
   async unbind(@CurrentUser() userId: string, @Param('platform') platform: string) {
-    if (!isCampusPlatform(platform)) {
+    const parsed = z.enum(['EGATE', 'CPDAILY', 'JWC', 'CARD']).safeParse(platform);
+    if (!parsed.success) {
       // 交给全局过滤器翻成 VALIDATION_FAILED
       throw new ValidationError('platform 不是受支持的校园系统', {
         platform,
-        supported: [...CAMPUS_PLATFORMS],
+        supported: CAMPUS_PLATFORMS,
       });
     }
-    await this.authService.unbindCampus(userId, platform);
-    return { platform, unbound: true };
+    await this.authService.unbindCampus(userId, parsed.data as CampusPlatform);
+    return { platform: parsed.data, unbound: true };
   }
 
   @Get('campus-bindings/:platform/capability')
@@ -150,13 +182,7 @@ export class AuthController {
     summary: '第二级：某校园系统能力是否可用（只回布尔值，不回 session）',
   })
   capability(@CurrentUser() userId: string, @Param('platform') platform: string) {
-    if (!isCampusPlatform(platform)) {
-      throw new ValidationError('platform 不是受支持的校园系统', {
-        platform,
-        supported: [...CAMPUS_PLATFORMS],
-      });
-    }
-    return this.authService.campusCapability(userId, platform);
+    return this.authService.campusCapability(userId, platform as CampusPlatform);
   }
 
   @Get('modules')

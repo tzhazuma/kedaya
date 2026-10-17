@@ -1,0 +1,82 @@
+.kdy-errand-detail__hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-errand-detail__reward-box {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-1;
+  min-width: 180px;
+  padding: $kdy-space-3 $kdy-space-4;
+  background: $kdy-color-brand-soft;
+  border-radius: $kdy-radius-lg;
+}
+
+.kdy-errand-detail__reward-label {
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-errand-detail__reward {
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-xxl;
+  font-weight: $kdy-font-weight-bold;
+}
+
+.kdy-errand-detail__rows {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+}
+
+.kdy-errand-detail__row {
+  display: flex;
+  gap: $kdy-space-3;
+}
+
+.kdy-errand-detail__k {
+  width: 140px;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-sm;
+}
+
+.kdy-errand-detail__v {
+  flex: 1;
+  min-width: 0;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: 1.7;
+  word-break: break-all;
+}
+
+.kdy-errand-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-3;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-errand-detail__hint {
+  display: block;
+  margin-top: $kdy-space-2;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.7;
+}
+
+.kdy-errand-detail__error {
+  display: block;
+  margin: $kdy-space-3 $kdy-space-5 0;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-errand-detail__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-2;
+}

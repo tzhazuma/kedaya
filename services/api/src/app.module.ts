@@ -5,6 +5,8 @@ import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ComplianceModule } from './common/compliance/compliance.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { EnvelopeInterceptor } from './common/interceptors/envelope.interceptor';
+import { MediaModule } from './common/media/media.module';
+import { TraceMiddleware } from './common/middleware/trace.middleware';
 import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -14,6 +16,7 @@ import { ScheduleModule } from './modules/schedule/schedule.module';
 import { CampusCardModule } from './modules/campus-card/campus-card.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { NotificationModule } from './modules/notifications/notifications.module';
+import { TelemetryModule } from './modules/telemetry/telemetry.module';
 
 // 契约 §4.1 业务模块（14）
 import { GroupbuyModule } from './modules/groupbuy/groupbuy.module';
@@ -55,6 +58,10 @@ import { WildlifeModule } from './modules/wildlife/wildlife.module';
     // 基础设施 + 合规层（都是 @Global）
     PrismaModule,
     ComplianceModule,
+    MediaModule,
+
+    // 运维/治理旁路（不属于用户可见模块，故意不进 @kedaya/contracts 的 MODULES）
+    TelemetryModule,
 
     // 20 个业务/基础模块（14 业务 + 5 基础 + facility）
     AuthModule,

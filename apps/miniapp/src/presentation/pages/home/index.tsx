@@ -5,7 +5,10 @@ import type { KedayaModule } from '@kedaya/contracts'
 import { getContainer } from '../../../app/container'
 import { moduleEntryPath } from '../../../app/routes'
 import { navigateTo, toast } from '../../../platform/navigation'
-import { KdyCard, KdyTag } from '../../components'
+import { KdyAgentFab, KdyCard, KdyTag } from '../../components'
+import { KdyModuleIcon } from '../../components/KdyModuleIcon'
+import { KdyHeading } from '../../components/KdyHeading'
+import { LikeOutlined, ArrowRight } from '@taroify/icons'
 import type { KdyTagTone } from '../../components'
 import { useStore } from '../../hooks'
 import './index.scss'
@@ -25,14 +28,16 @@ import './index.scss'
 
 function moduleTone(module: KedayaModule): KdyTagTone {
   if (module.requiresConsent) return 'danger'
-  if (module.sensitivity === 'high' || module.sensitivity === 'critical') return 'warning'
+  if (module.sensitivity === 'high' || module.sensitivity === 'critical')
+    return 'warning'
   return 'neutral'
 }
 
 function moduleBadge(module: KedayaModule): string {
   if (moduleEntryPath(module.id) !== null) return '已上线'
   if (module.requiresConsent) return '需二次同意'
-  if (module.sensitivity === 'high' || module.sensitivity === 'critical') return '高敏感'
+  if (module.sensitivity === 'high' || module.sensitivity === 'critical')
+    return '高敏感'
   return '开发中'
 }
 
@@ -48,27 +53,88 @@ export default function HomePage() {
       return
     }
     if (module.requiresConsent) {
-      toast(`${module.nameZh}：需先二次同意（骨架未实现同意流程）`)
+      toast(`${module.nameZh}：需二次同意，该流程尚未实现`)
       return
     }
-    toast(`${module.nameZh}：契约已登记，本骨架未实现`)
+    toast(`${module.nameZh}：契约已登记，尚未实现`)
   }
 
   return (
     <View className='kdy-page kdy-home'>
-      <View className='kdy-home__hero'>
-        <Text className='kdy-home__brand'>可达鸭</Text>
-        <Text className='kdy-home__slogan'>上科大，什么需求都可以到达</Text>
-        <Text className='kdy-home__session'>
-          {sessionState.profile === null
-            ? '未登录 · 可在「我的」里用测试账号登录'
-            : `已登录：${sessionState.profile.nickname}${
-                sessionState.profile.campusBound ? '（已绑定校园系统）' : '（未绑定校园系统）'
-              }`}
-        </Text>
+      <KdyHeading
+        title={
+          sessionState.profile
+            ? `你好，${sessionState.profile.nickname}`
+            : '校园生活，可达鸭。'
+        }
+        subtitle='上科大，什么需求都可以到达'
+        eyebrow='KEDAYA · 上海科技大学'
+      />
+
+      <View
+        className='kdy-home__feature kdy-glass'
+        onClick={() => void navigateTo(PAGE_PATHS.groupBuyList)}
+      >
+        <View className='kdy-home__feature-copy'>
+          <KdyTag tone='brand'>一起拼，更划算</KdyTag>
+          <Text className='kdy-home__feature-title'>好东西，和同学分享</Text>
+          <Text className='kdy-home__feature-description'>
+            发现校园拼单，让每一份心意都有回应。
+          </Text>
+          <View className='kdy-home__feature-link'>
+            去看看拼单 <ArrowRight />
+          </View>
+        </View>
+        <View className='kdy-home__feature-art'>
+          <KdyModuleIcon id='groupbuy' />
+        </View>
       </View>
 
-      <KdyCard title='全部模块' extra={<Text>{MODULES.length} 个</Text>} elevated={false}>
+      <KdyCard
+        title='常用服务'
+        extra={<Text>校园日常，轻松到达</Text>}
+        elevated={false}
+      >
+        <View className='kdy-home__grid'>
+          {MODULES.filter((module) =>
+            ['groupbuy', 'schedule', 'campus-card', 'lost-found'].includes(
+              module.id,
+            ),
+          ).map((module) => (
+            <View
+              key={module.id}
+              className='kdy-home__grid-item'
+              onClick={() => handleModuleTap(module)}
+            >
+              <KdyModuleIcon id={module.id} />
+              <Text className='kdy-home__grid-name'>{module.nameZh}</Text>
+            </View>
+          ))}
+        </View>
+      </KdyCard>
+
+      <View
+        className='kdy-home__support'
+        onClick={() => {
+          const module = MODULES.find((item) => item.id === 'wellbeing')
+          if (module) handleModuleTap(module)
+        }}
+      >
+        <LikeOutlined />
+        <View>
+          <Text className='kdy-home__support-title'>你的感受，值得被听见</Text>
+          <Text className='kdy-home__support-description'>
+            心理支持 · 需要帮助时，拨打 12356
+          </Text>
+        </View>
+        <ArrowRight />
+      </View>
+
+      <KdyCard
+        title='全部模块'
+        extra={<Text>{MODULES.length} 个</Text>}
+        elevated={false}
+      >
         <View className='kdy-home__grid'>
           {MODULES.map((module) => (
             <View
@@ -76,8 +142,13 @@ export default function HomePage() {
               className='kdy-home__grid-item'
               onClick={() => handleModuleTap(module)}
             >
+              <KdyModuleIcon id={module.id} />
               <Text className='kdy-home__grid-name'>{module.nameZh}</Text>
-              <KdyTag tone={moduleTone(module)}>{moduleBadge(module)}</KdyTag>
+              <Text
+                className={`kdy-home__module-state kdy-home__module-state--${moduleTone(module)}`}
+              >
+                {moduleBadge(module)}
+              </Text>
             </View>
           ))}
         </View>
@@ -86,6 +157,8 @@ export default function HomePage() {
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
       </Text>
+
+      <KdyAgentFab module='home' page={PAGE_PATHS.home} hint='不认识的地方，问我' />
     </View>
   )
 }

@@ -1,4 +1,9 @@
 import { Text, View } from '@tarojs/components'
+import Empty from '@taroify/core/empty'
+import Loading from '@taroify/core/loading'
+import { SmileOutlined, WarningOutlined } from '@taroify/icons'
+import '@taroify/core/empty/style'
+import '@taroify/core/loading/style'
 
 import { KdyButton } from '../KdyButton'
 import './index.scss'
@@ -20,10 +25,10 @@ export interface KdyEmptyProps {
   onAction?: () => void
 }
 
-const DEFAULTS: Record<KdyEmptyMode, { title: string; glyph: string }> = {
-  empty: { title: '这里还什么都没有', glyph: '🦆' },
-  error: { title: '加载失败了', glyph: '⚠️' },
-  loading: { title: '正在加载…', glyph: '⏳' },
+const DEFAULTS: Record<KdyEmptyMode, { title: string }> = {
+  empty: { title: '这里还什么都没有' },
+  error: { title: '加载失败了' },
+  loading: { title: '正在加载…' },
 }
 
 export function KdyEmpty({
@@ -37,11 +42,23 @@ export function KdyEmpty({
 
   return (
     <View className={`kdy-empty kdy-empty--${mode}`}>
-      <Text className='kdy-empty__glyph'>{preset.glyph}</Text>
-      <Text className='kdy-empty__title'>{title ?? preset.title}</Text>
-      {description !== undefined && (
-        <Text className='kdy-empty__description'>{description}</Text>
-      )}
+      <Empty>
+        <View className='kdy-empty__glyph'>
+          {mode === 'loading' ? (
+            <Loading />
+          ) : mode === 'error' ? (
+            <WarningOutlined />
+          ) : (
+            <SmileOutlined />
+          )}
+        </View>
+        <Text className='kdy-empty__title'>{title ?? preset.title}</Text>
+        {description !== undefined && (
+          <Empty.Description className='kdy-empty__description'>
+            {description}
+          </Empty.Description>
+        )}
+      </Empty>
       {actionText !== undefined && onAction !== undefined && (
         <View className='kdy-empty__action'>
           <KdyButton variant='secondary' size='sm' onClick={onAction}>

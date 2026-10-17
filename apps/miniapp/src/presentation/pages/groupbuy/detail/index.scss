@@ -12,7 +12,7 @@
 }
 
 .kdy-gb-detail__price {
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-ink;
   font-size: $kdy-font-size-display;
   font-weight: 700;
 }
@@ -101,11 +101,15 @@
 }
 
 .kdy-gb-detail__actions {
+  margin: $kdy-space-4 $kdy-space-5;
   padding: $kdy-space-4;
+  background: $kdy-color-surface;
+  border-radius: $kdy-radius-xl;
 }
 
 .kdy-gb-detail__actions-row {
   display: flex;
+  flex-wrap: wrap;
   gap: $kdy-space-2;
   margin-top: $kdy-space-3;
 }

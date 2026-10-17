@@ -5,14 +5,21 @@
  * 改完重跑 `npm run scaffold`，避免 15 个模块各写一套。
  */
 import { Module } from '@nestjs/common';
-import { TechpieModule } from '../techpie/techpie.module';
+import { AuthModule } from '../auth/auth.module';
 import { ScheduleController } from './schedule.controller';
 import { ScheduleCourseService } from './schedule.service';
 import { ScheduleCoursePrismaRepository } from './data/schedule.repository';
 import { SCHEDULE_COURSE_REPOSITORY } from './domain/schedule.domain';
 
+/**
+ * 课表 · schedule（契约 §4）
+ *
+ * 依赖 AuthModule 的**第二级**能力（`CAMPUS_SESSION_PORT` 取 session、
+ * `CAMPUS_DATA_PORT` 去教务系统取数）—— 课表数据的所有权是教务系统的，
+ * 本地表只是缓存。因此本模块不 import Prisma 之外的任何上游细节。
+ */
 @Module({
-  imports: [TechpieModule],
+  imports: [AuthModule],
   controllers: [ScheduleController],
   providers: [ScheduleCourseService, { provide: SCHEDULE_COURSE_REPOSITORY, useClass: ScheduleCoursePrismaRepository }],
   exports: [ScheduleCourseService],

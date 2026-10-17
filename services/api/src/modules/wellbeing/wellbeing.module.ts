@@ -5,7 +5,7 @@ import { WellbeingAppointmentPrismaRepository } from './data/wellbeing.repositor
 import { WELLBEING_APPOINTMENT_REPOSITORY } from './domain/wellbeing.domain';
 
 /**
- * 心理治疗模块（契约 §9 最高敏感）。
+ * 心理支持模块（契约 §9 最高敏感）。页面文案一律「心理支持」，禁止「治疗 / 诊断」类承诺措辞。
  * ConsentService / AuditService 来自全局 ComplianceModule，无需 import。
  */
 @Module({

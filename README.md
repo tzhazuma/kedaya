@@ -10,7 +10,7 @@
 
 [![CI](https://github.com/tzhazuma/kedaya/actions/workflows/ci.yml/badge.svg)](https://github.com/tzhazuma/kedaya/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Platform](https://img.shields.io/badge/platform-微信小程序%20%7C%20iOS%20%7C%20Android%20%7C%20鸿蒙%20%7C%20Web-brightgreen)
+![Platform](https://img.shields.io/badge/platform-微信小程序%20%7C%20Web-brightgreen)
 
 </div>
 
@@ -77,7 +77,7 @@ graph TB
 
     subgraph shared["共享契约层 · packages/"]
         CON["@kedaya/contracts<br/>信封 · 错误码 · 19 模块注册表 · OpenAPI"]
-        TOK["@kedaya/design-tokens<br/>tokens.json → CSS / SCSS / TS / Dart"]
+        TOK["@kedaya/design-tokens<br/>tokens.json → CSS / SCSS / TS / JS"]
         SHR["@kedaya/shared<br/>Result · 金额(整数分) · 时间 · 校验"]
     end
 
@@ -97,13 +97,10 @@ graph TB
     end
 
     MP --> CON
-    MB --> CON
     WEB --> CON
     MP --> TOK
-    MB --> TOK
     WEB --> TOK
     MP --> SHR
-    MB --> SHR
     WEB --> SHR
 
     CON --> API
@@ -131,7 +128,7 @@ presentation ──> application ──> domain <── data
 ```
 
 `domain` 层**零框架依赖**：它只定义模型和 `ports`（接口），由 `data` 层实现适配器。
-这样领域逻辑可以被三端共享、被单元测试覆盖、被 mock 替换。
+这样领域逻辑可以被小程序与 Web 共享、被单元测试覆盖、被 mock 替换。
 
 ### 2. 两级身份模型
 
@@ -161,14 +158,13 @@ presentation ──> application ──> domain <── data
 kedaya/
 ├── apps/
 │   ├── miniapp/          Taro 4 → 微信小程序（主端）+ H5
-│   ├── mobile/           Flutter → iOS / Android / 鸿蒙
 │   └── web/              Next.js 16 → Web 门户 + 管理后台
 ├── services/
 │   └── api/              NestJS 12 + Prisma → /api/v1
 ├── packages/
 │   ├── contracts/        响应信封 · 错误码 · 19 模块注册表 · OpenAPI 3.1
-│   ├── design-tokens/    tokens.json → CSS / SCSS / TS / Dart（单一真相）
-│   └── shared/           Result · 金额 · 时间 · 校验（纯 TS，三端共用）
+│   ├── design-tokens/    tokens.json → CSS / SCSS / TS / JS（单一真相）
+│   └── shared/           Result · 金额 · 时间 · 校验（纯 TS，客户端与 API 共用）
 ├── docs/
 │   ├── architecture/     总览 · 领域模型 · API 契约 · 客户端架构 · 安全 · 路线图
 │   ├── features/         功能规格：找搭子 · 猫鸟黑天鹅地图 · TechPie 整合
@@ -180,6 +176,21 @@ kedaya/
 
 ## 快速开始
 
+本地开发使用 Node **22.23.3**（Prisma 要求 22.12+，Node 21 不受支持）。
+首次安装及日常启动可使用：
+
+```bash
+nvm install
+nvm use
+./scripts/with-npm-lock.sh npm ci
+
+./scripts/dev.sh weapp   # 编译微信小程序，然后在微信开发者工具导入仓库根目录
+./scripts/dev.sh web     # Next.js 门户，http://localhost:3001
+```
+
+两个客户端默认均使用 Mock，可独立运行，无需启动数据库或后端。
+`dev.sh` 会自动选择 `.nvmrc` 指定的 Node，避免旧终端仍使用 Node 21。
+
 ```bash
 git clone https://github.com/tzhazuma/kedaya.git
 cd kedaya
@@ -189,15 +200,22 @@ npm install
 ### Web 门户
 
 ```bash
-npm run dev -w @kedaya/web          # http://localhost:3000
+npm run dev:web                    # http://localhost:3001
 ```
 
 ### 微信小程序（主端）
 
 ```bash
-npm run dev:weapp -w @kedaya/miniapp
-# 然后用「微信开发者工具」打开 apps/miniapp/ 目录，指向 dist/
+nvm use                            # 使用 .nvmrc 中的 Node 22（已安装依赖后）
+npm run dev:weapp                   # 保持终端运行，等待编译成功
+# 微信开发者工具 → 小程序 → 导入项目 → 选择本仓库根目录
+# 根目录 project.config.json 已指向 apps/miniapp/dist/
 ```
+
+首次运行需要先在仓库根目录执行 `npm ci`。只生成一次预览产物可执行
+`npm run build:weapp`。也可以导入 `apps/miniapp/`，其配置指向同一份产物。
+必须以「小程序」类型导入，不能选「其他项目」。如果之前误建为其他项目，
+请回到项目列表的「小程序」分类重新导入。默认使用本地 Mock，无需启动 API 或 Docker。
 
 ### 后端
 
@@ -206,13 +224,6 @@ docker compose -f services/api/docker-compose.yml up -d   # Postgres + Redis
 cp services/api/.env.example services/api/.env
 npm run prisma:migrate -w @kedaya/api
 npm run dev -w @kedaya/api          # http://localhost:3000/api/v1
-```
-
-### 原生移动端
-
-```bash
-# 需先安装 Flutter SDK >= 3.6.2
-cd apps/mobile && flutter pub get && flutter run
 ```
 
 ### 全仓校验
@@ -242,7 +253,7 @@ npm run tokens         # 重新生成设计令牌 + 同步 Flutter 副本
 | 食堂营养 | 菜品营养数据、热量估算、饮食建议 | 低 |
 | 论坛 | 版块、主题、回复、举报与治理 | 中 |
 | AI 校园画像 | 基于行为的画像与推荐，可解释、可关闭 | **高** |
-| 心理治疗 | 咨询预约、心理测评、危机干预入口 | **最高** |
+| 心理支持 | 倾听与预约入口，危机出口在首屏；不做诊断与治疗 | **最高** |
 | 常见问题 | 知识库与工单式自助答疑 | 低 |
 | TechPie 整合 | 与 TechPie / GeekPie 体系互联互通 | 中 |
 | 猫鸟黑天鹅 | 校园动物活动区域地图、投喂规范、上报 | 低 |
@@ -251,7 +262,7 @@ npm run tokens         # 重新生成设计令牌 + 同步 Flutter 副本
 **基础模块**：身份 · 课表 · 校园卡 · 我的 · 通知
 
 > 模块清单的**唯一真相**是 [`packages/contracts/src/modules.ts`](packages/contracts/src/modules.ts)。
-> 三端的导航、宫格、权限判定全部由它驱动，**不允许在各端硬编码**。
+> 小程序与 Web 的导航、宫格、权限判定全部由它驱动，**不允许在各端硬编码**。
 
 ---
 
@@ -259,7 +270,7 @@ npm run tokens         # 重新生成设计令牌 + 同步 Flutter 副本
 
 | 规则 | 说明 |
 | --- | --- |
-| 敏感模块独立同意 | 心理治疗 / 宿舍矛盾 / AI 画像 首次进入必须显式二次同意，可随时撤回 |
+| 敏感模块独立同意 | 心理支持 / 宿舍矛盾 / AI 画像 首次进入必须显式二次同意，可随时撤回 |
 | 同意门不滥用 | 身份、校园卡的同意由登录/开卡行为隐含，不额外设门 |
 | 数据最小化 | 心理与宿舍矛盾数据**不进入**通用画像；AI 画像不得读取这两个域 |
 | 匿名可用 | 论坛 / 宿舍矛盾 / 偷外卖 支持匿名身份，与实名身份解耦存储 |
@@ -272,7 +283,7 @@ npm run tokens         # 重新生成设计令牌 + 同步 Flutter 副本
 ## 设计令牌：单一真相
 
 所有颜色、间距、圆角、字号定义在 [`packages/design-tokens/tokens.json`](packages/design-tokens/tokens.json)，
-由生成器派生出四端产物 —— **任何一端都不允许手写色值**：
+由生成器派生出 TS、CSS、SCSS 和 JS 产物 —— **任何一端都不允许手写色值**：
 
 ```bash
 npm run tokens
@@ -282,7 +293,7 @@ npm run tokens
 tokens.json ──┬──> src/tokens.generated.ts    Web / 小程序 / 后端
               ├──> dist/tokens.css            CSS 变量 --kdy-*
               ├──> dist/tokens.scss           SCSS 变量 $kdy-*
-              └──> dart/kedaya_tokens.dart    Flutter KedaYaTokens
+              └──> dist/tokens.js             运行时 ESM
 ```
 
 ---
@@ -290,11 +301,11 @@ tokens.json ──┬──> src/tokens.generated.ts    Web / 小程序 / 后端
 ## 与 TechPie 的关系
 
 [TechPie](https://github.com/HeZeBang/TechPie-flutter)（GeekPie 出品，MIT）是本项目的**重要参考实现**。
-可达鸭延续了它的核心架构思想 —— 六边形分层、feature-first、Riverpod 装配、
+可达鸭延续了它的核心架构思想 —— 六边形分层、feature-first、依赖装配、
 启动不阻塞、两级身份模型 —— 并在此基础上：
 
-- 把契约层抽成**跨语言共享包**（TechPie 是单一 Flutter 应用，无可共享契约层）
-- 把端从"Flutter 一个应用"扩展为**小程序 + 原生 + Web 三端**
+- 把契约层抽成**共享 TypeScript 包**，供客户端与 API 使用
+- 提供**微信小程序 + Web 门户与管理后台**
 - 把模块从"课表/作业"扩展为**19 个校园服务模块**
 - 强化隐私合规（二次同意 + 审计 + 匿名身份解耦）
 
@@ -341,6 +352,9 @@ TechPie 整合模块（`techpie`）用于与 TechPie / GeekPie 体系互联互�
 1. [`docs/architecture/00-FROZEN-CONTRACT.md`](docs/architecture/00-FROZEN-CONTRACT.md) —— 冻结契约，所有接口的真相来源
 2. [`docs/architecture/`](docs/architecture/) —— 架构文档
 3. [`docs/adr/`](docs/adr/) —— 架构决策记录
+
+当前交付范围为微信小程序、Web 和 NestJS API。旧冻结契约与 ADR 中涉及原生端的内容
+保留作历史参考；当前客户端结构以 [客户端架构](docs/architecture/04-client-architecture.md) 为准。
 
 **提 PR 前请确保 `npm run typecheck && npm run test` 全绿。**
 

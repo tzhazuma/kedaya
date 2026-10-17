@@ -133,9 +133,9 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
   },
   {
     id: 'wellbeing',
-    nameZh: '心理治疗',
+    nameZh: '心理支持',
     nameEn: 'Wellbeing',
-    summary: '心理咨询预约、心理测评与危机干预入口',
+    summary: '倾听与预约入口，危机出口在首屏；不做诊断、不做治疗',
     category: 'business',
     sensitivity: 'critical',
     requiresConsent: true,

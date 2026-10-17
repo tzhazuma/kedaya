@@ -4,6 +4,74 @@
   gap: $kdy-space-2;
 }
 
+.kdy-discover__grid {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: $kdy-space-3;
+}
+
+// 三列等宽：用百分比而不是 calc（WXSS 对 calc + SCSS 变量插值的组合支持不稳）
+.kdy-discover__grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  width: 33.33%;
+  gap: $kdy-space-2;
+  padding: $kdy-space-3 0;
+  min-width: 0;
+}
+
+.kdy-discover__grid-name {
+  font-size: $kdy-font-size-sm;
+  color: $kdy-color-ink;
+}
+
+.kdy-discover__tips {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-3;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-discover__tip {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+.kdy-discover__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-3;
+  padding: $kdy-space-3 0;
+  border-bottom: 1px solid $kdy-color-border;
+}
+
+.kdy-discover__nav-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.kdy-discover__nav-title {
+  display: block;
+  font-size: $kdy-font-size-md;
+  color: $kdy-color-ink;
+}
+
+.kdy-discover__nav-detail {
+  display: block;
+  margin-top: $kdy-space-1;
+  font-size: $kdy-font-size-xs;
+  color: $kdy-color-text-muted;
+}
+
+.kdy-discover__nav-arrow {
+  font-size: $kdy-font-size-lg;
+  color: $kdy-color-text-muted;
+}
+
 .kdy-discover__hint {
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;

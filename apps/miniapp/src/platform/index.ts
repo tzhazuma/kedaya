@@ -5,6 +5,8 @@
  * 每个模块都在文件头注明了「微信特有」与「H5 降级」行为。
  */
 export * from './capabilities'
+export * from './clipboard'
+export * from './dialer'
 export * from './env'
 export * from './failure'
 export * from './location'

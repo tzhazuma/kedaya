@@ -8,7 +8,6 @@ import type { ResourceRepository } from '../../../common/crud/resource';
 
 /** 领域模型：字段与 Prisma 行字段一一对应（domain 层不 import Prisma） */
 export interface ProfileSettingModel {
-  id: string;
   userId: string;
   showRealName: boolean;
   allowAiPortrait: boolean;

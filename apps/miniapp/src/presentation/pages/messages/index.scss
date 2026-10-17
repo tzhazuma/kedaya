@@ -1,3 +1,17 @@
+.kdy-messages__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-messages__scopes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+}
+
 .kdy-messages__hint {
   display: block;
   color: $kdy-color-text-muted;
@@ -20,4 +34,76 @@
   color: $kdy-color-ink-soft;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
+}
+
+.kdy-messages__more {
+  display: flex;
+  justify-content: center;
+  margin: $kdy-space-4 0;
+}
+
+.kdy-message {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $kdy-space-2;
+  }
+
+  &__title-wrap {
+    display: flex;
+    align-items: center;
+    gap: $kdy-space-2;
+    flex: 1;
+    min-width: 0;
+  }
+
+  // 未读圆点：整条消息唯一的"未读"视觉信号（配合标题加粗）
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: $kdy-color-brand;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: $kdy-font-size-md;
+    color: $kdy-color-ink;
+    font-weight: $kdy-font-weight-medium;
+    // 长标题最多两行，避免一条通知把整屏占满
+    overflow: hidden;
+  }
+
+  &__body {
+    display: block;
+    font-size: $kdy-font-size-sm;
+    color: $kdy-color-ink-soft;
+    line-height: 1.6;
+  }
+
+  &__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $kdy-space-2;
+  }
+
+  &__time {
+    font-size: $kdy-font-size-xs;
+    color: $kdy-color-text-muted;
+  }
+
+  &__link {
+    font-size: $kdy-font-size-xs;
+    color: $kdy-color-brand-strong;
+  }
+
+  &--unread &__title {
+    font-weight: $kdy-font-weight-semibold;
+  }
 }

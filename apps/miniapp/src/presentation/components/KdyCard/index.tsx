@@ -34,8 +34,19 @@ export function KdyCard({
 
   const hasHeader = title !== undefined || extra !== undefined
 
+  /**
+   * 可点击的卡片要有**按下反馈**（`hoverClass`）。
+   * 没有反馈的卡片在真机上会让人怀疑"我到底点到了没有"，
+   * 于是用户会连点两下 —— 而第二下可能正好落在跳转后的页面上。
+   * 不可点击的卡片传 `none`：不能给出"可点"的假信号。
+   */
   return (
-    <View className={classes} onClick={onClick}>
+    <View
+      className={classes}
+      onClick={onClick}
+      hoverClass={onClick === undefined ? 'none' : 'kdy-card--pressed'}
+      hoverStayTime={70}
+    >
       {hasHeader && (
         <View className='kdy-card__header'>
           {title !== undefined && <Text className='kdy-card__title'>{title}</Text>}

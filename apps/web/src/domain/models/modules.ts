@@ -16,6 +16,7 @@ import {
   type ModuleDecoration,
   type PortalModule,
 } from './module';
+import { isDelivered } from './delivery';
 
 /**
  * UI 装饰表：key = 冻结模块 id。

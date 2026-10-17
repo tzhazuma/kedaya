@@ -21,8 +21,14 @@ export interface UserProfile {
   studentId?: string
   college?: string
   avatarUrl?: string
+  /** 自建账号的邮箱（登录/注册时由服务端回带，用于「我的」页展示账号） */
+  email?: string
   /** 是否已绑定校园系统（第二级能力层）。false 时校园功能返回 CAMPUS_BINDING_REQUIRED */
   campusBound: boolean
+  /** 是否已绑定微信（决定「我的」页显示绑定还是解绑） */
+  wechatBound?: boolean
+  /** 是否设置了邮箱密码（微信一键注册的账号可能还没有） */
+  hasPassword?: boolean
 }
 
 export interface Session {

@@ -27,11 +27,22 @@ import type { AuthPort, CampusIdentity } from '../domain/auth.domain';
  * 本 Mock 的语义：用 ticket 的 sha256 派生一个稳定的 externalId，
  * 使"同一 ticket → 同一账户"，便于本地把登录/绑定/二次同意整条链路跑通。
  */
+/**
+ * ⚠️ 本 Mock **在生产环境默认关闭**（见 `assertAllowedInProduction`）。
+ *
+ * 这不是洁癖：`authenticateTicket` 会**直接采信** `mock-<学号>` 形式的票据
+ * （`externalId` 就等于学号），而 `POST /auth/login` 按设计是公开接口 ——
+ * 若把它带进生产，任何人 `curl` 一个学号就能拿到该校学生的令牌。
+ * 所以生产环境必须显式 `CAMPUS_CAS_MOCK_ALLOWED=true` 才会打开，
+ * 且这条限制要写在部署记录里。
+ */
 @Injectable()
 export class MockCampusAuthProvider implements AuthPort {
   constructor(@Inject(ConfigService) private readonly config: ConfigService) {}
 
   async authenticateTicket(ticket: string): Promise<CampusIdentity> {
+    this.assertAllowedInProduction();
+
     const normalized = ticket.trim();
     if (normalized.length === 0) {
       throw new UnauthenticatedError('缺少上科大统一身份认证票据（ticket）');
@@ -58,4 +69,27 @@ export class MockCampusAuthProvider implements AuthPort {
       clientId: this.config.get<string>('CAMPUS_SSO_CLIENT_ID') ?? null,
     };
   }
+
+  /**
+   * 生产环境的兜底闸门。
+   *
+   * 为什么是 401 而**不是**拒绝启动（对比 `resolveMailTransport` 的取舍）：
+   * 邮件没配时整条注册链路都是假的，起不来才是对的；
+   * 而校园 CAS 只是一个**可选**登录入口 —— 邮箱与微信两条路仍然可用，
+   * 所以正确的行为是「这个入口暂时不可用」，而不是整站不上线。
+   * 用户看到的是明确的一句话，不是一个能冒充别人的后门。
+   */
+  private assertAllowedInProduction(): void {
+    if (this.config.get<string>('NODE_ENV') !== 'production') return;
+    if (isTruthy(this.config.get<string>('CAMPUS_CAS_MOCK_ALLOWED'))) return;
+    throw new UnauthenticatedError(
+      '校园统一身份认证仍在向校方申请对接中，暂不可用。请改用邮箱密码或微信登录；' +
+        '若这只是一次演示部署，请显式设置 CAMPUS_CAS_MOCK_ALLOWED=true' +
+        '（它会信任 mock-<学号> 形式的票据，等于暂时放弃这一级的身份校验）。',
+    );
+  }
+}
+
+function isTruthy(value: string | undefined): boolean {
+  return ['1', 'true', 'yes', 'on'].includes((value ?? '').trim().toLowerCase());
 }

@@ -125,7 +125,6 @@ const fakeUsers: UserRepository = {
       displayName: identity.realName ?? '同学',
       avatarUrl: null,
       department: identity.department ?? null,
-      studentId: identity.externalId,
       createdAt: new Date('2026-10-01T00:00:00.000Z'),
     };
     usersById.set(id, record);
@@ -133,6 +132,30 @@ const fakeUsers: UserRepository = {
   },
   async findById(id) {
     return usersById.get(id) ?? null;
+  },
+  async findIdentity() {
+    return null;
+  },
+  async linkIdentity(userId, identity) {
+    return {
+      provider: identity.provider,
+      externalId: identity.externalId,
+      createdAt: new Date('2026-10-01T00:00:00.000Z'),
+      userId,
+    } as never;
+  },
+  async unlinkIdentity() {
+    return 0;
+  },
+  async listIdentities() {
+    return [];
+  },
+  async updateProfile(userId, patch) {
+    const current = usersById.get(userId);
+    if (!current) throw new Error('user not found');
+    const next = { ...current, ...patch } as UserRecord;
+    usersById.set(userId, next);
+    return next;
   },
 };
 
@@ -258,7 +281,6 @@ describe('TechPie Phase 0 + 校园卡 · 端到端验收', () => {
       displayName: '同学0001',
       avatarUrl: null,
       department: '信息学院',
-      studentId: '20260001',
       createdAt: new Date('2026-10-01T00:00:00.000Z'),
     });
     usersById.set(OTHER_USER_ID, {
@@ -266,7 +288,6 @@ describe('TechPie Phase 0 + 校园卡 · 端到端验收', () => {
       displayName: '同学0002',
       avatarUrl: null,
       department: '生命学院',
-      studentId: '20260002',
       createdAt: new Date('2026-10-01T00:00:00.000Z'),
     });
 
@@ -310,8 +331,8 @@ describe('TechPie Phase 0 + 校园卡 · 端到端验收', () => {
       const body = (await response.json()) as Envelope<Record<string, unknown>>;
 
       expect(response.status).toBe(200);
-      expect(Object.keys(body.data!).sort()).toEqual(['department', 'name', 'studentId', 'userId']);
-      expect(body.data!.studentId).toBe('20260001');
+      expect(Object.keys(body.data!).sort()).toEqual(['avatarUrl', 'department', 'name', 'userId']);
+      expect(body.data!.userId).toBe('u-1');
     });
 
     it('GET /auth/session 的响应体里扫不到 8 个禁用键名，也没有长 base64 串', async () => {

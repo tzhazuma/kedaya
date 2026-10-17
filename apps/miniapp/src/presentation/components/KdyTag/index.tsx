@@ -1,4 +1,5 @@
-import { Text } from '@tarojs/components'
+import Tag from '@taroify/core/tag'
+import '@taroify/core/tag/style'
 import type { ReactNode } from 'react'
 
 import './index.scss'
@@ -8,7 +9,8 @@ import './index.scss'
  *
  * `tone` 与设计令牌的语义色一一对应，页面不要自己拼色值。
  */
-export type KdyTagTone = 'brand' | 'success' | 'warning' | 'danger' | 'info' | 'neutral'
+export type KdyTagTone =
+  'brand' | 'success' | 'warning' | 'danger' | 'info' | 'neutral'
 
 export interface KdyTagProps {
   children?: ReactNode
@@ -21,7 +23,11 @@ export function KdyTag({ children, tone = 'neutral', className }: KdyTagProps) {
     .filter((item) => item !== '')
     .join(' ')
 
-  return <Text className={classes}>{children}</Text>
+  return (
+    <Tag className={classes} shape='rounded'>
+      {children}
+    </Tag>
+  )
 }
 
 export default KdyTag

@@ -34,4 +34,47 @@ export class ScheduleCoursePrismaRepository
       where: { term, weekday },
       orderBy: [{ startSlot: 'asc' }, { id: 'asc' }],
     });
-  }}
+  }
+
+  async listByUserTerm(userId: string, term: string): Promise<ScheduleCourseModel[]> {
+    return this.prisma.scheduleCourse.findMany({
+      where: { userId, term },
+      orderBy: [{ weekday: 'asc' }, { startSlot: 'asc' }, { id: 'asc' }],
+    });
+  }
+
+  async listTerms(userId: string): Promise<string[]> {
+    const rows = await this.prisma.scheduleCourse.findMany({
+      where: { userId },
+      select: { term: true },
+      distinct: ['term'],
+      orderBy: { term: 'desc' },
+    });
+    return rows.map((row) => row.term);
+  }
+
+  async replaceTerm(
+    userId: string,
+    term: string,
+    courses: CreateScheduleCourseInput[],
+  ): Promise<number> {
+    // 一个事务：先删后插。崩在中途会整体回滚，绝不会留下半份课表。
+    return this.prisma.$transaction(async (tx) => {
+      await tx.scheduleCourse.deleteMany({ where: { userId, term } });
+      if (courses.length === 0) return 0;
+      await tx.scheduleCourse.createMany({
+        data: courses.map((course) => ({
+          userId,
+          term,
+          courseName: course.courseName,
+          teacher: course.teacher ?? null,
+          location: course.location ?? null,
+          weekday: course.weekday,
+          startSlot: course.startSlot,
+          endSlot: course.endSlot,
+        })),
+      });
+      return courses.length;
+    });
+  }
+}

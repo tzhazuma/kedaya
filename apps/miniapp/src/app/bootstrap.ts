@@ -99,6 +99,8 @@ export function refreshInBackground(container: AppContainer): void {
 }
 
 async function refreshSessionToken(container: AppContainer): Promise<void> {
+  // 演示 token 不是真实凭据，不能向占位 API 域名发送刷新请求。
+  if (container.env.useMock) return
   const { session } = container.useCases
   if (!session.needsRefresh()) return
 

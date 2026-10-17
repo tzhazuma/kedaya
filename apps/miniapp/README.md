@@ -29,6 +29,9 @@ npm run test      -w @kedaya/miniapp
 npm run lint      -w @kedaya/miniapp
 ```
 
+> **上线部署**（微信云托管 + 小程序提审）见 [`docs/deploy.md`](../../docs/deploy.md)，
+> 本端的环境变量样例见 [`.env.example`](./.env.example)。
+
 > ⚠️ 本仓库有多个工作流并行，`node_modules` 是共享的。
 > 任何会改动 `node_modules` 的命令（`npm install` / `npm ci`）都必须串行化：
 >
@@ -48,6 +51,13 @@ npm run lint      -w @kedaya/miniapp
    - 目录：`<repo>/apps/miniapp`
    - AppID：**游客模式**即可（`project.config.json` 里是占位值 `touristappid`）
 3. 导入后即可看到 tabBar 四个页面与拼单垂直切片（默认走 **mock 数据**，不需要后端）。
+
+也支持直接导入仓库根目录：根目录的 `project.config.json` 已将
+`miniprogramRoot` 设为 `apps/miniapp/dist/`。请从开发者工具的「小程序」分类导入，
+不要选「其他项目」。根目录可执行 `nvm use && npm run dev:weapp`，等待终端编译成功后
+再点击开发者工具的「编译」。若提示找不到 `app.json`，先确认构建已成功。
+开发工具 Docker 插件的 `docker: command not found` 不属于小程序运行错误；
+本地 Mock 预览不需要 Docker。
 
 ### 关于 appid（必须替换才能真机调试）
 
@@ -82,17 +92,21 @@ apps/miniapp/
     │   ├── bootstrap.ts       #   bootstrapSync（同步 hydrate）+ refreshInBackground
     │   └── routes.ts          #   页面路径常量（纯数据，无 Taro 依赖）
     ├── application/           # 用例层：编排，不含 IO
-    │   ├── auth/session.ts
-    │   └── groupbuy/          #   listGroupBuys / groupBuyDetail / joinGroupBuy
+    │   ├── auth/              #   session.ts（会话读取）、authAccount.ts（注册/登录/微信/资料/绑定）
+    │   ├── common/            #   listUseCase / detailUseCase（列表与详情状态机骨架）
+    │   ├── groupbuy/          #   listGroupBuys / myGroupBuys / groupBuyDetail / createGroupBuy / joinGroupBuy
+    │   ├── notification/      #   notificationUseCases（站内信列表 + 未读数 store）
+    │   ├── media/             #   mediaUseCases（图片能力状态机 + 选图/上传用例）
+    │   └── flee-market…       #   fleaMarket / errand / buddy / lostFound / forum / dormHarmony / schedule / campusCard / privacy / agent
     ├── domain/                # 纯领域：零框架依赖
-    │   ├── models/            #   groupbuy.ts（状态推导/参团资格）、session.ts
-    │   └── ports/             #   GroupBuyRepository / HttpPort / CachePort / ClockPort ...
+    │   ├── models/            #   groupbuy.ts（状态推导/参团资格）、auth.ts、profile.ts、media.ts、session.ts
+    │   └── ports/             #   GroupBuyRepository / AuthRepository / WechatCodePort / AvatarPickerPort / ImagePickerPort / MediaRepository / HttpPort ...
     ├── data/                  # adapters：实现 ports
     │   ├── api/               #   request.ts（信封解包 + 401 刷新重试）、taroHttpAdapter.ts
     │   ├── repositories/      #   http / mock 两套 GroupBuyRepository
     │   ├── storage/           #   Taro 同步存储、内存存储、会话存储
     │   └── mock/              #   内存数据库 + 确定性种子数据
-    ├── platform/              # 平台差异适配（订阅消息 / 扫码 / 分享 / 地图 / 导航）
+    ├── platform/              # 平台差异适配（订阅消息 / 扫码 / 分享 / 地图 / 导航 / tabBar 红点 / 相册选图与压缩）
     └── presentation/          # UI
         ├── components/        #   KdyCard / KdyButton / KdyEmpty / KdyTag
         │                      #   + KdySwitch / KdySearchBar / KdyAccordion / KdyField
@@ -180,6 +194,9 @@ apps/miniapp/
 | 扫码 | `wx.scanCode` 原生相机 | 无原生扫码 → `UNSUPPORTED`，引导手动输入 | `platform/scanner.ts` |
 | 分享 | **不能静默分享**：必须用户点击 `<Button open-type="share">` 或右上角转发 | `navigator.share` → 再降级复制链接 | `platform/share.ts` |
 | 地图 | `wx.openLocation` 打开微信内置地图（可直接导航） | 高德 Web URI → 再降级复制坐标 | `platform/map.ts` |
+| 微信登录凭证 | `Taro.login()` → code（需服务端配置 AppID/Secret） | 无微信环境 → 稳定的 `dev:<设备标识>` 模拟凭证 | `platform/wechatLogin.ts` |
+| 头像选择 | `chooseAvatar` 临时文件 → `compressImage` → ≤64KB data URL | 无此能力 → 按钮替换为说明文案 | `platform/avatarPicker.ts` |
+| 相册选图（发帖配图） | `chooseMedia` 多选 → 服务端压缩后的图 → 质量梯度压缩（80/60/40）→ 上传 | 无此能力 → 明确提示「相册选图需要在微信小程序内使用」 | `platform/imagePicker.ts` |
 
 失败语义统一为 `PlatformFailure.code ∈ {UNSUPPORTED, REJECTED, FAILED}`，
 UI 可以据此区分「这个端没有」「用户拒绝」「调用出错」。
@@ -188,15 +205,26 @@ UI 可以据此区分「这个端没有」「用户拒绝」「调用出错」�
 
 ## 6. 已实现的垂直切片：拼单（`groupbuy`）
 
-- **列表页** `presentation/pages/groupbuy/list`：分类筛选、下拉刷新、触底加载（游标分页）、
+- **列表页** `presentation/pages/groupbuy/list`：**三组筛选**（范围「全部 / 我发起的 / 我参与的」、
+  分类、排序「最新发布 / 即将截止」）、下拉刷新、触底加载（游标分页）、
   卡片展示（进度条 / 剩余份数 / 截止倒计时 / 状态标签）。
+  「我发起的 / 我参与的」需要登录：未登录时先引导登录，**不发注定 401 的请求**。
+  底部悬浮「发起拼单」入口（叠加 `env(safe-area-inset-bottom)`）。
+- **发起页** `presentation/pages/groupbuy/create`：标题/说明/单价/份数/取货地点/分类 +
+  截止时间预设（6 小时 / 12 小时 / 明天此刻 / 3 天 / 一周 / 自定义小时）。
+  单价输入收「元」，提交前 `yuanToFen` 换算成**整数分**；
+  截止时间用**相对当前时间**的预设，天然不会选中过去的时间（服务端硬规则是必须晚于现在）。
+  归属只认会话：服务端从 JWT 取发起人，客户端连 `initiatorId` 都不发（只给 mock 记账用）。
 - **详情页** `presentation/pages/groupbuy/detail`：完整信息 + 参与人列表 + 四个动作
   （参团 / 分享 / 复制链接 / 查看地图）。
 - **参团动作**：`application/groupbuy/joinGroupBuy.ts` —— 先查会话 → 再用 domain 的
   `canJoin` 本地预校验 → 最后才发请求（带幂等键）。
 - **三态齐全**：`loading` / `empty` / `error`（+ `ready`）。
-  列表页顶部有「模拟错误态 / 模拟空态 / 重置演示数据」三个按钮，
+  列表页的「模拟错误态 / 模拟空态 / 重置演示数据」放在折叠的「演示与调试工具」里，
   走的是 mock 仓储的真实控制面（`failNextRequests` / `clearAll`），**不是硬编码假状态**。
+- **「我的资产」** `presentation/pages/profile/assets`：内联「我发起的 / 我参与的」拼单，
+  其余模块给出列表页入口（各模块列表页都有自己的「我的」筛选）。
+  它用**独立的列表用例与缓存 key**（`myGroupBuys`），避免与拼单广场互相闪数据。
 
 默认 `TARO_APP_USE_MOCK !== 'false'` → 走 mock。接真后端：
 
@@ -469,9 +497,25 @@ npm run test -w @kedaya/miniapp
   - **向量匹配（`vector` / `hash` 模式）**：mock 诚实返回 `matchMode: 'rule'`
     （无 embedding）；端上不实现向量推理，只消费服务端的 `matchMode` 与 `score`。
 - **tabBar 图标**：未配置 `iconPath`（品牌图标未就位），当前只显示文字。
+- **分包（subPackages）**：**已做**。当前主包 **1172 KB**（上限 2048 KB），余量约 870 KB。
+  14 个子包共 57 个页面（六个生活模块 + 宿舍矛盾 + 猫鸟黑天鹅 / 食堂 / FAQ / 偷外卖 /
+  TechPie / 心理支持各三页，AI 画像两页）移出主包。
+  分法与理由见 `src/app.config.ts` 的注释；`src/app/__tests__/routes.test.ts` 守住
+  「tabBar 页必须在主包」「root 不嵌套」「preloadRule 只指向真实子包」这三条。
+  特别地，`auth/*`、`agent`、`profile/*` **刻意留在主包** ——
+  登录页和可达鸭悬浮球是任何页面都可能触达的路径，分包会让「点一下先等下载」。
+  测量方法与上线前的自检命令见 `docs/deploy.md` §10.1。
+  > 体积按**文件字节求和**计。`du` 会因为 4 KB 块对齐虚高约 45%
+  > （本仓曾据此误报成「1.7 MB」），别再用 `du` 判断包大小。
 - **H5 端未实机验证**：`build:h5` 脚本已就绪，但本轮只验证了 `weapp` 构建。
-- **CI / 真机预览**：未在真机与微信开发者工具中打开验证（无图形环境）。
+- **CI / 真机预览**：未在真机与微信开发者工具中打开验证（本机 IDE 服务端口关闭，
+  需手动导入 `apps/miniapp/dist`）。
 - **E2E 测试**：未接入小程序自动化（miniprogram-automator）。
+- **图片上传的「真实对象存储」未验证**：接口、剥离、三模块接线都已实测
+  （`MEDIA_STORAGE=local` 下上传含 GPS 的真实 JPEG，取回后 GPS 段消失），
+  但**没有 COS/OSS 凭据**，`s3` 适配器只有单元测试（SigV4 用 AWS 官方示例逐字节校验过）。
+  配好凭据后按 `docs/deploy.md` §5.4 走一遍验收，才算最终验证。
+  同样待手动验证的还有小程序的**选图真机交互**（`chooseMedia`，§10.4 给了清单）。
 
 ### ⚠️ 已知问题 / 需要在别处修
 

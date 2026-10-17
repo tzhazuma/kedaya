@@ -9,6 +9,15 @@ import type { Page } from '@kedaya/contracts';
 export interface ListParams {
   cursor?: string;
   limit: number;
+  /**
+   * 模块自定义筛选条件。
+   *
+   * 类型刻意保持"标量字典"而不是让通用层认识各模块的字段：筛选维度是各模块
+   * 自己的事（食堂按食堂 + 菜名、FAQ 按分类 + 关键词），通用 CRUD 层不该膨胀。
+   * controller 负责用 Zod 白名单校验、service 原样透传、**data 层**把它翻译成
+   * Prisma `where`（见 `PrismaCursorRepository.buildWhere`）——Prisma 只出现在 data 层。
+   */
+  filters?: Readonly<Record<string, string | number | boolean | undefined>>;
 }
 
 export interface ResourceRepository<TModel, TCreate, TUpdate> {

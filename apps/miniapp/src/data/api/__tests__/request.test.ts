@@ -80,6 +80,14 @@ function createClient(options: {
   tokens: TokenStorePort
   refresh?: AuthRefresherPort
   onUnauthenticated?: () => void
+  onServerError?: (info: {
+    path: string
+    method: string
+    status: number
+    code: string
+    message: string
+    traceId: string
+  }) => void
 }) {
   let traceSeq = 0
   return createApiClient({
@@ -93,6 +101,7 @@ function createClient(options: {
     ...(options.onUnauthenticated === undefined
       ? {}
       : { onUnauthenticated: options.onUnauthenticated }),
+    ...(options.onServerError === undefined ? {} : { onServerError: options.onServerError }),
   })
 }
 
@@ -405,5 +414,87 @@ describe('createApiClient 401 刷新重试', () => {
     expect(result.ok).toBe(false)
     expect(refreshCalls).toBe(0)
     expect(http.calls).toHaveLength(1)
+  })
+})
+
+describe('onServerError（服务端自身故障的上报入口）', () => {
+  it('5xx → 回调一次，带上方法 / 路径 / 状态码 / trace', async () => {
+    const seen: Array<Record<string, unknown>> = []
+    const http = createFakeHttp(() => json(500, { ok: false, error: { code: 'INTERNAL', message: '数据库连接失败' } }))
+    const client = createClient({
+      http: http.port,
+      tokens: createFakeTokens(TOKENS),
+      onServerError: (info) => {
+        seen.push(info)
+      },
+    })
+
+    const result = await client.post('/forum/posts', { title: 'x' })
+
+    expect(result.ok).toBe(false)
+    expect(seen).toHaveLength(1)
+    expect(seen[0]).toMatchObject({
+      path: '/forum/posts',
+      method: 'POST',
+      status: 500,
+      code: 'INTERNAL',
+      message: '数据库连接失败',
+    })
+    expect(typeof seen[0]?.traceId).toBe('string')
+  })
+
+  it('非信封响应体（视为 INTERNAL）同样上报 —— 这类问题最难线上发现', async () => {
+    const seen: unknown[] = []
+    const http = createFakeHttp(() => json(200, '<html>502 Bad Gateway</html>'))
+    const client = createClient({
+      http: http.port,
+      tokens: createFakeTokens(TOKENS),
+      onServerError: (info) => {
+        seen.push(info)
+      },
+    })
+
+    await client.get('/groupbuy/items')
+
+    expect(seen).toHaveLength(1)
+  })
+
+  it('业务性失败（校验 / 无权限 / 冲突 / 网络）一律不上报 —— 否则真故障会被噪声淹没', async () => {
+    const seen: unknown[] = []
+    const statuses = [400, 401, 403, 404, 409, 429]
+    let index = 0
+    const http = createFakeHttp(() =>
+      json(statuses[index++] ?? 400, { ok: false, error: { code: 'VALIDATION_FAILED', message: 'x' } }),
+    )
+    const client = createClient({
+      http: http.port,
+      tokens: createFakeTokens(TOKENS),
+      onServerError: (info) => {
+        seen.push(info)
+      },
+    })
+
+    for (let i = 0; i < statuses.length; i += 1) await client.get('/groupbuy/items')
+    // 传输层异常（断网/超时）也不算服务端故障
+    const offline = createFakeHttp(() => {
+      throw new HttpTransportError('network', '断网')
+    })
+    const offlineClient = createClient({
+      http: offline.port,
+      tokens: createFakeTokens(TOKENS),
+      onServerError: (info) => {
+        seen.push(info)
+      },
+    })
+    await offlineClient.get('/groupbuy/items')
+
+    expect(seen).toEqual([])
+  })
+
+  it('未提供 onServerError 时不崩（可选依赖，不是必需）', async () => {
+    const http = createFakeHttp(() => json(500, { ok: false, error: { code: 'INTERNAL', message: 'x' } }))
+    const client = createClient({ http: http.port, tokens: createFakeTokens(TOKENS) })
+    const result = await client.get('/groupbuy/items')
+    expect(result.ok).toBe(false)
   })
 })

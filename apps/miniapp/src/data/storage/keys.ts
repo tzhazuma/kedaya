@@ -78,6 +78,76 @@ export const StorageKeys = {
   campusCardTransactionCache: `${STORAGE_PREFIX}cache:campus-card:transactions`,
   /** 敏感模块二次同意记录（契约 §9） */
   consent: `${STORAGE_PREFIX}consent`,
+  /** 跳蚤市场列表缓存 */
+  fleaMarketListCache: `${STORAGE_PREFIX}cache:flea-market:list`,
+  /** 跑腿列表缓存 */
+  errandListCache: `${STORAGE_PREFIX}cache:errand:list`,
+  /** 找搭子列表缓存 */
+  buddyListCache: `${STORAGE_PREFIX}cache:buddy:list`,
+  /** 失物招领列表缓存 */
+  lostFoundListCache: `${STORAGE_PREFIX}cache:lost-found:list`,
+  /** 论坛帖子列表缓存 */
+  forumListCache: `${STORAGE_PREFIX}cache:forum:list`,
+  /**
+   * 宿舍矛盾：本地保存自己提交过的**追踪码**。
+   *
+   * 追踪码是查看匿名案子的唯一凭据（服务端只存哈希、无法找回），
+   * 所以在本地留一份，用户下次打开还能看进度 —— 这是"匿名 + 可追溯"的关键。
+   */
+  dormHarmonyTrackCodes: `${STORAGE_PREFIX}dorm-harmony:track-codes`,
+  /**
+   * 已绑定的校园系统（第二级能力）**离线视图**。
+   *
+   * 只缓存"哪些平台可用 + 到期时间"，不缓存任何 session / cookie
+   * （那些只存在于服务端加密存储里）。用途：断网时身份页仍能正确显示
+   * "已绑定教务系统"，而不是一闪而过的"未绑定"误导用户。
+   * 实际 key 会拼上用户标识，避免多账号切换时串味。
+   */
+  campusBindings: `${STORAGE_PREFIX}cache:campus:bindings`,
+  /**
+   * **Mock 上游**自己保存的绑定状态 / 课表。
+   *
+   * 与 `campusBindings` 分开是刻意的：一个是"服务端视图的离线缓存"，
+   * 一个是"模拟数据源自身的状态"。混用会让"离线缓存旧数据"和
+   * "模拟上游里真的没绑定"无法区分，测出的问题也不是真问题。
+   */
+  mockCampusBindings: `${STORAGE_PREFIX}mock:campus:bindings`,
+  /** 课表（mock 模式下由本地模拟上游写入；真实模式下仅作离线兜底） */
+  mockCampusCourses: `${STORAGE_PREFIX}mock:campus:courses`,
+  /** 「今日课表」视图缓存：断网时显示"上一次看到的课表 + 时间" */
+  scheduleTodayCache: `${STORAGE_PREFIX}cache:schedule:today`,
+  /** 「本周课表」视图缓存 */
+  scheduleWeekCache: `${STORAGE_PREFIX}cache:schedule:week`,
+  /** 校园卡总览缓存：**只在连不上后端时**兜底（正常的上游降级由服务端完成） */
+  campusCardCache: `${STORAGE_PREFIX}cache:campus-card:overview`,
+  /** 隐私开关缓存：断网时开关仍可展示（但不允许假装保存成功） */
+  privacySettingsCache: `${STORAGE_PREFIX}cache:privacy:settings`,
+  /** 站内信列表缓存：断网进「消息」页也能看到上次拉到的通知 */
+  notificationListCache: `${STORAGE_PREFIX}cache:notifications:list`,
+  /** 猫鸟黑天鹅列表缓存 */
+  wildlifeListCache: `${STORAGE_PREFIX}cache:wildlife:list`,
+  /** 食堂营养列表缓存 */
+  canteenListCache: `${STORAGE_PREFIX}cache:canteen:list`,
+  /** 常见问题列表缓存 */
+  faqListCache: `${STORAGE_PREFIX}cache:faq:list`,
+  /**
+   * 「我已标记有帮助」的本地记录。
+   *
+   * 与列表缓存分开：它是**用户行为**，形状也不同（`string[]`），
+   * 被一次列表刷新覆盖掉会导致重复计数。
+   */
+  faqHelpfulMarks: `${STORAGE_PREFIX}faq:helpful-marks`,
+  /** 偷外卖列表缓存（仅"我的记录"） */
+  takeoutGuardListCache: `${STORAGE_PREFIX}cache:takeout-guard:list`,
+  /** 校园技术服务目录列表缓存 */
+  techpieListCache: `${STORAGE_PREFIX}cache:techpie:list`,
+  /** 心理支持列表缓存（仅「我的预约」） */
+  wellbeingListCache: `${STORAGE_PREFIX}cache:wellbeing:list`,
+  /**
+   * AI 画像的**公开来源清单**离线缓存（非敏感：断网时"哪类数据用在哪、哪类被排除"仍说得出口）。
+   * 画像本体刻意**不缓存** —— 它是服务端结论，落盘会在换账号/换设备后被当成自己的数据读出来。
+   */
+  aiPortraitSourcesCache: `${STORAGE_PREFIX}cache:ai-portrait:sources`,
 } as const
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys]
