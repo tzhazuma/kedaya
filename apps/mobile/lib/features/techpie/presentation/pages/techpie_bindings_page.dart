@@ -24,7 +24,8 @@ class TechpieBindingsPage extends ConsumerStatefulWidget {
   const TechpieBindingsPage({super.key});
 
   @override
-  ConsumerState<TechpieBindingsPage> createState() => _TechpieBindingsPageState();
+  ConsumerState<TechpieBindingsPage> createState() =>
+      _TechpieBindingsPageState();
 }
 
 class _TechpieBindingsPageState extends ConsumerState<TechpieBindingsPage> {
@@ -163,7 +164,8 @@ class _TechpieBindingsPageState extends ConsumerState<TechpieBindingsPage> {
 
   void _toast(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -182,8 +184,8 @@ class _BindSheet extends StatelessWidget {
   });
 
   final bool isMockRuntime;
-  final Future<bool> Function(CampusPlatform platform, BindCredential credential)
-  onBind;
+  final Future<bool> Function(
+      CampusPlatform platform, BindCredential credential) onBind;
   final VoidCallback onOpenWebView;
   final VoidCallback onOpenCampusCard;
 
@@ -264,8 +266,8 @@ class _PlatformRow extends StatelessWidget {
 
   final CampusPlatform platform;
   final bool isMockRuntime;
-  final Future<bool> Function(CampusPlatform platform, BindCredential credential)
-  onBind;
+  final Future<bool> Function(
+      CampusPlatform platform, BindCredential credential) onBind;
 
   @override
   Widget build(BuildContext context) {

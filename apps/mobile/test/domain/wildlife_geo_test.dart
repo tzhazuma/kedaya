@@ -8,12 +8,23 @@ import 'package:kedaya/domain/models/geo.dart';
 /// 因此必须由机器验证，而不是靠肉眼。
 void main() {
   // 1 米 ≈ 1 像素；v 轴向下（所以 y 的符号是负的），原点映射到 (500, 400)。
-  const BasemapAffine affine = BasemapAffine(a: 1, b: 0, c: 500, d: 0, e: -1, f: 400);
+  const BasemapAffine affine =
+      BasemapAffine(a: 1, b: 0, c: 500, d: 0, e: -1, f: 400);
   const CampusProjection projection = CampusProjection.campus;
 
   group('纯 Dart 数学（domain 层禁止 dart:math）', () {
     test('geoCosDegrees 与标准余弦一致（误差 < 1e-9）', () {
-      const List<double> degrees = <double>[0, 30, 45, 60, 90, 120, 180, -90, -31.178];
+      const List<double> degrees = <double>[
+        0,
+        30,
+        45,
+        60,
+        90,
+        120,
+        180,
+        -90,
+        -31.178
+      ];
       const List<double> expected = <double>[
         1,
         0.8660254037844387,
@@ -46,7 +57,8 @@ void main() {
         35.13641700572214,
       ];
       for (int i = 0; i < values.length; i++) {
-        expect(geoSqrt(values[i]), closeTo(expected[i], 1e-9), reason: 'sqrt(${values[i]})');
+        expect(geoSqrt(values[i]), closeTo(expected[i], 1e-9),
+            reason: 'sqrt(${values[i]})');
       }
     });
   });
@@ -117,15 +129,18 @@ void main() {
       final Wgs84Point north = projection.fromLocalMeters(
         const LocalMeters(x: 0, y: 100),
       );
-      final LocalPixel northPixel = affine.pixelFor(north, projection: projection);
+      final LocalPixel northPixel =
+          affine.pixelFor(north, projection: projection);
       expect(northPixel.v, closeTo(300, 1e-6));
     });
 
     test('不可逆的仿射矩阵会抛错，而不是给出错误结果', () {
-      const BasemapAffine degenerate = BasemapAffine(a: 0, b: 0, c: 0, d: 0, e: 0, f: 0);
+      const BasemapAffine degenerate =
+          BasemapAffine(a: 0, b: 0, c: 0, d: 0, e: 0, f: 0);
       expect(degenerate.isInvertible, isFalse);
       expect(
-        () => degenerate.pointFor(const LocalPixel(u: 1, v: 1), projection: projection),
+        () => degenerate.pointFor(const LocalPixel(u: 1, v: 1),
+            projection: projection),
         throwsA(isA<StateError>()),
       );
     });

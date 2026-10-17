@@ -20,7 +20,11 @@ enum ForumPillTone {
 /// 色值**全部**来自 `context.kedayaColors`，因此暗色主题自动生效
 /// （契约 §11.5：禁止硬编码色值）。
 class ForumPill extends StatelessWidget {
-  const ForumPill({required this.text, this.tone = ForumPillTone.neutral, this.icon, super.key});
+  const ForumPill(
+      {required this.text,
+      this.tone = ForumPillTone.neutral,
+      this.icon,
+      super.key});
 
   final String text;
   final ForumPillTone tone;
@@ -76,11 +80,11 @@ class ForumAnonymousBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Tooltip(
-    message: notice,
-    child: const ForumPill(
-      text: '匿名',
-      tone: ForumPillTone.brand,
-      icon: Icons.visibility_off_outlined,
-    ),
-  );
+        message: notice,
+        child: const ForumPill(
+          text: '匿名',
+          tone: ForumPillTone.brand,
+          icon: Icons.visibility_off_outlined,
+        ),
+      );
 }

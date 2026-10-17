@@ -4,10 +4,12 @@
 /// 一律留在 `data/api/`。因此本文件不 import 任何库（连 `dart:convert` 都不用）。
 library;
 
-String _typeName(Object? value) => value == null ? 'null' : value.runtimeType.toString();
+String _typeName(Object? value) =>
+    value == null ? 'null' : value.runtimeType.toString();
 
 Never _mismatch(String key, String expected, Object? value) =>
-    throw FormatException('JSON 字段 "$key" 期望 $expected，实际为 ${_typeName(value)}');
+    throw FormatException(
+        'JSON 字段 "$key" 期望 $expected，实际为 ${_typeName(value)}');
 
 /// 断言 [value] 是 JSON 对象，并收敛为 `Map<String, Object?>`。
 ///
@@ -17,7 +19,8 @@ Map<String, Object?> requireJsonMap(Object? value, {String what = '响应'}) {
   if (value is Map<String, Object?>) return value;
   if (value is Map<Object?, Object?>) {
     return <String, Object?>{
-      for (final MapEntry<Object?, Object?> entry in value.entries) '${entry.key}': entry.value,
+      for (final MapEntry<Object?, Object?> entry in value.entries)
+        '${entry.key}': entry.value,
     };
   }
   throw FormatException('$what 期望 JSON 对象，实际为 ${_typeName(value)}');
@@ -95,6 +98,13 @@ bool readBool(Map<String, Object?> json, String key) {
   _mismatch(key, 'bool', value);
 }
 
+bool? readBoolOrNull(Map<String, Object?> json, String key) {
+  final Object? value = json[key];
+  if (value == null) return null;
+  if (value is bool) return value;
+  _mismatch(key, 'bool?', value);
+}
+
 bool readBoolOr(Map<String, Object?> json, String key, bool fallback) {
   final Object? value = json[key];
   if (value == null) return fallback;
@@ -136,7 +146,8 @@ String isoUtc(DateTime value) => value.toUtc().toIso8601String();
 /// 论坛主题/回复的状态是**小写**（`published`）、举报状态却是**大写**
 /// （`PENDING`）。同一个契约下两种大小写并存，客户端只能用不敏感比较兜住，
 /// 否则一个大小写差异就会让整条数据收敛成 `unknown`（帖子变成不可见/不可回复）。
-bool wireEquals(String a, String b) => a.trim().toLowerCase() == b.trim().toLowerCase();
+bool wireEquals(String a, String b) =>
+    a.trim().toLowerCase() == b.trim().toLowerCase();
 
 List<Object?> readList(Map<String, Object?> json, String key) {
   final Object? value = json[key];
@@ -152,10 +163,11 @@ List<Object?> readListOrEmpty(Map<String, Object?> json, String key) {
 }
 
 /// 读取字符串数组；非字符串元素被丢弃（后端新增字段时不至于整条解析失败）。
-List<String> readStringList(Map<String, Object?> json, String key) => readListOrEmpty(json, key)
-    .where((Object? value) => value is String)
-    .map((Object? value) => value! as String)
-    .toList(growable: false);
+List<String> readStringList(Map<String, Object?> json, String key) =>
+    readListOrEmpty(json, key)
+        .where((Object? value) => value is String)
+        .map((Object? value) => value! as String)
+        .toList(growable: false);
 
 Map<String, Object?> readMap(Map<String, Object?> json, String key) =>
     requireJsonMap(json[key], what: 'JSON 字段 "$key"');

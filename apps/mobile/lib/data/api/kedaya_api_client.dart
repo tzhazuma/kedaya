@@ -31,7 +31,8 @@ final class KedaYaApiClient implements KedayaApiPort {
   String? get lastTraceId => _client.lastTraceId;
 
   @override
-  Future<Result<T>> send<T>(ApiRequest request, T Function(Object? data) decode) async =>
+  Future<Result<T>> send<T>(
+          ApiRequest request, T Function(Object? data) decode) async =>
       toResult<T>(await _request<T>(request, decode));
 
   @override
@@ -66,7 +67,8 @@ final class KedaYaApiClient implements KedayaApiPort {
     }
   }
 
-  Future<ApiEnvelope<T>> _request<T>(ApiRequest request, T Function(Object? data) decode) async {
+  Future<ApiEnvelope<T>> _request<T>(
+      ApiRequest request, T Function(Object? data) decode) async {
     try {
       final Response<Object?> response = await _client.raw.request<Object?>(
         normalizePath(request.path),
@@ -79,7 +81,8 @@ final class KedaYaApiClient implements KedayaApiPort {
       final ApiEnvelope<T>? envelope = _failureEnvelope<T>(error, decode);
       if (envelope != null) return envelope;
       final ApiError mapped = _mapDioError(error);
-      return ApiEnvelope.failure<T>(mapped.code, mapped.message, _client.lastTraceId ?? '');
+      return ApiEnvelope.failure<T>(
+          mapped.code, mapped.message, _client.lastTraceId ?? '');
     } on Object catch (error) {
       return ApiEnvelope.failure<T>(
         ApiErrorCode.internal,
@@ -140,7 +143,8 @@ final class KedaYaApiClient implements KedayaApiPort {
   }
 
   /// 把一次响应收敛为信封（[send] 与 [sendMultipart] 共用）。
-  ApiEnvelope<T> _envelopeFrom<T>(Response<Object?> response, T Function(Object? data) decode) {
+  ApiEnvelope<T> _envelopeFrom<T>(
+      Response<Object?> response, T Function(Object? data) decode) {
     final Object? body = response.data;
     if (body is String && body.trim().isNotEmpty) {
       return ApiEnvelope.parseBody<T>(body, decode);
@@ -156,19 +160,21 @@ final class KedaYaApiClient implements KedayaApiPort {
   }
 
   Options _optionsFor(ApiRequest request) => Options(
-    method: request.method.wire,
-    // null 时保持 Dio 全局默认（`application/json`）；契约 §11.1 的
-    // JSON Merge Patch 会显式传 `application/merge-patch+json`。
-    contentType: request.contentType,
-    headers: <String, dynamic>{
-      if (request.idempotencyKey != null) idempotencyHeader: request.idempotencyKey,
-    },
-  );
+        method: request.method.wire,
+        // null 时保持 Dio 全局默认（`application/json`）；契约 §11.1 的
+        // JSON Merge Patch 会显式传 `application/merge-patch+json`。
+        contentType: request.contentType,
+        headers: <String, dynamic>{
+          if (request.idempotencyKey != null)
+            idempotencyHeader: request.idempotencyKey,
+        },
+      );
 
   /// 4xx/5xx 的响应体通常仍是失败信封 —— 优先用它，能拿到后端的中文文案与错误码。
   ///
   /// 只有确认 `ok: false` 才采用；否则（例如反代返回的 HTML 错误页）交给 HTTP 状态映射。
-  ApiEnvelope<T>? _failureEnvelope<T>(DioException error, T Function(Object? data) decode) {
+  ApiEnvelope<T>? _failureEnvelope<T>(
+      DioException error, T Function(Object? data) decode) {
     final Object? body = error.response?.data;
     Map<String, Object?>? json;
     if (body is Map<String, Object?>) {
@@ -187,35 +193,38 @@ final class KedaYaApiClient implements KedayaApiPort {
 }
 
 ApiError _mapDioError(DioException error) => switch (error.type) {
-  DioExceptionType.connectionTimeout ||
-  DioExceptionType.sendTimeout ||
-  DioExceptionType.receiveTimeout => const ApiError(
-    code: ApiErrorCode.upstreamUnavailable,
-    message: '网络超时，请稍后重试',
-  ),
-  DioExceptionType.connectionError => const ApiError(
-    code: ApiErrorCode.upstreamUnavailable,
-    message: '无法连接服务器，请检查网络',
-  ),
-  DioExceptionType.badCertificate => const ApiError(
-    code: ApiErrorCode.upstreamUnavailable,
-    message: '服务器证书校验失败',
-  ),
-  DioExceptionType.cancel => const ApiError(
-    code: ApiErrorCode.internal,
-    message: '请求已取消',
-  ),
-  DioExceptionType.badResponse => _mapStatusCode(error.response?.statusCode ?? 0),
-  DioExceptionType.unknown => ApiError(
-    code: ApiErrorCode.upstreamUnavailable,
-    message: '网络异常：${error.message ?? '未知原因'}',
-  ),
-  _ => const ApiError(code: ApiErrorCode.internal, message: '请求失败'),
-};
+      DioExceptionType.connectionTimeout ||
+      DioExceptionType.sendTimeout ||
+      DioExceptionType.receiveTimeout =>
+        const ApiError(
+          code: ApiErrorCode.upstreamUnavailable,
+          message: '网络超时，请稍后重试',
+        ),
+      DioExceptionType.connectionError => const ApiError(
+          code: ApiErrorCode.upstreamUnavailable,
+          message: '无法连接服务器，请检查网络',
+        ),
+      DioExceptionType.badCertificate => const ApiError(
+          code: ApiErrorCode.upstreamUnavailable,
+          message: '服务器证书校验失败',
+        ),
+      DioExceptionType.cancel => const ApiError(
+          code: ApiErrorCode.internal,
+          message: '请求已取消',
+        ),
+      DioExceptionType.badResponse =>
+        _mapStatusCode(error.response?.statusCode ?? 0),
+      DioExceptionType.unknown => ApiError(
+          code: ApiErrorCode.upstreamUnavailable,
+          message: '网络异常：${error.message ?? '未知原因'}',
+        ),
+      _ => const ApiError(code: ApiErrorCode.internal, message: '请求失败'),
+    };
 
 ApiError _mapStatusCode(int status) {
   if (status == 401) {
-    return const ApiError(code: ApiErrorCode.unauthenticated, message: '登录已过期，请重新登录');
+    return const ApiError(
+        code: ApiErrorCode.unauthenticated, message: '登录已过期，请重新登录');
   }
   if (status == 403) {
     return const ApiError(code: ApiErrorCode.forbidden, message: '没有权限执行该操作');
@@ -227,13 +236,16 @@ ApiError _mapStatusCode(int status) {
     return const ApiError(code: ApiErrorCode.conflict, message: '操作冲突，请刷新后重试');
   }
   if (status == 400 || status == 422) {
-    return const ApiError(code: ApiErrorCode.validationFailed, message: '请求参数不合法');
+    return const ApiError(
+        code: ApiErrorCode.validationFailed, message: '请求参数不合法');
   }
   if (status == 429) {
-    return const ApiError(code: ApiErrorCode.rateLimited, message: '操作过于频繁，请稍后再试');
+    return const ApiError(
+        code: ApiErrorCode.rateLimited, message: '操作过于频繁，请稍后再试');
   }
   if (status >= 500) {
-    return const ApiError(code: ApiErrorCode.upstreamUnavailable, message: '服务暂时不可用');
+    return const ApiError(
+        code: ApiErrorCode.upstreamUnavailable, message: '服务暂时不可用');
   }
   return ApiError(code: ApiErrorCode.internal, message: '请求失败（HTTP $status）');
 }

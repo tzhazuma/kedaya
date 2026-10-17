@@ -24,16 +24,17 @@ Future<List<String>?> showBuddyTagPicker({
   required List<String> selected,
   required int maxCount,
   BuddyTagGroup? group,
-}) => showModalBottomSheet<List<String>>(
-  context: context,
-  isScrollControlled: true,
-  builder: (BuildContext sheetContext) => _BuddyTagPickerSheet(
-    title: title,
-    selected: selected,
-    maxCount: maxCount,
-    group: group,
-  ),
-);
+}) =>
+    showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext sheetContext) => _BuddyTagPickerSheet(
+        title: title,
+        selected: selected,
+        maxCount: maxCount,
+        group: group,
+      ),
+    );
 
 class _BuddyTagPickerSheet extends StatefulWidget {
   const _BuddyTagPickerSheet({
@@ -59,7 +60,9 @@ class _BuddyTagPickerSheetState extends State<_BuddyTagPickerSheet> {
   void _toggle(String key) {
     setState(() {
       if (_selected.contains(key)) {
-        _selected = _selected.where((String item) => item != key).toList(growable: false);
+        _selected = _selected
+            .where((String item) => item != key)
+            .toList(growable: false);
         return;
       }
       if (_selected.length >= widget.maxCount) return;
@@ -70,7 +73,8 @@ class _BuddyTagPickerSheetState extends State<_BuddyTagPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final KedaYaColors colors = context.kedayaColors;
-    final List<BuddyTag> candidates = searchBuddyTags(_keyword, group: widget.group);
+    final List<BuddyTag> candidates =
+        searchBuddyTags(_keyword, group: widget.group);
     final bool full = _selected.length >= widget.maxCount;
 
     return SafeArea(

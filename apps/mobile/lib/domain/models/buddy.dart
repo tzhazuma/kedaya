@@ -76,7 +76,8 @@ enum BuddySection {
   static BuddySection? tryFromWire(String wire) {
     final String normalized = wire.trim().toLowerCase();
     for (final BuddySection value in BuddySection.values) {
-      if (value != BuddySection.unknown && value.wire == normalized) return value;
+      if (value != BuddySection.unknown && value.wire == normalized)
+        return value;
     }
     return null;
   }
@@ -125,16 +126,17 @@ enum BuddyActivity {
 ///
 /// **不新增 `section` 字段**：同一信息两处存储必然漂移（规格 §2.3 原话）。
 BuddySection sectionOfActivity(BuddyActivity activity) => switch (activity) {
-  BuddyActivity.study => BuddySection.academic,
-  BuddyActivity.meal => BuddySection.daily,
-  BuddyActivity.travel => BuddySection.daily,
-  BuddyActivity.other => BuddySection.daily,
-  BuddyActivity.sport => BuddySection.sport,
-  BuddyActivity.game => BuddySection.sport,
-};
+      BuddyActivity.study => BuddySection.academic,
+      BuddyActivity.meal => BuddySection.daily,
+      BuddyActivity.travel => BuddySection.daily,
+      BuddyActivity.other => BuddySection.daily,
+      BuddyActivity.sport => BuddySection.sport,
+      BuddyActivity.game => BuddySection.sport,
+    };
 
 /// 某个板块包含哪些 `activity`（`sectionOfActivity` 的反向投影，供 UI 筛选）。
-List<BuddyActivity> activitiesOfSection(BuddySection section) => BuddyActivity.values
+List<BuddyActivity> activitiesOfSection(BuddySection section) => BuddyActivity
+    .values
     .where((BuddyActivity activity) => sectionOfActivity(activity) == section)
     .toList(growable: false);
 
@@ -186,7 +188,8 @@ enum BuddyPostStatus {
   static BuddyPostStatus fromWire(String wire) {
     final String normalized = wire.trim().toUpperCase();
     for (final BuddyPostStatus value in BuddyPostStatus.values) {
-      if (value != BuddyPostStatus.unknown && value.wire == normalized) return value;
+      if (value != BuddyPostStatus.unknown && value.wire == normalized)
+        return value;
     }
     return BuddyPostStatus.unknown;
   }
@@ -202,7 +205,8 @@ enum BuddyPostStatus {
   bool get isOpen => this == BuddyPostStatus.open;
 
   /// 发起人能否关闭（`OPEN` / `FULL` → `CLOSED`）。
-  bool get canBeClosed => this == BuddyPostStatus.open || this == BuddyPostStatus.full;
+  bool get canBeClosed =>
+      this == BuddyPostStatus.open || this == BuddyPostStatus.full;
 
   /// 是否出现在列表里（规格 §5.9 的列表 `where` 条件是 `status: 'OPEN'`）。
   ///
@@ -218,20 +222,19 @@ enum BuddyPostStatus {
 bool canTransitionBuddyPost(BuddyPostStatus from, BuddyPostStatus to) {
   if (from == to) return false;
   return switch (from) {
-    BuddyPostStatus.open =>
-      to == BuddyPostStatus.full ||
-          to == BuddyPostStatus.closed ||
-          to == BuddyPostStatus.expired ||
-          to == BuddyPostStatus.cancelled,
-    BuddyPostStatus.full =>
-      to == BuddyPostStatus.open ||
-          to == BuddyPostStatus.closed ||
-          to == BuddyPostStatus.expired ||
-          to == BuddyPostStatus.cancelled,
+    BuddyPostStatus.open => to == BuddyPostStatus.full ||
+        to == BuddyPostStatus.closed ||
+        to == BuddyPostStatus.expired ||
+        to == BuddyPostStatus.cancelled,
+    BuddyPostStatus.full => to == BuddyPostStatus.open ||
+        to == BuddyPostStatus.closed ||
+        to == BuddyPostStatus.expired ||
+        to == BuddyPostStatus.cancelled,
     BuddyPostStatus.closed ||
     BuddyPostStatus.expired ||
     BuddyPostStatus.cancelled ||
-    BuddyPostStatus.unknown => false,
+    BuddyPostStatus.unknown =>
+      false,
   };
 }
 
@@ -271,10 +274,10 @@ final class BuddyCreator {
   const BuddyCreator({required this.id, this.nickname, this.avatarUrl});
 
   factory BuddyCreator.fromJson(Map<String, Object?> json) => BuddyCreator(
-    id: readStringOr(json, 'id', ''),
-    nickname: readStringOrNull(json, 'nickname'),
-    avatarUrl: readStringOrNull(json, 'avatarUrl'),
-  );
+        id: readStringOr(json, 'id', ''),
+        nickname: readStringOrNull(json, 'nickname'),
+        avatarUrl: readStringOrNull(json, 'avatarUrl'),
+      );
 
   final String id;
   final String? nickname;
@@ -285,10 +288,10 @@ final class BuddyCreator {
       (nickname != null && nickname!.isNotEmpty) ? nickname! : id;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'nickname': nickname,
-    'avatarUrl': avatarUrl,
-  };
+        'id': id,
+        'nickname': nickname,
+        'avatarUrl': avatarUrl,
+      };
 
   @override
   bool operator ==(Object other) => other is BuddyCreator && other.id == id;
@@ -355,7 +358,8 @@ final class BuddyPost {
       ),
       tags: readStringList(json, 'tags'),
       durationMin: readIntOrNull(json, 'durationMin'),
-      minSkillLevel: minSkill == null ? null : BuddySkillLevel.fromWire(minSkill),
+      minSkillLevel:
+          minSkill == null ? null : BuddySkillLevel.fromWire(minSkill),
       autoCloseAt: readDateTimeOrNull(json, 'autoCloseAt'),
       createdAt: readDateTimeOrNull(json, 'createdAt'),
     );
@@ -405,8 +409,9 @@ final class BuddyPost {
   bool get canJoin => status.isOpen && !isFull;
 
   /// 结束时刻；`durationMin` 未知时返回 null。
-  DateTime? get endsAtOrNull =>
-      durationMin == null ? null : startsAt.add(Duration(minutes: durationMin!));
+  DateTime? get endsAtOrNull => durationMin == null
+      ? null
+      : startsAt.add(Duration(minutes: durationMin!));
 
   /// 是否由 [userId] 发起（UI 据此显示「我发布的」）。
   bool isCreatedBy(String userId) => creator.id == userId;
@@ -415,25 +420,25 @@ final class BuddyPost {
   String get seatsLabel => '$joinedCount/$capacity 人';
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'activity': activity.wire,
-    // 派生值：读回时被忽略，发出时与后端形状一致（规格 §5.3 响应含 `section`）。
-    'section': section.wire,
-    'status': status.wire,
-    'title': title,
-    'description': description,
-    'location': location,
-    'startsAt': isoUtc(startsAt),
-    'durationMin': durationMin,
-    'capacity': capacity,
-    'joinedCount': joinedCount,
-    'genderPreference': genderPreference.wire,
-    'tags': tags,
-    'minSkillLevel': minSkillLevel?.wire,
-    'autoCloseAt': autoCloseAt == null ? null : isoUtc(autoCloseAt!),
-    'creator': creator.toJson(),
-    'createdAt': createdAt == null ? null : isoUtc(createdAt!),
-  };
+        'id': id,
+        'activity': activity.wire,
+        // 派生值：读回时被忽略，发出时与后端形状一致（规格 §5.3 响应含 `section`）。
+        'section': section.wire,
+        'status': status.wire,
+        'title': title,
+        'description': description,
+        'location': location,
+        'startsAt': isoUtc(startsAt),
+        'durationMin': durationMin,
+        'capacity': capacity,
+        'joinedCount': joinedCount,
+        'genderPreference': genderPreference.wire,
+        'tags': tags,
+        'minSkillLevel': minSkillLevel?.wire,
+        'autoCloseAt': autoCloseAt == null ? null : isoUtc(autoCloseAt!),
+        'creator': creator.toJson(),
+        'createdAt': createdAt == null ? null : isoUtc(createdAt!),
+      };
 
   BuddyPost copyWith({
     String? id,
@@ -452,24 +457,25 @@ final class BuddyPost {
     BuddySkillLevel? minSkillLevel,
     DateTime? autoCloseAt,
     DateTime? createdAt,
-  }) => BuddyPost(
-    id: id ?? this.id,
-    activity: activity ?? this.activity,
-    title: title ?? this.title,
-    description: description ?? this.description,
-    location: location ?? this.location,
-    startsAt: startsAt ?? this.startsAt,
-    capacity: capacity ?? this.capacity,
-    joinedCount: joinedCount ?? this.joinedCount,
-    creator: creator ?? this.creator,
-    status: status ?? this.status,
-    genderPreference: genderPreference ?? this.genderPreference,
-    tags: tags ?? this.tags,
-    durationMin: durationMin ?? this.durationMin,
-    minSkillLevel: minSkillLevel ?? this.minSkillLevel,
-    autoCloseAt: autoCloseAt ?? this.autoCloseAt,
-    createdAt: createdAt ?? this.createdAt,
-  );
+  }) =>
+      BuddyPost(
+        id: id ?? this.id,
+        activity: activity ?? this.activity,
+        title: title ?? this.title,
+        description: description ?? this.description,
+        location: location ?? this.location,
+        startsAt: startsAt ?? this.startsAt,
+        capacity: capacity ?? this.capacity,
+        joinedCount: joinedCount ?? this.joinedCount,
+        creator: creator ?? this.creator,
+        status: status ?? this.status,
+        genderPreference: genderPreference ?? this.genderPreference,
+        tags: tags ?? this.tags,
+        durationMin: durationMin ?? this.durationMin,
+        minSkillLevel: minSkillLevel ?? this.minSkillLevel,
+        autoCloseAt: autoCloseAt ?? this.autoCloseAt,
+        createdAt: createdAt ?? this.createdAt,
+      );
 
   @override
   bool operator ==(Object other) => other is BuddyPost && other.id == id;
@@ -535,26 +541,30 @@ final class BuddyPostQuery {
     int? limit,
     BuddyPostSort? sort,
     bool clearCursor = false,
-  }) => BuddyPostQuery(
-    section: section ?? this.section,
-    activities: activities ?? this.activities,
-    tags: tags ?? this.tags,
-    startsAfter: startsAfter ?? this.startsAfter,
-    cursor: clearCursor ? null : (cursor ?? this.cursor),
-    limit: limit ?? this.limit,
-    sort: sort ?? this.sort,
-  );
+  }) =>
+      BuddyPostQuery(
+        section: section ?? this.section,
+        activities: activities ?? this.activities,
+        tags: tags ?? this.tags,
+        startsAfter: startsAfter ?? this.startsAfter,
+        cursor: clearCursor ? null : (cursor ?? this.cursor),
+        limit: limit ?? this.limit,
+        sort: sort ?? this.sort,
+      );
 
   Map<String, Object?> toQuery() => <String, Object?>{
-    if (section != null && section!.isMatchable) 'section': section!.wire,
-    if (activities.isNotEmpty)
-      'activity': activities.map((BuddyActivity value) => value.wire).join(','),
-    if (tags.isNotEmpty) 'tags': tags.join(','),
-    if (startsAfter != null) 'startsAfter': isoUtc(startsAfter!),
-    if (cursor != null && cursor!.isNotEmpty) 'cursor': cursor,
-    'limit': limit < 1 ? 1 : (limit > maxBuddyPageSize ? maxBuddyPageSize : limit),
-    'sort': sort.wire,
-  };
+        if (section != null && section!.isMatchable) 'section': section!.wire,
+        if (activities.isNotEmpty)
+          'activity':
+              activities.map((BuddyActivity value) => value.wire).join(','),
+        if (tags.isNotEmpty) 'tags': tags.join(','),
+        if (startsAfter != null) 'startsAfter': isoUtc(startsAfter!),
+        if (cursor != null && cursor!.isNotEmpty) 'cursor': cursor,
+        'limit': limit < 1
+            ? 1
+            : (limit > maxBuddyPageSize ? maxBuddyPageSize : limit),
+        'sort': sort.wire,
+      };
 }
 
 /// 游标分页的默认页大小与上限（规格 §5.3：`limit` 1–100，默认 20）。
@@ -590,7 +600,8 @@ String? buddyContactInfoKind(String text) {
 }
 
 final RegExp _buddyMobilePattern = RegExp(r'1[3-9]\d{9}');
-final RegExp _buddyWechatPattern = RegExp(r'([Vv]?信\s*[:：]?\s*\w+|\b[Vv]\s*[:：]\s*\w+)');
+final RegExp _buddyWechatPattern =
+    RegExp(r'([Vv]?信\s*[:：]?\s*\w+|\b[Vv]\s*[:：]\s*\w+)');
 final RegExp _buddyQqPattern = RegExp(r'(?:QQ|qq)\s*[:：]?\s*\d{5,12}');
 final RegExp _buddyEmailPattern = RegExp(r'[\w.+-]+@[\w-]+\.[\w.]+');
 
@@ -676,7 +687,8 @@ final class BuddyPostDraft {
   }
 
   String? get durationError {
-    if (durationMin < buddyDurationMinMin || durationMin > buddyDurationMinMax) {
+    if (durationMin < buddyDurationMinMin ||
+        durationMin > buddyDurationMinMax) {
       return '时长请填 $buddyDurationMinMin–$buddyDurationMinMax 分钟';
     }
     return null;
@@ -727,17 +739,17 @@ final class BuddyPostDraft {
   /// **不含 `creatorId`**：发起人由后端从 JWT 取，客户端不参与。
   /// **不含 `section`**：板块由 `activity` 派生。
   CreateBuddyPostCommand toCommand() => CreateBuddyPostCommand(
-    activity: activity,
-    title: title.trim(),
-    description: description.trim().isEmpty ? null : description.trim(),
-    location: location.trim(),
-    startsAt: startsAt!,
-    durationMin: durationMin,
-    capacity: capacity,
-    genderPreference: genderPreference,
-    tags: tags,
-    minSkillLevel: effectiveMinSkillLevel,
-  );
+        activity: activity,
+        title: title.trim(),
+        description: description.trim().isEmpty ? null : description.trim(),
+        location: location.trim(),
+        startsAt: startsAt!,
+        durationMin: durationMin,
+        capacity: capacity,
+        genderPreference: genderPreference,
+        tags: tags,
+        minSkillLevel: effectiveMinSkillLevel,
+      );
 
   BuddyPostDraft copyWith({
     BuddyActivity? activity,
@@ -751,22 +763,23 @@ final class BuddyPostDraft {
     List<String>? tags,
     BuddySkillLevel? minSkillLevel,
     bool clearMinSkillLevel = false,
-  }) => BuddyPostDraft(
-    activity: activity ?? this.activity,
-    title: title ?? this.title,
-    description: description ?? this.description,
-    location: location ?? this.location,
-    startsAt: startsAt ?? this.startsAt,
-    durationMin: durationMin ?? this.durationMin,
-    capacity: capacity ?? this.capacity,
-    genderPreference: genderPreference ?? this.genderPreference,
-    tags: tags ?? this.tags,
-    minSkillLevel: clearMinSkillLevel ? null : (minSkillLevel ?? this.minSkillLevel),
-  );
+  }) =>
+      BuddyPostDraft(
+        activity: activity ?? this.activity,
+        title: title ?? this.title,
+        description: description ?? this.description,
+        location: location ?? this.location,
+        startsAt: startsAt ?? this.startsAt,
+        durationMin: durationMin ?? this.durationMin,
+        capacity: capacity ?? this.capacity,
+        genderPreference: genderPreference ?? this.genderPreference,
+        tags: tags ?? this.tags,
+        minSkillLevel:
+            clearMinSkillLevel ? null : (minSkillLevel ?? this.minSkillLevel),
+      );
 
   @override
-  String toString() =>
-      'BuddyPostDraft(${activity.wire}, ${title.length}字, '
+  String toString() => 'BuddyPostDraft(${activity.wire}, ${title.length}字, '
       '${tags.length}标签, $capacity人)';
 }
 
@@ -798,17 +811,17 @@ final class CreateBuddyPostCommand {
   final BuddySkillLevel? minSkillLevel;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'activity': activity.wire,
-    'title': title,
-    'description': description,
-    'location': location,
-    // 契约 §6.1：时间是 ISO-8601 **UTC** 字符串。
-    // 规格 §5.4 的示例写的是 `+08:00` 偏移，指的是同一时刻，本端统一发 UTC `Z`。
-    'startsAt': isoUtc(startsAt),
-    'durationMin': durationMin,
-    'capacity': capacity,
-    'genderPreference': genderPreference.wire,
-    'tags': tags,
-    'minSkillLevel': minSkillLevel?.wire,
-  };
+        'activity': activity.wire,
+        'title': title,
+        'description': description,
+        'location': location,
+        // 契约 §6.1：时间是 ISO-8601 **UTC** 字符串。
+        // 规格 §5.4 的示例写的是 `+08:00` 偏移，指的是同一时刻，本端统一发 UTC `Z`。
+        'startsAt': isoUtc(startsAt),
+        'durationMin': durationMin,
+        'capacity': capacity,
+        'genderPreference': genderPreference.wire,
+        'tags': tags,
+        'minSkillLevel': minSkillLevel?.wire,
+      };
 }

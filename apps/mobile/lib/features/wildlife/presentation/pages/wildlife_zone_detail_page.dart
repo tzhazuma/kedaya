@@ -20,14 +20,16 @@ class WildlifeZoneDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<WildlifeZone> value = ref.watch(wildlifeZoneDetailProvider(zoneId));
+    final AsyncValue<WildlifeZone> value =
+        ref.watch(wildlifeZoneDetailProvider(zoneId));
     return KedaYaPageScaffold(
       title: '区域详情',
       padding: EdgeInsets.zero,
       child: value.when(
         data: (WildlifeZone zone) => _ZoneBody(zone: zone),
         loading: () => const KedaYaLoadingState(message: '正在加载区域…'),
-        error: (Object error, StackTrace stackTrace) => _buildError(context, ref, error),
+        error: (Object error, StackTrace stackTrace) =>
+            _buildError(context, ref, error),
       ),
     );
   }
@@ -56,7 +58,8 @@ class _ZoneBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final KedaYaColors colors = context.kedayaColors;
     final List<WildlifeSpecies> species =
-        ref.watch(wildlifeSpeciesProvider).valueOrNull ?? const <WildlifeSpecies>[];
+        ref.watch(wildlifeSpeciesProvider).valueOrNull ??
+            const <WildlifeSpecies>[];
 
     return ListView(
       padding: const EdgeInsets.all(KedaYaTokens.space4),

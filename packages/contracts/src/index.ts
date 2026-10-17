@@ -15,3 +15,4 @@ export * from './envelope';
 export * from './modules';
 export * from './buddy-tags';
 export * from './pages';
+export * from './contact-exchange';

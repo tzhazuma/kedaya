@@ -141,55 +141,57 @@ final class BuddyRuleCoefficient {
 /// `clamp(ruleScore, 0, 1)`（§3.3 末段）。
 const Map<BuddySection, List<BuddyRuleCoefficient>> buddyRuleCoefficients =
     <BuddySection, List<BuddyRuleCoefficient>>{
-      BuddySection.academic: <BuddyRuleCoefficient>[
-        BuddyRuleCoefficient(kind: BuddyRuleKind.sameDepartment, perHit: 0.4, cap: 0.4),
-        BuddyRuleCoefficient(
-          kind: BuddyRuleKind.commonInterestTags,
-          perHit: 0.10,
-          cap: 0.30,
-        ),
-        BuddyRuleCoefficient(
-          kind: BuddyRuleKind.commonActivityTags,
-          perHit: 0.1,
-          cap: 0.1,
-        ),
-      ],
-      BuddySection.daily: <BuddyRuleCoefficient>[
-        BuddyRuleCoefficient(
-          kind: BuddyRuleKind.commonInterestTags,
-          perHit: 0.15,
-          cap: 0.50,
-        ),
-        BuddyRuleCoefficient(
-          kind: BuddyRuleKind.availabilityOverlap,
-          perHit: 0.2,
-          cap: 0.2,
-        ),
-        BuddyRuleCoefficient(
-          kind: BuddyRuleKind.samePreferredArea,
-          perHit: 0.1,
-          cap: 0.1,
-        ),
-      ],
-      BuddySection.sport: <BuddyRuleCoefficient>[
-        BuddyRuleCoefficient(kind: BuddyRuleKind.sameSkillLevel, perHit: 0.3, cap: 0.3),
-        BuddyRuleCoefficient(
-          kind: BuddyRuleKind.commonActivityTags,
-          perHit: 0.15,
-          cap: 0.40,
-        ),
-        BuddyRuleCoefficient(
-          kind: BuddyRuleKind.commonInterestTags,
-          perHit: 0.10,
-          cap: 0.20,
-        ),
-        BuddyRuleCoefficient(
-          kind: BuddyRuleKind.samePreferredArea,
-          perHit: 0.1,
-          cap: 0.1,
-        ),
-      ],
-    };
+  BuddySection.academic: <BuddyRuleCoefficient>[
+    BuddyRuleCoefficient(
+        kind: BuddyRuleKind.sameDepartment, perHit: 0.4, cap: 0.4),
+    BuddyRuleCoefficient(
+      kind: BuddyRuleKind.commonInterestTags,
+      perHit: 0.10,
+      cap: 0.30,
+    ),
+    BuddyRuleCoefficient(
+      kind: BuddyRuleKind.commonActivityTags,
+      perHit: 0.1,
+      cap: 0.1,
+    ),
+  ],
+  BuddySection.daily: <BuddyRuleCoefficient>[
+    BuddyRuleCoefficient(
+      kind: BuddyRuleKind.commonInterestTags,
+      perHit: 0.15,
+      cap: 0.50,
+    ),
+    BuddyRuleCoefficient(
+      kind: BuddyRuleKind.availabilityOverlap,
+      perHit: 0.2,
+      cap: 0.2,
+    ),
+    BuddyRuleCoefficient(
+      kind: BuddyRuleKind.samePreferredArea,
+      perHit: 0.1,
+      cap: 0.1,
+    ),
+  ],
+  BuddySection.sport: <BuddyRuleCoefficient>[
+    BuddyRuleCoefficient(
+        kind: BuddyRuleKind.sameSkillLevel, perHit: 0.3, cap: 0.3),
+    BuddyRuleCoefficient(
+      kind: BuddyRuleKind.commonActivityTags,
+      perHit: 0.15,
+      cap: 0.40,
+    ),
+    BuddyRuleCoefficient(
+      kind: BuddyRuleKind.commonInterestTags,
+      perHit: 0.10,
+      cap: 0.20,
+    ),
+    BuddyRuleCoefficient(
+      kind: BuddyRuleKind.samePreferredArea,
+      perHit: 0.1,
+      cap: 0.1,
+    ),
+  ],
+};
 
 /// 取某板块的系数行（`unknown` 板块没有任何规则 → 空列表）。
 List<BuddyRuleCoefficient> buddyCoefficientsFor(BuddySection section) =>
@@ -265,7 +267,8 @@ bool buddyAvailabilityIntersects(
   for (final AvailabilitySlot left in a) {
     for (final AvailabilitySlot right in b) {
       if (left.dow != right.dow) continue;
-      if (left.startMin < right.endMin && right.startMin < left.endMin) return true;
+      if (left.startMin < right.endMin && right.startMin < left.endMin)
+        return true;
     }
   }
   return false;
@@ -298,13 +301,13 @@ final class BuddyRuleSignals {
 
   /// 某条规则的"命中数"（`0` 表示未命中）。
   int hitsFor(BuddyRuleKind kind) => switch (kind) {
-    BuddyRuleKind.sameDepartment => sameDepartment ? 1 : 0,
-    BuddyRuleKind.commonInterestTags => commonInterestTags.length,
-    BuddyRuleKind.commonActivityTags => commonActivityTags.length,
-    BuddyRuleKind.availabilityOverlap => availabilityOverlaps ? 1 : 0,
-    BuddyRuleKind.samePreferredArea => samePreferredArea ? 1 : 0,
-    BuddyRuleKind.sameSkillLevel => sameSkillLevel ? 1 : 0,
-  };
+        BuddyRuleKind.sameDepartment => sameDepartment ? 1 : 0,
+        BuddyRuleKind.commonInterestTags => commonInterestTags.length,
+        BuddyRuleKind.commonActivityTags => commonActivityTags.length,
+        BuddyRuleKind.availabilityOverlap => availabilityOverlaps ? 1 : 0,
+        BuddyRuleKind.samePreferredArea => samePreferredArea ? 1 : 0,
+        BuddyRuleKind.sameSkillLevel => sameSkillLevel ? 1 : 0,
+      };
 }
 
 /// `ruleScoreFor` 的结果：分数 + 信号 + 中文理由。
@@ -340,19 +343,22 @@ BuddyRuleSignals buddyRuleSignalsFor({
   required BuddyPost post,
   required BuddyProfile me,
   required BuddyProfile creatorProfile,
-}) => BuddyRuleSignals(
-  sameDepartment: me.department != null &&
-      me.department!.trim().isNotEmpty &&
-      me.department!.trim() == creatorProfile.department?.trim(),
-  commonInterestTags: _commonTags(me.interestTags, creatorProfile.interestTags),
-  commonActivityTags: _commonTags(me.activityTags, post.tags),
-  availabilityOverlaps:
-      post.durationMin != null &&
-      buddyOverlapsAvailability(me.availability, post.startsAt, post.durationMin!),
-  samePreferredArea:
-      _commonTags(me.preferredAreas, creatorProfile.preferredAreas).isNotEmpty,
-  sameSkillLevel: me.skillLevel == creatorProfile.skillLevel,
-);
+}) =>
+    BuddyRuleSignals(
+      sameDepartment: me.department != null &&
+          me.department!.trim().isNotEmpty &&
+          me.department!.trim() == creatorProfile.department?.trim(),
+      commonInterestTags:
+          _commonTags(me.interestTags, creatorProfile.interestTags),
+      commonActivityTags: _commonTags(me.activityTags, post.tags),
+      availabilityOverlaps: post.durationMin != null &&
+          buddyOverlapsAvailability(
+              me.availability, post.startsAt, post.durationMin!),
+      samePreferredArea:
+          _commonTags(me.preferredAreas, creatorProfile.preferredAreas)
+              .isNotEmpty,
+      sameSkillLevel: me.skillLevel == creatorProfile.skillLevel,
+    );
 
 /// `ruleScoreFor(section, me, post, creatorProfile)` —— 规格 §3.3 的软打分。
 ///
@@ -423,16 +429,17 @@ String buddyExplainMatch({
   return reasons.join('、');
 }
 
-String _reasonTextFor(BuddyRuleKind kind, BuddyRuleSignals signals) => switch (kind) {
-  BuddyRuleKind.sameDepartment => '同院系',
-  BuddyRuleKind.commonInterestTags =>
-    '共同兴趣：${_tagLabels(signals.commonInterestTags)}',
-  BuddyRuleKind.commonActivityTags =>
-    '共同活动：${_tagLabels(signals.commonActivityTags)}',
-  BuddyRuleKind.availabilityOverlap => '时间合适',
-  BuddyRuleKind.samePreferredArea => '常去同一区域',
-  BuddyRuleKind.sameSkillLevel => '运动水平相同',
-};
+String _reasonTextFor(BuddyRuleKind kind, BuddyRuleSignals signals) =>
+    switch (kind) {
+      BuddyRuleKind.sameDepartment => '同院系',
+      BuddyRuleKind.commonInterestTags =>
+        '共同兴趣：${_tagLabels(signals.commonInterestTags)}',
+      BuddyRuleKind.commonActivityTags =>
+        '共同活动：${_tagLabels(signals.commonActivityTags)}',
+      BuddyRuleKind.availabilityOverlap => '时间合适',
+      BuddyRuleKind.samePreferredArea => '常去同一区域',
+      BuddyRuleKind.sameSkillLevel => '运动水平相同',
+    };
 
 /// key → 显示名，最多 [buddyReasonTagMaxCount] 个，`,` 分隔（§5.7 的 `A,B,C`）。
 String _tagLabels(List<String> keys) {
@@ -467,7 +474,8 @@ enum BuddyMatchMode {
   static BuddyMatchMode fromWire(String wire) {
     final String normalized = wire.trim().toLowerCase();
     for (final BuddyMatchMode value in BuddyMatchMode.values) {
-      if (value != BuddyMatchMode.unknown && value.wire == normalized) return value;
+      if (value != BuddyMatchMode.unknown && value.wire == normalized)
+        return value;
     }
     return BuddyMatchMode.unknown;
   }
@@ -477,11 +485,11 @@ enum BuddyMatchMode {
 
   /// 诚实的展示文案。**`rule` / `unknown` 下不得声称"智能推荐"**。
   String get notice => switch (this) {
-    BuddyMatchMode.vector => '为你智能推荐',
-    BuddyMatchMode.hash => '按标签与时段推荐（当前为哈希降级，非语义模型）',
-    BuddyMatchMode.rule => '按标签与时段排序（当前无向量能力，不是智能推荐）',
-    BuddyMatchMode.unknown => '推荐模式未知，结果仅供参考',
-  };
+        BuddyMatchMode.vector => '为你智能推荐',
+        BuddyMatchMode.hash => '按标签与时段推荐（当前为哈希降级，非语义模型）',
+        BuddyMatchMode.rule => '按标签与时段排序（当前无向量能力，不是智能推荐）',
+        BuddyMatchMode.unknown => '推荐模式未知，结果仅供参考',
+      };
 }
 
 /// 融合公式（规格 §3.4）。
@@ -500,7 +508,8 @@ double buddyFinalScore({
   final double clampedRule = buddyClamp01(ruleScore);
   final double fused = switch (mode) {
     BuddyMatchMode.rule || BuddyMatchMode.unknown => clampedRule,
-    BuddyMatchMode.vector || BuddyMatchMode.hash =>
+    BuddyMatchMode.vector ||
+    BuddyMatchMode.hash =>
       buddyClamp01(baseScore) * 0.70 + clampedRule * 0.30,
   };
   return buddyClamp01(fused + feedbackAdjustment);
@@ -562,7 +571,8 @@ enum BuddyMatchFeedbackAction {
 
   static BuddyMatchFeedbackAction? tryFromWire(String wire) {
     final String normalized = wire.trim().toLowerCase();
-    for (final BuddyMatchFeedbackAction value in BuddyMatchFeedbackAction.values) {
+    for (final BuddyMatchFeedbackAction value
+        in BuddyMatchFeedbackAction.values) {
       if (value.wire == normalized) return value;
     }
     return null;
@@ -572,10 +582,10 @@ enum BuddyMatchFeedbackAction {
 /// 反馈权重（规格 §3.6，对齐 `matching.py:367-371`）。
 const Map<BuddyMatchFeedbackAction, double> buddyFeedbackActionWeights =
     <BuddyMatchFeedbackAction, double>{
-      BuddyMatchFeedbackAction.like: 0.20,
-      BuddyMatchFeedbackAction.dislike: -0.30,
-      BuddyMatchFeedbackAction.skip: -0.05,
-    };
+  BuddyMatchFeedbackAction.like: 0.20,
+  BuddyMatchFeedbackAction.dislike: -0.30,
+  BuddyMatchFeedbackAction.skip: -0.05,
+};
 
 /// 半衰期（天）（规格 §3.6，对齐 `matching.py:366`）。
 const double buddyFeedbackHalflifeDays = 30;
@@ -597,16 +607,19 @@ final class BuddyMatchFeedback {
     required this.createdAt,
   });
 
-  factory BuddyMatchFeedback.fromJson(Map<String, Object?> json) => BuddyMatchFeedback(
-    userId: readStringOr(json, 'userId', ''),
-    targetPostId: readString(json, 'targetPostId'),
-    // 未登记板块（含 `dating`）收敛为 `unknown`：它**不参与任何板块的反馈隔离**，
-    // 因此永远不会被错误地应用到某个真实板块上。
-    section: BuddySection.fromWire(readStringOr(json, 'section', 'unknown')),
-    action: BuddyMatchFeedbackAction.tryFromWire(readStringOr(json, 'action', 'skip')) ??
-        BuddyMatchFeedbackAction.skip,
-    createdAt: readDateTime(json, 'createdAt'),
-  );
+  factory BuddyMatchFeedback.fromJson(Map<String, Object?> json) =>
+      BuddyMatchFeedback(
+        userId: readStringOr(json, 'userId', ''),
+        targetPostId: readString(json, 'targetPostId'),
+        // 未登记板块（含 `dating`）收敛为 `unknown`：它**不参与任何板块的反馈隔离**，
+        // 因此永远不会被错误地应用到某个真实板块上。
+        section:
+            BuddySection.fromWire(readStringOr(json, 'section', 'unknown')),
+        action: BuddyMatchFeedbackAction.tryFromWire(
+                readStringOr(json, 'action', 'skip')) ??
+            BuddyMatchFeedbackAction.skip,
+        createdAt: readDateTime(json, 'createdAt'),
+      );
 
   final String userId;
   final String targetPostId;
@@ -619,12 +632,12 @@ final class BuddyMatchFeedback {
   final DateTime createdAt;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'userId': userId,
-    'targetPostId': targetPostId,
-    'section': section.wire,
-    'action': action.wire,
-    'createdAt': isoUtc(createdAt),
-  };
+        'userId': userId,
+        'targetPostId': targetPostId,
+        'section': section.wire,
+        'action': action.wire,
+        'createdAt': isoUtc(createdAt),
+      };
 
   @override
   String toString() =>
@@ -649,7 +662,8 @@ Map<String, double> buddyFeedbackAdjustment(
   for (final BuddyMatchFeedback feedback in feedbacks) {
     final double delta = buddyFeedbackActionWeights[feedback.action] ?? 0;
     final double rawDays =
-        now.toUtc().difference(feedback.createdAt.toUtc()).inMilliseconds / 86400000.0;
+        now.toUtc().difference(feedback.createdAt.toUtc()).inMilliseconds /
+            86400000.0;
     final double days = rawDays < 0 ? 0 : rawDays;
     final double decay = buddyExpNeg(days / buddyFeedbackHalflifeDays);
     out[feedback.targetPostId] = delta * decay;
@@ -676,12 +690,12 @@ final class BuddyRecommendQuery {
   bool get isSectionValid => section.isMatchable;
 
   Map<String, Object?> toQuery() => <String, Object?>{
-    'section': section.wire,
-    'limit': limit < 1
-        ? 1
-        : (limit > maxBuddyRecommendLimit ? maxBuddyRecommendLimit : limit),
-    if (cursor != null && cursor!.isNotEmpty) 'cursor': cursor,
-  };
+        'section': section.wire,
+        'limit': limit < 1
+            ? 1
+            : (limit > maxBuddyRecommendLimit ? maxBuddyRecommendLimit : limit),
+        if (cursor != null && cursor!.isNotEmpty) 'cursor': cursor,
+      };
 }
 
 /// 一条推荐：帖子 + 分数 + **中文理由**（规格 §5.7）。
@@ -718,10 +732,10 @@ final class BuddyRecommendation {
   int get percent => (buddyClamp01(score) * 100).round();
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'post': post.toJson(),
-    'score': score,
-    'reason': reason,
-  };
+        'post': post.toJson(),
+        'score': score,
+        'reason': reason,
+      };
 
   @override
   String toString() =>
@@ -740,7 +754,8 @@ final class BuddyRecommendationPage {
     final String mode = readStringOr(json, 'matchMode', 'rule');
     final BuddyMatchMode parsed = BuddyMatchMode.fromWire(mode);
     final List<BuddyRecommendation> items = readListOrEmpty(json, 'items')
-        .where((Object? item) => item is Map<Object?, Object?> || item is Map<String, Object?>)
+        .where((Object? item) =>
+            item is Map<Object?, Object?> || item is Map<String, Object?>)
         .map(
           (Object? item) => BuddyRecommendation.fromJson(
             requireJsonMap(item, what: 'recommendations[] 元素'),
@@ -749,7 +764,8 @@ final class BuddyRecommendationPage {
         .toList(growable: false);
     return BuddyRecommendationPage(
       items: items,
-      matchMode: parsed == BuddyMatchMode.unknown ? BuddyMatchMode.rule : parsed,
+      matchMode:
+          parsed == BuddyMatchMode.unknown ? BuddyMatchMode.rule : parsed,
       nextCursor: readStringOrNull(json, 'nextCursor'),
     );
   }
@@ -763,10 +779,12 @@ final class BuddyRecommendationPage {
   bool get hasMore => nextCursor != null && nextCursor!.isNotEmpty;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'matchMode': matchMode.wire,
-    'items': items.map((BuddyRecommendation item) => item.toJson()).toList(growable: false),
-    'nextCursor': nextCursor,
-  };
+        'matchMode': matchMode.wire,
+        'items': items
+            .map((BuddyRecommendation item) => item.toJson())
+            .toList(growable: false),
+        'nextCursor': nextCursor,
+      };
 
   @override
   String toString() =>

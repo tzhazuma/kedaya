@@ -131,7 +131,10 @@ void main() {
           'coordinates': <Object?>[
             <Object?>[121.5900, 31.1780],
             // 向北约 100 m
-            <Object?>[121.5900, 31.1780 + 100 / CampusProjection.defaultMetersPerDegreeLat],
+            <Object?>[
+              121.5900,
+              31.1780 + 100 / CampusProjection.defaultMetersPerDegreeLat
+            ],
           ],
         },
       });
@@ -147,7 +150,8 @@ void main() {
       expect(polylineLengthMeters(path), closeTo(200, 4));
       expect(polylineLengthMeters(const <Wgs84Point>[]), 0);
       expect(
-        polylineLengthMeters(const <Wgs84Point>[Wgs84Point(lat: 31.178, lng: 121.59)]),
+        polylineLengthMeters(
+            const <Wgs84Point>[Wgs84Point(lat: 31.178, lng: 121.59)]),
         0,
       );
     });

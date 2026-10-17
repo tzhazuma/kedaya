@@ -127,16 +127,18 @@ void main() {
   group('BindCredential：类型上就没有口令变体', () {
     test('密封类型只有两个子类（穷尽 switch 能编译 = 没有第三个变体）', () {
       String kindOf(BindCredential credential) => switch (credential) {
-        OAuthCodeCredential() => OAuthCodeCredential.kind,
-        OpenIdCredential() => OpenIdCredential.kind,
-      };
+            OAuthCodeCredential() => OAuthCodeCredential.kind,
+            OpenIdCredential() => OpenIdCredential.kind,
+          };
       expect(kindOf(const OAuthCodeCredential(code: 'c')), 'oauth_code');
       expect(kindOf(const OpenIdCredential(openId: 'o')), 'openid');
     });
 
     test('凭据的 toString / redactedLabel 都不含凭据值', () {
-      const OAuthCodeCredential oauth = OAuthCodeCredential(code: 'code-secret-1');
-      const OpenIdCredential openId = OpenIdCredential(openId: 'openid-secret-2');
+      const OAuthCodeCredential oauth =
+          OAuthCodeCredential(code: 'code-secret-1');
+      const OpenIdCredential openId =
+          OpenIdCredential(openId: 'openid-secret-2');
 
       expect(oauth.toString(), isNot(contains('code-secret-1')));
       expect(oauth.redactedLabel, isNot(contains('code-secret-1')));
@@ -146,12 +148,14 @@ void main() {
     });
 
     test('toWire() 是唯一携带凭据值的出口（形状与规格 §8.5 对齐）', () {
-      const OAuthCodeCredential oauth = OAuthCodeCredential(code: 'code-secret-1');
+      const OAuthCodeCredential oauth =
+          OAuthCodeCredential(code: 'code-secret-1');
       expect(oauth.toWire(), <String, Object?>{
         'kind': 'oauth_code',
         'code': 'code-secret-1',
       });
-      const OpenIdCredential openId = OpenIdCredential(openId: 'openid-secret-2');
+      const OpenIdCredential openId =
+          OpenIdCredential(openId: 'openid-secret-2');
       expect(openId.toWire(), <String, Object?>{
         'kind': 'openid',
         'openId': 'openid-secret-2',
@@ -193,12 +197,14 @@ void main() {
         code: 'X',
         expiresAt: expiresAt,
       );
-      expect(code.isExpiredAt(expiresAt.subtract(const Duration(seconds: 1))), isFalse);
+      expect(code.isExpiredAt(expiresAt.subtract(const Duration(seconds: 1))),
+          isFalse);
       expect(code.isExpiredAt(expiresAt), isTrue);
     });
 
     test('卡号本地兜底脱敏：只留末 4 位', () {
-      expect(CampusCardAccount.maskCardNumber('6225880137771234'), endsWith('1234'));
+      expect(CampusCardAccount.maskCardNumber('6225880137771234'),
+          endsWith('1234'));
       expect(
         CampusCardAccount.maskCardNumber('6225880137771234'),
         isNot(contains('622588013777')),
@@ -276,7 +282,8 @@ void main() {
       expect(fields, <String>{'status', 'entry', 'problem'});
       for (final String name in fields) {
         expect(
-          RegExp(r'ticket|url|handoff|code', caseSensitive: false).hasMatch(name),
+          RegExp(r'ticket|url|handoff|code', caseSensitive: false)
+              .hasMatch(name),
           isFalse,
           reason: '字段 "$name" 疑似携带票据 / 中转 URL',
         );

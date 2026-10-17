@@ -19,9 +19,9 @@ final class RemoteForumRepository implements ForumPort {
 
   @override
   Future<Result<List<ForumBoard>>> listBoards() => _api.send<List<ForumBoard>>(
-    const ApiRequest(path: 'forum/boards', method: ApiMethod.get),
-    _decodeBoards,
-  );
+        const ApiRequest(path: 'forum/boards', method: ApiMethod.get),
+        _decodeBoards,
+      );
 
   @override
   Future<Result<Page<ForumPost>>> listPosts(ForumPostQuery query) =>
@@ -35,9 +35,9 @@ final class RemoteForumRepository implements ForumPort {
 
   @override
   Future<Result<ForumPost>> getPost(String id) => _api.send<ForumPost>(
-    ApiRequest(path: '$_base/$id', method: ApiMethod.get),
-    _decodePost,
-  );
+        ApiRequest(path: '$_base/$id', method: ApiMethod.get),
+        _decodePost,
+      );
 
   @override
   Future<Result<Page<ForumReply>>> listReplies(ForumReplyQuery query) =>
@@ -75,7 +75,8 @@ final class RemoteForumRepository implements ForumPort {
           body: command.toJson(),
           idempotencyKey: newIdempotencyKey(),
         ),
-        (Object? data) => ForumReply.fromJson(requireJsonMap(data, what: 'forum reply')),
+        (Object? data) =>
+            ForumReply.fromJson(requireJsonMap(data, what: 'forum reply')),
       );
 
   @override
@@ -87,16 +88,18 @@ final class RemoteForumRepository implements ForumPort {
           body: command.toJson(),
           idempotencyKey: newIdempotencyKey(),
         ),
-        (Object? data) => ForumReport.fromJson(requireJsonMap(data, what: 'forum report')),
+        (Object? data) =>
+            ForumReport.fromJson(requireJsonMap(data, what: 'forum report')),
       );
 
   ForumPost _decodePost(Object? data) =>
       ForumPost.fromJson(requireJsonMap(data, what: 'forum post'));
 
   List<ForumBoard> _decodeBoards(Object? data) => readListOrEmpty(
-    requireJsonMap(data, what: 'forum boards'),
-    'items',
-  )
-      .map((Object? item) => ForumBoard.fromJson(requireJsonMap(item, what: 'forum board')))
-      .toList(growable: false);
+        requireJsonMap(data, what: 'forum boards'),
+        'items',
+      )
+          .map((Object? item) =>
+              ForumBoard.fromJson(requireJsonMap(item, what: 'forum board')))
+          .toList(growable: false);
 }

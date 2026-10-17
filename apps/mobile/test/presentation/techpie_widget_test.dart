@@ -29,18 +29,18 @@ void main() {
   final DateTime base = DateTime.utc(2026, 10, 17, 2);
 
   AuthSession session() => AuthSession(
-    user: const User(
-      userId: 'u-1001',
-      studentId: '20240001',
-      displayName: '可达鸭测试账号',
-      department: '信息科学与技术学院',
-      email: 'test@shanghaitech.edu.cn',
-    ),
-    accessToken: 'access-token',
-    refreshToken: 'refresh-token',
-    issuedAt: base,
-    expiresAt: base.add(const Duration(hours: 2)),
-  );
+        user: const User(
+          userId: 'u-1001',
+          studentId: '20240001',
+          displayName: '可达鸭测试账号',
+          department: '信息科学与技术学院',
+          email: 'test@shanghaitech.edu.cn',
+        ),
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        issuedAt: base,
+        expiresAt: base.add(const Duration(hours: 2)),
+      );
 
   Future<void> pumpPage(
     WidgetTester tester,
@@ -160,7 +160,8 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: KedaYaTheme.light(),
-          home: Scaffold(body: CampusCapabilityTile(capability: notImplemented)),
+          home:
+              Scaffold(body: CampusCapabilityTile(capability: notImplemented)),
         ),
       );
       await tester.pumpAndSettle();
@@ -267,7 +268,8 @@ void main() {
     });
 
     testWidgets('入口页在暗色主题下同样可用', (tester) async {
-      await pumpPage(tester, const TechpieHomePage(), theme: KedaYaTheme.dark());
+      await pumpPage(tester, const TechpieHomePage(),
+          theme: KedaYaTheme.dark());
       expect(tester.takeException(), isNull);
     });
   });

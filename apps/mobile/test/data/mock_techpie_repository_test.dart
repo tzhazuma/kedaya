@@ -23,11 +23,12 @@ void main() {
     MockControls? controls,
     DateTime Function()? clock,
     bool renewSupported = true,
-  }) => MockTechpieRepository(
-    controls: controls ?? MockControls(latency: Duration.zero),
-    clock: clock ?? () => base,
-    renewSupported: renewSupported,
-  );
+  }) =>
+      MockTechpieRepository(
+        controls: controls ?? MockControls(latency: Duration.zero),
+        clock: clock ?? () => base,
+        renewSupported: renewSupported,
+      );
 
   String? reasonOf(Result<Object?> result) {
     final Object? details = result.errorOrNull?.details;
@@ -39,14 +40,22 @@ void main() {
     test('返回种子绑定，按 id 稳定排序，且只含元数据', () async {
       final Result<List<TechpieLink>> result = await repo().listLinks();
       final List<TechpieLink> links = result.unwrap;
-      expect(links.map((TechpieLink link) => link.id).toList(), <String>['tp-1001', 'tp-1002']);
+      expect(links.map((TechpieLink link) => link.id).toList(),
+          <String>['tp-1001', 'tp-1002']);
       expect(links.first.platform, CampusPlatform.cpdaily);
       expect(links.first.status, CampusBindingStatus.linked);
       expect(links.last.status, CampusBindingStatus.expired);
       for (final TechpieLink link in links) {
         final String dump = link.toJson().toString().toLowerCase();
-        for (final String token in <String>['cookie', 'session', 'tgc', 'ticket', 'tenant']) {
-          expect(dump.contains(token), isFalse, reason: '${link.id} 泄漏了 "$token"');
+        for (final String token in <String>[
+          'cookie',
+          'session',
+          'tgc',
+          'ticket',
+          'tenant'
+        ]) {
+          expect(dump.contains(token), isFalse,
+              reason: '${link.id} 泄漏了 "$token"');
         }
       }
     });
@@ -69,7 +78,7 @@ void main() {
     test('cas 不是可绑定的校园系统 → VALIDATION_FAILED / UNKNOWN_PLATFORM', () async {
       final Result<TechpieLink> result = await repo().bind(
         CampusPlatform.cas,
-        const OAuthCodeCredential(code: 'c'),
+        credential: const OAuthCodeCredential(code: 'c'),
       );
       expect(result.errorOrNull?.code, ApiErrorCode.validationFailed);
       expect(reasonOf(result), 'UNKNOWN_PLATFORM');
@@ -78,7 +87,7 @@ void main() {
     test('凭据形态不完整 → VALIDATION_FAILED（错误信息里也只有脱敏标签）', () async {
       final Result<TechpieLink> result = await repo().bind(
         CampusPlatform.egate,
-        const OAuthCodeCredential(code: '   '),
+        credential: const OAuthCodeCredential(code: '   '),
       );
       expect(result.errorOrNull?.code, ApiErrorCode.validationFailed);
       expect(reasonOf(result), 'CREDENTIAL_EMPTY');
@@ -88,7 +97,7 @@ void main() {
     test('已绑定 → CONFLICT / ALREADY_LINKED', () async {
       final Result<TechpieLink> result = await repo().bind(
         CampusPlatform.cpdaily,
-        const OAuthCodeCredential(code: 'code-secret'),
+        credential: const OAuthCodeCredential(code: 'code-secret'),
       );
       expect(result.errorOrNull?.code, ApiErrorCode.conflict);
       expect(reasonOf(result), 'ALREADY_LINKED');
@@ -97,7 +106,7 @@ void main() {
     test('已过期的绑定可以重新绑定，复用同一 id，状态回到 LINKED', () async {
       final Result<TechpieLink> result = await repo().bind(
         CampusPlatform.egate,
-        const OAuthCodeCredential(code: 'code-secret'),
+        credential: const OAuthCodeCredential(code: 'code-secret'),
       );
       final TechpieLink link = result.unwrap;
       expect(link.id, 'tp-1002');
@@ -109,11 +118,11 @@ void main() {
       final MockTechpieRepository repository = repo();
       await repository.bind(
         CampusPlatform.egate,
-        const OAuthCodeCredential(code: 'super-secret-code-xyz'),
+        credential: const OAuthCodeCredential(code: 'super-secret-code-xyz'),
       );
       await repository.bind(
         CampusPlatform.techpie,
-        const OpenIdCredential(openId: 'super-secret-openid-xyz'),
+        credential: const OpenIdCredential(openId: 'super-secret-openid-xyz'),
       );
       final String dump = repository.debugDumpStrings().join('|');
       expect(dump, isNot(contains('super-secret-code-xyz')));
@@ -139,7 +148,8 @@ void main() {
     });
 
     test('F3：上游没有续期能力 → CONFLICT / RENEW_NOT_SUPPORTED（不谎称已续期）', () async {
-      final Result<TechpieLink> result = await repo(renewSupported: false).renew('tp-1001');
+      final Result<TechpieLink> result =
+          await repo(renewSupported: false).renew('tp-1001');
       expect(result.errorOrNull?.code, ApiErrorCode.conflict);
       expect(reasonOf(result), 'RENEW_NOT_SUPPORTED');
       expect(
@@ -160,18 +170,19 @@ void main() {
         controls: MockControls(latency: Duration.zero),
         clock: () => base,
         serverStates: const <String, CampusCapabilityState>{
-          'techpie.webview': CampusCapabilityState.upstreamUnavailable,
+          'webview.ecourse': CampusCapabilityState.upstreamUnavailable,
         },
       );
-      final List<CampusCapability> items = (await repository.listCapabilities()).unwrap;
+      final List<CampusCapability> items =
+          (await repository.listCapabilities()).unwrap;
       final CampusCapability webview = items.firstWhere(
-        (CampusCapability item) => item.id == 'techpie.webview',
+        (CampusCapability item) => item.id == 'webview.ecourse',
       );
       expect(webview.state, CampusCapabilityState.upstreamUnavailable);
       expect(webview.phase, CampusCapabilityPhase.phase0);
       // Phase 1 的项即使被服务端标成 available 也仍然不是 Phase 0。
       final CampusCapability timetable = items.firstWhere(
-        (CampusCapability item) => item.id == 'schedule.timetable',
+        (CampusCapability item) => item.id == 'schedule.courses',
       );
       expect(timetable.phase, CampusCapabilityPhase.phase1);
       expect(timetable.phase.isImplemented, isFalse);
@@ -209,7 +220,8 @@ void main() {
 
     test('不传 platform（W4 直连）→ **不要求绑定**也能拿到票据', () async {
       final MockTechpieRepository repository = repo();
-      final Result<WebViewTicket> result = await repository.createWebViewSession(
+      final Result<WebViewTicket> result =
+          await repository.createWebViewSession(
         targetUrl: 'https://ecourse.shanghaitech.edu.cn/',
       );
       final WebViewTicket ticket = result.unwrap;
@@ -224,7 +236,8 @@ void main() {
       final WebViewTicket ticket = (await repo().createWebViewSession(
         platform: CampusPlatform.cpdaily,
         targetUrl: 'https://ecourse.shanghaitech.edu.cn/',
-      )).unwrap;
+      ))
+          .unwrap;
       expect(ticket.expiresInSec, 30);
       expect(ticket.platform, CampusPlatform.cpdaily);
       expect(ticket.ticket, isNotEmpty);
@@ -238,14 +251,17 @@ void main() {
       final WebViewTicket ticket = (await repository.createWebViewSession(
         platform: CampusPlatform.cpdaily,
         targetUrl: 'https://ecourse.shanghaitech.edu.cn/',
-      )).unwrap;
+      ))
+          .unwrap;
 
-      final Result<WebViewHandoff> first = await repository.redeemWebViewTicket(ticket);
+      final Result<WebViewHandoff> first =
+          await repository.redeemWebViewTicket(ticket);
       expect(first.isOk, isTrue);
       expect(first.unwrap.targetUrl, 'https://ecourse.shanghaitech.edu.cn/');
       expect(first.unwrap.toString(), isNot(contains(ticket.ticket)));
 
-      final Result<WebViewHandoff> second = await repository.redeemWebViewTicket(ticket);
+      final Result<WebViewHandoff> second =
+          await repository.redeemWebViewTicket(ticket);
       expect(second.errorOrNull?.code, ApiErrorCode.conflict);
       expect(reasonOf(second), 'TICKET_ALREADY_USED');
       expect(repository.debugConsumedTicketCount, 1);
@@ -258,7 +274,8 @@ void main() {
         targetUrl: 'https://ecourse.shanghaitech.edu.cn/',
         platform: CampusPlatform.cpdaily,
       );
-      final Result<WebViewHandoff> result = await repo().redeemWebViewTicket(forged);
+      final Result<WebViewHandoff> result =
+          await repo().redeemWebViewTicket(forged);
       expect(result.errorOrNull?.code, ApiErrorCode.notFound);
       expect(reasonOf(result), 'TICKET_NOT_FOUND');
     });
@@ -269,10 +286,12 @@ void main() {
       final WebViewTicket ticket = (await repository.createWebViewSession(
         platform: CampusPlatform.cpdaily,
         targetUrl: 'https://ecourse.shanghaitech.edu.cn/',
-      )).unwrap;
+      ))
+          .unwrap;
 
       now = base.add(const Duration(seconds: 31));
-      final Result<WebViewHandoff> result = await repository.redeemWebViewTicket(ticket);
+      final Result<WebViewHandoff> result =
+          await repository.redeemWebViewTicket(ticket);
       expect(result.errorOrNull?.code, ApiErrorCode.conflict);
       expect(reasonOf(result), 'TICKET_EXPIRED');
     });

@@ -12,13 +12,15 @@ import 'json_read.dart';
 /// 对普通用户不可见。追溯依赖后端持有的 匿名 id ↔ 实名 id 映射表，
 /// **客户端永远不持有该映射**，因此客户端也无法反推匿名背后是谁。
 final class AnonymousIdentity {
-  const AnonymousIdentity({required this.id, required this.alias, this.boardId});
+  const AnonymousIdentity(
+      {required this.id, required this.alias, this.boardId});
 
-  factory AnonymousIdentity.fromJson(Map<String, Object?> json) => AnonymousIdentity(
-    id: readString(json, 'id'),
-    alias: readString(json, 'alias'),
-    boardId: readStringOrNull(json, 'boardId'),
-  );
+  factory AnonymousIdentity.fromJson(Map<String, Object?> json) =>
+      AnonymousIdentity(
+        id: readString(json, 'id'),
+        alias: readString(json, 'alias'),
+        boardId: readStringOrNull(json, 'boardId'),
+      );
 
   /// 匿名身份 id。由后端在**另一个命名空间**生成，与实名 `userId` 不可互推。
   final String id;
@@ -37,7 +39,8 @@ final class AnonymousIdentity {
   /// 是哪个实名用户 —— 这正是"解耦"在 API 形状上的体现。
   /// [sequence] 由后端按 (用户, 版块) 稳定分配，所以同一人在同一版块的匿名身份
   /// 是稳定的（版主可追溯），但跨版块不相关。
-  factory AnonymousIdentity.derive({required String boardId, required int sequence}) =>
+  factory AnonymousIdentity.derive(
+          {required String boardId, required int sequence}) =>
       AnonymousIdentity(
         id: 'anon-$boardId-$sequence',
         alias: '匿名鸭 #$sequence',
@@ -45,13 +48,14 @@ final class AnonymousIdentity {
       );
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'alias': alias,
-    if (boardId != null) 'boardId': boardId,
-  };
+        'id': id,
+        'alias': alias,
+        if (boardId != null) 'boardId': boardId,
+      };
 
   @override
-  bool operator ==(Object other) => other is AnonymousIdentity && other.id == id;
+  bool operator ==(Object other) =>
+      other is AnonymousIdentity && other.id == id;
 
   @override
   int get hashCode => id.hashCode;

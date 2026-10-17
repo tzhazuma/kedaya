@@ -24,3 +24,6 @@ process.env.WELLBEING_CRISIS_HOTLINE ??= '021-12320-5';
 // wildlife：位置模糊化密钥（≥32 字节）。缺失时 WildlifeModule **故意**启动失败
 // （规格 §9.7 / T14）—— 那条行为由 wildlife 自己的测试显式清空变量来验证。
 process.env.WILDLIFE_FUZZ_SECRET ??= 'test-wildlife-fuzz-secret-32-bytes-min!!';
+// contact-exchange：联系方式加密密钥。缺失时模块**故意**启动失败（fail closed）；
+// 生产环境必须显式注入，测试里给一个固定的 32 字节十六进制值。
+process.env.CONTACT_EXCHANGE_ENC_KEY ??= 'c'.repeat(64);

@@ -21,9 +21,9 @@ import 'package:kedaya/presentation/theme/kedaya_theme.dart';
 ///   - 暗色主题下不能抛异常（颜色全部来自设计令牌）。
 void main() {
   Widget wrap(Widget child, {ThemeData? theme}) => MaterialApp(
-    theme: theme ?? KedaYaTheme.light(),
-    home: Scaffold(body: SingleChildScrollView(child: child)),
-  );
+        theme: theme ?? KedaYaTheme.light(),
+        home: Scaffold(body: SingleChildScrollView(child: child)),
+      );
 
   group('伦理提示（规格 §8.2）', () {
     testWidgets('展示全部规则 + 勾选项 + "不是授权"的说明', (WidgetTester tester) async {

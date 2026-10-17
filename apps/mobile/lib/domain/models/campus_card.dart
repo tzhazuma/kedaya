@@ -28,10 +28,10 @@ enum CampusCardLinkState {
   bool get needsRebind => this == CampusCardLinkState.expired;
 
   String get label => switch (this) {
-    CampusCardLinkState.unlinked => '未开通',
-    CampusCardLinkState.linked => '已开通',
-    CampusCardLinkState.expired => '已过期',
-  };
+        CampusCardLinkState.unlinked => '未开通',
+        CampusCardLinkState.linked => '已开通',
+        CampusCardLinkState.expired => '已过期',
+      };
 }
 
 /// 校园卡绑定元数据。
@@ -49,12 +49,13 @@ final class CampusCardLink {
   });
 
   factory CampusCardLink.fromJson(Map<String, Object?> json) => CampusCardLink(
-    state: CampusCardLinkState.fromWire(readStringOr(json, 'state', 'UNLINKED')),
-    channel: readStringOrNull(json, 'channel'),
-    openIdTail: readStringOrNull(json, 'openIdTail'),
-    linkedAt: readDateTimeOrNull(json, 'linkedAt'),
-    expiresAt: readDateTimeOrNull(json, 'expiresAt'),
-  );
+        state: CampusCardLinkState.fromWire(
+            readStringOr(json, 'state', 'UNLINKED')),
+        channel: readStringOrNull(json, 'channel'),
+        openIdTail: readStringOrNull(json, 'openIdTail'),
+        linkedAt: readDateTimeOrNull(json, 'linkedAt'),
+        expiresAt: readDateTimeOrNull(json, 'expiresAt'),
+      );
 
   final CampusCardLinkState state;
 
@@ -78,12 +79,12 @@ final class CampusCardLink {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'state': state.wire,
-    'channel': channel,
-    'openIdTail': openIdTail,
-    'linkedAt': linkedAt == null ? null : isoUtc(linkedAt!),
-    'expiresAt': expiresAt == null ? null : isoUtc(expiresAt!),
-  };
+        'state': state.wire,
+        'channel': channel,
+        'openIdTail': openIdTail,
+        'linkedAt': linkedAt == null ? null : isoUtc(linkedAt!),
+        'expiresAt': expiresAt == null ? null : isoUtc(expiresAt!),
+      };
 
   @override
   bool operator ==(Object other) =>
@@ -95,7 +96,8 @@ final class CampusCardLink {
       other.expiresAt == expiresAt;
 
   @override
-  int get hashCode => Object.hash(state, channel, openIdTail, linkedAt, expiresAt);
+  int get hashCode =>
+      Object.hash(state, channel, openIdTail, linkedAt, expiresAt);
 
   @override
   String toString() =>
@@ -113,12 +115,13 @@ final class CampusCardAccount {
     required this.updatedAt,
   });
 
-  factory CampusCardAccount.fromJson(Map<String, Object?> json) => CampusCardAccount(
-    holderName: readString(json, 'holderName'),
-    cardNumberMasked: readString(json, 'cardNumberMasked'),
-    balanceFen: readInt(json, 'balanceFen'),
-    updatedAt: readDateTime(json, 'updatedAt'),
-  );
+  factory CampusCardAccount.fromJson(Map<String, Object?> json) =>
+      CampusCardAccount(
+        holderName: readString(json, 'holderName'),
+        cardNumberMasked: readString(json, 'cardNumberMasked'),
+        balanceFen: readInt(json, 'balanceFen'),
+        updatedAt: readDateTime(json, 'updatedAt'),
+      );
 
   /// 持卡人姓名（校园卡场景下展示姓名是必要信息）。
   final String holderName;
@@ -137,11 +140,11 @@ final class CampusCardAccount {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'holderName': holderName,
-    'cardNumberMasked': cardNumberMasked,
-    'balanceFen': balanceFen,
-    'updatedAt': isoUtc(updatedAt),
-  };
+        'holderName': holderName,
+        'cardNumberMasked': cardNumberMasked,
+        'balanceFen': balanceFen,
+        'updatedAt': isoUtc(updatedAt),
+      };
 
   @override
   bool operator ==(Object other) =>
@@ -221,17 +224,18 @@ final class CampusCardTransaction {
   final int? balanceAfterFen;
 
   /// 带符号分值：支出为负（展示层用 `Money.fenToSignedYuan`）。
-  int get signedAmountFen =>
-      direction == CampusCardTransactionDirection.debit ? -amountFen : amountFen;
+  int get signedAmountFen => direction == CampusCardTransactionDirection.debit
+      ? -amountFen
+      : amountFen;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'merchant': merchant,
-    'amountFen': amountFen,
-    'direction': direction.wire,
-    'occurredAt': isoUtc(occurredAt),
-    'balanceAfterFen': balanceAfterFen,
-  };
+        'id': id,
+        'merchant': merchant,
+        'amountFen': amountFen,
+        'direction': direction.wire,
+        'occurredAt': isoUtc(occurredAt),
+        'balanceAfterFen': balanceAfterFen,
+      };
 
   @override
   bool operator ==(Object other) =>
@@ -244,8 +248,8 @@ final class CampusCardTransaction {
       other.balanceAfterFen == balanceAfterFen;
 
   @override
-  int get hashCode =>
-      Object.hash(id, merchant, amountFen, direction, occurredAt, balanceAfterFen);
+  int get hashCode => Object.hash(
+      id, merchant, amountFen, direction, occurredAt, balanceAfterFen);
 
   @override
   String toString() =>
@@ -266,11 +270,12 @@ final class CampusPaymentCode {
     this.refreshAfterSec,
   });
 
-  factory CampusPaymentCode.fromJson(Map<String, Object?> json) => CampusPaymentCode(
-    code: readString(json, 'code'),
-    expiresAt: readDateTime(json, 'expiresAt'),
-    refreshAfterSec: readIntOrNull(json, 'refreshAfterSec'),
-  );
+  factory CampusPaymentCode.fromJson(Map<String, Object?> json) =>
+      CampusPaymentCode(
+        code: readString(json, 'code'),
+        expiresAt: readDateTime(json, 'expiresAt'),
+        refreshAfterSec: readIntOrNull(json, 'refreshAfterSec'),
+      );
 
   final String code;
   final DateTime expiresAt;

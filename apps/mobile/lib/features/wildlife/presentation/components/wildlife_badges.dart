@@ -46,19 +46,20 @@ class WildlifeFeedingBadge extends StatelessWidget {
 }
 
 /// 语义色 → 设计令牌。**唯一**的颜色映射点（组件与画笔共用）。
-Color feedingToneColor(FeedingPolicy policy, KedaYaColors colors) => switch (policy.tone) {
-  FeedingBadgeTone.success => colors.success,
-  FeedingBadgeTone.warning => colors.warning,
-  FeedingBadgeTone.danger => colors.danger,
-  FeedingBadgeTone.muted => colors.textMuted,
-};
+Color feedingToneColor(FeedingPolicy policy, KedaYaColors colors) =>
+    switch (policy.tone) {
+      FeedingBadgeTone.success => colors.success,
+      FeedingBadgeTone.warning => colors.warning,
+      FeedingBadgeTone.danger => colors.danger,
+      FeedingBadgeTone.muted => colors.textMuted,
+    };
 
 IconData _feedingIcon(FeedingPolicy policy) => switch (policy) {
-  FeedingPolicy.allowed => Icons.check_circle_outline,
-  FeedingPolicy.discouraged => Icons.info_outline,
-  FeedingPolicy.forbidden => Icons.do_not_disturb_on_outlined,
-  FeedingPolicy.unknown => Icons.help_outline,
-};
+      FeedingPolicy.allowed => Icons.check_circle_outline,
+      FeedingPolicy.discouraged => Icons.info_outline,
+      FeedingPolicy.forbidden => Icons.do_not_disturb_on_outlined,
+      FeedingPolicy.unknown => Icons.help_outline,
+    };
 
 /// 审核状态徽章（待审核 / 已发布 / 未通过）。
 class WildlifeStatusBadge extends StatelessWidget {
@@ -313,7 +314,8 @@ class WildlifeHealthConcernNotice extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(Icons.health_and_safety_outlined, size: 18, color: colors.danger),
+          Icon(Icons.health_and_safety_outlined,
+              size: 18, color: colors.danger),
           const SizedBox(width: KedaYaTokens.space2),
           Expanded(
             child: Text(

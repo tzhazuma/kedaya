@@ -16,18 +16,19 @@ void main() {
     int? durationMin,
     BuddySkillLevel? minSkillLevel,
     String creatorId = 'u-9999',
-  }) => BuddyPost(
-    id: 'bp-test',
-    activity: activity,
-    title: '测试活动',
-    location: '体育馆',
-    startsAt: startsAt ?? DateTime.utc(2026, 10, 19, 12),
-    capacity: 4,
-    creator: BuddyCreator(id: creatorId),
-    tags: tags,
-    durationMin: durationMin,
-    minSkillLevel: minSkillLevel,
-  );
+  }) =>
+      BuddyPost(
+        id: 'bp-test',
+        activity: activity,
+        title: '测试活动',
+        location: '体育馆',
+        startsAt: startsAt ?? DateTime.utc(2026, 10, 19, 12),
+        capacity: 4,
+        creator: BuddyCreator(id: creatorId),
+        tags: tags,
+        durationMin: durationMin,
+        minSkillLevel: minSkillLevel,
+      );
 
   BuddyProfile profile({
     List<String> interestTags = const <String>[],
@@ -37,17 +38,18 @@ void main() {
     BuddySkillLevel skillLevel = BuddySkillLevel.casual,
     String? department,
     bool matchEnabled = true,
-  }) => BuddyProfile(
-    userId: 'u-me',
-    sections: const <BuddySection>[BuddySection.sport],
-    interestTags: interestTags,
-    activityTags: activityTags,
-    preferredAreas: preferredAreas,
-    availability: availability,
-    skillLevel: skillLevel,
-    department: department,
-    matchEnabled: matchEnabled,
-  );
+  }) =>
+      BuddyProfile(
+        userId: 'u-me',
+        sections: const <BuddySection>[BuddySection.sport],
+        interestTags: interestTags,
+        activityTags: activityTags,
+        preferredAreas: preferredAreas,
+        availability: availability,
+        skillLevel: skillLevel,
+        department: department,
+        matchEnabled: matchEnabled,
+      );
 
   BuddyRuleCoefficient row(BuddySection section, BuddyRuleKind kind) =>
       buddyCoefficientsFor(section).firstWhere(
@@ -63,7 +65,8 @@ void main() {
       );
       expect(rows, hasLength(3), reason: '§3.3 明确删除了「同学校 +0.2」');
 
-      expect(row(BuddySection.academic, BuddyRuleKind.sameDepartment).perHit, 0.4);
+      expect(
+          row(BuddySection.academic, BuddyRuleKind.sameDepartment).perHit, 0.4);
       expect(row(BuddySection.academic, BuddyRuleKind.sameDepartment).cap, 0.4);
 
       final BuddyRuleCoefficient interest = row(
@@ -82,7 +85,8 @@ void main() {
     });
 
     test('daily：兴趣 +min(0.5, 0.15n) / 时段重叠 +0.2 / 同区域 +0.1（没有「年龄差」）', () {
-      final List<BuddyRuleCoefficient> rows = buddyCoefficientsFor(BuddySection.daily);
+      final List<BuddyRuleCoefficient> rows =
+          buddyCoefficientsFor(BuddySection.daily);
       expect(rows, hasLength(3));
 
       final BuddyRuleCoefficient interest = row(
@@ -105,8 +109,10 @@ void main() {
       );
     });
 
-    test('sport：水平 +0.3 / 活动 +min(0.4, 0.15n) / 兴趣 +min(0.2, 0.10n) / 同区域 +0.1', () {
-      final List<BuddyRuleCoefficient> rows = buddyCoefficientsFor(BuddySection.sport);
+    test('sport：水平 +0.3 / 活动 +min(0.4, 0.15n) / 兴趣 +min(0.2, 0.10n) / 同区域 +0.1',
+        () {
+      final List<BuddyRuleCoefficient> rows =
+          buddyCoefficientsFor(BuddySection.sport);
       expect(rows, hasLength(4));
 
       expect(
@@ -158,13 +164,15 @@ void main() {
         BuddyRuleKind.commonActivityTags,
       );
       expect(sportActivity.scoreFor(2), closeTo(0.30, 1e-12));
-      expect(sportActivity.scoreFor(3), closeTo(0.40, 1e-12), reason: '0.45 被封到 0.4');
+      expect(sportActivity.scoreFor(3), closeTo(0.40, 1e-12),
+          reason: '0.45 被封到 0.4');
     });
 
     test('三板块规则分上限分别是 0.8 / 0.8 / 1.0（§3.3 末段）', () {
       double maxOf(BuddySection section) => buddyCoefficientsFor(
-        section,
-      ).fold(0.0, (double sum, BuddyRuleCoefficient item) => sum + item.cap);
+            section,
+          ).fold(
+              0.0, (double sum, BuddyRuleCoefficient item) => sum + item.cap);
 
       expect(maxOf(BuddySection.academic), closeTo(0.8, 1e-12));
       expect(maxOf(BuddySection.daily), closeTo(0.8, 1e-12));
@@ -205,11 +213,11 @@ void main() {
       const BuddyRuleSignals signals = BuddyRuleSignals(
         sameDepartment: true,
         commonInterestTags: <String>['badminton', 'coding', 'movie', 'pet'],
-        commonActivityTags: <String>['indoor'],
+        commonActivityTags: <String>['gym'],
       );
       expect(
         buddyExplainMatch(section: BuddySection.academic, signals: signals),
-        '同院系、共同兴趣：羽毛球,编程,电影',
+        '同院系、共同兴趣：羽毛球,编程,电影、共同活动：健身',
         reason: '只取前 3 条理由，且兴趣最多列 3 个（对齐 matching.py:282）',
       );
     });
@@ -429,16 +437,19 @@ void main() {
 
       // 模式 C（rule）：ruleScore × 1.0
       expect(
-        buddyFinalScore(mode: BuddyMatchMode.rule, ruleScore: 0.5, baseScore: 1),
+        buddyFinalScore(
+            mode: BuddyMatchMode.rule, ruleScore: 0.5, baseScore: 1),
         closeTo(0.5, 1e-12),
       );
       // 模式 A/B：base × 0.70 + rule × 0.30（towerScore 恒为 None，§3.4）
       expect(
-        buddyFinalScore(mode: BuddyMatchMode.hash, ruleScore: 0.5, baseScore: 1),
+        buddyFinalScore(
+            mode: BuddyMatchMode.hash, ruleScore: 0.5, baseScore: 1),
         closeTo(0.85, 1e-12),
       );
       expect(
-        buddyFinalScore(mode: BuddyMatchMode.vector, ruleScore: 0.5, baseScore: 1),
+        buddyFinalScore(
+            mode: BuddyMatchMode.vector, ruleScore: 0.5, baseScore: 1),
         closeTo(0.85, 1e-12),
       );
       // 叠加反馈后 clamp
@@ -469,7 +480,8 @@ void main() {
 
     test('反馈权重逐字对齐 matching.py:367-371', () {
       expect(buddyFeedbackActionWeights[BuddyMatchFeedbackAction.like], 0.20);
-      expect(buddyFeedbackActionWeights[BuddyMatchFeedbackAction.dislike], -0.30);
+      expect(
+          buddyFeedbackActionWeights[BuddyMatchFeedbackAction.dislike], -0.30);
       expect(buddyFeedbackActionWeights[BuddyMatchFeedbackAction.skip], -0.05);
       expect(buddyFeedbackHalflifeDays, 30);
     });

@@ -147,7 +147,8 @@ void main() {
         'tgc',
         'castgc',
       ]) {
-        expect(code.contains(token), isFalse, reason: 'techpie_port 出现了 "$token"');
+        expect(code.contains(token), isFalse,
+            reason: 'techpie_port 出现了 "$token"');
       }
     });
 

@@ -20,20 +20,21 @@ final class MockForumRepository implements ForumPort {
     List<ForumPost>? posts,
     Map<String, List<ForumReply>>? replies,
     MockControls? controls,
-  }) : _boards = <String, ForumBoard>{
-         for (final ForumBoard board in boards ?? mockForumBoards) board.id: board,
-       },
-       _posts = <String, ForumPost>{
-         for (final ForumPost post in posts ?? mockForumPosts) post.id: post,
-       },
-       _replies = <String, List<ForumReply>>{
-         for (final MapEntry<String, List<ForumReply>> entry
-             in (replies ?? mockForumReplies).entries)
-           entry.key: <ForumReply>[...entry.value],
-       },
-       currentUserId = mockUser.userId,
-       currentUserName = mockUser.displayNameOrId,
-       controls = controls ?? MockControls();
+  })  : _boards = <String, ForumBoard>{
+          for (final ForumBoard board in boards ?? mockForumBoards)
+            board.id: board,
+        },
+        _posts = <String, ForumPost>{
+          for (final ForumPost post in posts ?? mockForumPosts) post.id: post,
+        },
+        _replies = <String, List<ForumReply>>{
+          for (final MapEntry<String, List<ForumReply>> entry
+              in (replies ?? mockForumReplies).entries)
+            entry.key: <ForumReply>[...entry.value],
+        },
+        currentUserId = mockUser.userId,
+        currentUserName = mockUser.displayNameOrId,
+        controls = controls ?? MockControls();
 
   /// 契约 §2.4 治理规则：3 个**不同**用户举报 → 自动隐藏 + 进人工队列。
   static const int autoHideReportThreshold = 3;
@@ -58,7 +59,8 @@ final class MockForumRepository implements ForumPort {
   final Map<String, int> _anonymousSequences = <String, int>{};
 
   /// 该用户在每个版块的匿名身份缓存（保证同一版块内匿名身份稳定）。
-  final Map<String, AnonymousIdentity> _anonymousByBoard = <String, AnonymousIdentity>{};
+  final Map<String, AnonymousIdentity> _anonymousByBoard =
+      <String, AnonymousIdentity>{};
 
   /// 可在运行时切换延迟与故障（UI 三态演示 / 测试注入）。
   final MockControls controls;
@@ -70,14 +72,17 @@ final class MockForumRepository implements ForumPort {
   /// 供测试断言内部状态。
   List<ForumPost> snapshotPosts() => _sortedPosts(_visible(_posts.values));
 
-  List<ForumReport> snapshotReports() => List<ForumReport>.unmodifiable(_reports);
+  List<ForumReport> snapshotReports() =>
+      List<ForumReport>.unmodifiable(_reports);
 
-  int reportCountFor(String targetId) => _reportersByTarget[targetId]?.length ?? 0;
+  int reportCountFor(String targetId) =>
+      _reportersByTarget[targetId]?.length ?? 0;
 
   @override
   Future<Result<List<ForumBoard>>> listBoards() async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<List<ForumBoard>>();
+    if (controls.failure != null)
+      return controls.failureResult<List<ForumBoard>>();
     final List<ForumBoard> all = _boards.values.toList(growable: false);
     all.sort((ForumBoard a, ForumBoard b) => a.id.compareTo(b.id));
     return Ok<List<ForumBoard>>(all);
@@ -86,15 +91,18 @@ final class MockForumRepository implements ForumPort {
   @override
   Future<Result<Page<ForumPost>>> listPosts(ForumPostQuery query) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<Page<ForumPost>>();
+    if (controls.failure != null)
+      return controls.failureResult<Page<ForumPost>>();
     if (controls.emptyResults) {
-      return Ok<Page<ForumPost>>(const Page<ForumPost>(items: <ForumPost>[], total: 0));
+      return Ok<Page<ForumPost>>(
+          const Page<ForumPost>(items: <ForumPost>[], total: 0));
     }
 
     Iterable<ForumPost> candidates = _visible(_posts.values);
     final String? boardId = query.boardId;
     if (boardId != null && boardId.isNotEmpty) {
-      candidates = candidates.where((ForumPost post) => post.boardId == boardId);
+      candidates =
+          candidates.where((ForumPost post) => post.boardId == boardId);
     }
     final String keyword = (query.keyword ?? '').trim().toLowerCase();
     if (keyword.isNotEmpty) {
@@ -108,7 +116,8 @@ final class MockForumRepository implements ForumPort {
     final List<ForumPost> all = _sortedPosts(candidates);
     final int start = _parseCursor(query.cursor);
     final int limit = _clampLimit(query.limit);
-    final List<ForumPost> window = all.skip(start).take(limit).toList(growable: false);
+    final List<ForumPost> window =
+        all.skip(start).take(limit).toList(growable: false);
     final int consumed = start + window.length;
     return Ok<Page<ForumPost>>(
       Page<ForumPost>(
@@ -132,7 +141,8 @@ final class MockForumRepository implements ForumPort {
   @override
   Future<Result<Page<ForumReply>>> listReplies(ForumReplyQuery query) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<Page<ForumReply>>();
+    if (controls.failure != null)
+      return controls.failureResult<Page<ForumReply>>();
     final ForumPost? post = _posts[query.postId];
     if (post == null || !post.isVisible) {
       return Err<Page<ForumReply>>(
@@ -141,17 +151,21 @@ final class MockForumRepository implements ForumPort {
       );
     }
     if (controls.emptyResults) {
-      return Ok<Page<ForumReply>>(const Page<ForumReply>(items: <ForumReply>[], total: 0));
+      return Ok<Page<ForumReply>>(
+          const Page<ForumReply>(items: <ForumReply>[], total: 0));
     }
 
     final List<ForumReply> all = <ForumReply>[
       ...(_replies[query.postId] ?? const <ForumReply>[]),
-    ]..removeWhere((ForumReply reply) => reply.status == ForumReplyStatus.deleted);
-    all.sort((ForumReply a, ForumReply b) => a.createdAt.compareTo(b.createdAt));
+    ]..removeWhere(
+        (ForumReply reply) => reply.status == ForumReplyStatus.deleted);
+    all.sort(
+        (ForumReply a, ForumReply b) => a.createdAt.compareTo(b.createdAt));
 
     final int start = _parseCursor(query.cursor);
     final int limit = _clampLimit(query.limit);
-    final List<ForumReply> window = all.skip(start).take(limit).toList(growable: false);
+    final List<ForumReply> window =
+        all.skip(start).take(limit).toList(growable: false);
     final int consumed = start + window.length;
     return Ok<Page<ForumReply>>(
       Page<ForumReply>(
@@ -173,13 +187,15 @@ final class MockForumRepository implements ForumPort {
       return _validation<ForumPost>('标题不能为空');
     }
     if (title.runes.length > ForumPostDraft.titleMaxLength) {
-      return _validation<ForumPost>('标题请控制在 ${ForumPostDraft.titleMaxLength} 字以内');
+      return _validation<ForumPost>(
+          '标题请控制在 ${ForumPostDraft.titleMaxLength} 字以内');
     }
     if (body.isEmpty) {
       return _validation<ForumPost>('正文不能为空');
     }
     if (body.runes.length > ForumPostDraft.bodyMaxLength) {
-      return _validation<ForumPost>('正文请控制在 ${ForumPostDraft.bodyMaxLength} 字以内');
+      return _validation<ForumPost>(
+          '正文请控制在 ${ForumPostDraft.bodyMaxLength} 字以内');
     }
     final ForumBoard? board = _boards[command.boardId];
     if (board == null) {
@@ -203,7 +219,8 @@ final class MockForumRepository implements ForumPort {
       body: body,
       author: author,
       status: ForumPostStatus.published,
-      tags: command.tags.take(ForumPostDraft.tagMaxCount).toList(growable: false),
+      tags:
+          command.tags.take(ForumPostDraft.tagMaxCount).toList(growable: false),
       replyCount: 0,
       likeCount: 0,
       createdAt: mockNow,
@@ -214,7 +231,8 @@ final class MockForumRepository implements ForumPort {
   }
 
   @override
-  Future<Result<ForumReply>> createReply(CreateForumReplyCommand command) async {
+  Future<Result<ForumReply>> createReply(
+      CreateForumReplyCommand command) async {
     await controls.simulate();
     if (controls.failure != null) return controls.failureResult<ForumReply>();
 
@@ -230,7 +248,8 @@ final class MockForumRepository implements ForumPort {
       return _validation<ForumReply>('回复内容不能为空');
     }
     if (body.runes.length > ForumReplyDraft.bodyMaxLength) {
-      return _validation<ForumReply>('回复请控制在 ${ForumReplyDraft.bodyMaxLength} 字以内');
+      return _validation<ForumReply>(
+          '回复请控制在 ${ForumReplyDraft.bodyMaxLength} 字以内');
     }
     // 契约 §2.4 状态机：LOCKED 禁止新回复。
     if (!post.canReply) {
@@ -272,9 +291,9 @@ final class MockForumRepository implements ForumPort {
     final bool targetExists = switch (command.targetType) {
       ForumReportTargetType.post => _posts.containsKey(command.targetId),
       ForumReportTargetType.reply => _replies.values.any(
-        (List<ForumReply> list) =>
-            list.any((ForumReply reply) => reply.id == command.targetId),
-      ),
+          (List<ForumReply> list) =>
+              list.any((ForumReply reply) => reply.id == command.targetId),
+        ),
     };
     if (!targetExists) {
       return Err<ForumReport>(
@@ -283,10 +302,12 @@ final class MockForumRepository implements ForumPort {
       );
     }
 
-    final ForumPost? targetPost = command.targetType == ForumReportTargetType.post
-        ? _posts[command.targetId]
-        : null;
-    final String boardId = targetPost?.boardId ?? _boardIdOfReply(command.targetId) ?? '';
+    final ForumPost? targetPost =
+        command.targetType == ForumReportTargetType.post
+            ? _posts[command.targetId]
+            : null;
+    final String boardId =
+        targetPost?.boardId ?? _boardIdOfReply(command.targetId) ?? '';
 
     final ForumAuthor reporter = command.anonymous
         ? AnonymousAuthor(_anonymousFor(boardId))
@@ -318,7 +339,8 @@ final class MockForumRepository implements ForumPort {
 
     // 契约 §2.4：3 个不同用户举报 → 自动隐藏。
     if (targetPost != null && reporters.length >= autoHideReportThreshold) {
-      _posts[targetPost.id] = targetPost.copyWith(status: ForumPostStatus.hidden);
+      _posts[targetPost.id] =
+          targetPost.copyWith(status: ForumPostStatus.hidden);
     }
     return Ok<ForumReport>(created);
   }
@@ -374,12 +396,12 @@ final class MockForumRepository implements ForumPort {
   }
 
   Err<T> _validation<T>(String message) => Err<T>(
-    ApiError(code: ApiErrorCode.validationFailed, message: message),
-    traceId: MockControls.traceId,
-  );
+        ApiError(code: ApiErrorCode.validationFailed, message: message),
+        traceId: MockControls.traceId,
+      );
 
   Err<T> _notFoundPost<T>() => Err<T>(
-    const ApiError(code: ApiErrorCode.notFound, message: '该主题不存在或已被隐藏'),
-    traceId: MockControls.traceId,
-  );
+        const ApiError(code: ApiErrorCode.notFound, message: '该主题不存在或已被隐藏'),
+        traceId: MockControls.traceId,
+      );
 }

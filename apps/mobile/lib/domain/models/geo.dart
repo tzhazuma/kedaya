@@ -54,8 +54,10 @@ final class Wgs84Point {
   /// 但**只认这两个语义**：`gcjLat` / `gcjLng` / `exactLat` / `exactLng`
   /// 这类键**永远不会被读取**（规格 §9.6 T15：响应里的精确坐标对客户端不存在）。
   factory Wgs84Point.fromJson(Map<String, Object?> json) {
-    final double? lat = readDoubleOrNull(json, 'lat') ?? readDoubleOrNull(json, 'latitude');
-    final double? lng = readDoubleOrNull(json, 'lng') ?? readDoubleOrNull(json, 'longitude');
+    final double? lat =
+        readDoubleOrNull(json, 'lat') ?? readDoubleOrNull(json, 'latitude');
+    final double? lng =
+        readDoubleOrNull(json, 'lng') ?? readDoubleOrNull(json, 'longitude');
     if (lat == null || lng == null) {
       throw const FormatException('坐标对象缺少 lat/lng 字段');
     }
@@ -104,7 +106,8 @@ final class LocalMeters {
   }
 
   @override
-  String toString() => 'LocalMeters(${x.toStringAsFixed(2)}, ${y.toStringAsFixed(2)})';
+  String toString() =>
+      'LocalMeters(${x.toStringAsFixed(2)}, ${y.toStringAsFixed(2)})';
 }
 
 /// 底图图片上的像素坐标（u 向右、v 向下，原点在图片左上角）。
@@ -121,7 +124,8 @@ final class LocalPixel {
   }
 
   @override
-  String toString() => 'LocalPixel(${u.toStringAsFixed(2)}, ${v.toStringAsFixed(2)})';
+  String toString() =>
+      'LocalPixel(${u.toStringAsFixed(2)}, ${v.toStringAsFixed(2)})';
 }
 
 /// WGS84 → 局部米制平面的等距圆柱近似（规格 §3.4 步骤 1）。
@@ -155,17 +159,18 @@ final class CampusProjection {
   final double metersPerDegreeLngAtEquator;
 
   /// 该纬度上经度 1 度对应的米数（`cos(lat)` 由纯 Dart 实现，见 [geoCosDegrees]）。
-  double get metersPerDegreeLng => metersPerDegreeLngAtEquator * geoCosDegrees(origin.lat);
+  double get metersPerDegreeLng =>
+      metersPerDegreeLngAtEquator * geoCosDegrees(origin.lat);
 
   LocalMeters toLocalMeters(Wgs84Point point) => LocalMeters(
-    x: (point.lng - origin.lng) * metersPerDegreeLng,
-    y: (point.lat - origin.lat) * metersPerDegreeLat,
-  );
+        x: (point.lng - origin.lng) * metersPerDegreeLng,
+        y: (point.lat - origin.lat) * metersPerDegreeLat,
+      );
 
   Wgs84Point fromLocalMeters(LocalMeters meters) => Wgs84Point(
-    lat: origin.lat + meters.y / metersPerDegreeLat,
-    lng: origin.lng + meters.x / metersPerDegreeLng,
-  );
+        lat: origin.lat + meters.y / metersPerDegreeLat,
+        lng: origin.lng + meters.x / metersPerDegreeLng,
+      );
 
   /// 两点距离（米）。等距圆柱 + 中点纬度，校园尺度误差可忽略。
   double metersBetween(Wgs84Point a, Wgs84Point b) {
@@ -211,14 +216,14 @@ final class CampusBounds {
       point.lng <= maxLng;
 
   @override
-  String toString() =>
-      'CampusBounds(lat $minLat–$maxLat, lng $minLng–$maxLng)';
+  String toString() => 'CampusBounds(lat $minLat–$maxLat, lng $minLng–$maxLng)';
 }
 
 /// 写入路径的坐标越界异常（规格 §3.5 V5：返回
 /// `VALIDATION_FAILED` / `COORDINATE_OUT_OF_CAMPUS`，HTTP 422）。
 final class CoordinateOutOfCampusException implements Exception {
-  const CoordinateOutOfCampusException(this.point, {this.bounds = CampusBounds.campus});
+  const CoordinateOutOfCampusException(this.point,
+      {this.bounds = CampusBounds.campus});
 
   /// 服务端 `details.reason` 的规范取值。
   static const String reason = 'COORDINATE_OUT_OF_CAMPUS';
@@ -280,7 +285,8 @@ final class BasemapAffine {
   }
 
   /// 恒等（1 米 ≈ 1 像素，原点重合）—— 测试与「示意图 = 像素图」的默认标定。
-  static const BasemapAffine identity = BasemapAffine(a: 1, b: 0, c: 0, d: 0, e: 1, f: 0);
+  static const BasemapAffine identity =
+      BasemapAffine(a: 1, b: 0, c: 0, d: 0, e: 1, f: 0);
 
   final double a;
   final double b;
@@ -297,9 +303,9 @@ final class BasemapAffine {
   bool get isInvertible => determinant.abs() > 1e-12;
 
   LocalPixel pixelForMeters(LocalMeters meters) => LocalPixel(
-    u: a * meters.x + b * meters.y + c,
-    v: d * meters.x + e * meters.y + f,
-  );
+        u: a * meters.x + b * meters.y + c,
+        v: d * meters.x + e * meters.y + f,
+      );
 
   LocalMeters metersForPixel(LocalPixel pixel) {
     final double det = determinant;
@@ -315,13 +321,15 @@ final class BasemapAffine {
   LocalPixel pixelFor(
     Wgs84Point point, {
     CampusProjection projection = CampusProjection.campus,
-  }) => pixelForMeters(projection.toLocalMeters(point));
+  }) =>
+      pixelForMeters(projection.toLocalMeters(point));
 
   /// 像素 → WGS84（用于「在地图上点选位置」）。
   Wgs84Point pointFor(
     LocalPixel pixel, {
     CampusProjection projection = CampusProjection.campus,
-  }) => projection.fromLocalMeters(metersForPixel(pixel));
+  }) =>
+      projection.fromLocalMeters(metersForPixel(pixel));
 
   @override
   String toString() =>

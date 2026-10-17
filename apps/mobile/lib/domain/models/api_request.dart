@@ -64,14 +64,15 @@ final class ApiRequest {
     Map<String, Object?>? query,
     String? idempotencyKey,
     String? contentType,
-  }) => ApiRequest(
-    path: path ?? this.path,
-    method: method ?? this.method,
-    body: body ?? this.body,
-    query: query ?? this.query,
-    idempotencyKey: idempotencyKey ?? this.idempotencyKey,
-    contentType: contentType ?? this.contentType,
-  );
+  }) =>
+      ApiRequest(
+        path: path ?? this.path,
+        method: method ?? this.method,
+        body: body ?? this.body,
+        query: query ?? this.query,
+        idempotencyKey: idempotencyKey ?? this.idempotencyKey,
+        contentType: contentType ?? this.contentType,
+      );
 
   @override
   String toString() => '${method.wire} $path';
@@ -86,15 +87,15 @@ final class PageQuery {
 
   /// 收敛到 [maxPageSize] 以内，并丢弃 null。
   Map<String, Object?> toQuery() => <String, Object?>{
-    if (cursor != null && cursor!.isNotEmpty) 'cursor': cursor,
-    'limit': limit < 1 ? 1 : (limit > maxPageSize ? maxPageSize : limit),
-  };
+        if (cursor != null && cursor!.isNotEmpty) 'cursor': cursor,
+        'limit': limit < 1 ? 1 : (limit > maxPageSize ? maxPageSize : limit),
+      };
 
   /// 从查询串还原（供 mock 与测试复用）。
   factory PageQuery.fromJson(Map<String, Object?> json) => PageQuery(
-    cursor: readStringOrNull(json, 'cursor'),
-    limit: readIntOr(json, 'limit', defaultPageSize),
-  );
+        cursor: readStringOrNull(json, 'cursor'),
+        limit: readIntOr(json, 'limit', defaultPageSize),
+      );
 }
 
 /// 一个 multipart 上传项（`POST /api/v1/wildlife/media`，规格 §4.1）。

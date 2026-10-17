@@ -10,13 +10,13 @@ import '../../../../presentation/theme/kedaya_tokens.dart';
 
 /// `buddy` 的活动图标（纯展示映射）。
 IconData buddyActivityIcon(BuddyActivity activity) => switch (activity) {
-  BuddyActivity.sport => Icons.sports_tennis_outlined,
-  BuddyActivity.study => Icons.menu_book_outlined,
-  BuddyActivity.meal => Icons.restaurant_outlined,
-  BuddyActivity.travel => Icons.directions_transit_outlined,
-  BuddyActivity.game => Icons.casino_outlined,
-  BuddyActivity.other => Icons.groups_outlined,
-};
+      BuddyActivity.sport => Icons.sports_tennis_outlined,
+      BuddyActivity.study => Icons.menu_book_outlined,
+      BuddyActivity.meal => Icons.restaurant_outlined,
+      BuddyActivity.travel => Icons.directions_transit_outlined,
+      BuddyActivity.game => Icons.casino_outlined,
+      BuddyActivity.other => Icons.groups_outlined,
+    };
 
 /// 三板块分栏的 chip 条（**只有三个真实板块**，契约 §11.10-G 不含 dating）。
 class BuddySectionChipBar extends StatelessWidget {
@@ -41,7 +41,8 @@ class BuddySectionChipBar extends StatelessWidget {
           vertical: KedaYaTokens.space2,
         ),
         children: <Widget>[
-          for (final BuddySection section in buddyMatchableSections) ...<Widget>[
+          for (final BuddySection section
+              in buddyMatchableSections) ...<Widget>[
             if (section != buddyMatchableSections.first)
               const SizedBox(width: KedaYaTokens.space2),
             ChoiceChip(
@@ -57,7 +58,8 @@ class BuddySectionChipBar extends StatelessWidget {
                 fontWeight: selected == section
                     ? KedaYaTokens.fontWeightSemibold
                     : KedaYaTokens.fontWeightRegular,
-                color: selected == section ? colors.brandStrong : colors.textMuted,
+                color:
+                    selected == section ? colors.brandStrong : colors.textMuted,
               ),
             ),
           ],
@@ -178,7 +180,9 @@ class BuddyPostCard extends StatelessWidget {
               _MetaRow(
                 icon: Icons.schedule_outlined,
                 text: buddyLocalFullLabel(post.startsAt) +
-                    (post.durationMin == null ? '' : ' · ${post.durationMin} 分钟'),
+                    (post.durationMin == null
+                        ? ''
+                        : ' · ${post.durationMin} 分钟'),
               ),
               const SizedBox(height: KedaYaTokens.space1),
               _MetaRow(icon: Icons.place_outlined, text: post.location),
@@ -188,7 +192,8 @@ class BuddyPostCard extends StatelessWidget {
                 text: '${post.seatsLabel} · '
                     '${post.isFull ? '已满员' : '还缺 ${post.remainingSeats} 人'}',
               ),
-              if (post.genderPreference != BuddyGenderPreference.any) ...<Widget>[
+              if (post.genderPreference !=
+                  BuddyGenderPreference.any) ...<Widget>[
                 const SizedBox(height: KedaYaTokens.space1),
                 _MetaRow(
                   icon: Icons.wc_outlined,
@@ -293,7 +298,8 @@ class BuddyRecommendationCard extends StatelessWidget {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  Icon(Icons.tips_and_updates_outlined, size: 16, color: colors.info),
+                  Icon(Icons.tips_and_updates_outlined,
+                      size: 16, color: colors.info),
                   const SizedBox(width: KedaYaTokens.space1),
                   Text(
                     '推荐理由',
@@ -413,7 +419,8 @@ class BuddyApplicationTile extends StatelessWidget {
               _MetaChip(label: application.status.label),
             ],
           ),
-          if (application.message != null && application.message!.isNotEmpty) ...<Widget>[
+          if (application.message != null &&
+              application.message!.isNotEmpty) ...<Widget>[
             const SizedBox(height: KedaYaTokens.space2),
             Text(
               application.message!,
@@ -448,7 +455,9 @@ class BuddyApplicationTile extends StatelessWidget {
               ],
             ),
           ],
-          if (!isCreator && application.isPending && onWithdraw != null) ...<Widget>[
+          if (!isCreator &&
+              application.isPending &&
+              onWithdraw != null) ...<Widget>[
             const SizedBox(height: KedaYaTokens.space3),
             OutlinedButton(
               onPressed: busy ? null : onWithdraw,
@@ -566,13 +575,13 @@ class _FeedbackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Expanded(
-    child: OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 16),
-      label: Text(
-        label,
-        style: const TextStyle(fontSize: KedaYaTokens.fontSizeXs),
-      ),
-    ),
-  );
+        child: OutlinedButton.icon(
+          onPressed: onPressed,
+          icon: Icon(icon, size: 16),
+          label: Text(
+            label,
+            style: const TextStyle(fontSize: KedaYaTokens.fontSizeXs),
+          ),
+        ),
+      );
 }

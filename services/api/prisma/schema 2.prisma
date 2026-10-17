@@ -1,0 +1,1491 @@
+// 可达鸭 · Prisma schema（PostgreSQL 16）
+// 冻结契约：docs/architecture/00-FROZEN-CONTRACT.md §5（两级身份）、§6.1（金额整数分）、§9（隐私合规）
+//
+// 全局约定
+//   · 主键统一 cuid()，便于分页游标直接复用主键
+//   · 金额字段一律 Int，单位 **分**（契约 §6.1：`amountFen: number`），禁止 Float/Decimal
+//   · 时间一律 DateTime（UTC），由 API 层序列化为 ISO-8601
+//   · 敏感表在模型上方用 `/// 访问域` 注释标明，Prisma 会把这些注释带进生成的客户端文档
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // 注意（Prisma 7 破坏性变更）：schema 里**不再允许**写 `url = env("DATABASE_URL")`。
+  // 连接串现在有两个来源：
+  //   · Migrate / introspect 等 CLI 命令 → prisma.config.ts 的 `datasource.url`
+  //   · 运行时 PrismaClient          → driver adapter（见 src/prisma/prisma.service.ts）
+}
+
+/* ================================================================== *
+ * 1. 身份域（契约 §5）—— 两级模型，物理分离
+ * ================================================================== */
+
+/// KedaYa 自有账户。**不**存放任何校园系统凭据。
+model User {
+  id           String  @id @default(cuid())
+  displayName  String
+  avatarUrl    String?
+  department   String?
+  /// 匿名身份与实名身份解耦：本账号是否被允许使用匿名handle（契约 §9）
+  anonEnabled  Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  /// 自建账号凭据（邮箱 + 密码）。仅密码登录方式存在时为 null（例如纯 CAS 账号）
+  credential     UserCredential?
+  identities     AuthIdentity[]
+  campusBindings CampusBinding[]
+  /// TechPie 整合（规格 §5.1）：校园平台绑定元数据。**不含凭证**。
+  techpieLinks   TechpieLink[]
+  /// TechPie 整合（规格 §5.3）：校园会话密文的唯一落点。业务层永不直接读。
+  campusSessions CampusSession[]
+  consents       Consent[]
+  auditLogs      AuditLog[]
+  profileSetting ProfileSetting?
+  schedule       ScheduleCourse[]
+  cardTxns       CampusCardTransaction[]
+  notifications  Notification[]
+  portrait       AiPortraitProfile?
+  appointments   WellbeingAppointment[]
+  /// 上报的动物观测（规格 §2.6 reporterId）。匿名上报时 API 层不得回传该关联
+  wildlifeSightings WildlifeSighting[]
+
+  /// 找搭子（buddy-matching.md §2）。资料与账号资料刻意分离：撤回匹配只删资料行。
+  buddyProfile                BuddyProfile?
+  buddyPosts                  BuddyPost[]
+  buddyApplications           BuddyApplication[]
+  buddyFeedbacks              BuddyMatchFeedback[]
+  buddyQuestionnaireResponses BuddyQuestionnaireResponse[]
+
+  /// ---- 合并同学分支时补的反向关系（他们的 model 引用了 User，但 User 侧没有对端）----
+  refreshSessions      RefreshSession[]
+  fleaItems            FleaItem[]
+  errandTasksRequested ErrandTask[]
+  errandTasksRun       ErrandTask[] @relation("ErrandRunner")
+  lostFoundItems       LostFoundItem[]
+  forumPosts           ForumPost[]
+  forumReplies         ForumReply[]
+
+  @@index([createdAt])
+}
+
+/// 自建账号凭据：邮箱 + 密码（**与 CAS 身份层物理分离**）。
+///
+/// 访问域：identity
+/// 硬规则：
+///   1. 只存 `scrypt` 派生的哈希（含随机盐与成本参数），绝不落明文或可逆密文；
+///   2. 连续失败次数与锁定时间写在本表，锁定判定由服务层执行；
+///   3. 本表**不**参与 `AuthPort`（第一级 CAS 端口）—— 它是第二条独立的登录方式，
+///      两条路径最终都收敛到同一个 KedaYa `User`。
+model UserCredential {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  /// 规范化小写邮箱；唯一索引用于「邮箱即账号」
+  email             String    @unique
+  /// scrypt 哈希，格式 scrypt$N$r$p$saltB64$hashB64
+  passwordHash      String
+  /// active | locked | disabled
+  status            String    @default("active")
+  failedAttempts    Int       @default(0)
+  lockedUntil       DateTime?
+  passwordChangedAt DateTime  @default(now())
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([status])
+}
+
+/// 一次性验证码（注册 / 找回密码 / 更换密码）。
+///
+/// 访问域：identity
+/// 硬规则：
+///   1. 只存哈希，验证码明文仅出现在发信内容里；
+///   2. 有 TTL、最大尝试次数与冷却时间，全部在服务层强制；
+///   3. 消费后写 `consumedAt`，不物理删除，便于审计与防重放。
+model VerificationCode {
+  id         String    @id @default(cuid())
+  /// 目标（规范化小写邮箱）
+  target     String
+  /// register | reset-password | change-password
+  purpose    String
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int       @default(0)
+  ip         String?
+  createdAt  DateTime  @default(now())
+
+  @@index([target, purpose, createdAt])
+  @@index([expiresAt])
+}
+
+/// 刷新令牌会话：让 refreshToken **可撤销、可轮换**（登出即失效）。
+///
+/// 访问域：identity
+/// 只存 `sha256(token)`，不存令牌本身；轮换时旧行立即 `revokedAt`。
+model RefreshSession {
+  id           String    @id @default(cuid())
+  userId       String
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  userAgent    String?
+  ip           String?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+}
+
+/// 第一级 · 身份层。上科大统一身份认证（CAS / Egate OAuth）的映射结果。
+///
+/// 访问域：identity
+/// 硬规则（契约 §5）：本表**只**回答"你是谁"。绝不包含任何校园系统的
+/// cookie / session / tgc —— 那些属于 CampusBinding（第二级）。
+model AuthIdentity {
+  id         String @id @default(cuid())
+  userId     String
+  /// 上游提供方：SHTU_CAS | SHTU_EGATE
+  provider   String
+  /// 上游唯一标识（CAS 的学号 / OAuth 的 sub）
+  externalId String
+  /// 上科大邮箱（*@shanghaitech.edu.cn）
+  email      String?
+  realName   String?
+  department String?
+  /// 第一级登录时间。注意：这不代表任何校园系统已绑定。
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, externalId])
+  @@index([userId])
+}
+
+/// 第二级 · 能力层。第三方校园系统绑定。
+///
+/// 访问域：campus-binding（加密字段，仅 CampusSessionPort 可解密）
+/// 硬规则（契约 §5）：
+///   1. 本表与身份层**物理分离**，任何校园 session 都不得上抛为身份；
+///   2. `encryptedSession` 为 AES-256-GCM 密文，密钥在环境变量里，绝不落库；
+///   3. 可以"已登录但未绑定" —— 此时 campus 能力返回 CAMPUS_BINDING_REQUIRED。
+model CampusBinding {
+  id         String @id @default(cuid())
+  userId     String
+  /// 目标校园系统：EGATE | CPDAILY | JWC | CARD
+  platform   String
+  /// AES-256-GCM 加密后的 session cookie 引用（密文，非明文）
+  encryptedSession String
+  /// session 的不可逆指纹，仅用于判断"是否需要重新绑定"，不含明文
+  sessionFingerprint String?
+  /// 该绑定被授权的能力范围
+  scopes     String[]
+  status     String   @default("active")
+  expiresAt  DateTime
+  lastUsedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@index([userId, status])
+  @@index([expiresAt])
+}
+
+/// 敏感模块二次同意（契约 §9）。可随时撤回，撤回后保留历史行（revokedAt 非空）。
+///
+/// 访问域：consent
+/// 注意：auth / campus-card 虽是 high 敏感但**不设同意门**，
+/// 判定规则来自 @kedaya/contracts 的 `requiresConsent`，不在本表硬编码。
+model Consent {
+  id        String    @id @default(cuid())
+  userId    String
+  /// 契约 §4 的模块 id：wellbeing | dorm-harmony | ai-portrait
+  module    String
+  /// 用户同意的协议版本，便于协议变更后重新征求
+  version   String    @default("v1")
+  grantedAt DateTime  @default(now())
+  /// 非空表示已撤回
+  revokedAt DateTime?
+  ip        String?
+  ua        String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, module])
+  @@index([userId, module, revokedAt])
+}
+
+/// 审计日志（契约 §9：敏感模块读写全部落审计）。
+///
+/// 访问域：audit（只写不删；仅合规角色可读）
+model AuditLog {
+  id         String   @id @default(cuid())
+  /// 操作者。匿名操作时为 null，用 actorType 区分
+  actorId    String?
+  /// user | anonymous | system | service
+  actorType  String   @default("user")
+  /// 领域动作，如 wellbeing.appointment.create
+  action     String
+  /// 资源类型，如 WellbeingAppointment
+  resource   String
+  resourceId String?
+  /// 契约 §4 模块 id
+  module     String?
+  ip         String?
+  ua         String?
+  at         DateTime @default(now())
+  metadata   Json?
+
+  user User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([module, at])
+  @@index([actorId, at])
+  @@index([resource, resourceId])
+}
+
+/* ================================================================== *
+ * 2. 业务模块表（契约 §4.1，14 个）
+ * ================================================================== */
+
+/// 拼单 · groupbuy（低敏感）
+model GroupbuyOrder {
+  id           String   @id @default(cuid())
+  ownerId      String
+  title        String
+  description  String?
+  category     String
+  /// 成团所需人数
+  targetCount  Int
+  /// 单价，**分**
+  unitPriceFen Int
+  status       String   @default("open")
+  deadline     DateTime
+  pickupSpot   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  members GroupbuyMember[]
+
+  @@index([status, deadline])
+  @@index([category])
+}
+
+/// 拼单参团记录
+model GroupbuyMember {
+  id       String   @id @default(cuid())
+  orderId  String
+  userId   String
+  quantity Int      @default(1)
+  /// 已付金额，**分**
+  paidFen  Int      @default(0)
+  role     String   @default("member")
+  joinedAt DateTime @default(now())
+
+  order GroupbuyOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, userId])
+  @@index([userId])
+}
+
+/// 偷外卖 · takeout-guard（中敏感，支持匿名）
+model TakeoutReport {
+  id          String   @id @default(cuid())
+  /// 实名举报者；匿名举报时为 null
+  reporterId  String?
+  /// 匿名 handle，与实名身份解耦存储（契约 §9）
+  anonHandle  String?
+  orderNo     String
+  place       String
+  happenedAt  DateTime
+  detail      String?
+  evidenceUrl String?
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, happenedAt])
+  @@index([anonHandle])
+}
+
+/// 跳蚤 · flea-market（低敏感）
+model FleaItem {
+  id          String   @id @default(cuid())
+  sellerId    String
+  title       String
+  description String?
+  /// 价格，**分**
+  priceFen    Int
+  category    String
+  /// new | like-new | good | fair
+  condition   String   @default("good")
+  campusSpot  String?
+  /// 图片地址。**只存本平台上传的地址**（见 common/media/media-url.ts 的白名单），
+  /// 且上传时已剥离 EXIF GPS（契约 A2.5）。
+  imageUrls   String[] @default([])
+  status      String   @default("on-sale")
+  /// 被预定/售出后置位，便于"我的发布"展示
+  reservedById String?
+  soldAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  seller User @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([status, category])
+  @@index([priceFen])
+  @@index([sellerId, status])
+}
+
+/// 宿舍矛盾 · dorm-harmony（**高敏感**）
+///
+/// 访问域：dorm-harmony
+/// 契约 §9：匿名调解，禁止进入通用画像；ai-portrait 不得读取本表。
+///
+/// 匿名与「可追踪」并存的做法（重要）：
+///   本表**没有**指向 `User` 的外键（防止实名关联），
+///   用户在提交时会拿到一次性的 `trackCode` 明文，
+///   服务端只存 `trackCodeHash`。后续查询/追加留言都必须出示该 code，
+///   因此"能追踪自己的案子"与"服务端不知道案子属于谁"可以同时成立。
+model DormHarmonyCase {
+  id            String   @id @default(cuid())
+  /// 匿名 handle —— 与实名 User 无外键，刻意解耦
+  anonHandle    String
+  /// 追踪码的哈希（明文只在提交响应里出现一次）
+  trackCodeHash String?
+  building      String
+  topic         String
+  detail        String?
+  status        String   @default("submitted")
+  /// 调解员（宿管/辅导员），未介入时为 null
+  mediatorId    String?
+  /// 期望的解决方式：talk | mediation | rule | other
+  expectation   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  messages DormHarmonyMessage[]
+
+  @@index([status, building])
+  @@index([anonHandle])
+}
+
+/// 宿舍矛盾调解留言（匿名线索）。高敏感：只按 caseId 关联。
+model DormHarmonyMessage {
+  id         String   @id @default(cuid())
+  caseId     String
+  /// student | mediator
+  fromRole   String   @default("student")
+  anonHandle String?
+  body       String
+  createdAt  DateTime @default(now())
+
+  case DormHarmonyCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, createdAt])
+}
+
+/// 跑腿 · errand（低敏感）
+model ErrandTask {
+  id          String   @id @default(cuid())
+  requesterId String
+  /// 接单者，未接单为 null
+  runnerId    String?
+  title       String
+  detail      String?
+  /// 悬赏，**分**
+  rewardFen   Int
+  fromPlace   String
+  toPlace     String
+  deadline    DateTime
+  status      String   @default("open")
+  /// 接单时间 / 送达时间，用于超时判定与「我的跑腿」排序
+  acceptedAt  DateTime?
+  deliveredAt DateTime?
+  settledAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  requester User  @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+  runner    User? @relation("ErrandRunner", fields: [runnerId], references: [id], onDelete: SetNull)
+
+  @@index([status, deadline])
+  @@index([rewardFen])
+  @@index([requesterId, status])
+  @@index([runnerId, status])
+}
+
+/* ================================================================== *
+ * 找搭子 · buddy（低敏感，规格 docs/features/buddy-matching.md）
+ *
+ * 领域骨架见 `02-domain-model.md` §2.3（已冻结）：`BuddyPost` / `BuddyApplication`
+ * 的字段与状态机**不得改动**；本模块只在其上补 `BuddyProfile` /
+ * `BuddyMatchFeedback` / `BuddyQuestionnaire(+Response)` / `BuddyTag`。
+ *
+ * ⚠️ 脚手架占位表 `BuddyGroup`（status='recruiting'）已**退休**：
+ *    它既不是冻结契约里的模型，也不承载规格 §3 的匹配特征。
+ *    退休动作在 `20261017050000_buddy` 迁移里（DROP TABLE + 建新表）。
+ *
+ * ⚠️ `embedding Unsupported("vector(768)")?` 的三个真实限制（规格 §4.2）：
+ *    1. `prisma migrate dev` **不会**为它生成 DDL —— 本仓用手写迁移
+ *       （`prisma/migrations/20261017050000_buddy/migration.sql`）；
+ *    2. Prisma Client **不暴露**该字段给 create/update/select：
+ *       写入必须 `$executeRaw`，读取必须 `$queryRaw`（见 data/buddy-vector.repository.ts）；
+ *    3. `prisma db pull` 能识别 vector 列但**维度信息可能丢失**，重生成 schema 务必 diff。
+ * ================================================================== */
+
+/// 找搭子 · 匹配资料（规格 §2.2）。**不是**账号资料：`profile` 存"我是谁"，
+/// 本表只存"匹配要用的特征"。撤回匹配 = 硬删本行，不影响账号。
+///
+/// 访问域：buddy。**对任何人都不直接可见**（含发帖人），只被算法使用（规格 §6.1）。
+model BuddyProfile {
+  userId         String   @id
+  /// academic | daily | sport（至少 1 项才可被推荐）
+  sections       String[] @default([])
+  /// 封闭标签表的 key，≤20 项（规格 §3.2：不允许自由文本进入匹配特征）
+  interestTags   String[] @default([])
+  /// 封闭标签表的 key，≤10 项
+  activityTags   String[] @default([])
+  /// beginner | casual | regular | competitive（仅 sport 使用）
+  skillLevel     String?  @default("casual")
+  /// [{ dow, startMin, endMin }]，分钟粒度、Asia/Shanghai（规格 §3.3 F7）
+  availability   Json     @default("[]")
+  /// 校园地点白名单，≤5 项。**不是**精确坐标
+  preferredAreas String[] @default([])
+  department     String?
+  bio            String?
+  /// **默认关闭**：不主动开启就不进推荐池（规格 §6.3 的隐私决策）
+  matchEnabled   Boolean  @default(false)
+  /// pgvector 列。由 §3.4 的 profileText 生成；只能走 $queryRaw/$executeRaw
+  embedding      Unsupported("vector(768)")?
+  embeddingModel String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([matchEnabled])
+  @@map("BuddyProfile")
+}
+
+/// 找搭子 · 招募帖（契约 `02-domain-model.md:518-527` 冻结 + 规格 §2.3 新增可选字段）。
+///
+/// 状态机（冻结，规格 §2.8）：OPEN → FULL → OPEN / CLOSED / EXPIRED / CANCELLED。
+/// 流转只走 `domain/buddy-post.state.ts` 的 `canTransition` 纯函数。
+model BuddyPost {
+  id               String   @id @default(cuid())
+  creatorId        String
+  /// sport | study | meal | travel | game | other（冻结）。板块由它**派生**，不另存 section
+  activity         String
+  /// OPEN | FULL | CLOSED | EXPIRED | CANCELLED（冻结）
+  status           String   @default("OPEN")
+  title            String
+  description      String?
+  location         String
+  startsAt         DateTime
+  /// 预计时长（分钟）30–480，用于时段重叠判断
+  durationMin      Int?
+  /// 含发起人的总人数（规格 U2：初值 1、capacity 含发起人）
+  capacity         Int
+  joinedCount      Int      @default(1)
+  /// any | same | other（冻结）—— 发起人的准入约束，**不是**打分特征
+  genderPreference String   @default("any")
+  /// 封闭标签表的 key，≤8 项。**匹配打分的主特征**
+  tags             String[] @default([])
+  /// beginner | casual | regular | competitive（仅 sport）。**硬过滤 F6**，不是打分
+  minSkillLevel    String?
+  /// 到期自动转 EXPIRED 的时间，默认 = startsAt
+  autoCloseAt      DateTime?
+  /// pgvector 列（规格 §4.4：baseScore 比较"我的画像向量"与"帖子向量"）
+  embedding        Unsupported("vector(768)")?
+  embeddingModel   String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime?
+
+  creator      User                 @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  applications BuddyApplication[]
+  feedbacks    BuddyMatchFeedback[]
+
+  @@index([status, startsAt])
+  @@index([activity, status, startsAt])
+  @@index([creatorId])
+  @@map("BuddyPost")
+}
+
+/// 找搭子 · 申请（契约 `02-domain-model.md:528-531` 冻结 + 规格 §2.4 新增字段）。
+///
+/// 状态机（冻结）：PENDING → ACCEPTED / REJECTED / WITHDRAWN；WITHDRAWN → PENDING
+/// （复用同一行，为 `@@unique([postId, applicantId])` 服务，规格 U7）。
+model BuddyApplication {
+  id          String    @id @default(cuid())
+  postId      String
+  applicantId String
+  /// PENDING | ACCEPTED | REJECTED | WITHDRAWN（冻结）
+  status      String    @default("PENDING")
+  message     String?
+  /// 接受/拒绝时刻，审计用
+  decidedAt   DateTime?
+  /// 必须等于 post.creatorId
+  decidedBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  post      BuddyPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  applicant User      @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  /// 同一人对同一活动只能有一条申请记录（撤回后重新申请是**更新**该行，不是插新行）
+  @@unique([postId, applicantId])
+  @@index([applicantId, status])
+  @@map("BuddyApplication")
+}
+
+/// 找搭子 · 匹配反馈（规格 §2.5，移植 STUMatch `MatchFeedback`）。
+///
+/// 适配：反馈目标是**帖子**而非用户 —— 对"这个人"表达不喜欢会变成对同学的隐性评价。
+model BuddyMatchFeedback {
+  id           String   @id @default(cuid())
+  userId       String
+  targetPostId String
+  /// academic | daily | sport。**隔离维度**：跨板块反馈会互相污染（规格 §3.6）
+  section      String
+  /// like | dislike | skip（与 STUMatch 同名同义）
+  action       String
+  /// 衰减计算基准
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetPost BuddyPost @relation(fields: [targetPostId], references: [id], onDelete: Cascade)
+
+  /// 同一板块内对同一帖子的反馈可覆盖（UPSERT），避免刷反馈（规格 D11）
+  @@unique([userId, targetPostId, section])
+  @@index([userId, section, createdAt])
+  @@map("BuddyMatchFeedback")
+}
+
+/// 找搭子 · 问卷定义（规格 §2.6）。题目存 DB（可运营调整，不需发版），答案存 JSON。
+model BuddyQuestionnaire {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  /// academic | daily | sport
+  section     String
+  description String?
+  /// 题目数组，schema 见规格 §2.6（single_choice | multiple_choice | rating | text）
+  questions   Json     @default("[]")
+  isActive    Boolean  @default(true)
+  /// 从 1 递增；**改题必须新建版本**，不原地改（否则历史答案无法解释）
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  responses BuddyQuestionnaireResponse[]
+
+  @@index([section, isActive])
+  @@map("BuddyQuestionnaire")
+}
+
+/// 找搭子 · 问卷答案（规格 §2.6）。只把白名单键同步进 `BuddyProfile`。
+model BuddyQuestionnaireResponse {
+  id              String   @id @default(cuid())
+  questionnaireId String
+  userId          String
+  /// { [questionId]: value }
+  answers         Json     @default("{}")
+  /// 冗余记录当时版本
+  version         Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  questionnaire BuddyQuestionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 一人一份；重新提交是更新（规格 §2.6 未明说，属本模块补充，见交付说明）
+  @@unique([questionnaireId, userId])
+  @@map("BuddyQuestionnaireResponse")
+}
+
+/// 找搭子 · 封闭标签表（规格 §3.2）。
+///
+/// 自由文本会导致"羽毛球"/"打羽毛球"/"badminton"互不匹配，因此
+/// `interestTags` / `activityTags` / `BuddyPost.tags` 一律取本表的 `key`。
+/// `aliases` **仅用于搜索**，不用于匹配。
+/// 标签表变更必须走 migration + 审计，**不得运行时改**（否则历史匹配不可复现）。
+model BuddyTag {
+  /// 机器值，如 badminton
+  key       String   @id
+  /// 中文显示名，如 羽毛球
+  label     String
+  /// sport | study | meal | travel | interest（供 UI 分栏）
+  group     String
+  aliases   String[] @default([])
+  /// 下架标签不删除（历史数据仍引用）
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([group, isActive])
+  @@map("BuddyTag")
+}
+
+/// 失物招领 · lost-found（低敏感）
+model LostFoundItem {
+  id          String   @id @default(cuid())
+  reporterId  String
+  /// lost | found
+  kind        String
+  title       String
+  description String?
+  place       String
+  happenedAt  DateTime
+  contactHint String?
+  /// 图片地址（同 FleaItem.imageUrls：仅本平台地址，已剥离 EXIF GPS）
+  imageUrls   String[] @default([])
+  status      String   @default("open")
+  /// 认领/归还后置位（closed | claimed）
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([kind, status])
+  @@index([happenedAt])
+  @@index([reporterId, status])
+}
+
+/// 食堂营养 · canteen（低敏感）
+model CanteenDish {
+  id           String   @id @default(cuid())
+  canteen      String
+  name         String
+  caloriesKcal Int
+  proteinG     Int
+  fatG         Int
+  carbG        Int
+  /// 价格，**分**
+  priceFen     Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([canteen])
+  @@index([caloriesKcal])
+}
+
+/// 论坛版块 · forum
+///
+/// `ForumPost.board` 存的是本表的 `slug`（不是 id）：
+/// 版块是**低频变更的目录数据**，用 slug 做业务键让帖子列表过滤
+/// 与前端路由可以共用同一个可读值。为了不破坏已有数据与 seed，
+/// 这里**刻意不加外键约束**，改由用例层校验版块存在（见 forum.service）。
+model ForumBoard {
+  id          String   @id @default(cuid())
+  /// 唯一业务键，由 `slugify` 生成（契约 §6.3 的 slugify）
+  slug        String   @unique
+  name        String
+  description String?
+  /// public | campus_only（campus_only 需登录，契约 §4 模块表）
+  visibility  String   @default("public")
+  /// 冗余计数（发帖时自增）
+  postCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([visibility])
+}
+
+/// 论坛主题 · forum（中敏感，支持匿名）
+///
+/// 匿名存储（契约 §9）：`anonymous=true` 时 `authorId` 恒为 `null`，
+/// 只存 `anonHandle`（= HMAC(secret, userId + '|' + 'thread:' + postId)）。
+/// 也就是说**实名身份根本不落库**，作者身份只能由本人携带 JWT 重算 handle 证明，
+/// 因此同一人在不同主题的 handle 天然不可关联（见 forum.domain.ts）。
+model ForumPost {
+  id         String    @id @default(cuid())
+  /// → ForumBoard.id（02-domain-model §2.4 的 boardId）
+  boardId    String
+  authorId   String?
+  anonHandle String?
+  title      String
+  body       String
+  /// DRAFT | PUBLISHED | LOCKED | HIDDEN | DELETED（状态机见 forum.domain.ts）
+  status     String    @default("PUBLISHED")
+  /// ≤5 个，每个 ≤16 字（契约 02-domain-model §2.4）
+  tags       String[]  @default([])
+  /// 冗余计数，回复/删除回复时维护，供详情页直接返回
+  replyCount Int       @default(0)
+  likeCount  Int       @default(0)
+  pinnedAt   DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  author  User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  replies ForumReply[]
+
+  @@index([boardId, status, createdAt])
+  @@index([anonHandle])
+  @@index([status, createdAt])
+}
+
+/// 论坛回复
+model ForumReply {
+  id            String   @id @default(cuid())
+  postId        String
+  /// 二级回复（指向同表 id）；无外键，理由同 ForumPost.board
+  parentReplyId String?
+  authorId      String?
+  anonHandle    String?
+  body          String
+  /// PUBLISHED | HIDDEN | DELETED
+  status        String   @default("PUBLISHED")
+  likeCount     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  post   ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([postId, createdAt])
+  @@index([postId, status])
+  @@index([parentReplyId])
+}
+
+/// 论坛举报 · forum
+///
+/// 匿名可用：匿名举报人只留 `reporterKey`（HMAC handle），`reporterId` 为 null。
+/// `reporterKey` 同时是**去重键**：同一人对同一条内容的重复举报只会有一行，
+/// 这样「3 个不同用户举报自动隐藏」的阈值统计不会被同一个人刷出来。
+model ForumReport {
+  id         String   @id @default(cuid())
+  /// POST | REPLY
+  targetType String
+  targetId   String
+  /// spam | abuse | pii | illegal | other（pii 的旧写法 privacy 会被归一化）
+  reason     String
+  detail     String?
+  /// PENDING | UPHELD | DISMISSED
+  status     String   @default("PENDING")
+  /// 实名举报人；匿名举报时为 null（与 reporterKey 解耦）
+  reporterId String?
+  /// 去重/计数键：`user:<id>` 或 `anon:<handle>`，绝不等于实名 id
+  reporterKey String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([targetType, targetId, reporterKey])
+  @@index([targetId, status])
+  @@index([status, createdAt])
+}
+
+/// AI 校园画像 · ai-portrait（**高敏感**）
+///
+/// 访问域：ai-portrait
+/// 契约 §9 数据最小化：本表**不得**由 wellbeing / dorm-harmony 的数据派生。
+/// `explain` 存放可解释性字段，`enabled` 对应用户可关闭开关。
+model AiPortraitProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  /// 画像标签（可解释、可关闭）
+  traits    Json
+  /// 每个标签的推导来源，供用户查看"为什么给我推这个"
+  explain   Json
+  enabled   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// 心理治疗 · wellbeing（**最高敏感**）
+///
+/// 访问域：wellbeing
+/// 契约 §9：
+///   · 必须二次同意（Consent 表），否则 CONSENT_REQUIRED；
+///   · 读写全部落 AuditLog；
+///   · 必须提供危机干预热线出口，且不可被埋进二级菜单；
+///   · 数据不进入通用画像。
+model WellbeingAppointment {
+  id         String   @id @default(cuid())
+  userId     String
+  counselor  String
+  slotAt     DateTime
+  /// online | onsite
+  mode       String   @default("onsite")
+  status     String   @default("requested")
+  /// 最小化采集：仅存用户主动填写的诉求摘要
+  note       String?
+  /// 触发危机干预流程的标记
+  crisisFlag Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, slotAt])
+  @@index([status])
+}
+
+/// 常见问题 · faq（低敏感）
+model FaqEntry {
+  id             String   @id @default(cuid())
+  /// 唯一业务键（02-domain-model §2.8）：slugify(question)，中文会退化为 ULID
+  slug           String   @unique
+  question       String
+  answer         String
+  category       String
+  tags           String[]
+  /// DRAFT | PUBLISHED | ARCHIVED
+  status         String   @default("PUBLISHED")
+  helpfulCount   Int      @default(0)
+  unhelpfulCount Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([category, status])
+}
+
+/// FAQ「有用」投票 · faq
+///
+/// 幂等落点：`@@unique([entryId, voterKey])` 让「同一用户重复点只算一次」
+/// 由**数据库约束**保证，而不是靠先查后写的竞态逻辑。
+/// 注意本表只存 `voterKey`（`user:<id>`），不存任何画像字段。
+model FaqHelpfulVote {
+  id        String   @id @default(cuid())
+  entryId   String
+  voterKey  String
+  /// helpful | unhelpful（同一人可改票，唯一约束保证一人一票）
+  vote      String   @default("helpful")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([entryId, voterKey])
+  @@index([entryId])
+}
+
+/// FAQ 工单式自助答疑 · faq
+///
+/// 未登录也可提交（`userId` 为 null，契约 02-domain-model §2.8）。
+/// `contact` 只允许邮箱/微信，**禁止明文手机号**（用例层用 isChinaMobile 拦截）。
+model FaqTicket {
+  id                String    @id @default(cuid())
+  userId            String?
+  contact           String
+  question          String
+  /// OPEN | ANSWERED | CLOSED（状态机见 faq.domain.ts）
+  status            String    @default("OPEN")
+  answer            String?
+  answeredAt        DateTime?
+  closedAt          DateTime?
+  /// 提交时命中的 FAQ 建议 id（用于后续统计"未命中"，不做推荐模型）
+  suggestedEntryIds String[]  @default([])
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+/// 场馆预约 · facility（中敏感，契约 §11.10-C 新增的第 20 个模块）
+///
+/// 金额一律整数分（契约 §6.1）：`feeFen` 是 Int，禁止 Float/Decimal。
+/// 状态：booked | cancelled | completed。
+model FacilityBooking {
+  id           String   @id @default(cuid())
+  ownerId      String
+  /// gym | badminton | basketball | tennis | pool | other
+  kind         String
+  facilityName String?
+  startsAt     DateTime
+  endsAt       DateTime
+  status       String   @default("booked")
+  /// 费用（整数分）
+  feeFen       Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([ownerId, startsAt])
+  @@index([kind, startsAt])
+  @@index([status, startsAt])
+}
+
+/// TechPie 整合 · 校园平台绑定（契约 §2.9 + 规格 §5.1）。
+///
+/// 访问域：campus-binding（**只有状态，没有凭证**）
+/// 硬规则：
+///   1. 本表**不含任何凭证** —— 凭证只在 `CampusSession.sessionCipher` 里；
+///   2. `provider` 按契约 §11.10-B 冻结为校园平台语义
+///      （`cas | egate | cpdaily | ecard | techpie`），与 `CampusBinding.platform` 同一套；
+///   3. **Phase 0 只写 `ecard`**（校园卡走独立 OPENID 通道，与 CASTGC 完全解耦 —— 规格 §2.5）。
+///      其余平台属 Phase 1+，阻塞于信息办书面回复（U7 / U12），**不实现**。
+model TechpieLink {
+  id             String    @id @default(cuid())
+  userId         String
+  /// 校园平台：cas | egate | cpdaily | jwc | ecard | techpie（契约 §11.20-C 统一枚举）
+  provider       String
+  /// PENDING | ACTIVE | EXPIRED | REVOKED | FAILED（契约 §11.19-A：以 OpenAPI 为准）
+  status         String    @default("PENDING")
+  /// 对端标识（校园卡的 OPENID / 学号）。**不是**凭证。
+  externalUserId String?
+  /// 对端 token（加密）。⚠️ Phase 0 **没有任何写入者** ——
+  /// Gradescope / Hydro 的第三方 token 属 U13「建议 M4 再评估」。
+  /// 保留该列是为了对齐契约 §2.9 的冻结字段，**不代表已实现该能力**。
+  tokenCipher    String?
+  expiresAt      DateTime?
+  lastSyncAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  /// 解绑用软删（`DELETE /links/:id`）；但**凭证副本是硬删**（见 CampusSession）。
+  deletedAt      DateTime?
+
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs TechpieSyncJob[]
+
+  @@unique([userId, provider])
+  @@index([status, expiresAt])
+  @@map("TechpieLink")
+}
+
+/// TechPie 整合 · 同步任务（契约 §2.9 + 规格 §5.2）。
+///
+/// 访问域：campus-binding
+/// `lastError` **必须脱敏**（规格 §10.3）：不得含 cookie / token / 密码。
+model TechpieSyncJob {
+  id          String    @id @default(cuid())
+  linkId      String
+  /// pull_schedule | pull_deadline | push_post
+  kind        String
+  /// QUEUED | RUNNING | SUCCEEDED | FAILED | SKIPPED
+  status      String    @default("QUEUED")
+  /// 指数退避，最多 5 次（契约 §2.9）
+  attempts    Int       @default(0)
+  lastError   String?
+  nextRetryAt DateTime?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  link TechpieLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextRetryAt])
+  @@index([linkId, createdAt])
+  @@map("TechpieSyncJob")
+}
+
+/// TechPie 整合 · 校园会话密文（规格 §5.3）—— **整个模块最敏感的表**。
+///
+/// 访问域：campus-session（凭证的唯一落点）
+/// 硬规则：
+///   1. 它**不属于身份层**（契约 §5 硬规则 1），业务代码永远不直接读它；
+///   2. 解密只允许在 `modules/techpie/data/campus-session.service.ts` 内部；
+///   3. 解绑即**硬删**整行（对齐 `05-security-privacy.md:458`）；
+///   4. ⚠️ **Phase 0 只有 `ecard`（OPENID 通道）一个写入者。**
+///      `egate` / `cpdaily` 等需要 CASTGC 的平台在信息办书面回复（U7）前
+///      **没有任何写入路径** —— 不是"先做着等批准"，而是根本不做：
+///      一旦落库就有了未经授权的凭证副本，事后清理无法消除已发生的风险。
+model CampusSession {
+  id             String    @id @default(cuid())
+  userId         String
+  /// 校园平台：cas | egate | cpdaily | jwc | ecard | techpie（契约 §11.20-C 统一枚举）
+  platform       String
+  /// ACTIVE | EXPIRED | REVOKED
+  status         String    @default("ACTIVE")
+  /// AES-256-GCM 密文（含 cookie / 会话）。**永不出现在任何响应里**。
+  sessionCipher  String
+  /// 密钥版本，支持轮换
+  cipherKeyId    String
+  externalUserId String?
+  expiresAt      DateTime?
+  lastRenewedAt  DateTime?
+  /// ≥3 时转 EXPIRED 并要求用户重绑（规格 §5.3）
+  renewFailCount Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@index([status, expiresAt])
+  @@map("CampusSession")
+}
+
+/* ================================================================== *
+ * 2.10 wildlife 域（猫/鸟/黑天鹅活动区域与轨迹）—— 规格
+ *      docs/features/wildlife-map.md §2 / §7 / §9
+ *
+ * 全局约定（规格 §3.2）：
+ *   · **所有 lat/lng 列的语义都是 WGS84**，禁止出现 gcjLat/gcjLng 这类持久化列；
+ *     GCJ-02 只在渲染前一刻于内存中存在（`domain/geo.ts` 的 `toGcj02`）。
+ *   · 金额/半径/计数一律 Int；经纬度用 Decimal(10,7)（≈1.1 cm 分辨率）。
+ *   · 主键用 cuid()（本文件头部冻结的仓库约定；规格 §7 草案写的是
+ *     `dbgenerated("gen_ulid()")`，但本仓库没有该 PG 函数 —— 见交付说明）。
+ * ================================================================== */
+
+/// 物种分类树 · wildlife（低敏感）
+///
+/// ⚠️ 种子数据（`prisma/seed-data.ts`）中的物种清单是**推测值**，未做实地物种调查
+/// （规格 §2.5 / U2）。`needsFieldVerification` / `verificationNote` 就是把这个
+/// 未知项变成**机器可见**的标记 —— 与 `CampusBasemap.license` 的 CI 校验同一思路。
+model SpeciesTaxonomy {
+  id                   String  @id @default(cuid())
+  /// 学名，如 `Cygnus atratus`。唯一
+  scientificName       String  @unique
+  commonNameZh         String
+  commonNameEn         String?
+  /// species | genus | family | order
+  taxonRank            String  @default("species")
+  parentId             String?
+  parent               SpeciesTaxonomy?  @relation("TaxonTree", fields: [parentId], references: [id])
+  children             SpeciesTaxonomy[] @relation("TaxonTree")
+  /// 国家/地方保护动物 → 审核严格度提升（双人复核）
+  isProtected          Boolean @default(false)
+  /// 繁殖期敏感 → 触发 §9.4 季节性加强模糊
+  isNestingSensitive   Boolean @default(false)
+  /// 繁殖月份（1–12）。仅 isNestingSensitive 时有意义
+  nestingMonths        Int[]   @default([])
+  /// allowed | discouraged | forbidden
+  defaultFeedingPolicy String  @default("discouraged")
+  /// 对接外部识别 API 的标签映射 `{ inaturalist?: number; baiduLabel?: string }`
+  externalIds          Json    @default("{}")
+  iconUrl              String?
+  isActive             Boolean @default(true)
+  /// 该条目是否仍需实地核实（U2）。种子数据全部为 true
+  needsFieldVerification Boolean @default(true)
+  verificationNote     String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  deletedAt            DateTime?
+
+  sightings   WildlifeSighting[]
+  individuals WildlifeIndividual[]
+  spots       WildlifeSpot[]
+  tracks      WildlifeTrack[]
+
+  @@index([taxonRank, isActive])
+  @@map("SpeciesTaxonomy")
+}
+
+/// 管理端划定的区域 · wildlife（低敏感）
+///
+/// 语义：**人工定义**的区域（投喂政策 / 告示位 / 管理边界 / 敏感区多边形）。
+/// 与 `WildlifeSpot`（算法聚类出的热点）**不是同一张表**（规格 §2.3）。
+model WildlifeZone {
+  id            String   @id @default(cuid())
+  name          String
+  /// 主要物种标签（SpeciesTaxonomy.id 列表）
+  speciesIds    String[] @default([])
+  /// WGS84 圆心
+  centerLat     Decimal  @db.Decimal(10, 7)
+  centerLng     Decimal  @db.Decimal(10, 7)
+  radiusM       Int
+  /// allowed | discouraged | forbidden
+  feedingPolicy String   @default("discouraged")
+  note          String?
+  /// 该区域的位置模糊化半径（米），默认 50（规格 §9.3 ②）
+  fuzzRadiusM   Int      @default(50)
+  /// 敏感区（宿舍/保育区/巢区）→ 公开展示时**只给区域不给坐标**（规格 §9.3 ①）
+  isSensitive   Boolean  @default(false)
+  /// 敏感区多边形顶点环（WGS84，`[{lat,lng}, ...]`）。
+  /// 规格 §9.3① 的 `SensitivePolygon.ring` 来源；只有 isSensitive=true 时有意义。
+  /// 为 null 的敏感区退化为"整个圆都不给坐标"（仍安全，只是判定更粗）。
+  sensitiveRing Json?
+  /// 告示位文案（黑天鹅等），规格 §8.3
+  noticeText    String?
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  sightings WildlifeSighting[]
+  spots     WildlifeSpot[]
+
+  @@index([isSensitive])
+  @@index([sortOrder])
+  @@map("WildlifeZone")
+}
+
+/// 一条观测上报 · wildlife（低敏感，但含位置/时间 → 属画像输入）
+///
+/// 访问域：wildlife
+/// 硬规则（规格 §2.6 / §9）：
+///   · `geoLat`/`geoLng` 是**已模糊化**的可公开坐标，**永远不是**精确坐标；
+///   · 精确坐标只存在 `WildlifeSightingExact`（受限表，读一次写一次审计）；
+///   · `observedAt`（发现时间）与 `createdAt`（上报时间）**必须分离**（契约 §11.10-A）。
+model WildlifeSighting {
+  id       String        @id @default(cuid())
+  zoneId   String?
+  zone     WildlifeZone? @relation(fields: [zoneId], references: [id])
+  /// SpeciesTaxonomy.id。契约冻结的字段名是 `species`
+  species  String
+  speciesRef SpeciesTaxonomy @relation(fields: [species], references: [id])
+  /// PENDING | PUBLISHED | REJECTED（契约 §2.10 状态机，不得改动）
+  status   String        @default("PENDING")
+
+  /// 公开坐标：WGS84，**已模糊化**。
+  /// 规格 §6.3 U6：契约把 geo 定义成 `{lat,lng}` 对象，但 Json 无法建索引/无法范围过滤，
+  /// 因此持久层拆成两个标量列；API 层仍返回 `geo: {lat, lng}`（响应形状不变）。
+  geoLat   Decimal?      @db.Decimal(10, 7)
+  geoLng   Decimal?      @db.Decimal(10, 7)
+  /// 实际生效的模糊层级：grid | coarsened | zone-only（规格 §9.2 四层流水线的产物）
+  geoFuzzLevel String    @default("grid")
+  /// 生效的模糊半径（米）。含 §9.4 季节性加强后的结果
+  fuzzRadiusM  Int       @default(50)
+  /// k-匿名计数用的网格键（`gridCellKey`，与 `snapToGrid` 同一套 floor 划分）。
+  /// 必须在**公开表**上，因为受限表不能被聚合查询读取（规格 §9.3 ④）。
+  gridCellKey  String?
+
+  photoUrls     String[] @default([])
+  healthConcern Boolean  @default(false)
+  reporterId    String
+  reporter      User     @relation(fields: [reporterId], references: [id])
+
+  /// 发现时间（用户选的）
+  observedAt       DateTime
+  /// 公开的粗化时间（规格 §9.5）
+  observedAtFuzzed DateTime
+  /// 公开延迟（天）。保护物种繁殖期为 7，其余为 0（规格 §9.5）
+  publishDelayDays Int      @default(0)
+
+  individualId           String?
+  individual             WildlifeIndividual? @relation(fields: [individualId], references: [id])
+  autoSpeciesId          String?
+  autoConfidence         Decimal? @db.Decimal(4, 3)
+  /// manual | vision_api | ondevice | fallback
+  classifiedBy           String   @default("manual")
+  /// 用户纠正了自动结果 → 训练样本（规格 §5.5）
+  correctedFromSpeciesId String?
+  note                   String?
+  isAnonymous            Boolean  @default(false)
+  moderatedBy            String?
+  moderatedAt            DateTime?
+  /// ≤200 字，**仅审核端可见**
+  rejectReason           String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  exact WildlifeSightingExact?
+  media WildlifeMedia[]
+
+  @@index([species, status, observedAt])
+  @@index([geoLat, geoLng])        // 包围盒粗筛（规格 §6.3）
+  @@index([status, createdAt])     // 审核队列
+  @@index([healthConcern, status]) // 健康异常优先
+  @@index([gridCellKey, observedAt]) // k-匿名计数（规格 §9.3 ④）
+  @@index([reporterId, createdAt])
+  @@map("WildlifeSighting")
+}
+
+/// 受限表：精确坐标 · wildlife
+///
+/// 访问域：wildlife.exact（**仅审核员 / 社团管理员**，每次读取写审计）
+/// 规格 §2.7：普通用户**完全不可读**，上报人本人**也不可读**（最小权限原则）。
+model WildlifeSightingExact {
+  sightingId      String           @id
+  sighting        WildlifeSighting @relation(fields: [sightingId], references: [id], onDelete: Cascade)
+  /// WGS84 精确纬度
+  exactLat        Decimal          @db.Decimal(10, 7)
+  /// WGS84 精确经度
+  exactLng        Decimal          @db.Decimal(10, 7)
+  exactAccuracyM  Int?
+  exactObservedAt DateTime
+  @@map("WildlifeSightingExact")
+}
+
+/// 被命名的个体 · wildlife（"手动给个名字"，规格 §2.8）
+///
+/// 审核语义与 WildlifeSighting 同构（刻意复用同一套队列与守卫）。
+model WildlifeIndividual {
+  id            String          @id @default(cuid())
+  name          String
+  speciesId     String
+  species       SpeciesTaxonomy @relation(fields: [speciesId], references: [id])
+  description   String?
+  coverPhotoUrl String?
+  /// PENDING | PUBLISHED | REJECTED
+  status        String          @default("PENDING")
+  isActive      Boolean         @default(true)
+  createdBy     String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?
+
+  sightings WildlifeSighting[]
+
+  /// 同物种内名字唯一，防止重复建个体
+  @@unique([speciesId, name])
+  @@index([status, createdAt])
+  @@map("WildlifeIndividual")
+}
+
+/// 观测照片 · wildlife
+///
+/// 硬规则（规格 §4.3）：`storageKey` 指向的对象**必须已剥离 EXIF**（含 GPS）。
+/// 未剥离 GPS 的照片会直接绕过 §9 的全部位置模糊化。
+model WildlifeMedia {
+  id            String           @id @default(cuid())
+  sightingId    String?
+  sighting      WildlifeSighting? @relation(fields: [sightingId], references: [id], onDelete: Cascade)
+  storageKey    String
+  thumbKey      String
+  widthPx       Int
+  heightPx      Int
+  /// 剥离元数据**之后**的大小
+  byteSize      Int
+  mimeType      String
+  /// 内容哈希，用于去重
+  sha256        String
+  /// 客户端生成的幂等键（规格 §4.5）
+  clientPhotoId String
+  sortOrder     Int              @default(0)
+  /// 上传者（孤儿媒体回收与越权校验用）
+  uploadedBy    String?
+  createdAt     DateTime         @default(now())
+
+  @@unique([sightingId, clientPhotoId])
+  @@unique([uploadedBy, clientPhotoId])
+  @@index([sha256])
+  @@index([sightingId, sortOrder])
+  @@index([sightingId, createdAt]) // 孤儿媒体回收（24h）
+  @@map("WildlifeMedia")
+}
+
+/// 聚合热点 · wildlife（**派生只读**，由 Worker 重算覆盖，无写端点）
+///
+/// 与 `WildlifeZone`（人工定义）刻意分表（规格 §2.3）。
+model WildlifeSpot {
+  id                String          @id @default(cuid())
+  speciesId         String
+  species           SpeciesTaxonomy @relation(fields: [speciesId], references: [id])
+  zoneId            String?
+  zone              WildlifeZone?   @relation(fields: [zoneId], references: [id])
+  /// WGS84，**已模糊化**的聚类质心
+  centroidLat       Decimal         @db.Decimal(10, 7)
+  centroidLng       Decimal         @db.Decimal(10, 7)
+  /// 95 分位半径
+  radiusM           Int
+  sightingCount     Int
+  /// 去重上报人数（反作弊：同一人多次上报只计 1，规格 §6.2 ②）
+  distinctReporters Int
+  firstSeenAt       DateTime
+  lastSeenAt        DateTime
+  /// 24 小时分布直方图（"常见出没时段"）
+  hourHistogram     Int[]           @default([])
+  confidence        Decimal         @db.Decimal(4, 3)
+  /// 如 `dbscan-v1`，用于可复现
+  algorithmVersion  String
+  computedAt        DateTime
+  createdAt         DateTime        @default(now())
+
+  @@index([speciesId, computedAt])
+  @@index([computedAt])
+  @@map("WildlifeSpot")
+}
+
+/// 推断轨迹 · wildlife（**派生只读**）
+///
+/// ⚠️ 数据来自同学偶发上报，**不是 GPS 项圈** → 无法重建真实运动路径（规格 §6.1）。
+/// `isInferred` **恒为 true**，字段存在的唯一目的是让客户端无法忘记标注它。
+model WildlifeTrack {
+  id               String          @id @default(cuid())
+  speciesId        String
+  species          SpeciesTaxonomy @relation(fields: [speciesId], references: [id])
+  individualId     String?
+  /// 途经的 WildlifeSpot，**按时间排序**
+  spotIds          String[]        @default([])
+  /// LineString（**已模糊化**）
+  pathGeoJson      Json
+  totalDistanceM   Int
+  spanStartAt      DateTime
+  spanEndAt        DateTime
+  sightingCount    Int
+  /// 只有一种方法，明确不做插值（规格 §6.2 ④）
+  method           String          @default("dbscan-chain")
+  confidence       Decimal         @db.Decimal(4, 3)
+  isInferred       Boolean         @default(true)
+  algorithmVersion String
+  computedAt       DateTime
+  createdAt        DateTime        @default(now())
+
+  @@index([speciesId, computedAt])
+  @@index([computedAt])
+  @@map("WildlifeTrack")
+}
+
+/* ================================================================== *
+ * 3. 基础模块表（契约 §4.2，5 个）
+ * ================================================================== */
+
+/// 课表 · schedule（中敏感）
+model ScheduleCourse {
+  id         String   @id @default(cuid())
+  userId     String
+  term       String
+  courseName String
+  teacher    String?
+  location   String?
+  /// 1=周一 … 7=周日
+  weekday    Int
+  /// 第几节开始 / 结束（1..12）
+  startSlot  Int
+  endSlot    Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, term])
+  @@index([term, weekday])
+}
+
+/// 校园卡 · campus-card（**高敏感**，需审计 + 最小采集，但**不设同意门**）
+///
+/// 访问域：campus-card
+/// 契约 §9：登录/开卡这个行为本身就是同意，不叠二次同意门。
+/// 真实流水必须经 CampusSessionPort（第二级）拉取，未绑定 → CAMPUS_BINDING_REQUIRED。
+model CampusCardTransaction {
+  id              String   @id @default(cuid())
+  userId          String
+  /// 金额，**分**。direction 决定正负语义
+  amountFen       Int
+  /// DEBIT | CREDIT（契约 §11.21-B：out/in 有方向歧义 —— “out” 是从谁的角度？）
+  direction       String
+  merchant        String
+  occurredAt      DateTime
+  balanceAfterFen Int
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt])
+}
+
+/// 我的 · profile（中敏感）—— 隐私开关集中存放
+model ProfileSetting {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  showRealName     Boolean  @default(false)
+  /// 契约 §9：画像必须"可关闭"
+  allowAiPortrait  Boolean  @default(false)
+  allowWellbeing   Boolean  @default(false)
+  allowDormHarmony Boolean  @default(false)
+  themeMode        String   @default("system")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// 通知 · notifications（低敏感）
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  /// inapp | wechat-subscribe | push
+  channel   String    @default("inapp")
+  /// 业务来源：groupbuy | errand | flea-market | forum | campus-card | schedule | system …
+  /// 前端据此选图标与分组（不解析 title 猜来源）
+  source    String    @default("system")
+  /// 点击后跳转的小程序页面路径（取自 @kedaya/contracts 的 MINIAPP_PAGES）。
+  /// 允许为空 —— 有些通知只是"告知"，没有可跳转的目标，前端必须能处理这种情况。
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@index([userId, createdAt])
+}
+
+/// 运维 · 客户端遥测（**不存任何内容数据**；只存崩溃/服务端故障线索）
+///
+/// 三条设计约束：
+///   · `userId` 可空 —— 崩溃经常发生在登录之前（冷启动、登录页、刷新 token 失败）；
+///     强行要求登录会让最需要排查的场景永远收不到。
+///   · `message` / `stack` 已在服务端 `redactSecrets()` 抹掉 token / 邮箱 / 手机号，
+///     落库的是**已脱敏**文本。
+///   · 表会持续增长 → 上线后必须配保留策略（见 docs/deploy.md「遥测保留」），
+///     否则一年后这张表会变成最大的表。
+model ClientEvent {
+  id         String   @id @default(cuid())
+  /// 白名单：error | unhandled-rejection | page-not-found | api-failure | render-error
+  kind       String
+  message    String
+  stack      String?
+  /// 出错时所在页面路径（例如 presentation/pages/fleaMarket/list/index）
+  route      String?
+  /// 客户端产生的追踪 id，用来和后端日志里的同一请求对齐（契约 §6.1）
+  traceId    String?
+  platform   String?
+  appVersion String?
+  /// 标量键值对（已脱敏、已限量）；Prisma Json 字段
+  context    Json?
+  /// 刻意**不建外键关系**：用户注销时遥测应当保留（否则删除账号会同时抹掉
+  /// 排查线索，而那恰恰是出问题时最需要查的时候）；同时避免 User 被级联删除时
+  /// 把历史故障记录一起带走。
+  userId     String?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([kind, createdAt])
+  @@index([userId, createdAt])
+}
+
+/// 治理 · 内容举报（UGC 合规底线：必须有举报入口，且必须能被处理）
+///
+/// 设计取舍（详见 modules/reports/domain/reports.domain.ts）：
+///   · **举报不直接下架** —— 自动下架等于给任何人一个"凑三个人就能删帖"的按钮；
+///     这里只做记录 / 去重 / 阈值升级，下架留在人工复核后（docs/deploy.md 给了 SQL）。
+///   · `targetTitle` 存**举报那一刻的快照**：内容之后被作者删掉，
+///     复核时仍然知道当初举报的是什么。
+///   · `targetAuthorId` 是给复核用的（"同一个人被举报几次"是最有用的排序信号），
+///     刻意不建外键：内容作者注销账号不该连带抹掉举报记录。
+///   · `escalated` 是**阈值打标**，不是状态机 —— 值班的人按它排序即可。
+model ContentReport {
+  id             String   @id @default(cuid())
+  /// flea-item | errand-task | buddy-group | lost-found-item | forum-post | forum-reply
+  /// | canteen-dish | faq-entry | wildlife-spot
+  targetType     String
+  targetId       String
+  targetTitle    String
+  /// 内容作者；匿名帖为 null
+  targetAuthorId String?
+  /// 举报人。**刻意不建外键**：注销账号不该抹掉举报记录
+  /// （那等于给"举报完就注销"留了一条让证据消失的路）。
+  reporterId     String
+  /// illegal | porn | harassment | fraud | privacy | spam | other
+  reason         String
+  detail         String?
+  /// 同一对象被 ≥ REPORT_ESCALATION_THRESHOLD 个不同的人举报后置 true
+  escalated      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  /// 同一个人对同一对象只能举报一次（重复举报会被 409 挡掉）
+  @@unique([reporterId, targetType, targetId])
+  /// 复核队列的主查询：按对象聚合 + 按时间倒序
+  @@index([targetType, targetId])
+  /// 我举报过的（客户端用来显示"已举报"）
+  @@index([reporterId, createdAt])
+  @@index([escalated, createdAt])
+}

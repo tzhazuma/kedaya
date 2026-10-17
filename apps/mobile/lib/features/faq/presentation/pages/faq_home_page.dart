@@ -43,7 +43,8 @@ class _FaqHomePageState extends ConsumerState<FaqHomePage> {
     final AsyncValue<FaqListState> value = ref.watch(faqListControllerProvider);
     final FaqFilter filter = ref.watch(faqFilterProvider);
     final MockControls? mockControls = ref.watch(mockControlsProvider);
-    final FaqListController controller = ref.read(faqListControllerProvider.notifier);
+    final FaqListController controller =
+        ref.read(faqListControllerProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -90,7 +91,8 @@ class _FaqHomePageState extends ConsumerState<FaqHomePage> {
                     : '换个分类看看，或者去「我的工单」里直接提问。',
                 loadingMessage: '正在加载常见问题…',
                 onRetry: controller.refresh,
-                builder: (BuildContext context, FaqListState state) => ListView.separated(
+                builder: (BuildContext context, FaqListState state) =>
+                    ListView.separated(
                   padding: const EdgeInsets.all(KedaYaTokens.space4),
                   itemCount: state.articles.length + 1,
                   separatorBuilder: (BuildContext context, int index) =>
@@ -148,7 +150,8 @@ class _SearchField extends StatelessWidget {
         style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
         decoration: InputDecoration(
           hintText: '搜索问题关键词，例如「登录」「匿名」',
-          hintStyle: TextStyle(color: colors.textMuted, fontSize: KedaYaTokens.fontSizeSm),
+          hintStyle: TextStyle(
+              color: colors.textMuted, fontSize: KedaYaTokens.fontSizeSm),
           prefixIcon: Icon(Icons.search, color: colors.textMuted),
           suffixIcon: IconButton(
             tooltip: '清空',
@@ -183,10 +186,12 @@ class _CategoryBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final KedaYaColors colors = context.kedayaColors;
-    final AsyncValue<List<FaqCategory>> categories = ref.watch(faqCategoriesProvider);
+    final AsyncValue<List<FaqCategory>> categories =
+        ref.watch(faqCategoriesProvider);
     final String? selected = ref.watch(faqFilterProvider).category;
     final FaqFilterNotifier filter = ref.read(faqFilterProvider.notifier);
-    final List<FaqCategory> list = categories.valueOrNull ?? const <FaqCategory>[];
+    final List<FaqCategory> list =
+        categories.valueOrNull ?? const <FaqCategory>[];
 
     if (categories.hasError && list.isEmpty) {
       // 分类拉取失败不挡住文章列表。
@@ -197,7 +202,8 @@ class _CategoryBar extends ConsumerWidget {
             const SizedBox(width: KedaYaTokens.space4),
             Text(
               '分类加载失败',
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.danger),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs, color: colors.danger),
             ),
             TextButton(
               onPressed: () => ref.invalidate(faqCategoriesProvider),
@@ -260,7 +266,9 @@ class _CategoryChip extends StatelessWidget {
       side: BorderSide(color: colors.border),
       labelStyle: TextStyle(
         fontSize: KedaYaTokens.fontSizeSm,
-        fontWeight: selected ? KedaYaTokens.fontWeightSemibold : KedaYaTokens.fontWeightRegular,
+        fontWeight: selected
+            ? KedaYaTokens.fontWeightSemibold
+            : KedaYaTokens.fontWeightRegular,
         color: selected ? colors.brandStrong : colors.textMuted,
       ),
     );
@@ -284,7 +292,8 @@ class _ListFooter extends StatelessWidget {
             Text(
               '加载更多失败：${state.loadMoreError}',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
             ),
             const SizedBox(height: KedaYaTokens.space2),
             OutlinedButton(
@@ -317,7 +326,8 @@ class _ListFooter extends StatelessWidget {
       child: Center(
         child: Text(
           state.total == null ? '没有更多了' : '共 ${state.total} 条 · 没有更多了',
-          style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+          style: TextStyle(
+              fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
         ),
       ),
     );

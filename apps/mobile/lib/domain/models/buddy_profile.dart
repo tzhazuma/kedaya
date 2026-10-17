@@ -40,7 +40,15 @@ const int buddyAvailabilityEndMinMax = 1440;
 const int buddyDowMin = 0;
 const int buddyDowMax = 6;
 
-const List<String> _dowLabels = <String>['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const List<String> _dowLabels = <String>[
+  '周日',
+  '周一',
+  '周二',
+  '周三',
+  '周四',
+  '周五',
+  '周六'
+];
 
 /// `dow` → 中文（越界回落为「未知」而不是抛错）。
 String buddyDowLabel(int dow) =>
@@ -63,11 +71,12 @@ final class AvailabilitySlot {
     required this.endMin,
   });
 
-  factory AvailabilitySlot.fromJson(Map<String, Object?> json) => AvailabilitySlot(
-    dow: readIntOr(json, 'dow', 0),
-    startMin: readIntOr(json, 'startMin', 0),
-    endMin: readIntOr(json, 'endMin', 0),
-  );
+  factory AvailabilitySlot.fromJson(Map<String, Object?> json) =>
+      AvailabilitySlot(
+        dow: readIntOr(json, 'dow', 0),
+        startMin: readIntOr(json, 'startMin', 0),
+        endMin: readIntOr(json, 'endMin', 0),
+      );
 
   /// 0 = 周日 … 6 = 周六（与 JS `getDay()` 一致）。
   final int dow;
@@ -99,10 +108,10 @@ final class AvailabilitySlot {
       '${buddyDowLabel(dow)} ${buddyMinutesLabel(startMin)}–${buddyMinutesLabel(endMin)}';
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'dow': dow,
-    'startMin': startMin,
-    'endMin': endMin,
-  };
+        'dow': dow,
+        'startMin': startMin,
+        'endMin': endMin,
+      };
 
   @override
   bool operator ==(Object other) =>
@@ -146,7 +155,8 @@ List<AvailabilitySlot> splitCrossMidnight({
   // 跨零点：当天 [startMin, 24:00) + 次日 [00:00, endMin)。
   final int nextDow = (dow + 1) % 7;
   final List<AvailabilitySlot> parts = <AvailabilitySlot>[
-    AvailabilitySlot(dow: dow, startMin: startMin, endMin: buddyAvailabilityEndMinMax),
+    AvailabilitySlot(
+        dow: dow, startMin: startMin, endMin: buddyAvailabilityEndMinMax),
   ];
   if (endMin > 0) {
     parts.add(AvailabilitySlot(dow: nextDow, startMin: 0, endMin: endMin));
@@ -237,26 +247,28 @@ final class BuddyProfile {
   /// `embedding` / `embeddingModel` / `gender` / `age` / `mbti` 等键
   /// **永远不会被读取**（规格 §8.4 T26）。
   factory BuddyProfile.fromJson(Map<String, Object?> json) => BuddyProfile(
-    userId: readStringOr(json, 'userId', ''),
-    sections: readStringList(json, 'sections')
-        .map(BuddySection.fromWire)
-        .where((BuddySection section) => section.isMatchable)
-        .toList(growable: false),
-    interestTags: readStringList(json, 'interestTags'),
-    activityTags: readStringList(json, 'activityTags'),
-    skillLevel: BuddySkillLevel.fromWire(readStringOr(json, 'skillLevel', 'casual')),
-    availability: readListOrEmpty(json, 'availability')
-        .where((Object? item) => item is Map<Object?, Object?> || item is Map<String, Object?>)
-        .map(
-          (Object? item) =>
-              AvailabilitySlot.fromJson(requireJsonMap(item, what: 'availability[] 元素')),
-        )
-        .toList(growable: false),
-    preferredAreas: readStringList(json, 'preferredAreas'),
-    department: readStringOrNull(json, 'department'),
-    bio: readStringOrNull(json, 'bio'),
-    matchEnabled: readBoolOr(json, 'matchEnabled', false),
-  );
+        userId: readStringOr(json, 'userId', ''),
+        sections: readStringList(json, 'sections')
+            .map(BuddySection.fromWire)
+            .where((BuddySection section) => section.isMatchable)
+            .toList(growable: false),
+        interestTags: readStringList(json, 'interestTags'),
+        activityTags: readStringList(json, 'activityTags'),
+        skillLevel: BuddySkillLevel.fromWire(
+            readStringOr(json, 'skillLevel', 'casual')),
+        availability: readListOrEmpty(json, 'availability')
+            .where((Object? item) =>
+                item is Map<Object?, Object?> || item is Map<String, Object?>)
+            .map(
+              (Object? item) => AvailabilitySlot.fromJson(
+                  requireJsonMap(item, what: 'availability[] 元素')),
+            )
+            .toList(growable: false),
+        preferredAreas: readStringList(json, 'preferredAreas'),
+        department: readStringOrNull(json, 'department'),
+        bio: readStringOrNull(json, 'bio'),
+        matchEnabled: readBoolOr(json, 'matchEnabled', false),
+      );
 
   /// 一人一份（FK→`User`）。
   final String userId;
@@ -368,7 +380,8 @@ final class BuddyProfile {
     for (final AvailabilitySlot slot in availability) {
       final String? error = slot.error;
       if (error != null) {
-        errors['availability'] = '${slot.label.isEmpty ? '时段' : slot.label}：$error';
+        errors['availability'] =
+            '${slot.label.isEmpty ? '时段' : slot.label}：$error';
         break;
       }
     }
@@ -379,21 +392,21 @@ final class BuddyProfile {
   bool get isValid => validationErrors().isEmpty;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'userId': userId,
-    'sections': matchableSections
-        .map((BuddySection section) => section.wire)
-        .toList(growable: false),
-    'interestTags': interestTags,
-    'activityTags': activityTags,
-    'skillLevel': skillLevel.wire,
-    'availability': availability
-        .map((AvailabilitySlot slot) => slot.toJson())
-        .toList(growable: false),
-    'preferredAreas': preferredAreas,
-    'department': department,
-    'bio': bio,
-    'matchEnabled': matchEnabled,
-  };
+        'userId': userId,
+        'sections': matchableSections
+            .map((BuddySection section) => section.wire)
+            .toList(growable: false),
+        'interestTags': interestTags,
+        'activityTags': activityTags,
+        'skillLevel': skillLevel.wire,
+        'availability': availability
+            .map((AvailabilitySlot slot) => slot.toJson())
+            .toList(growable: false),
+        'preferredAreas': preferredAreas,
+        'department': department,
+        'bio': bio,
+        'matchEnabled': matchEnabled,
+      };
 
   BuddyProfile copyWith({
     String? userId,
@@ -408,18 +421,19 @@ final class BuddyProfile {
     bool? matchEnabled,
     bool clearDepartment = false,
     bool clearBio = false,
-  }) => BuddyProfile(
-    userId: userId ?? this.userId,
-    sections: sections ?? this.sections,
-    interestTags: interestTags ?? this.interestTags,
-    activityTags: activityTags ?? this.activityTags,
-    skillLevel: skillLevel ?? this.skillLevel,
-    availability: availability ?? this.availability,
-    preferredAreas: preferredAreas ?? this.preferredAreas,
-    department: clearDepartment ? null : (department ?? this.department),
-    bio: clearBio ? null : (bio ?? this.bio),
-    matchEnabled: matchEnabled ?? this.matchEnabled,
-  );
+  }) =>
+      BuddyProfile(
+        userId: userId ?? this.userId,
+        sections: sections ?? this.sections,
+        interestTags: interestTags ?? this.interestTags,
+        activityTags: activityTags ?? this.activityTags,
+        skillLevel: skillLevel ?? this.skillLevel,
+        availability: availability ?? this.availability,
+        preferredAreas: preferredAreas ?? this.preferredAreas,
+        department: clearDepartment ? null : (department ?? this.department),
+        bio: clearBio ? null : (bio ?? this.bio),
+        matchEnabled: matchEnabled ?? this.matchEnabled,
+      );
 
   @override
   String toString() =>

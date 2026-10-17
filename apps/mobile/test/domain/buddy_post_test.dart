@@ -5,7 +5,8 @@ import 'package:kedaya/domain/models/buddy_tags.dart';
 /// `BuddyPost` 与状态机的领域测试（规格 §2.3 / §2.8 / §5.4）。
 void main() {
   /// Dart 没有字符串重复运算符，测试里造超长文本用它。
-  String repeat(String unit, int count) => List<String>.filled(count, unit).join();
+  String repeat(String unit, int count) =>
+      List<String>.filled(count, unit).join();
 
   group('sectionOf(activity) —— 板块派生（规格 §2.3，T2）', () {
     test('6 个 activity 全部覆盖', () {
@@ -48,22 +49,22 @@ void main() {
     ];
     const Map<BuddyPostStatus, Set<BuddyPostStatus>> allowed =
         <BuddyPostStatus, Set<BuddyPostStatus>>{
-          BuddyPostStatus.open: <BuddyPostStatus>{
-            BuddyPostStatus.full,
-            BuddyPostStatus.closed,
-            BuddyPostStatus.expired,
-            BuddyPostStatus.cancelled,
-          },
-          BuddyPostStatus.full: <BuddyPostStatus>{
-            BuddyPostStatus.open,
-            BuddyPostStatus.closed,
-            BuddyPostStatus.expired,
-            BuddyPostStatus.cancelled,
-          },
-          BuddyPostStatus.closed: <BuddyPostStatus>{},
-          BuddyPostStatus.expired: <BuddyPostStatus>{},
-          BuddyPostStatus.cancelled: <BuddyPostStatus>{},
-        };
+      BuddyPostStatus.open: <BuddyPostStatus>{
+        BuddyPostStatus.full,
+        BuddyPostStatus.closed,
+        BuddyPostStatus.expired,
+        BuddyPostStatus.cancelled,
+      },
+      BuddyPostStatus.full: <BuddyPostStatus>{
+        BuddyPostStatus.open,
+        BuddyPostStatus.closed,
+        BuddyPostStatus.expired,
+        BuddyPostStatus.cancelled,
+      },
+      BuddyPostStatus.closed: <BuddyPostStatus>{},
+      BuddyPostStatus.expired: <BuddyPostStatus>{},
+      BuddyPostStatus.cancelled: <BuddyPostStatus>{},
+    };
 
     test('5×5 全矩阵逐格校验', () {
       for (final BuddyPostStatus from in real) {
@@ -80,8 +81,10 @@ void main() {
     test('自反一律为 false；unknown 永不参与转移', () {
       for (final BuddyPostStatus status in BuddyPostStatus.values) {
         expect(canTransitionBuddyPost(status, status), isFalse);
-        expect(canTransitionBuddyPost(status, BuddyPostStatus.unknown), isFalse);
-        expect(canTransitionBuddyPost(BuddyPostStatus.unknown, status), isFalse);
+        expect(
+            canTransitionBuddyPost(status, BuddyPostStatus.unknown), isFalse);
+        expect(
+            canTransitionBuddyPost(BuddyPostStatus.unknown, status), isFalse);
       }
     });
 
@@ -233,7 +236,10 @@ void main() {
     test('板块 / 活动 / 标签 / 时间 / 游标 / 排序', () {
       final Map<String, Object?> query = BuddyPostQuery(
         section: BuddySection.sport,
-        activities: const <BuddyActivity>[BuddyActivity.sport, BuddyActivity.game],
+        activities: const <BuddyActivity>[
+          BuddyActivity.sport,
+          BuddyActivity.game
+        ],
         tags: const <String>['badminton', 'indoor'],
         startsAfter: DateTime.utc(2026, 10, 17, 4),
         cursor: 'opaque-cursor',
@@ -264,15 +270,15 @@ void main() {
   group('BuddyPostDraft 校验（规格 §5.4 的错误表）', () {
     final DateTime now = DateTime.utc(2026, 10, 17, 4);
     BuddyPostDraft valid() => BuddyPostDraft(
-      activity: BuddyActivity.sport,
-      title: '周六下午羽毛球，缺 2 人',
-      description: '体育馆 3 号场，打两小时，新手也行',
-      location: '体育馆 3 号场',
-      startsAt: now.add(const Duration(days: 2)),
-      durationMin: 120,
-      capacity: 4,
-      tags: const <String>['badminton', 'indoor'],
-    );
+          activity: BuddyActivity.sport,
+          title: '周六下午羽毛球，缺 2 人',
+          description: '体育馆 3 号场，打两小时，新手也行',
+          location: '体育馆 3 号场',
+          startsAt: now.add(const Duration(days: 2)),
+          durationMin: 120,
+          capacity: 4,
+          tags: const <String>['badminton', 'indoor'],
+        );
 
     test('合法草稿：无错误，且命令里不含 creatorId / section', () {
       final BuddyPostDraft draft = valid();
@@ -333,7 +339,8 @@ void main() {
     test('开始时间：必须晚于当前', () {
       expect(valid().copyWith(startsAt: now).startsAtErrorAt(now), isNotNull);
       expect(
-        valid().copyWith(startsAt: now.subtract(const Duration(minutes: 1)))
+        valid()
+            .copyWith(startsAt: now.subtract(const Duration(minutes: 1)))
             .startsAtErrorAt(now),
         isNotNull,
       );
@@ -354,25 +361,24 @@ void main() {
 
     test('标签：封闭表 + 数量上限（UNKNOWN_TAG:<key>）', () {
       expect(
-        valid().copyWith(tags: const <String>['badminton', 'quidditch']).tagsError,
+        valid()
+            .copyWith(tags: const <String>['badminton', 'quidditch']).tagsError,
         contains('UNKNOWN_TAG:quidditch'),
       );
       expect(
-        valid()
-            .copyWith(
-              tags: const <String>[
-                'badminton',
-                'indoor',
-                'outdoor',
-                'running',
-                'fitness',
-                'swimming',
-                'tennis',
-                'yoga',
-                'cycling',
-              ],
-            )
-            .tagsError,
+        valid().copyWith(
+          tags: const <String>[
+            'badminton',
+            'indoor',
+            'outdoor',
+            'running',
+            'fitness',
+            'swimming',
+            'tennis',
+            'yoga',
+            'cycling',
+          ],
+        ).tagsError,
         contains('$buddyPostTagMaxCount'),
       );
       expect(valid().tagsError, isNull);
@@ -388,7 +394,8 @@ void main() {
           .copyWith(activity: BuddyActivity.study)
           .copyWith(minSkillLevel: BuddySkillLevel.regular);
       expect(academic.section, BuddySection.academic);
-      expect(academic.effectiveMinSkillLevel, isNull, reason: '§2.3：仅 sport 使用');
+      expect(academic.effectiveMinSkillLevel, isNull,
+          reason: '§2.3：仅 sport 使用');
     });
 
     test('validationErrorsAt 一次给出全部字段错误', () {
@@ -399,22 +406,28 @@ void main() {
         tags: const <String>['nope'],
       ).validationErrorsAt(now);
 
-      expect(errors.keys, containsAll(<String>['title', 'location', 'startsAt']));
+      expect(
+          errors.keys, containsAll(<String>['title', 'location', 'startsAt']));
       expect(errors.keys, containsAll(<String>['capacity', 'tags']));
     });
   });
 
   group('性别偏好与技能水平', () {
     test('性别偏好收敛（是准入约束，不参与打分）', () {
-      expect(BuddyGenderPreference.fromWire('same'), BuddyGenderPreference.same);
-      expect(BuddyGenderPreference.fromWire('nonsense'), BuddyGenderPreference.any);
+      expect(
+          BuddyGenderPreference.fromWire('same'), BuddyGenderPreference.same);
+      expect(BuddyGenderPreference.fromWire('nonsense'),
+          BuddyGenderPreference.any);
       expect(BuddyGenderPreference.same.label, '同性');
     });
 
     test('技能水平有单调序（F6 的硬过滤用 rank 比较）', () {
-      expect(BuddySkillLevel.beginner.rank, lessThan(BuddySkillLevel.casual.rank));
-      expect(BuddySkillLevel.casual.rank, lessThan(BuddySkillLevel.regular.rank));
-      expect(BuddySkillLevel.regular.rank, lessThan(BuddySkillLevel.competitive.rank));
+      expect(
+          BuddySkillLevel.beginner.rank, lessThan(BuddySkillLevel.casual.rank));
+      expect(
+          BuddySkillLevel.casual.rank, lessThan(BuddySkillLevel.regular.rank));
+      expect(BuddySkillLevel.regular.rank,
+          lessThan(BuddySkillLevel.competitive.rank));
       expect(BuddySkillLevel.fromWire('weird'), BuddySkillLevel.casual);
     });
   });

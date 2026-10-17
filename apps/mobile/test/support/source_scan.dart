@@ -61,7 +61,8 @@ Set<String> fieldNamesOf(String source, String className) {
   final int start = source.indexOf(marker);
   if (start < 0) throw StateError('源码里找不到 class $className');
   final int end = source.indexOf('\n}\n', start);
-  final String body = end < 0 ? source.substring(start) : source.substring(start, end);
+  final String body =
+      end < 0 ? source.substring(start) : source.substring(start, end);
   final RegExp field = RegExp(
     r'^\s*final\s+.*?\s+(\w+)\s*;$',
     multiLine: true,

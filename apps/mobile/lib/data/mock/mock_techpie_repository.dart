@@ -26,18 +26,20 @@ final class MockTechpieRepository implements TechpiePort {
     MockControls? controls,
     DateTime Function()? clock,
     this.renewSupported = true,
-  }) : controls = controls ?? MockControls(),
-       _clock = clock ?? DateTime.now,
-       _links = <String, TechpieLink>{
-         for (final TechpieLink link in links ?? mockTechpieLinks) link.id: link,
-       },
-       _webEntries = List<CampusWebEntry>.unmodifiable(
-         webEntries ?? phase0CampusWebEntries,
-       ),
-       _catalog = List<CampusCapability>.unmodifiable(
-         catalog ?? mockCampusCapabilityCatalog,
-       ),
-       _serverStates = Map<String, CampusCapabilityState>.unmodifiable(serverStates);
+  })  : controls = controls ?? MockControls(),
+        _clock = clock ?? DateTime.now,
+        _links = <String, TechpieLink>{
+          for (final TechpieLink link in links ?? mockTechpieLinks)
+            link.id: link,
+        },
+        _webEntries = List<CampusWebEntry>.unmodifiable(
+          webEntries ?? phase0CampusWebEntries,
+        ),
+        _catalog = List<CampusCapability>.unmodifiable(
+          catalog ?? mockCampusCapabilityCatalog,
+        ),
+        _serverStates =
+            Map<String, CampusCapabilityState>.unmodifiable(serverStates);
 
   /// 可在运行时切换延迟与故障（UI 三态演示 / 测试注入）。
   final MockControls controls;
@@ -68,11 +70,11 @@ final class MockTechpieRepository implements TechpiePort {
 
   /// 供测试断言"凭据没有留在仓库里"：把内部状态拍平成字符串列表。
   List<String> debugDumpStrings() => <String>[
-    ..._links.values.map((TechpieLink link) => link.toJson().toString()),
-    ..._pendingTickets.keys,
-    ..._consumedTickets,
-    ..._issuedAt.keys,
-  ];
+        ..._links.values.map((TechpieLink link) => link.toJson().toString()),
+        ..._pendingTickets.keys,
+        ..._consumedTickets,
+        ..._issuedAt.keys,
+      ];
 
   /// 已兑换票据数（测试用）。
   int get debugConsumedTicketCount => _consumedTickets.length;
@@ -80,8 +82,10 @@ final class MockTechpieRepository implements TechpiePort {
   @override
   Future<Result<List<TechpieLink>>> listLinks() async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<List<TechpieLink>>();
-    if (controls.emptyResults) return Ok<List<TechpieLink>>(const <TechpieLink>[]);
+    if (controls.failure != null)
+      return controls.failureResult<List<TechpieLink>>();
+    if (controls.emptyResults)
+      return Ok<List<TechpieLink>>(const <TechpieLink>[]);
     return Ok<List<TechpieLink>>(_sortedLinks());
   }
 
@@ -181,12 +185,11 @@ final class MockTechpieRepository implements TechpiePort {
     }
     // 服务端只**覆盖**它明确知道的状态；其余留给客户端按绑定情况推导
     // （推导规则是纯函数 `resolveCampusCapabilities`，不在 mock 里重写一遍）。
-    final List<CampusCapability> resolved = _catalog
-        .map((CampusCapability capability) {
-          final CampusCapabilityState? override = _serverStates[capability.id];
-          return override == null ? capability : capability.withState(override);
-        })
-        .toList(growable: false);
+    final List<CampusCapability> resolved =
+        _catalog.map((CampusCapability capability) {
+      final CampusCapabilityState? override = _serverStates[capability.id];
+      return override == null ? capability : capability.withState(override);
+    }).toList(growable: false);
     return Ok<List<CampusCapability>>(resolved);
   }
 
@@ -196,7 +199,9 @@ final class MockTechpieRepository implements TechpiePort {
     required String targetUrl,
   }) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<WebViewTicket>();
+    if (controls.failure != null)
+      return controls.failureResult<WebViewTicket>();
+    final DateTime now = _clock().toUtc();
     // 服务端侧校验（规格 §8.4 的校验表；客户端传的 targetUrl 一律不可信）。
     final Uri? uri = Uri.tryParse(targetUrl.trim());
     if (uri == null || uri.scheme.toLowerCase() != 'https') {
@@ -218,7 +223,6 @@ final class MockTechpieRepository implements TechpiePort {
     // （与 `services/api` 的 `resolvePlatform()` 一致）。
     if (platform != null) {
       final TechpieLink? link = _linkForPlatform(platform);
-      final DateTime now = _clock().toUtc();
       if (link == null || !link.isUsableAt(now)) {
         // I4：已登录但未绑定是**合法状态** → 409，不是 401。
         return _err<WebViewTicket>(
@@ -241,9 +245,11 @@ final class MockTechpieRepository implements TechpiePort {
   }
 
   @override
-  Future<Result<WebViewHandoff>> redeemWebViewTicket(WebViewTicket ticket) async {
+  Future<Result<WebViewHandoff>> redeemWebViewTicket(
+      WebViewTicket ticket) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<WebViewHandoff>();
+    if (controls.failure != null)
+      return controls.failureResult<WebViewHandoff>();
     final String value = ticket.ticket;
     if (_consumedTickets.contains(value)) {
       // 防重放：一次性票据用后即焚。
@@ -297,11 +303,11 @@ final class MockTechpieRepository implements TechpiePort {
   }
 
   Err<T> _err<T>(ApiErrorCode code, String message, {String? reason}) => Err<T>(
-    ApiError(
-      code: code,
-      message: message,
-      details: reason == null ? null : <String, Object?>{'reason': reason},
-    ),
-    traceId: MockControls.traceId,
-  );
+        ApiError(
+          code: code,
+          message: message,
+          details: reason == null ? null : <String, Object?>{'reason': reason},
+        ),
+        traceId: MockControls.traceId,
+      );
 }

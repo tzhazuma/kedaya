@@ -15,32 +15,36 @@ import 'package:kedaya/features/forum/application/forum_providers.dart';
 void main() {
   ProviderContainer containerWith(MockForumRepository repository) {
     final ProviderContainer container = ProviderContainer(
-      overrides: <Override>[forumRepositoryProvider.overrideWithValue(repository)],
+      overrides: <Override>[
+        forumRepositoryProvider.overrideWithValue(repository)
+      ],
     );
     addTearDown(container.dispose);
     return container;
   }
 
-  MockForumRepository repo({MockControls? controls}) =>
-      MockForumRepository(controls: controls ?? MockControls(latency: Duration.zero));
+  MockForumRepository repo({MockControls? controls}) => MockForumRepository(
+      controls: controls ?? MockControls(latency: Duration.zero));
 
   List<ForumPost> seedPosts(int count) => <ForumPost>[
-    for (int i = 0; i < count; i++)
-      ForumPost(
-        id: 'fp-seed-$i',
-        boardId: 'fb-campus',
-        boardName: '校园生活',
-        title: '主题 $i',
-        body: '正文 $i',
-        author: const RealAuthor(userId: 'u-1', name: '鸭鸭一号'),
-        createdAt: DateTime.utc(2026, 10, 16, 12).subtract(Duration(hours: i)),
-      ),
-  ];
+        for (int i = 0; i < count; i++)
+          ForumPost(
+            id: 'fp-seed-$i',
+            boardId: 'fb-campus',
+            boardName: '校园生活',
+            title: '主题 $i',
+            body: '正文 $i',
+            author: const RealAuthor(userId: 'u-1', name: '鸭鸭一号'),
+            createdAt:
+                DateTime.utc(2026, 10, 16, 12).subtract(Duration(hours: i)),
+          ),
+      ];
 
   /// 等到状态不再是 loading（依赖失效后的重建是异步的）。
   Future<ForumListState> settle(ProviderContainer container) async {
     for (int i = 0; i < 50; i++) {
-      final AsyncValue<ForumListState> value = container.read(forumListControllerProvider);
+      final AsyncValue<ForumListState> value =
+          container.read(forumListControllerProvider);
       if (value.hasValue && !value.isLoading) return value.requireValue;
       await Future<void>.delayed(Duration.zero);
     }
@@ -67,7 +71,8 @@ void main() {
     test('empty：空结果时 isEmpty 为 true（UI 渲染空态）', () async {
       final MockControls controls = MockControls(latency: Duration.zero)
         ..emptyResults = true;
-      final ProviderContainer container = containerWith(repo(controls: controls));
+      final ProviderContainer container =
+          containerWith(repo(controls: controls));
 
       final ForumListState state = await container.read(
         forumListControllerProvider.future,
@@ -80,7 +85,8 @@ void main() {
     test('error：上游故障抛出 ApiException（UI 渲染错误态）', () async {
       final MockControls controls = MockControls(latency: Duration.zero)
         ..failureMode = MockFailureMode.upstreamUnavailable;
-      final ProviderContainer container = containerWith(repo(controls: controls));
+      final ProviderContainer container =
+          containerWith(repo(controls: controls));
 
       await expectLater(
         container.read(forumListControllerProvider.future),
@@ -103,13 +109,15 @@ void main() {
       );
 
       expect(state.boardId, 'fb-study');
-      expect(state.posts.map((ForumPost post) => post.id), <String>['fp-1002', 'fp-1005']);
+      expect(state.posts.map((ForumPost post) => post.id),
+          <String>['fp-1002', 'fp-1005']);
     });
 
     test('切换版块会重新加载列表', () async {
       final ProviderContainer container = containerWith(repo());
 
-      final ForumListState all = await container.read(forumListControllerProvider.future);
+      final ForumListState all =
+          await container.read(forumListControllerProvider.future);
       expect(all.posts, hasLength(6));
 
       container.read(forumBoardFilterProvider.notifier).select('fb-campus');
@@ -124,7 +132,8 @@ void main() {
     test('版块列表 provider 暴露 4 个版块', () async {
       final ProviderContainer container = containerWith(repo());
 
-      final List<ForumBoard> boards = await container.read(forumBoardsProvider.future);
+      final List<ForumBoard> boards =
+          await container.read(forumBoardsProvider.future);
       expect(boards, hasLength(4));
     });
   });
@@ -136,7 +145,8 @@ void main() {
         MockForumRepository(posts: seedPosts(12), controls: controls),
       );
 
-      ForumListState state = await container.read(forumListControllerProvider.future);
+      ForumListState state =
+          await container.read(forumListControllerProvider.future);
       expect(state.posts, hasLength(10));
       expect(state.hasMore, isTrue);
 
@@ -168,15 +178,16 @@ void main() {
       expect(replies.replies, hasLength(2));
 
       await container.read(forumActionsProvider).reply(
-        const CreateForumReplyCommand(postId: 'fp-1001', body: '新回复'),
-      );
+            const CreateForumReplyCommand(postId: 'fp-1001', body: '新回复'),
+          );
 
       replies = await container.read(forumRepliesProvider('fp-1001').future);
       expect(replies.replies, hasLength(3));
       expect(replies.replies.last.body, '新回复');
 
       // 主题详情也被失效重取，replyCount 同步。
-      final ForumPost post = await container.read(forumPostProvider('fp-1001').future);
+      final ForumPost post =
+          await container.read(forumPostProvider('fp-1001').future);
       expect(post.replyCount, 3);
     });
 
@@ -184,16 +195,15 @@ void main() {
       final ProviderContainer container = containerWith(repo());
 
       await container.read(forumListControllerProvider.future);
-      final ForumPost created = await container
-          .read(forumActionsProvider)
-          .createPost(
-            const CreateForumPostCommand(
-              boardId: 'fb-club',
-              title: '新帖',
-              body: '正文',
-              anonymous: true,
-            ),
-          );
+      final ForumPost created =
+          await container.read(forumActionsProvider).createPost(
+                const CreateForumPostCommand(
+                  boardId: 'fb-club',
+                  title: '新帖',
+                  body: '正文',
+                  anonymous: true,
+                ),
+              );
 
       expect(created.anonymous, isTrue);
 
@@ -248,7 +258,8 @@ void main() {
         throwsA(isA<ApiException>()),
       );
 
-      final ForumListState state = container.read(forumListControllerProvider).requireValue;
+      final ForumListState state =
+          container.read(forumListControllerProvider).requireValue;
       expect(state.posts, hasLength(6));
       expect(container.read(forumListControllerProvider).isLoading, isFalse);
     });

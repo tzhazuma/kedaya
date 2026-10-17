@@ -155,7 +155,8 @@ final List<ForumPost> mockForumPosts = <ForumPost>[
 ];
 
 /// 每个主题的回复（key = postId）。
-final Map<String, List<ForumReply>> mockForumReplies = <String, List<ForumReply>>{
+final Map<String, List<ForumReply>> mockForumReplies =
+    <String, List<ForumReply>>{
   'fp-1001': <ForumReply>[
     ForumReply(
       id: 'fr-2001',
@@ -168,7 +169,8 @@ final Map<String, List<ForumReply>> mockForumReplies = <String, List<ForumReply>
       id: 'fr-2002',
       postId: 'fp-1001',
       body: '请问支持校园卡吗？',
-      author: AnonymousAuthor(AnonymousIdentity.derive(boardId: 'fb-campus', sequence: 11)),
+      author: AnonymousAuthor(
+          AnonymousIdentity.derive(boardId: 'fb-campus', sequence: 11)),
       createdAt: mockNow.subtract(const Duration(hours: 6)),
     ),
   ],
@@ -184,7 +186,8 @@ final Map<String, List<ForumReply>> mockForumReplies = <String, List<ForumReply>
       id: 'fr-2004',
       postId: 'fp-1002',
       body: '同求，可以一起自习。',
-      author: AnonymousAuthor(AnonymousIdentity.derive(boardId: 'fb-study', sequence: 9)),
+      author: AnonymousAuthor(
+          AnonymousIdentity.derive(boardId: 'fb-study', sequence: 9)),
       parentReplyId: 'fr-2003',
       createdAt: mockNow.subtract(const Duration(hours: 4)),
     ),

@@ -25,43 +25,43 @@ void main() {
   final DateTime base = DateTime.utc(2026, 10, 17, 2);
 
   AuthSession session() => AuthSession(
-    user: const User(
-      userId: 'u-1001',
-      studentId: '20240001',
-      displayName: '可达鸭测试账号',
-      department: '信息科学与技术学院',
-      email: 'test@shanghaitech.edu.cn',
-    ),
-    accessToken: 'access-token',
-    refreshToken: 'refresh-token',
-    issuedAt: base,
-    expiresAt: base.add(const Duration(hours: 2)),
-  );
+        user: const User(
+          userId: 'u-1001',
+          studentId: '20240001',
+          displayName: '可达鸭测试账号',
+          department: '信息科学与技术学院',
+          email: 'test@shanghaitech.edu.cn',
+        ),
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        issuedAt: base,
+        expiresAt: base.add(const Duration(hours: 2)),
+      );
 
   /// 与墙上时钟解耦的种子绑定：`cpdaily` 的有效期远在未来，
   /// 因此 `resolveCampusCapabilities`（它用 `DateTime.now()` 判定）不会随运行日期漂移。
   List<TechpieLink> seededLinks() => <TechpieLink>[
-    TechpieLink(
-      id: 'tp-1001',
-      summary: CampusBindingSummary(
-        platform: CampusPlatform.cpdaily,
-        status: CampusBindingStatus.linked,
-        externalUserId: '20240001',
-        expiresAt: DateTime.utc(2099),
-        lastSyncAt: base,
-      ),
-    ),
-    TechpieLink(
-      id: 'tp-1002',
-      summary: CampusBindingSummary(
-        platform: CampusPlatform.egate,
-        status: CampusBindingStatus.expired,
-        externalUserId: '20240001',
-        expiresAt: DateTime.utc(2000),
-        lastSyncAt: base,
-      ),
-    ),
-  ];
+        TechpieLink(
+          id: 'tp-1001',
+          summary: CampusBindingSummary(
+            platform: CampusPlatform.cpdaily,
+            status: CampusBindingStatus.linked,
+            externalUserId: '20240001',
+            expiresAt: DateTime.utc(2099),
+            lastSyncAt: base,
+          ),
+        ),
+        TechpieLink(
+          id: 'tp-1002',
+          summary: CampusBindingSummary(
+            platform: CampusPlatform.egate,
+            status: CampusBindingStatus.expired,
+            externalUserId: '20240001',
+            expiresAt: DateTime.utc(2000),
+            lastSyncAt: base,
+          ),
+        ),
+      ];
 
   ProviderContainer container({
     bool signedIn = true,
@@ -147,12 +147,14 @@ void main() {
       final List<TechpieLink> links = await c.read(
         techpieLinksControllerProvider.future,
       );
-      expect(links.map((TechpieLink link) => link.id).toList(), <String>['tp-1002']);
+      expect(links.map((TechpieLink link) => link.id).toList(),
+          <String>['tp-1002']);
     });
 
     test('手动续期把过期绑定救回来', () async {
       final ProviderContainer c = container();
-      final TechpieLink renewed = await c.read(techpieActionsProvider).renew('tp-1002');
+      final TechpieLink renewed =
+          await c.read(techpieActionsProvider).renew('tp-1002');
       expect(renewed.status, CampusBindingStatus.linked);
       expect(renewed.isUsableAt(base), isTrue);
     });
@@ -174,16 +176,16 @@ void main() {
     test('绑定成功后列表里出现新平台（免口令凭据）', () async {
       final ProviderContainer c = container();
       await c.read(techpieLinksControllerProvider.future);
-      final TechpieLink bound = await c
-          .read(techpieActionsProvider)
-          .bind(CampusPlatform.egate, const OAuthCodeCredential(code: 'test-code'));
+      final TechpieLink bound = await c.read(techpieActionsProvider).bind(
+          CampusPlatform.egate, const OAuthCodeCredential(code: 'test-code'));
       expect(bound.status, CampusBindingStatus.linked);
       final List<TechpieLink> links = await c.read(
         techpieLinksControllerProvider.future,
       );
       expect(links, hasLength(2));
       expect(
-        links.every((TechpieLink link) => link.status == CampusBindingStatus.linked),
+        links.every(
+            (TechpieLink link) => link.status == CampusBindingStatus.linked),
         isTrue,
       );
     });
@@ -203,7 +205,8 @@ void main() {
       expect(of('webview.ecourse').isUsable, isTrue);
       expect(of('ecard.balance').state, CampusCapabilityState.bindingRequired);
       expect(of('ecard.balance').needsSignIn, isFalse);
-      expect(of('schedule.courses').state, CampusCapabilityState.notImplemented);
+      expect(
+          of('schedule.courses').state, CampusCapabilityState.notImplemented);
       expect(of('schedule.courses').isUsable, isFalse);
     });
 
@@ -217,7 +220,8 @@ void main() {
           .toList(growable: false);
       expect(phase0, isNotEmpty);
       for (final CampusCapability item in phase0) {
-        expect(item.state, CampusCapabilityState.unauthenticated, reason: item.id);
+        expect(item.state, CampusCapabilityState.unauthenticated,
+            reason: item.id);
         expect(item.needsBinding, isFalse, reason: item.id);
         expect(item.needsSignIn, isTrue, reason: item.id);
       }
@@ -263,7 +267,8 @@ void main() {
       expect(snapshot.account, isNotNull);
       expect(snapshot.transactions, hasLength(4));
 
-      final CampusPaymentCode code = await c.read(campusPaymentCodeProvider.future);
+      final CampusPaymentCode code =
+          await c.read(campusPaymentCodeProvider.future);
       expect(code.code, isNotEmpty);
       expect(code.isExpiredAt(base), isFalse);
     });
@@ -272,7 +277,8 @@ void main() {
       final MockControls controls = MockControls(latency: Duration.zero)
         ..failureMode = MockFailureMode.upstreamUnavailable;
       final ProviderContainer c = container(
-        campusCard: MockCampusCardRepository(controls: controls, clock: () => base),
+        campusCard:
+            MockCampusCardRepository(controls: controls, clock: () => base),
       );
       await expectLater(
         c.read(campusCardControllerProvider.future),

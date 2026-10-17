@@ -51,24 +51,30 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
   @override
   Widget build(BuildContext context) {
     final KedaYaColors colors = context.kedayaColors;
-    final WildlifeReportState state = ref.watch(wildlifeReportControllerProvider);
+    final WildlifeReportState state =
+        ref.watch(wildlifeReportControllerProvider);
     final WildlifeReportController controller = ref.read(
       wildlifeReportControllerProvider.notifier,
     );
     final List<WildlifeSpecies> species =
-        ref.watch(wildlifeSpeciesProvider).valueOrNull ?? const <WildlifeSpecies>[];
+        ref.watch(wildlifeSpeciesProvider).valueOrNull ??
+            const <WildlifeSpecies>[];
     final List<WildlifeZone> zones =
         ref.watch(wildlifeZonesProvider).valueOrNull ?? const <WildlifeZone>[];
-    final CampusBasemap? basemap = ref.watch(wildlifeBasemapProvider).valueOrNull;
+    final CampusBasemap? basemap =
+        ref.watch(wildlifeBasemapProvider).valueOrNull;
     final List<WildlifeIndividual> individuals = state.speciesId == null
         ? const <WildlifeIndividual>[]
-        : (ref.watch(wildlifeIndividualsProvider(state.speciesId)).valueOrNull ??
-              const <WildlifeIndividual>[]);
+        : (ref
+                .watch(wildlifeIndividualsProvider(state.speciesId))
+                .valueOrNull ??
+            const <WildlifeIndividual>[]);
     final WildlifeZone? zone = _zoneById(zones, state.zoneId);
     final DateFormat dateFormat = DateFormat('yyyy-MM-dd HH:mm');
 
     if (state.isDone) {
-      return _SuccessView(sighting: state.submitted!, onReset: controller.reset);
+      return _SuccessView(
+          sighting: state.submitted!, onReset: controller.reset);
     }
 
     return Scaffold(
@@ -105,7 +111,8 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
                   return _PhotoTile(
                     photo: photo,
                     onRemove: () => controller.removePhoto(photo.clientPhotoId),
-                    onRetry: () => unawaited(controller.retryPhoto(photo.clientPhotoId)),
+                    onRetry: () =>
+                        unawaited(controller.retryPhoto(photo.clientPhotoId)),
                   );
                 },
               ),
@@ -167,7 +174,8 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
           WildlifeSpeciesPicker(
             species: species,
             selectedSpeciesId: state.speciesId,
-            suggestionId: state.classify?.available == true ? state.autoSpeciesId : null,
+            suggestionId:
+                state.classify?.available == true ? state.autoSpeciesId : null,
             onSelected: controller.setSpecies,
           ),
           const SizedBox(height: KedaYaTokens.space5),
@@ -185,7 +193,8 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
               state.observedAt == null
                   ? '未选择'
                   : dateFormat.format(state.observedAt!.toLocal()),
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeSm, color: colors.text),
             ),
             trailing: TextButton(
               onPressed: () => unawaited(_pickObservedAt(controller, state)),
@@ -213,7 +222,8 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
               const SizedBox(width: KedaYaTokens.space2),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => setState(() => _pickingOnMap = !_pickingOnMap),
+                  onPressed: () =>
+                      setState(() => _pickingOnMap = !_pickingOnMap),
                   icon: const Icon(Icons.touch_app_outlined, size: 16),
                   label: Text(_pickingOnMap ? '收起地图' : '在地图上点选'),
                 ),
@@ -232,8 +242,10 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
                   tone: colors.info,
                 ),
                 if (state.geoAccuracyM != null)
-                  WildlifePill(text: '±${state.geoAccuracyM} m', icon: Icons.straighten),
-                if (zone != null) WildlifePill(text: zone.name, icon: Icons.map_outlined),
+                  WildlifePill(
+                      text: '±${state.geoAccuracyM} m', icon: Icons.straighten),
+                if (zone != null)
+                  WildlifePill(text: zone.name, icon: Icons.map_outlined),
               ],
             ),
           ],
@@ -257,7 +269,8 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
             const SizedBox(height: KedaYaTokens.space1),
             Text(
               '点击地图选择位置（校园外的点会被服务端拒绝）。',
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
             ),
           ],
           const SizedBox(height: KedaYaTokens.space5),
@@ -272,7 +285,8 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
           if (state.speciesId == null)
             Text(
               '先选择物种，才能选择或新建个体。',
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
             )
           else ...<Widget>[
             if (individuals.isNotEmpty)
@@ -284,8 +298,8 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
                     ChoiceChip(
                       label: Text(item.name),
                       selected: state.selectedIndividualId == item.id,
-                      onSelected: (bool selected) =>
-                          controller.selectIndividual(selected ? item.id : null),
+                      onSelected: (bool selected) => controller
+                          .selectIndividual(selected ? item.id : null),
                     ),
                 ],
               ),
@@ -303,7 +317,8 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
           const SizedBox(height: KedaYaTokens.space5),
 
           // ---------------------------------------------------------- 备注与开关
-          _SectionTitle(title: '备注（可选）', subtitle: '≤$maxSightingNoteLength 字，会经过内容安全。'),
+          _SectionTitle(
+              title: '备注（可选）', subtitle: '≤$maxSightingNoteLength 字，会经过内容安全。'),
           const SizedBox(height: KedaYaTokens.space2),
           TextField(
             onChanged: controller.setNote,
@@ -343,8 +358,8 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
             // 选中的区域是 `forbidden` 时出红色警告条（规格 §8.3）。
             forbiddenZoneName:
                 zone != null && zone.feedingPolicy.needsReportingWarning
-                ? zone.name
-                : null,
+                    ? zone.name
+                    : null,
           ),
           const SizedBox(height: KedaYaTokens.space4),
 
@@ -352,7 +367,8 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: state.canSubmit ? () => unawaited(controller.submit()) : null,
+              onPressed:
+                  state.canSubmit ? () => unawaited(controller.submit()) : null,
               icon: state.isSubmitting
                   ? const SizedBox(
                       width: 16,
@@ -368,7 +384,8 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
             Text(
               state.blockingReason,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
             ),
           ],
           if (state.formNotice != null) ...<Widget>[
@@ -376,7 +393,8 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
             Text(
               state.formNotice!,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.info),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs, color: colors.info),
             ),
           ],
           if (state.submitError != null) ...<Widget>[
@@ -384,7 +402,8 @@ class _WildlifeReportPageState extends ConsumerState<WildlifeReportPage> {
             Text(
               state.submitError!,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
             ),
           ],
           const SizedBox(height: KedaYaTokens.space6),
@@ -490,12 +509,13 @@ class _PhotoTile extends StatelessWidget {
                     child: Image.memory(
                       _asBytes(photo.bytes),
                       fit: BoxFit.cover,
-                      errorBuilder:
-                          (BuildContext context, Object error, StackTrace? stackTrace) =>
-                              Container(
-                                color: colors.surfaceAlt,
-                                child: Icon(Icons.image_outlined, color: colors.textMuted),
-                              ),
+                      errorBuilder: (BuildContext context, Object error,
+                              StackTrace? stackTrace) =>
+                          Container(
+                        color: colors.surfaceAlt,
+                        child:
+                            Icon(Icons.image_outlined, color: colors.textMuted),
+                      ),
                     ),
                   ),
                 ),
@@ -516,20 +536,23 @@ class _PhotoTile extends StatelessWidget {
           if (photo.isUploading)
             Text(
               '上传中…',
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
             )
           else if (photo.hasFailed)
             TextButton(
               onPressed: onRetry,
               child: Text(
                 '重试',
-                style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.danger),
+                style: TextStyle(
+                    fontSize: KedaYaTokens.fontSizeXs, color: colors.danger),
               ),
             )
           else
             Text(
               '已上传',
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.success),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs, color: colors.success),
             ),
         ],
       ),
@@ -582,11 +605,13 @@ class _ClassifyCard extends StatelessWidget {
             const SizedBox(height: KedaYaTokens.space2),
             Text(
               result.fallbackNotice,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
             ),
           ] else ...<Widget>[
             const SizedBox(height: KedaYaTokens.space2),
-            for (final WildlifeClassifySuggestion suggestion in result.sortedByConfidence)
+            for (final WildlifeClassifySuggestion suggestion
+                in result.sortedByConfidence)
               Padding(
                 padding: const EdgeInsets.only(bottom: KedaYaTokens.space1),
                 child: Row(
@@ -610,7 +635,8 @@ class _ClassifyCard extends StatelessWidget {
             if (result.preselection == null)
               Text(
                 '置信度低于 $classifyPreselectMinConfidence，我们不会替你预选，请自己确认。',
-                style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.warning),
+                style: TextStyle(
+                    fontSize: KedaYaTokens.fontSizeXs, color: colors.warning),
               ),
           ],
         ],

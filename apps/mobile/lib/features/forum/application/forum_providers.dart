@@ -46,22 +46,24 @@ final class ForumListState {
     Object? loadMoreError,
     bool clearLoadMoreError = false,
     bool clearBoardId = false,
-  }) => ForumListState(
-    posts: posts ?? this.posts,
-    boardId: clearBoardId ? null : (boardId ?? this.boardId),
-    nextCursor: nextCursor ?? this.nextCursor,
-    total: total ?? this.total,
-    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-    loadMoreError: clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
-  );
+  }) =>
+      ForumListState(
+        posts: posts ?? this.posts,
+        boardId: clearBoardId ? null : (boardId ?? this.boardId),
+        nextCursor: nextCursor ?? this.nextCursor,
+        total: total ?? this.total,
+        isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+        loadMoreError:
+            clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
+      );
 
   /// 追加下一页（游标分页）。
   ForumListState append(ForumListState next) => ForumListState(
-    posts: <ForumPost>[...posts, ...next.posts],
-    boardId: next.boardId ?? boardId,
-    nextCursor: next.nextCursor,
-    total: next.total ?? total,
-  );
+        posts: <ForumPost>[...posts, ...next.posts],
+        boardId: next.boardId ?? boardId,
+        nextCursor: next.nextCursor,
+        total: next.total ?? total,
+      );
 }
 
 /// 版块筛选（UI 的 chip 选中项）。
@@ -90,7 +92,8 @@ final forumBoardsProvider = FutureProvider<List<ForumBoard>>((ref) async {
 
 /// 主题列表控制器（application 层：编排用例，不含 IO）。
 final forumListControllerProvider =
-    AsyncNotifierProvider<ForumListController, ForumListState>(ForumListController.new);
+    AsyncNotifierProvider<ForumListController, ForumListState>(
+        ForumListController.new);
 
 final class ForumListController extends AsyncNotifier<ForumListState> {
   static const int pageSize = 10;
@@ -138,11 +141,11 @@ final class ForumListController extends AsyncNotifier<ForumListState> {
     final Result<Page<ForumPost>> result = await port.listPosts(query);
     return switch (result) {
       Ok<Page<ForumPost>>(:final Page<ForumPost> value) => ForumListState(
-        posts: value.items,
-        boardId: query.boardId,
-        nextCursor: value.nextCursor,
-        total: value.total,
-      ),
+          posts: value.items,
+          boardId: query.boardId,
+          nextCursor: value.nextCursor,
+          total: value.total,
+        ),
       Err<Page<ForumPost>>(:final ApiError error, :final String? traceId) =>
         throw ApiException(error, traceId: traceId),
     };
@@ -190,26 +193,28 @@ final class ForumReplyListState {
     bool? isLoadingMore,
     Object? loadMoreError,
     bool clearLoadMoreError = false,
-  }) => ForumReplyListState(
-    replies: replies ?? this.replies,
-    nextCursor: nextCursor ?? this.nextCursor,
-    total: total ?? this.total,
-    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-    loadMoreError: clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
-  );
+  }) =>
+      ForumReplyListState(
+        replies: replies ?? this.replies,
+        nextCursor: nextCursor ?? this.nextCursor,
+        total: total ?? this.total,
+        isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+        loadMoreError:
+            clearLoadMoreError ? null : (loadMoreError ?? this.loadMoreError),
+      );
 
   ForumReplyListState append(ForumReplyListState next) => ForumReplyListState(
-    replies: <ForumReply>[...replies, ...next.replies],
-    nextCursor: next.nextCursor,
-    total: next.total ?? total,
-  );
+        replies: <ForumReply>[...replies, ...next.replies],
+        nextCursor: next.nextCursor,
+        total: next.total ?? total,
+      );
 }
 
 /// 某个主题的回复列表（family 参数 = postId）。
-final forumRepliesProvider =
-    AsyncNotifierProvider.family<ForumReplyListController, ForumReplyListState, String>(
-      ForumReplyListController.new,
-    );
+final forumRepliesProvider = AsyncNotifierProvider.family<
+    ForumReplyListController, ForumReplyListState, String>(
+  ForumReplyListController.new,
+);
 
 final class ForumReplyListController
     extends FamilyAsyncNotifier<ForumReplyListState, String> {
@@ -234,7 +239,8 @@ final class ForumReplyListController
     );
     try {
       final ForumReplyListState next = await _fetch(
-        ForumReplyQuery(postId: arg, cursor: current.nextCursor, limit: pageSize),
+        ForumReplyQuery(
+            postId: arg, cursor: current.nextCursor, limit: pageSize),
       );
       state = AsyncData<ForumReplyListState>(current.append(next));
     } on Object catch (error) {
@@ -248,11 +254,12 @@ final class ForumReplyListController
     final ForumPort port = ref.read(forumRepositoryProvider);
     final Result<Page<ForumReply>> result = await port.listReplies(query);
     return switch (result) {
-      Ok<Page<ForumReply>>(:final Page<ForumReply> value) => ForumReplyListState(
-        replies: value.items,
-        nextCursor: value.nextCursor,
-        total: value.total,
-      ),
+      Ok<Page<ForumReply>>(:final Page<ForumReply> value) =>
+        ForumReplyListState(
+          replies: value.items,
+          nextCursor: value.nextCursor,
+          total: value.total,
+        ),
       Err<Page<ForumReply>>(:final ApiError error, :final String? traceId) =>
         throw ApiException(error, traceId: traceId),
     };

@@ -34,6 +34,8 @@ import { WellbeingModule } from './modules/wellbeing/wellbeing.module';
 import { FaqModule } from './modules/faq/faq.module';
 import { TechpieModule } from './modules/techpie/techpie.module';
 import { WildlifeModule } from './modules/wildlife/wildlife.module';
+// 跨模块隐私基础设施（不是契约 §4 的用户可见模块）：U8 联系方式交换
+import { ContactExchangeModule } from './modules/contact-exchange/contact-exchange.module';
 
 /**
  * 应用根模块 —— 契约 §4 的 **20 个模块全部装配**（v1.2 §11.10-C 新增 `facility`）。
@@ -84,6 +86,8 @@ import { WildlifeModule } from './modules/wildlife/wildlife.module';
     FaqModule,
     TechpieModule,
     WildlifeModule,
+    // 联系方式交换（U8）：跨模块隐私基础设施，路由 /contact-exchange
+    ContactExchangeModule,
   ],
   providers: [
     /*

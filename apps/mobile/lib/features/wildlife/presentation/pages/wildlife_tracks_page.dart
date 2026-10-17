@@ -25,10 +25,12 @@ class WildlifeTracksPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<List<WildlifeTrack>> value = ref.watch(wildlifeTracksProvider);
+    final AsyncValue<List<WildlifeTrack>> value =
+        ref.watch(wildlifeTracksProvider);
     final String? speciesId = ref.watch(wildlifeSpeciesFilterProvider);
     final List<WildlifeSpecies> species =
-        ref.watch(wildlifeSpeciesProvider).valueOrNull ?? const <WildlifeSpecies>[];
+        ref.watch(wildlifeSpeciesProvider).valueOrNull ??
+            const <WildlifeSpecies>[];
     final MockControls? mockControls = ref.watch(mockControlsProvider);
     final KedaYaColors colors = context.kedayaColors;
 
@@ -80,33 +82,33 @@ class WildlifeTracksPage extends ConsumerWidget {
               onRetry: () => ref.invalidate(wildlifeTracksProvider),
               builder: (BuildContext context, List<WildlifeTrack> tracks) =>
                   ListView.separated(
-                    padding: const EdgeInsets.all(KedaYaTokens.space4),
-                    itemCount: tracks.length + 1,
-                    separatorBuilder: (BuildContext context, int index) =>
-                        const SizedBox(height: KedaYaTokens.space3),
-                    itemBuilder: (BuildContext context, int index) {
-                      if (index == tracks.length) {
-                        return Padding(
-                          padding: const EdgeInsets.only(top: KedaYaTokens.space2),
-                          child: Text(
-                            '轨迹由服务端每日重算（DBSCAN 聚类 → 停留点 → 走廊连接）。'
-                            '间隔超过 6 小时或距离超过 300 m 的簇不会连接：'
-                            '轨迹断裂是可接受的，编造不可接受。',
-                            style: TextStyle(
-                              fontSize: KedaYaTokens.fontSizeXs,
-                              height: KedaYaTokens.lineHeightNormal,
-                              color: colors.textMuted,
-                            ),
-                          ),
-                        );
-                      }
-                      final WildlifeTrack track = tracks[index];
-                      return WildlifeTrackCard(
-                        track: track,
-                        onTap: () => context.push('/wildlife/tracks/${track.id}'),
-                      );
-                    },
-                  ),
+                padding: const EdgeInsets.all(KedaYaTokens.space4),
+                itemCount: tracks.length + 1,
+                separatorBuilder: (BuildContext context, int index) =>
+                    const SizedBox(height: KedaYaTokens.space3),
+                itemBuilder: (BuildContext context, int index) {
+                  if (index == tracks.length) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: KedaYaTokens.space2),
+                      child: Text(
+                        '轨迹由服务端每日重算（DBSCAN 聚类 → 停留点 → 走廊连接）。'
+                        '间隔超过 6 小时或距离超过 300 m 的簇不会连接：'
+                        '轨迹断裂是可接受的，编造不可接受。',
+                        style: TextStyle(
+                          fontSize: KedaYaTokens.fontSizeXs,
+                          height: KedaYaTokens.lineHeightNormal,
+                          color: colors.textMuted,
+                        ),
+                      ),
+                    );
+                  }
+                  final WildlifeTrack track = tracks[index];
+                  return WildlifeTrackCard(
+                    track: track,
+                    onTap: () => context.push('/wildlife/tracks/${track.id}'),
+                  );
+                },
+              ),
             ),
           ),
         ],

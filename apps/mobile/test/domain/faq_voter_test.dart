@@ -8,7 +8,8 @@ import 'package:kedaya/domain/models/faq.dart';
 void main() {
   group('FaqVoter.resolve', () {
     test('已登录：用实名 userId，key 前缀 u:', () {
-      final FaqVoter voter = FaqVoter.resolve(userId: 'u-1001', deviceId: 'dev-abc');
+      final FaqVoter voter =
+          FaqVoter.resolve(userId: 'u-1001', deviceId: 'dev-abc');
 
       expect(voter.key, 'u:u-1001');
       expect(voter.isRealUser, isTrue);
@@ -32,7 +33,8 @@ void main() {
     });
 
     test('同一个字符串在两种身份下得到不同的 key（不会互相冒充）', () {
-      expect(FaqVoter.forUser('same').key, isNot(FaqVoter.forDevice('same').key));
+      expect(
+          FaqVoter.forUser('same').key, isNot(FaqVoter.forDevice('same').key));
     });
 
     test('相同入参稳定得到相同 key（幂等的必要条件）', () {
@@ -73,8 +75,10 @@ void main() {
   group('幂等键的端到端语义', () {
     test('同一 voter 的 key 不变 => 服务端集合里只占一个位置', () {
       final Set<String> voters = <String>{};
-      final String first = FaqVoter.resolve(userId: 'u-1', deviceId: 'dev-1').key;
-      final String second = FaqVoter.resolve(userId: 'u-1', deviceId: 'dev-1').key;
+      final String first =
+          FaqVoter.resolve(userId: 'u-1', deviceId: 'dev-1').key;
+      final String second =
+          FaqVoter.resolve(userId: 'u-1', deviceId: 'dev-1').key;
 
       voters.add(first);
       voters.add(second);

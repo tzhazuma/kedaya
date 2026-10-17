@@ -127,5 +127,6 @@ abstract interface class BuddyPort {
   ///
   /// UPSERT（`@@unique([userId, targetPostId, section])`），副作用是
   /// 让下一次推荐立刻反映反馈（规格 §5.8）。
-  Future<Result<BuddyMatchFeedback>> submitFeedback(BuddyMatchFeedback feedback);
+  Future<Result<BuddyMatchFeedback>> submitFeedback(
+      BuddyMatchFeedback feedback);
 }

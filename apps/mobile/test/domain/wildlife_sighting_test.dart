@@ -23,17 +23,18 @@ void main() {
     bool ethicsAcknowledged = true,
     ClassifiedBy classifiedBy = ClassifiedBy.manual,
     String? autoSpeciesId,
-  }) => WildlifeSightingDraft(
-    speciesId: speciesId,
-    observedAt: observedAt ?? now.subtract(const Duration(hours: 1)),
-    geo: geo,
-    geoAccuracyM: geoAccuracyM,
-    mediaIds: mediaIds,
-    note: note,
-    ethicsAcknowledged: ethicsAcknowledged,
-    classifiedBy: classifiedBy,
-    autoSpeciesId: autoSpeciesId,
-  );
+  }) =>
+      WildlifeSightingDraft(
+        speciesId: speciesId,
+        observedAt: observedAt ?? now.subtract(const Duration(hours: 1)),
+        geo: geo,
+        geoAccuracyM: geoAccuracyM,
+        mediaIds: mediaIds,
+        note: note,
+        ethicsAcknowledged: ethicsAcknowledged,
+        classifiedBy: classifiedBy,
+        autoSpeciesId: autoSpeciesId,
+      );
 
   WildlifeValidationResult validate(WildlifeSightingDraft value) =>
       value.validate(now: now, knownSpeciesIds: knownSpecies);
@@ -57,7 +58,8 @@ void main() {
     });
 
     test('发现时间与上报时间分离（需求 R4）', () {
-      final WildlifeSighting sighting = WildlifeSighting.fromJson(<String, Object?>{
+      final WildlifeSighting sighting =
+          WildlifeSighting.fromJson(<String, Object?>{
         'id': 'wl-1',
         'species': 'sp-cat',
         'status': 'PUBLISHED',
@@ -72,7 +74,8 @@ void main() {
     });
 
     test('缺 createdAt 时退化为 observedAt（不让整条解析失败）', () {
-      final WildlifeSighting sighting = WildlifeSighting.fromJson(<String, Object?>{
+      final WildlifeSighting sighting =
+          WildlifeSighting.fromJson(<String, Object?>{
         'id': 'wl-1',
         'species': 'sp-cat',
         'observedAt': '2026-10-16T01:00:00.000Z',
@@ -84,7 +87,8 @@ void main() {
     });
 
     test('敏感区没有 geo 时 hasGeo=false，位置文案改为"不公开坐标"', () {
-      final WildlifeSighting sighting = WildlifeSighting.fromJson(<String, Object?>{
+      final WildlifeSighting sighting =
+          WildlifeSighting.fromJson(<String, Object?>{
         'id': 'wl-sensitive',
         'species': 'sp-cat',
         'status': 'PUBLISHED',
@@ -153,7 +157,8 @@ void main() {
     });
 
     test('未知物种 → UNKNOWN_SPECIES', () {
-      final WildlifeValidationResult result = validate(draft(speciesId: 'sp-nope'));
+      final WildlifeValidationResult result =
+          validate(draft(speciesId: 'sp-nope'));
       expect(result.has(reasonUnknownSpecies), isTrue);
       expect(result.isValid, isFalse);
     });
@@ -167,7 +172,8 @@ void main() {
       );
       // 允许 5 分钟时钟漂移。
       expect(
-        validate(draft(observedAt: now.add(const Duration(minutes: 3)))).isValid,
+        validate(draft(observedAt: now.add(const Duration(minutes: 3))))
+            .isValid,
         isTrue,
       );
       expect(
@@ -194,8 +200,10 @@ void main() {
     });
 
     test('精度越界 → INVALID_ACCURACY；null 视为未提供', () {
-      expect(validate(draft(geoAccuracyM: 0)).has(reasonInvalidAccuracy), isTrue);
-      expect(validate(draft(geoAccuracyM: 10001)).has(reasonInvalidAccuracy), isTrue);
+      expect(
+          validate(draft(geoAccuracyM: 0)).has(reasonInvalidAccuracy), isTrue);
+      expect(validate(draft(geoAccuracyM: 10001)).has(reasonInvalidAccuracy),
+          isTrue);
       expect(validate(draft(geoAccuracyM: null)).isValid, isTrue);
     });
 
@@ -206,7 +214,8 @@ void main() {
         ).has(reasonMediaAlreadyLinked),
         isTrue,
       );
-      expect(validate(draft(mediaIds: const <String>['a', 'b', 'c'])).isValid, isTrue);
+      expect(validate(draft(mediaIds: const <String>['a', 'b', 'c'])).isValid,
+          isTrue);
     });
 
     test('备注超过 200 字 → CONTENT_REJECTED', () {
@@ -216,7 +225,8 @@ void main() {
         ).has(reasonContentRejected),
         isTrue,
       );
-      expect(validate(draft(note: _repeat('鸭', maxSightingNoteLength))).isValid, isTrue);
+      expect(validate(draft(note: _repeat('鸭', maxSightingNoteLength))).isValid,
+          isTrue);
     });
 
     test('未勾选伦理确认 → ETHICS_NOT_ACKNOWLEDGED（且只是这次提交被拒）', () {
@@ -264,16 +274,31 @@ void main() {
         isTrue,
       );
       expect(
-        looksLikeImage(<int>[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0]),
+        looksLikeImage(
+            <int>[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0]),
         isTrue,
       );
       expect(
         looksLikeImage(<int>[
-          0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50,
+          0x52,
+          0x49,
+          0x46,
+          0x46,
+          0,
+          0,
+          0,
+          0,
+          0x57,
+          0x45,
+          0x42,
+          0x50,
         ]),
         isTrue,
       );
-      expect(sniffMimeType(<int>[0xFF, 0xD8, 0xFF, 0xE0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), 'image/jpeg');
+      expect(
+          sniffMimeType(
+              <int>[0xFF, 0xD8, 0xFF, 0xE0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+          'image/jpeg');
     });
 
     test('改了扩展名的文本文件会被拒（不信任 Content-Type）', () {
@@ -316,15 +341,18 @@ void main() {
   group('自动分类的置信度分档（规格 §5.5 / §11.6 T44）', () {
     test('≥0.85 很确定；0.60–0.85 可能是；<0.60 无法确定', () {
       expect(
-        const WildlifeClassifySuggestion(speciesId: 'sp-swan', confidence: 0.9).confidenceLabel,
+        const WildlifeClassifySuggestion(speciesId: 'sp-swan', confidence: 0.9)
+            .confidenceLabel,
         '很确定',
       );
       expect(
-        const WildlifeClassifySuggestion(speciesId: 'sp-swan', confidence: 0.7).confidenceLabel,
+        const WildlifeClassifySuggestion(speciesId: 'sp-swan', confidence: 0.7)
+            .confidenceLabel,
         '可能是',
       );
       expect(
-        const WildlifeClassifySuggestion(speciesId: 'sp-swan', confidence: 0.4).confidenceLabel,
+        const WildlifeClassifySuggestion(speciesId: 'sp-swan', confidence: 0.4)
+            .confidenceLabel,
         '无法确定',
       );
     });
@@ -363,7 +391,8 @@ void main() {
     });
 
     test('结果按置信度降序，并容忍 suggestions 键名', () {
-      final WildlifeClassifyResult result = WildlifeClassifyResult.fromJson(<String, Object?>{
+      final WildlifeClassifyResult result =
+          WildlifeClassifyResult.fromJson(<String, Object?>{
         'suggestions': <Object?>[
           <String, Object?>{'speciesId': 'sp-cat', 'confidence': 0.4},
           <String, Object?>{'speciesId': 'sp-swan', 'confidence': 0.8},
@@ -457,4 +486,5 @@ void main() {
 }
 
 /// Dart 没有 `String * int`：重复字符串用它。
-String _repeat(String unit, int times) => List<String>.filled(times, unit).join();
+String _repeat(String unit, int times) =>
+    List<String>.filled(times, unit).join();

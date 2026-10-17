@@ -24,12 +24,13 @@ class TechpieHomePage extends ConsumerWidget {
     final KedaYaColors colors = context.kedayaColors;
 
     // 第一级身份（登录与否 / 显示名）—— 只来自 sessionControllerProvider。
-    final AuthSession? session = ref.watch(sessionControllerProvider).valueOrNull;
+    final AuthSession? session =
+        ref.watch(sessionControllerProvider).valueOrNull;
 
     // 第二级绑定（元数据）—— 只来自 TechpiePort。
     final List<TechpieLink> links =
         ref.watch(techpieLinksControllerProvider).valueOrNull ??
-        const <TechpieLink>[];
+            const <TechpieLink>[];
 
     return KedaYaPageScaffold(
       title: '校园整合',
@@ -90,9 +91,8 @@ class TechpieHomePage extends ConsumerWidget {
 String _bindingSummary(List<TechpieLink> links) {
   if (links.isEmpty) return '暂无绑定';
   final DateTime now = DateTime.now();
-  final int usable = links
-      .where((TechpieLink link) => link.isUsableAt(now))
-      .length;
+  final int usable =
+      links.where((TechpieLink link) => link.isUsableAt(now)).length;
   final int stale = links.length - usable;
   return stale == 0
       ? '${links.length} 项，全部可用'

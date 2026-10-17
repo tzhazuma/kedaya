@@ -59,3 +59,11 @@ apps/*/.turbo/
 __pycache__/
 *.pyc
 *.pyo
+
+# ---- Flutter / Android 构建产物 ----
+apps/mobile/build/
+apps/mobile/.dart_tool/
+apps/mobile/.idea/
+apps/mobile/android/.gradle/
+apps/mobile/android/local.properties
+apps/mobile/**/GeneratedPluginRegistrant.*

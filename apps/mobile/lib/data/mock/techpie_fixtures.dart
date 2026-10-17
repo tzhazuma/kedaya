@@ -164,36 +164,36 @@ final CampusCardAccount mockCampusCardAccount = CampusCardAccount(
 /// 校园卡流水（mock）：支出与充值各两笔，覆盖两个方向。
 final List<CampusCardTransaction> mockCampusCardTransactions =
     <CampusCardTransaction>[
-      CampusCardTransaction(
-        id: 'cc-2001',
-        merchant: '一食堂',
-        amountFen: 1580,
-        direction: CampusCardTransactionDirection.debit,
-        occurredAt: mockNow.subtract(const Duration(hours: 3)),
-        balanceAfterFen: 32860,
-      ),
-      CampusCardTransaction(
-        id: 'cc-2002',
-        merchant: '图书馆自助打印',
-        amountFen: 60,
-        direction: CampusCardTransactionDirection.debit,
-        occurredAt: mockNow.subtract(const Duration(days: 1)),
-        balanceAfterFen: 34440,
-      ),
-      CampusCardTransaction(
-        id: 'cc-2003',
-        merchant: '校园卡在线充值',
-        amountFen: 20000,
-        direction: CampusCardTransactionDirection.credit,
-        occurredAt: mockNow.subtract(const Duration(days: 3)),
-        balanceAfterFen: 34500,
-      ),
-      CampusCardTransaction(
-        id: 'cc-2004',
-        merchant: '二食堂',
-        amountFen: 1320,
-        direction: CampusCardTransactionDirection.debit,
-        occurredAt: mockNow.subtract(const Duration(days: 4)),
-        balanceAfterFen: 14500,
-      ),
-    ];
+  CampusCardTransaction(
+    id: 'cc-2001',
+    merchant: '一食堂',
+    amountFen: 1580,
+    direction: CampusCardTransactionDirection.debit,
+    occurredAt: mockNow.subtract(const Duration(hours: 3)),
+    balanceAfterFen: 32860,
+  ),
+  CampusCardTransaction(
+    id: 'cc-2002',
+    merchant: '图书馆自助打印',
+    amountFen: 60,
+    direction: CampusCardTransactionDirection.debit,
+    occurredAt: mockNow.subtract(const Duration(days: 1)),
+    balanceAfterFen: 34440,
+  ),
+  CampusCardTransaction(
+    id: 'cc-2003',
+    merchant: '校园卡在线充值',
+    amountFen: 20000,
+    direction: CampusCardTransactionDirection.credit,
+    occurredAt: mockNow.subtract(const Duration(days: 3)),
+    balanceAfterFen: 34500,
+  ),
+  CampusCardTransaction(
+    id: 'cc-2004',
+    merchant: '二食堂',
+    amountFen: 1320,
+    direction: CampusCardTransactionDirection.debit,
+    occurredAt: mockNow.subtract(const Duration(days: 4)),
+    balanceAfterFen: 14500,
+  ),
+];

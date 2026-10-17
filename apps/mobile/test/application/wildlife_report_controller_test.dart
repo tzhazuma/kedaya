@@ -57,9 +57,11 @@ void main() {
     controllerOf(container).ensureDefaults(now: mockNow);
     expect(stateOf(container).observedAt, mockNow);
     // 再调一次不会覆盖用户已经改过的时间。
-    controllerOf(container).setObservedAt(mockNow.subtract(const Duration(hours: 3)));
+    controllerOf(container)
+        .setObservedAt(mockNow.subtract(const Duration(hours: 3)));
     controllerOf(container).ensureDefaults(now: mockNow);
-    expect(stateOf(container).observedAt, mockNow.subtract(const Duration(hours: 3)));
+    expect(stateOf(container).observedAt,
+        mockNow.subtract(const Duration(hours: 3)));
   });
 
   test('选图 → 自动上传 → 拿到 mediaId；提交前还差物种与伦理确认', () async {
@@ -87,7 +89,8 @@ void main() {
 
   test('上传失败 → 照片标记失败；重试**复用**同一个 clientPhotoId（幂等）', () async {
     final MockWildlifeRepository repository = MockWildlifeRepository(
-      controls: MockControls(latency: Duration.zero)..failureMode = MockFailureMode.upstreamUnavailable,
+      controls: MockControls(latency: Duration.zero)
+        ..failureMode = MockFailureMode.upstreamUnavailable,
       now: mockNow,
     );
     final ProviderContainer container = containerWith(repository: repository);
@@ -203,7 +206,8 @@ void main() {
       now: mockNow,
     );
     final ProviderContainer container = containerWith(repository: repository);
-    controllerOf(container).setObservedAt(mockNow.subtract(const Duration(hours: 1)));
+    controllerOf(container)
+        .setObservedAt(mockNow.subtract(const Duration(hours: 1)));
     controllerOf(container).setSpecies(mockSpeciesCat);
     await controllerOf(container).setLocationFromMap(
       const Wgs84Point(lat: 31.17855, lng: 121.59010),
@@ -217,7 +221,8 @@ void main() {
     final WildlifeReportState after = stateOf(container);
     expect(after.submitted, isNull);
     expect(after.submitError, contains(wildlifeEthicsAckLabel));
-    expect(repository.sightingsSnapshot(), hasLength(mockWildlifeSightings.length));
+    expect(repository.sightingsSnapshot(),
+        hasLength(mockWildlifeSightings.length));
   });
 
   test('完整流程：勾选伦理后提交成功，状态是 PENDING（不假装已发布）', () async {
@@ -230,7 +235,8 @@ void main() {
 
     await controller.pickPhotos();
     controller.setObservedAt(mockNow.subtract(const Duration(hours: 2)));
-    await controller.setLocationFromMap(const Wgs84Point(lat: 31.17855, lng: 121.59010));
+    await controller
+        .setLocationFromMap(const Wgs84Point(lat: 31.17855, lng: 121.59010));
     controller.setSpecies(mockSpeciesCat);
     controller.setNote('在草坪长椅下面，两只');
     controller.setEthicsAcknowledged(true);
@@ -255,7 +261,8 @@ void main() {
     final WildlifeReportController controller = controllerOf(container);
     controller.setObservedAt(mockNow.subtract(const Duration(hours: 1)));
     controller.setSpecies(mockSpeciesCat);
-    await controller.setLocationFromMap(const Wgs84Point(lat: 31.17855, lng: 121.59010));
+    await controller
+        .setLocationFromMap(const Wgs84Point(lat: 31.17855, lng: 121.59010));
     controller.setEthicsAcknowledged(true);
     // 「大橘」在 mock 里已存在（同物种同名 → 服务端会返回 CONFLICT）。
     controller.setIndividualName('大橘');
@@ -276,7 +283,8 @@ void main() {
     final WildlifeReportController controller = controllerOf(container);
     controller.setObservedAt(mockNow.subtract(const Duration(hours: 1)));
     controller.setSpecies(mockSpeciesCat);
-    await controller.setLocationFromMap(const Wgs84Point(lat: 31.17855, lng: 121.59010));
+    await controller
+        .setLocationFromMap(const Wgs84Point(lat: 31.17855, lng: 121.59010));
     controller.setEthicsAcknowledged(true);
     controller.setIndividualName('三花');
 
@@ -300,7 +308,8 @@ void main() {
     controller.setObservedAt(mockNow.subtract(const Duration(hours: 1)));
     controller.setSpecies(mockSpeciesCat);
     // 校园外坐标：客户端预校验就会拦下来。
-    await controller.setLocationFromMap(const Wgs84Point(lat: 39.9, lng: 116.4));
+    await controller
+        .setLocationFromMap(const Wgs84Point(lat: 39.9, lng: 116.4));
     controller.setEthicsAcknowledged(true);
 
     await controller.submit();
@@ -319,7 +328,8 @@ void main() {
     final WildlifeReportController controller = controllerOf(container);
     controller.setObservedAt(mockNow.subtract(const Duration(hours: 1)));
     controller.setSpecies(mockSpeciesCat);
-    await controller.setLocationFromMap(const Wgs84Point(lat: 31.17855, lng: 121.59010));
+    await controller
+        .setLocationFromMap(const Wgs84Point(lat: 31.17855, lng: 121.59010));
     controller.setEthicsAcknowledged(true);
     controller.toggleHealthConcern();
     controller.toggleAnonymous();

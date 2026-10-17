@@ -54,9 +54,9 @@ final class OAuthCodeCredential extends BindCredential {
 
   @override
   Map<String, Object?> toWire() => <String, Object?>{
-    'kind': kind,
-    'code': code,
-  };
+        'kind': kind,
+        'code': code,
+      };
 
   /// ⚠️ 不打 [code]。
   @override
@@ -82,14 +82,15 @@ final class OpenIdCredential extends BindCredential {
   String get redactedLabel => 'OPENID 通道（$channel，已脱敏）';
 
   @override
-  bool get isWellFormed => openId.trim().isNotEmpty && channel.trim().isNotEmpty;
+  bool get isWellFormed =>
+      openId.trim().isNotEmpty && channel.trim().isNotEmpty;
 
   @override
   Map<String, Object?> toWire() => <String, Object?>{
-    'kind': kind,
-    'openId': openId,
-    'channel': channel,
-  };
+        'kind': kind,
+        'openId': openId,
+        'channel': channel,
+      };
 
   /// ⚠️ 不打 [openId]。
   @override

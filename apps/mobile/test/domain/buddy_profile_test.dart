@@ -6,7 +6,8 @@ import 'package:kedaya/domain/models/buddy_tags.dart';
 /// 匹配资料与可用时段的领域测试（规格 §2.2 / §3.3 / §6.3）。
 void main() {
   /// Dart 没有字符串重复运算符，测试里造超长文本用它。
-  String repeat(String unit, int count) => List<String>.filled(count, unit).join();
+  String repeat(String unit, int count) =>
+      List<String>.filled(count, unit).join();
 
   group('AvailabilitySlot 校验（规格 §2.2）', () {
     test('合法时段：0 ≤ startMin < endMin ≤ 1440', () {
@@ -15,7 +16,8 @@ void main() {
         isNull,
       );
       expect(
-        const AvailabilitySlot(dow: 6, startMin: 23 * 60, endMin: 24 * 60).error,
+        const AvailabilitySlot(dow: 6, startMin: 23 * 60, endMin: 24 * 60)
+            .error,
         isNull,
         reason: '24:00 是「到午夜」的自然边界（本端的显式放宽，见常量注释）',
       );
@@ -58,7 +60,8 @@ void main() {
       expect(slot.label, '周一 09:00–12:00');
       expect(slot.isValid, isTrue);
       expect(
-        const AvailabilitySlot(dow: 0, startMin: 23 * 60, endMin: 24 * 60).label,
+        const AvailabilitySlot(dow: 0, startMin: 23 * 60, endMin: 24 * 60)
+            .label,
         '周日 23:00–24:00',
       );
     });
@@ -151,7 +154,12 @@ void main() {
       );
       expect(
         normalized.map((AvailabilitySlot slot) => slot.label),
-        <String>['周一 19:00–22:00', '周三 19:00–22:00', '周五 23:00–24:00', '周六 00:00–01:00'],
+        <String>[
+          '周一 19:00–22:00',
+          '周三 19:00–22:00',
+          '周五 23:00–24:00',
+          '周六 00:00–01:00'
+        ],
       );
     });
 
@@ -214,7 +222,10 @@ void main() {
     });
 
     test('matchEnabled 缺省为 false（规格 §6.3：默认不参与）', () {
-      expect(BuddyProfile.fromJson(<String, Object?>{'userId': 'u-1'}).matchEnabled, isFalse);
+      expect(
+          BuddyProfile.fromJson(<String, Object?>{'userId': 'u-1'})
+              .matchEnabled,
+          isFalse);
       expect(BuddyProfile.empty('u-1').matchEnabled, isFalse);
       expect(BuddyProfile.empty('u-1').isRecommendable, isFalse);
       expect(BuddyProfile.empty('u-1').hasAnySignal, isFalse);
@@ -232,7 +243,8 @@ void main() {
       ]) {
         expect(json.containsKey(forbidden), isFalse, reason: '不得下发 $forbidden');
       }
-      expect(json.keys, containsAll(<String>['sections', 'interestTags', 'availability']));
+      expect(json.keys,
+          containsAll(<String>['sections', 'interestTags', 'availability']));
     });
 
     test('availability 解析容错：非对象元素被跳过', () {
@@ -251,18 +263,18 @@ void main() {
 
   group('BuddyProfile 校验（规格 §2.2 的约束列）', () {
     BuddyProfile base() => BuddyProfile(
-      userId: 'u-1',
-      sections: const <BuddySection>[BuddySection.sport],
-      interestTags: const <String>['badminton', 'coding'],
-      activityTags: const <String>['badminton'],
-      availability: const <AvailabilitySlot>[
-        AvailabilitySlot(dow: 1, startMin: 19 * 60, endMin: 22 * 60),
-      ],
-      preferredAreas: const <String>['体育馆'],
-      department: '信息科学与技术学院',
-      bio: '常泡图书馆',
-      matchEnabled: true,
-    );
+          userId: 'u-1',
+          sections: const <BuddySection>[BuddySection.sport],
+          interestTags: const <String>['badminton', 'coding'],
+          activityTags: const <String>['badminton'],
+          availability: const <AvailabilitySlot>[
+            AvailabilitySlot(dow: 1, startMin: 19 * 60, endMin: 22 * 60),
+          ],
+          preferredAreas: const <String>['体育馆'],
+          department: '信息科学与技术学院',
+          bio: '常泡图书馆',
+          matchEnabled: true,
+        );
 
     test('合法资料没有任何错误', () {
       expect(base().validationErrors(), isEmpty);
@@ -272,64 +284,69 @@ void main() {
 
     test('兴趣标签：数量上限 20、单标签长度 24、必须在封闭表里', () {
       expect(
-        base()
-            .copyWith(
-              interestTags: <String>[
-                for (int i = 0; i < 21; i++) 'badminton',
-              ],
-            )
-            .validationErrors()['interestTags'],
+        base().copyWith(
+          interestTags: <String>[
+            for (int i = 0; i < 21; i++) 'badminton',
+          ],
+        ).validationErrors()['interestTags'],
         contains('$buddyInterestTagMaxCount'),
       );
       expect(
-        base().copyWith(interestTags: <String>[repeat('x', 25)]).validationErrors()['interestTags'],
+        base().copyWith(interestTags: <String>[
+          repeat('x', 25)
+        ]).validationErrors()['interestTags'],
         contains('$buddyInterestTagMaxLength'),
       );
       expect(
-        base().copyWith(interestTags: const <String>['quidditch']).validationErrors()['interestTags'],
+        base().copyWith(interestTags: const <String>[
+          'quidditch'
+        ]).validationErrors()['interestTags'],
         contains('UNKNOWN_TAG:quidditch'),
       );
     });
 
     test('活动标签：数量上限 10 + 封闭表', () {
       expect(
-        base()
-            .copyWith(activityTags: <String>[for (int i = 0; i < 11; i++) 'badminton'])
-            .validationErrors()['activityTags'],
+        base().copyWith(activityTags: <String>[
+          for (int i = 0; i < 11; i++) 'badminton'
+        ]).validationErrors()['activityTags'],
         contains('$buddyActivityTagMaxCount'),
       );
       expect(
-        base().copyWith(activityTags: const <String>['nope']).validationErrors()['activityTags'],
+        base().copyWith(activityTags: const <String>[
+          'nope'
+        ]).validationErrors()['activityTags'],
         contains('UNKNOWN_TAG:nope'),
       );
     });
 
     test('常去区域：≤5 + 校园地点白名单', () {
       expect(
-        base()
-            .copyWith(
-              preferredAreas: const <String>[
-                '图书馆',
-                '一食堂',
-                '二食堂',
-                '体育馆',
-                '田径场',
-                '篮球场',
-              ],
-            )
-            .validationErrors()['preferredAreas'],
+        base().copyWith(
+          preferredAreas: const <String>[
+            '图书馆',
+            '一食堂',
+            '二食堂',
+            '体育馆',
+            '田径场',
+            '篮球场',
+          ],
+        ).validationErrors()['preferredAreas'],
         contains('$buddyPreferredAreaMaxCount'),
       );
       expect(
-        base().copyWith(preferredAreas: const <String>['月球基地'])
-            .validationErrors()['preferredAreas'],
+        base().copyWith(preferredAreas: const <String>[
+          '月球基地'
+        ]).validationErrors()['preferredAreas'],
         contains('白名单'),
       );
     });
 
     test('院系 ≤64 字；自述 ≤200 字且不得写联系方式', () {
       expect(
-        base().copyWith(department: repeat('院', 65)).validationErrors()['department'],
+        base()
+            .copyWith(department: repeat('院', 65))
+            .validationErrors()['department'],
         isNotNull,
       );
       expect(
@@ -344,13 +361,11 @@ void main() {
 
     test('时段非法时给出错误', () {
       expect(
-        base()
-            .copyWith(
-              availability: const <AvailabilitySlot>[
-                AvailabilitySlot(dow: 1, startMin: 600, endMin: 600),
-              ],
-            )
-            .validationErrors()['availability'],
+        base().copyWith(
+          availability: const <AvailabilitySlot>[
+            AvailabilitySlot(dow: 1, startMin: 600, endMin: 600),
+          ],
+        ).validationErrors()['availability'],
         isNotNull,
       );
     });
@@ -363,9 +378,8 @@ void main() {
 
   group('封闭标签表（规格 §3.2）', () {
     test('key 唯一、label 非空、分组齐全', () {
-      final Set<String> keys = buddyTagCatalog
-          .map((BuddyTag tag) => tag.key)
-          .toSet();
+      final Set<String> keys =
+          buddyTagCatalog.map((BuddyTag tag) => tag.key).toSet();
       expect(keys, hasLength(buddyTagCatalog.length), reason: 'key 必须唯一');
       for (final BuddyTag tag in buddyTagCatalog) {
         expect(tag.label, isNotEmpty);

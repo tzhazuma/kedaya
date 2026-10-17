@@ -28,7 +28,8 @@ void main() {
     });
 
     test('nestingMonths 容忍字符串数字，未知层级收敛', () {
-      final WildlifeSpecies species = WildlifeSpecies.fromJson(<String, Object?>{
+      final WildlifeSpecies species =
+          WildlifeSpecies.fromJson(<String, Object?>{
         'id': 'sp-x',
         'scientificName': 'X',
         'commonNameZh': 'X',
@@ -39,7 +40,8 @@ void main() {
       expect(species.nestingMonths, <int>[3, 4]);
       expect(species.taxonRank, TaxonRank.unknown);
       expect(species.defaultFeedingPolicy, FeedingPolicy.unknown);
-      expect(species.isNestingInMonth(3), isFalse, reason: 'isNestingSensitive 默认为 false');
+      expect(species.isNestingInMonth(3), isFalse,
+          reason: 'isNestingSensitive 默认为 false');
     });
 
     test('shanghaiMonth 按东八区取月份（规格 §9.4 的 monthInShanghai）', () {
@@ -75,7 +77,11 @@ void main() {
       final WildlifeZone nested = WildlifeZone.fromJson(<String, Object?>{
         'id': 'wz-1',
         'name': '人工湖',
-        'geo': <String, Object?>{'lat': 31.1772, 'lng': 121.5913, 'radiusM': 120},
+        'geo': <String, Object?>{
+          'lat': 31.1772,
+          'lng': 121.5913,
+          'radiusM': 120
+        },
         'species': <Object?>['sp-swan'],
       });
       expect(nested.radiusM, 120);
@@ -144,28 +150,53 @@ void main() {
         ),
       ];
       expect(zoneContaining(point, zones)!.id, 'small');
-      expect(zoneContaining(const Wgs84Point(lat: 31.1860, lng: 121.5970), zones), isNull);
+      expect(
+          zoneContaining(const Wgs84Point(lat: 31.1860, lng: 121.5970), zones),
+          isNull);
     });
   });
 
   group('聚合热点（规格 §2.3 / §8.1 E10 / §11.3 T24）', () {
-    WildlifeSpot spot({int delayHours = defaultAggregationDelayHours}) => WildlifeSpot(
-      id: 'ws-1',
-      speciesId: 'sp-cat',
-      centroid: const Wgs84Point(lat: 31.17855, lng: 121.59015),
-      radiusM: 62,
-      sightingCount: 24,
-      firstSeenAt: DateTime.utc(2026, 9, 1),
-      lastSeenAt: DateTime.utc(2026, 10, 15),
-      computedAt: DateTime.utc(2026, 10, 16, 3),
-      hourHistogram: const <int>[
-        0, 0, 0, 0, 0, 0, 2, 5, 8, 4, 1, 0,
-        0, 0, 0, 0, 0, 3, 7, 9, 5, 2, 0, 0,
-      ],
-      confidence: 0.72,
-      distinctReporters: 9,
-      aggregationDelayHours: delayHours,
-    );
+    WildlifeSpot spot({int delayHours = defaultAggregationDelayHours}) =>
+        WildlifeSpot(
+          id: 'ws-1',
+          speciesId: 'sp-cat',
+          centroid: const Wgs84Point(lat: 31.17855, lng: 121.59015),
+          radiusM: 62,
+          sightingCount: 24,
+          firstSeenAt: DateTime.utc(2026, 9, 1),
+          lastSeenAt: DateTime.utc(2026, 10, 15),
+          computedAt: DateTime.utc(2026, 10, 16, 3),
+          hourHistogram: const <int>[
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            5,
+            8,
+            4,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            3,
+            7,
+            9,
+            5,
+            2,
+            0,
+            0,
+          ],
+          confidence: 0.72,
+          distinctReporters: 9,
+          aggregationDelayHours: delayHours,
+        );
 
     test('客户端永远不把它当实时位置', () {
       expect(spot().isRealtime, isFalse);
@@ -176,7 +207,8 @@ void main() {
     test('computedAt 与当前时间至少相差 24 小时', () {
       final WildlifeSpot value = spot();
       expect(value.isAggregationDelayed(DateTime.utc(2026, 10, 17, 3)), isTrue);
-      expect(value.isAggregationDelayed(DateTime.utc(2026, 10, 16, 12)), isFalse);
+      expect(
+          value.isAggregationDelayed(DateTime.utc(2026, 10, 16, 12)), isFalse);
     });
 
     test('直方图被规范为恰好 24 项（多给少给都不崩）', () {
@@ -195,8 +227,8 @@ void main() {
     });
 
     test('peakHours 取最多的 3 个时段，按次数降序', () {
-      // 直方图里 19 点 9 次、8 点 8 次、7 点与 20 点都是 5 次 → 取索引小的 7 点。
-      expect(spot().peakHours, <int>[19, 8, 7]);
+      // 直方图里 19 点 9 次、8 点 8 次、18 点 7 次（第三名），7/20 点各 5 次。
+      expect(spot().peakHours, <int>[19, 8, 18]);
     });
 
     test('confidenceLabel 分档', () {
@@ -223,7 +255,9 @@ void main() {
         <String, Object?>{'limit': 50, 'minConfidence': 0.3},
       );
       expect(
-        const WildlifeSpotQuery(speciesId: 'sp-cat', zoneId: 'wz-lake', limit: 10).toQuery(),
+        const WildlifeSpotQuery(
+                speciesId: 'sp-cat', zoneId: 'wz-lake', limit: 10)
+            .toQuery(),
         <String, Object?>{
           'limit': 10,
           'species': 'sp-cat',

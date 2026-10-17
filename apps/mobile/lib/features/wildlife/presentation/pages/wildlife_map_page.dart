@@ -30,7 +30,8 @@ class WildlifeMapPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<WildlifeMapState> value = ref.watch(wildlifeMapControllerProvider);
+    final AsyncValue<WildlifeMapState> value =
+        ref.watch(wildlifeMapControllerProvider);
     final WildlifeMapController controller = ref.read(
       wildlifeMapControllerProvider.notifier,
     );
@@ -81,26 +82,30 @@ class WildlifeMapPage extends ConsumerWidget {
             ),
             const SizedBox(height: KedaYaTokens.space2),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: KedaYaTokens.space4),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: KedaYaTokens.space4),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(KedaYaTokens.radiusLg),
                 child: AspectRatio(
-                  aspectRatio: state.basemap.widthPx <= 0 || state.basemap.heightPx <= 0
-                      ? 10 / 7
-                      : state.basemap.widthPx / state.basemap.heightPx,
+                  aspectRatio:
+                      state.basemap.widthPx <= 0 || state.basemap.heightPx <= 0
+                          ? 10 / 7
+                          : state.basemap.widthPx / state.basemap.heightPx,
                   child: WildlifeMapCanvas(
                     basemap: state.basemap,
                     zones: state.publicZones,
                     spots: state.spots,
                     tracks: state.tracks,
-                    onPickPoint: (Wgs84Point point) => _onTapMap(context, state, point),
+                    onPickPoint: (Wgs84Point point) =>
+                        _onTapMap(context, state, point),
                   ),
                 ),
               ),
             ),
             const SizedBox(height: KedaYaTokens.space3),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: KedaYaTokens.space4),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: KedaYaTokens.space4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -160,7 +165,8 @@ class WildlifeMapPage extends ConsumerWidget {
   }
 
   /// 点击地图：命中区域 → 弹出告示位摘要（规格 §8.3：气泡内显示前 40 字）。
-  void _onTapMap(BuildContext context, WildlifeMapState state, Wgs84Point point) {
+  void _onTapMap(
+      BuildContext context, WildlifeMapState state, Wgs84Point point) {
     final WildlifeZone? zone = zoneContaining(point, state.zones);
     if (zone == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -245,30 +251,30 @@ class _QuickLinks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-    children: <Widget>[
-      Expanded(
-        child: OutlinedButton.icon(
-          onPressed: onZones,
-          icon: const Icon(Icons.map_outlined, size: 16),
-          label: Text('区域 $zoneCount'),
-        ),
-      ),
-      const SizedBox(width: KedaYaTokens.space2),
-      Expanded(
-        child: OutlinedButton.icon(
-          onPressed: onSightings,
-          icon: const Icon(Icons.list_alt_outlined, size: 16),
-          label: const Text('观测记录'),
-        ),
-      ),
-      const SizedBox(width: KedaYaTokens.space2),
-      Expanded(
-        child: OutlinedButton.icon(
-          onPressed: onTracks,
-          icon: const Icon(Icons.timeline, size: 16),
-          label: Text('轨迹 $trackCount'),
-        ),
-      ),
-    ],
-  );
+        children: <Widget>[
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: onZones,
+              icon: const Icon(Icons.map_outlined, size: 16),
+              label: Text('区域 $zoneCount'),
+            ),
+          ),
+          const SizedBox(width: KedaYaTokens.space2),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: onSightings,
+              icon: const Icon(Icons.list_alt_outlined, size: 16),
+              label: const Text('观测记录'),
+            ),
+          ),
+          const SizedBox(width: KedaYaTokens.space2),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: onTracks,
+              icon: const Icon(Icons.timeline, size: 16),
+              label: Text('轨迹 $trackCount'),
+            ),
+          ),
+        ],
+      );
 }

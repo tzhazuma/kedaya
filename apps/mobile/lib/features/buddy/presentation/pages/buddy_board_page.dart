@@ -28,9 +28,11 @@ class BuddyBoardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<BuddyListState> value = ref.watch(buddyListControllerProvider);
+    final AsyncValue<BuddyListState> value =
+        ref.watch(buddyListControllerProvider);
     final MockControls? mockControls = ref.watch(mockControlsProvider);
-    final BuddyListController controller = ref.read(buddyListControllerProvider.notifier);
+    final BuddyListController controller =
+        ref.read(buddyListControllerProvider.notifier);
     final BuddySection section = ref.watch(buddySectionFilterProvider);
 
     return Scaffold(
@@ -66,7 +68,8 @@ class BuddyBoardPage extends ConsumerWidget {
                   unawaited(controller.refresh());
               }
             },
-            itemBuilder: (BuildContext context) => const <PopupMenuEntry<String>>[
+            itemBuilder: (BuildContext context) =>
+                const <PopupMenuEntry<String>>[
               PopupMenuItem<String>(value: 'profile', child: Text('我的匹配资料')),
               PopupMenuItem<String>(value: 'applications', child: Text('我的申请')),
               PopupMenuItem<String>(value: 'privacy', child: Text('隐私说明')),
@@ -95,30 +98,31 @@ class BuddyBoardPage extends ConsumerWidget {
                 onRetry: controller.refresh,
                 builder: (BuildContext context, BuddyListState state) =>
                     NotificationListener<ScrollNotification>(
-                      // 触底加载：剩余不足 240px 时预取下一页。
-                      onNotification: (ScrollNotification notification) {
-                        if (notification.metrics.extentAfter < 240) {
-                          unawaited(controller.loadMore());
-                        }
-                        return false;
-                      },
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(KedaYaTokens.space4),
-                        itemCount: state.posts.length + 1,
-                        separatorBuilder: (BuildContext context, int index) =>
-                            const SizedBox(height: KedaYaTokens.space3),
-                        itemBuilder: (BuildContext context, int index) {
-                          if (index == state.posts.length) {
-                            return _ListFooter(state: state, controller: controller);
-                          }
-                          final BuddyPost post = state.posts[index];
-                          return BuddyPostCard(
-                            post: post,
-                            onTap: () => context.push('/buddy/${post.id}'),
-                          );
-                        },
-                      ),
-                    ),
+                  // 触底加载：剩余不足 240px 时预取下一页。
+                  onNotification: (ScrollNotification notification) {
+                    if (notification.metrics.extentAfter < 240) {
+                      unawaited(controller.loadMore());
+                    }
+                    return false;
+                  },
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(KedaYaTokens.space4),
+                    itemCount: state.posts.length + 1,
+                    separatorBuilder: (BuildContext context, int index) =>
+                        const SizedBox(height: KedaYaTokens.space3),
+                    itemBuilder: (BuildContext context, int index) {
+                      if (index == state.posts.length) {
+                        return _ListFooter(
+                            state: state, controller: controller);
+                      }
+                      final BuddyPost post = state.posts[index];
+                      return BuddyPostCard(
+                        post: post,
+                        onTap: () => context.push('/buddy/${post.id}'),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           ),
@@ -129,11 +133,12 @@ class BuddyBoardPage extends ConsumerWidget {
 }
 
 /// 「我的申请」底部弹层（`GET /buddy/applications`，申请人视角）。
-Future<void> _showMyApplications(BuildContext context) => showModalBottomSheet<void>(
-  context: context,
-  isScrollControlled: true,
-  builder: (BuildContext sheetContext) => const _MyApplicationsSheet(),
-);
+Future<void> _showMyApplications(BuildContext context) =>
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext sheetContext) => const _MyApplicationsSheet(),
+    );
 
 class _MyApplicationsSheet extends ConsumerWidget {
   const _MyApplicationsSheet();
@@ -179,25 +184,25 @@ class _MyApplicationsSheet extends ConsumerWidget {
                 onRetry: () => ref.invalidate(buddyMyApplicationsProvider),
                 builder: (BuildContext context, List<BuddyApplication> items) =>
                     ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: items.length,
-                      separatorBuilder: (BuildContext context, int index) =>
-                          const SizedBox(height: KedaYaTokens.space2),
-                      itemBuilder: (BuildContext context, int index) {
-                        final BuddyApplication application = items[index];
-                        return BuddyApplicationTile(
-                          application: application,
-                          isCreator: false,
-                          onWithdraw: () => unawaited(
-                            actions.leave(application.postId).then(
+                  shrinkWrap: true,
+                  itemCount: items.length,
+                  separatorBuilder: (BuildContext context, int index) =>
+                      const SizedBox(height: KedaYaTokens.space2),
+                  itemBuilder: (BuildContext context, int index) {
+                    final BuddyApplication application = items[index];
+                    return BuddyApplicationTile(
+                      application: application,
+                      isCreator: false,
+                      onWithdraw: () => unawaited(
+                        actions.leave(application.postId).then(
                               (BuddyApplication _) => ref.invalidate(
                                 buddyMyApplicationsProvider,
                               ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ],
@@ -225,7 +230,8 @@ class _ListFooter extends StatelessWidget {
             Text(
               '加载更多失败：${state.loadMoreError}',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
             ),
             const SizedBox(height: KedaYaTokens.space2),
             OutlinedButton(
@@ -258,7 +264,8 @@ class _ListFooter extends StatelessWidget {
       child: Center(
         child: Text(
           state.total == null ? '没有更多了' : '共 ${state.total} 条 · 没有更多了',
-          style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+          style: TextStyle(
+              fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
         ),
       ),
     );

@@ -22,7 +22,9 @@ void main() {
 
   ProviderContainer containerWith(MockBuddyRepository repository) {
     final ProviderContainer container = ProviderContainer(
-      overrides: <Override>[buddyRepositoryProvider.overrideWithValue(repository)],
+      overrides: <Override>[
+        buddyRepositoryProvider.overrideWithValue(repository)
+      ],
     );
     addTearDown(container.dispose);
     return container;
@@ -32,29 +34,30 @@ void main() {
     MockControls? controls,
     List<BuddyPost>? posts,
     BuddyProfile? profile,
-  }) => MockBuddyRepository(
-    controls: controls ?? MockControls(latency: Duration.zero),
-    clock: () => fixedNow,
-    posts: posts,
-    profile: profile,
-  );
+  }) =>
+      MockBuddyRepository(
+        controls: controls ?? MockControls(latency: Duration.zero),
+        clock: () => fixedNow,
+        posts: posts,
+        profile: profile,
+      );
 
   List<BuddyPost> seedPosts(int count) => <BuddyPost>[
-    for (int i = 0; i < count; i++)
-      BuddyPost(
-        id: 'bp-seed-$i',
-        activity: BuddyActivity.sport,
-        title: '活动 $i',
-        location: '体育馆',
-        // 用 buddy_fixtures 的上海本地时间助手：种子活动落在「周一 19:00 起」，
-        // 与 fixtures 的可用时段一致，因此列表与推荐两侧的期望都稳定。
-        startsAt: buddyShanghaiInstant(fixedNow, dayOffset: 2, hour: 19)
-            .add(Duration(minutes: i * 5)),
-        capacity: 4,
-        creator: const BuddyCreator(id: 'u-2001', nickname: '鸭鸭一号'),
-        createdAt: fixedNow,
-      ),
-  ];
+        for (int i = 0; i < count; i++)
+          BuddyPost(
+            id: 'bp-seed-$i',
+            activity: BuddyActivity.sport,
+            title: '活动 $i',
+            location: '体育馆',
+            // 用 buddy_fixtures 的上海本地时间助手：种子活动落在「周一 19:00 起」，
+            // 与 fixtures 的可用时段一致，因此列表与推荐两侧的期望都稳定。
+            startsAt: buddyShanghaiInstant(fixedNow, dayOffset: 2, hour: 19)
+                .add(Duration(minutes: i * 5)),
+            capacity: 4,
+            creator: const BuddyCreator(id: 'u-2001', nickname: '鸭鸭一号'),
+            createdAt: fixedNow,
+          ),
+      ];
 
   /// 等到状态不再是 loading（依赖失效后的重建是异步的）。
   Future<BuddyListState> settle(ProviderContainer container) async {
@@ -90,7 +93,8 @@ void main() {
     test('empty：空结果时 isEmpty 为 true（UI 渲染空态）', () async {
       final MockControls controls = MockControls(latency: Duration.zero)
         ..emptyResults = true;
-      final ProviderContainer container = containerWith(repo(controls: controls));
+      final ProviderContainer container =
+          containerWith(repo(controls: controls));
 
       final BuddyListState state = await container.read(
         buddyListControllerProvider.future,
@@ -102,7 +106,8 @@ void main() {
     test('error：上游故障抛出 ApiException（UI 渲染错误态）', () async {
       final MockControls controls = MockControls(latency: Duration.zero)
         ..failureMode = MockFailureMode.upstreamUnavailable;
-      final ProviderContainer container = containerWith(repo(controls: controls));
+      final ProviderContainer container =
+          containerWith(repo(controls: controls));
 
       await expectLater(
         container.read(buddyListControllerProvider.future),
@@ -123,16 +128,24 @@ void main() {
       );
       expect(sport.posts, hasLength(3));
 
-      container.read(buddySectionFilterProvider.notifier).select(BuddySection.academic);
+      container
+          .read(buddySectionFilterProvider.notifier)
+          .select(BuddySection.academic);
       final BuddyListState academic = await settle(container);
       expect(academic.section, BuddySection.academic);
-      expect(academic.posts.map((BuddyPost post) => post.id), <String>['bp-1002']);
+      expect(
+          academic.posts.map((BuddyPost post) => post.id), <String>['bp-1002']);
 
-      container.read(buddySectionFilterProvider.notifier).select(BuddySection.daily);
+      container
+          .read(buddySectionFilterProvider.notifier)
+          .select(BuddySection.daily);
       final BuddyListState daily = await settle(container);
-      expect(daily.posts.map((BuddyPost post) => post.id), <String>['bp-1003', 'bp-1005']);
+      expect(daily.posts.map((BuddyPost post) => post.id),
+          <String>['bp-1003', 'bp-1005']);
 
-      container.read(buddySectionFilterProvider.notifier).select(BuddySection.sport);
+      container
+          .read(buddySectionFilterProvider.notifier)
+          .select(BuddySection.sport);
       final BuddyListState back = await settle(container);
       expect(back.posts, hasLength(3));
     });
@@ -182,9 +195,11 @@ void main() {
         buddyListControllerProvider.future,
       );
       await container.read(buddyListControllerProvider.notifier).loadMore();
-      final BuddyListState after = container.read(
-        buddyListControllerProvider,
-      ).requireValue;
+      final BuddyListState after = container
+          .read(
+            buddyListControllerProvider,
+          )
+          .requireValue;
       expect(after.posts, hasLength(before.posts.length));
     });
   });
@@ -193,7 +208,8 @@ void main() {
     test('按 id 取；不存在时抛 ApiException(NOT_FOUND)', () async {
       final ProviderContainer container = containerWith(repo());
 
-      final BuddyPost post = await container.read(buddyPostProvider('bp-1001').future);
+      final BuddyPost post =
+          await container.read(buddyPostProvider('bp-1001').future);
       expect(post.id, 'bp-1001');
       expect(post.section, BuddySection.sport);
 
@@ -217,37 +233,41 @@ void main() {
       final List<BuddyApplication> before = await container.read(
         buddyMyApplicationsProvider.future,
       );
-      expect(before.map((BuddyApplication item) => item.postId), isNot(contains('bp-1003')));
+      expect(before.map((BuddyApplication item) => item.postId),
+          isNot(contains('bp-1003')));
 
       await container.read(buddyActionsProvider).join(
-        const BuddyJoinCommand(postId: 'bp-1003'),
-      );
+            const BuddyJoinCommand(postId: 'bp-1003'),
+          );
 
       final List<BuddyApplication> after = await container.read(
         buddyMyApplicationsProvider.future,
       );
-      expect(after.map((BuddyApplication item) => item.postId), contains('bp-1003'));
+      expect(after.map((BuddyApplication item) => item.postId),
+          contains('bp-1003'));
     });
 
     test('createPost 后列表被失效重取，新活动出现在当前板块', () async {
       final ProviderContainer container = containerWith(repo());
       await container.read(buddyListControllerProvider.future);
 
-      final BuddyPost created = await container.read(buddyActionsProvider).createPost(
-        CreateBuddyPostCommand(
-          activity: BuddyActivity.sport,
-          title: '新活动',
-          location: '体育馆',
-          startsAt: fixedNow.add(const Duration(days: 1)),
-          capacity: 4,
-          tags: const <String>['badminton'],
-        ),
-      );
+      final BuddyPost created =
+          await container.read(buddyActionsProvider).createPost(
+                CreateBuddyPostCommand(
+                  activity: BuddyActivity.sport,
+                  title: '新活动',
+                  location: '体育馆',
+                  startsAt: fixedNow.add(const Duration(days: 1)),
+                  capacity: 4,
+                  tags: const <String>['badminton'],
+                ),
+              );
 
       final BuddyListState state = await container.read(
         buddyListControllerProvider.future,
       );
-      expect(state.posts.map((BuddyPost post) => post.id), contains(created.id));
+      expect(
+          state.posts.map((BuddyPost post) => post.id), contains(created.id));
       expect(state.total, 4);
     });
 
@@ -273,14 +293,14 @@ void main() {
       );
 
       await container.read(buddyActionsProvider).submitFeedback(
-        BuddyMatchFeedback(
-          userId: buddyMockCurrentUserId,
-          targetPostId: 'bp-1001',
-          section: BuddySection.sport,
-          action: BuddyMatchFeedbackAction.like,
-          createdAt: fixedNow,
-        ),
-      );
+            BuddyMatchFeedback(
+              userId: buddyMockCurrentUserId,
+              targetPostId: 'bp-1001',
+              section: BuddySection.sport,
+              action: BuddyMatchFeedbackAction.like,
+              createdAt: fixedNow,
+            ),
+          );
 
       final AsyncValue<BuddyListState> after = container.read(
         buddyListControllerProvider,
@@ -291,20 +311,22 @@ void main() {
 
     test('saveProfile 后资料 provider 被失效重取；非法资料抛错', () async {
       final ProviderContainer container = containerWith(repo());
-      final BuddyProfile initial = await container.read(buddyProfileProvider.future);
+      final BuddyProfile initial =
+          await container.read(buddyProfileProvider.future);
       expect(initial.matchEnabled, isFalse);
 
       await container.read(buddyActionsProvider).saveProfile(
-        initial.copyWith(matchEnabled: true),
-      );
-      final BuddyProfile saved = await container.read(buddyProfileProvider.future);
+            initial.copyWith(matchEnabled: true),
+          );
+      final BuddyProfile saved =
+          await container.read(buddyProfileProvider.future);
       expect(saved.matchEnabled, isTrue);
       expect(saved.isRecommendable, isTrue);
 
       await expectLater(
         container.read(buddyActionsProvider).saveProfile(
-          initial.copyWith(interestTags: const <String>['quidditch']),
-        ),
+              initial.copyWith(interestTags: const <String>['quidditch']),
+            ),
         throwsA(
           isA<ApiException>().having(
             (ApiException error) => error.code,
@@ -321,7 +343,8 @@ void main() {
 
       await container.read(buddyActionsProvider).deleteProfile();
 
-      final BuddyProfile profile = await container.read(buddyProfileProvider.future);
+      final BuddyProfile profile =
+          await container.read(buddyProfileProvider.future);
       expect(profile.matchEnabled, isFalse);
       expect(profile.hasAnySignal, isFalse);
     });
@@ -334,12 +357,12 @@ void main() {
       expect(received.single.status, BuddyApplicationStatus.pending);
 
       await container.read(buddyActionsProvider).decide(
-        const BuddyDecideCommand(
-          postId: 'bp-1005',
-          applicationId: 'ba-2001',
-          decision: BuddyDecision.accepted,
-        ),
-      );
+            const BuddyDecideCommand(
+              postId: 'bp-1005',
+              applicationId: 'ba-2001',
+              decision: BuddyDecision.accepted,
+            ),
+          );
 
       final List<BuddyApplication> after = await container.read(
         buddyPostApplicationsProvider('bp-1005').future,
@@ -349,16 +372,17 @@ void main() {
 
     test('leave 撤回后状态回到 WITHDRAWN', () async {
       final ProviderContainer container = containerWith(repo());
-      final BuddyApplication withdrawn = await container
-          .read(buddyActionsProvider)
-          .leave('bp-1006');
+      final BuddyApplication withdrawn =
+          await container.read(buddyActionsProvider).leave('bp-1006');
       expect(withdrawn.status, BuddyApplicationStatus.withdrawn);
 
       final List<BuddyApplication> mine = await container.read(
         buddyMyApplicationsProvider.future,
       );
       expect(
-        mine.firstWhere((BuddyApplication item) => item.postId == 'bp-1006').status,
+        mine
+            .firstWhere((BuddyApplication item) => item.postId == 'bp-1006')
+            .status,
         BuddyApplicationStatus.withdrawn,
       );
     });

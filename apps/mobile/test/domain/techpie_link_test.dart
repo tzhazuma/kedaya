@@ -52,7 +52,8 @@ void main() {
     });
 
     test('fromWire 未知返回 null', () {
-      expect(CampusBindingStatus.fromWire('linked'), CampusBindingStatus.linked);
+      expect(
+          CampusBindingStatus.fromWire('linked'), CampusBindingStatus.linked);
       expect(CampusBindingStatus.fromWire('weird'), isNull);
     });
   });
@@ -62,13 +63,14 @@ void main() {
       CampusPlatform platform = CampusPlatform.cpdaily,
       CampusBindingStatus status = CampusBindingStatus.linked,
       DateTime? expiresAt,
-    }) => CampusBindingSummary(
-      platform: platform,
-      status: status,
-      externalUserId: '20240001',
-      expiresAt: expiresAt,
-      lastSyncAt: now,
-    );
+    }) =>
+        CampusBindingSummary(
+          platform: platform,
+          status: status,
+          externalUserId: '20240001',
+          expiresAt: expiresAt,
+          lastSyncAt: now,
+        );
 
     test('toJson 的键名是封闭集合（5 个）', () {
       expect(summary().toJson().keys.toSet(), <String>{
@@ -81,8 +83,13 @@ void main() {
     });
 
     test('isUsableAt：LINKED 且未过期才算可用', () {
-      expect(summary(expiresAt: now.add(const Duration(days: 1))).isUsableAt(now), isTrue);
-      expect(summary(expiresAt: now.subtract(const Duration(seconds: 1))).isUsableAt(now), isFalse);
+      expect(
+          summary(expiresAt: now.add(const Duration(days: 1))).isUsableAt(now),
+          isTrue);
+      expect(
+          summary(expiresAt: now.subtract(const Duration(seconds: 1)))
+              .isUsableAt(now),
+          isFalse);
       // 无 expiresAt（由服务端决定）= 不过期。
       expect(summary().isUsableAt(now), isTrue);
       // 状态不是 LINKED 时，即使 expiresAt 在未来也不可用。
@@ -189,12 +196,12 @@ void main() {
 
     test('canRenew：LINKED 与 EXPIRED/REVOKED 可以续期，UNLINKED/LINKING 不可以', () {
       TechpieLink withStatus(CampusBindingStatus status) => TechpieLink(
-        id: 'tp-1',
-        summary: CampusBindingSummary(
-          platform: CampusPlatform.egate,
-          status: status,
-        ),
-      );
+            id: 'tp-1',
+            summary: CampusBindingSummary(
+              platform: CampusPlatform.egate,
+              status: status,
+            ),
+          );
       expect(withStatus(CampusBindingStatus.linked).canRenew, isTrue);
       expect(withStatus(CampusBindingStatus.expired).canRenew, isTrue);
       expect(withStatus(CampusBindingStatus.revoked).canRenew, isTrue);

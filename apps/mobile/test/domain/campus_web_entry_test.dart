@@ -13,11 +13,14 @@ void main() {
   group('campusTargetUrlProblem 的通过路径', () {
     test('白名单内的 https + 443 → null（通过）', () {
       expect(campusTargetUrlProblem(campusHost), isNull);
-      expect(campusTargetUrlProblem('https://elrc.shanghaitech.edu.cn/a/b?c=1'), isNull);
+      expect(campusTargetUrlProblem('https://elrc.shanghaitech.edu.cn/a/b?c=1'),
+          isNull);
       // host 大小写不敏感（Uri 会归一化，代码再兜一层）。
-      expect(campusTargetUrlProblem('https://ECOURSE.ShanghaiTech.EDU.CN/'), isNull);
+      expect(campusTargetUrlProblem('https://ECOURSE.ShanghaiTech.EDU.CN/'),
+          isNull);
       // 显式写 :443 也是允许的。
-      expect(campusTargetUrlProblem('https://ecourse.shanghaitech.edu.cn:443/'), isNull);
+      expect(campusTargetUrlProblem('https://ecourse.shanghaitech.edu.cn:443/'),
+          isNull);
     });
 
     test('白名单是精确匹配，不是后缀通配', () {
@@ -35,8 +38,10 @@ void main() {
     test('畸形 URL / 无 scheme / 非 https', () {
       expect(campusTargetUrlProblem('not a url'), isNotNull);
       expect(campusTargetUrlProblem('ecourse.shanghaitech.edu.cn'), isNotNull);
-      expect(campusTargetUrlProblem('http://ecourse.shanghaitech.edu.cn/'), isNotNull);
-      expect(campusTargetUrlProblem('ftp://ecourse.shanghaitech.edu.cn/'), isNotNull);
+      expect(campusTargetUrlProblem('http://ecourse.shanghaitech.edu.cn/'),
+          isNotNull);
+      expect(campusTargetUrlProblem('ftp://ecourse.shanghaitech.edu.cn/'),
+          isNotNull);
       expect(campusTargetUrlProblem(''), isNotNull);
     });
 
@@ -65,7 +70,9 @@ void main() {
       );
       expect(problem, isNotNull);
       expect(problem, contains('443'));
-      expect(campusTargetUrlProblem('https://ecourse.shanghaitech.edu.cn:8443/'), isNotNull);
+      expect(
+          campusTargetUrlProblem('https://ecourse.shanghaitech.edu.cn:8443/'),
+          isNotNull);
     });
 
     test('后缀伪装（白名单域名作为前缀或后缀）', () {
@@ -74,7 +81,8 @@ void main() {
         isNotNull,
       );
       expect(
-        campusTargetUrlProblem('https://evil-ecourse.shanghaitech.edu.cn.attacker.net/'),
+        campusTargetUrlProblem(
+            'https://evil-ecourse.shanghaitech.edu.cn.attacker.net/'),
         isNotNull,
       );
     });
@@ -96,7 +104,7 @@ void main() {
       expect(campusDomainAllowlist, isNotEmpty);
       for (final String host in campusDomainAllowlist) {
         expect(host, isNot(contains('*')), reason: '白名单不许出现通配符');
-        expect(host, startsWith('https://'), isFalse, reason: '白名单里只放 host');
+        expect(host, isNot(startsWith('https://')), reason: '白名单里只放 host');
       }
     });
 
@@ -138,11 +146,11 @@ void main() {
 
   group('票据与中转 URL 的语义', () {
     WebViewTicket ticket({int expiresInSec = 30}) => WebViewTicket(
-      ticket: 'wvt-secret-value',
-      expiresInSec: expiresInSec,
-      targetUrl: campusHost,
-      platform: CampusPlatform.cpdaily,
-    );
+          ticket: 'wvt-secret-value',
+          expiresInSec: expiresInSec,
+          targetUrl: campusHost,
+          platform: CampusPlatform.cpdaily,
+        );
 
     test('默认时效是规格 §8.4 的 30 秒', () {
       expect(WebViewTicket.defaultTicketTtlSec, 30);
@@ -153,11 +161,13 @@ void main() {
       final DateTime issuedAt = DateTime.utc(2026, 10, 17, 2);
       expect(ticket().isExpiredAt(issuedAt, issuedAt), isFalse);
       expect(
-        ticket().isExpiredAt(issuedAt, issuedAt.add(const Duration(seconds: 29))),
+        ticket()
+            .isExpiredAt(issuedAt, issuedAt.add(const Duration(seconds: 29))),
         isFalse,
       );
       expect(
-        ticket().isExpiredAt(issuedAt, issuedAt.add(const Duration(seconds: 30))),
+        ticket()
+            .isExpiredAt(issuedAt, issuedAt.add(const Duration(seconds: 30))),
         isTrue,
       );
       expect(
@@ -197,7 +207,8 @@ void main() {
         fallbackExpiresAt: fallback,
       );
       expect(handoff.expiresAt, fallback);
-      expect(handoff.isExpiredAt(fallback.subtract(const Duration(seconds: 1))), isFalse);
+      expect(handoff.isExpiredAt(fallback.subtract(const Duration(seconds: 1))),
+          isFalse);
 
       // 服务端给了具体时刻时以服务端为准。
       final WebViewHandoff explicit = WebViewHandoff.fromJson(
@@ -232,7 +243,9 @@ void main() {
         targetUrl: campusHost,
         expiresAt: expiresAt,
       );
-      expect(handoff.isExpiredAt(expiresAt.subtract(const Duration(seconds: 1))), isFalse);
+      expect(
+          handoff.isExpiredAt(expiresAt.subtract(const Duration(seconds: 1))),
+          isFalse);
       expect(handoff.isExpiredAt(expiresAt), isTrue);
     });
   });

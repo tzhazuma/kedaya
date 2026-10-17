@@ -21,7 +21,7 @@ import '../domain/ports/webview_port.dart';
 /// 服务端签发的一次性中转 URL；会话的注入发生在**服务端**，客户端从未持有它。
 final class MethodChannelWebView implements WebViewPort {
   const MethodChannelWebView({MethodChannel channel = _defaultChannel})
-    : _channel = channel;
+      : _channel = channel;
 
   static const MethodChannel _defaultChannel = MethodChannel('kedaya/webview');
 

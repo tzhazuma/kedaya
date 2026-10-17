@@ -20,15 +20,16 @@ final class MockFaqRepository implements FaqPort {
     List<FaqArticle>? articles,
     List<FaqTicket>? tickets,
     MockControls? controls,
-  }) : _categories = <FaqCategory>{
-         for (final FaqCategory category in categories ?? mockFaqCategories)
-           category.id: category,
-       },
-       _articles = <String, FaqArticle>{
-         for (final FaqArticle article in articles ?? mockFaqArticles) article.id: article,
-       },
-       _tickets = <FaqTicket>[...(tickets ?? mockFaqTickets)],
-       controls = controls ?? MockControls();
+  })  : _categories = <String, FaqCategory>{
+          for (final FaqCategory category in categories ?? mockFaqCategories)
+            category.id: category,
+        },
+        _articles = <String, FaqArticle>{
+          for (final FaqArticle article in articles ?? mockFaqArticles)
+            article.id: article,
+        },
+        _tickets = <FaqTicket>[...(tickets ?? mockFaqTickets)],
+        controls = controls ?? MockControls();
 
   final Map<String, FaqCategory> _categories;
   final Map<String, FaqArticle> _articles;
@@ -43,17 +44,20 @@ final class MockFaqRepository implements FaqPort {
   int _ticketSequence = 3100;
 
   /// 供测试断言内部状态。
-  List<FaqArticle> snapshotArticles() => List<FaqArticle>.unmodifiable(_articles.values);
+  List<FaqArticle> snapshotArticles() =>
+      List<FaqArticle>.unmodifiable(_articles.values);
 
   List<FaqTicket> snapshotTickets() => List<FaqTicket>.unmodifiable(_tickets);
 
   /// 某篇文章「有用」的**去重后**投票人数（用于断言幂等）。
-  int helpfulVoterCountFor(String articleId) => _helpfulVoters[articleId]?.length ?? 0;
+  int helpfulVoterCountFor(String articleId) =>
+      _helpfulVoters[articleId]?.length ?? 0;
 
   @override
   Future<Result<List<FaqCategory>>> listCategories() async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<List<FaqCategory>>();
+    if (controls.failure != null)
+      return controls.failureResult<List<FaqCategory>>();
     final List<FaqCategory> all = _categories.values.toList(growable: false);
     all.sort((FaqCategory a, FaqCategory b) => a.id.compareTo(b.id));
     return Ok<List<FaqCategory>>(all);
@@ -62,9 +66,11 @@ final class MockFaqRepository implements FaqPort {
   @override
   Future<Result<Page<FaqArticle>>> listArticles(FaqQuery query) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<Page<FaqArticle>>();
+    if (controls.failure != null)
+      return controls.failureResult<Page<FaqArticle>>();
     if (controls.emptyResults) {
-      return Ok<Page<FaqArticle>>(const Page<FaqArticle>(items: <FaqArticle>[], total: 0));
+      return Ok<Page<FaqArticle>>(
+          const Page<FaqArticle>(items: <FaqArticle>[], total: 0));
     }
 
     Iterable<FaqArticle> candidates = _articles.values.where(
@@ -72,11 +78,13 @@ final class MockFaqRepository implements FaqPort {
     );
     final String? category = query.category;
     if (category != null && category.isNotEmpty) {
-      candidates = candidates.where((FaqArticle article) => article.category == category);
+      candidates = candidates
+          .where((FaqArticle article) => article.category == category);
     }
     final String keyword = (query.keyword ?? '').trim();
     if (keyword.isNotEmpty) {
-      candidates = candidates.where((FaqArticle article) => article.matches(keyword));
+      candidates =
+          candidates.where((FaqArticle article) => article.matches(keyword));
     }
 
     final List<FaqArticle> all = candidates.toList(growable: false);
@@ -84,7 +92,8 @@ final class MockFaqRepository implements FaqPort {
 
     final int start = _parseCursor(query.cursor);
     final int limit = _clampLimit(query.limit);
-    final List<FaqArticle> window = all.skip(start).take(limit).toList(growable: false);
+    final List<FaqArticle> window =
+        all.skip(start).take(limit).toList(growable: false);
     final int consumed = start + window.length;
     return Ok<Page<FaqArticle>>(
       Page<FaqArticle>(
@@ -101,7 +110,8 @@ final class MockFaqRepository implements FaqPort {
     required String voterId,
   }) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<FaqHelpfulResult>();
+    if (controls.failure != null)
+      return controls.failureResult<FaqHelpfulResult>();
 
     final FaqArticle? article = _articles[articleId];
     if (article == null) {
@@ -132,7 +142,8 @@ final class MockFaqRepository implements FaqPort {
       );
     }
     voters.add(voterId);
-    final FaqArticle updated = article.copyWith(helpfulCount: article.helpfulCount + 1);
+    final FaqArticle updated =
+        article.copyWith(helpfulCount: article.helpfulCount + 1);
     _articles[articleId] = updated;
     return Ok<FaqHelpfulResult>(
       FaqHelpfulResult(
@@ -144,11 +155,14 @@ final class MockFaqRepository implements FaqPort {
   }
 
   @override
-  Future<Result<Page<FaqTicket>>> listMyTickets({String? cursor, int limit = defaultPageSize}) async {
+  Future<Result<Page<FaqTicket>>> listMyTickets(
+      {String? cursor, int limit = defaultPageSize}) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<Page<FaqTicket>>();
+    if (controls.failure != null)
+      return controls.failureResult<Page<FaqTicket>>();
     if (controls.emptyResults) {
-      return Ok<Page<FaqTicket>>(const Page<FaqTicket>(items: <FaqTicket>[], total: 0));
+      return Ok<Page<FaqTicket>>(
+          const Page<FaqTicket>(items: <FaqTicket>[], total: 0));
     }
 
     final List<FaqTicket> all = _tickets
@@ -158,10 +172,8 @@ final class MockFaqRepository implements FaqPort {
 
     final int start = _parseCursor(cursor);
     final int effectiveLimit = _clampLimit(limit);
-    final List<FaqTicket> window = all
-        .skip(start)
-        .take(effectiveLimit)
-        .toList(growable: false);
+    final List<FaqTicket> window =
+        all.skip(start).take(effectiveLimit).toList(growable: false);
     final int consumed = start + window.length;
     return Ok<Page<FaqTicket>>(
       Page<FaqTicket>(

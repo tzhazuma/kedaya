@@ -34,7 +34,8 @@ class BuddyRecommendPage extends ConsumerWidget {
       buddyRecommendControllerProvider.notifier,
     );
     final BuddySection section = ref.watch(buddySectionFilterProvider);
-    final String? myUserId = ref.watch(sessionControllerProvider).valueOrNull?.user.userId;
+    final String? myUserId =
+        ref.watch(sessionControllerProvider).valueOrNull?.user.userId;
 
     return Scaffold(
       appBar: AppBar(
@@ -73,45 +74,47 @@ class BuddyRecommendPage extends ConsumerWidget {
                 onRetry: controller.refresh,
                 builder: (BuildContext context, BuddyRecommendState state) =>
                     NotificationListener<ScrollNotification>(
-                      onNotification: (ScrollNotification notification) {
-                        if (notification.metrics.extentAfter < 240) {
-                          unawaited(controller.loadMore());
-                        }
-                        return false;
-                      },
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(KedaYaTokens.space4),
-                        itemCount: state.items.length + 2,
-                        separatorBuilder: (BuildContext context, int index) =>
-                            const SizedBox(height: KedaYaTokens.space3),
-                        itemBuilder: (BuildContext context, int index) {
-                          if (index == 0) {
-                            return _MatchModeNotice(mode: state.matchMode);
-                          }
-                          if (index == state.items.length + 1) {
-                            return _ListFooter(state: state, controller: controller);
-                          }
-                          final BuddyRecommendation recommendation =
-                              state.items[index - 1];
-                          return BuddyRecommendationCard(
+                  onNotification: (ScrollNotification notification) {
+                    if (notification.metrics.extentAfter < 240) {
+                      unawaited(controller.loadMore());
+                    }
+                    return false;
+                  },
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(KedaYaTokens.space4),
+                    itemCount: state.items.length + 2,
+                    separatorBuilder: (BuildContext context, int index) =>
+                        const SizedBox(height: KedaYaTokens.space3),
+                    itemBuilder: (BuildContext context, int index) {
+                      if (index == 0) {
+                        return _MatchModeNotice(mode: state.matchMode);
+                      }
+                      if (index == state.items.length + 1) {
+                        return _ListFooter(
+                            state: state, controller: controller);
+                      }
+                      final BuddyRecommendation recommendation =
+                          state.items[index - 1];
+                      return BuddyRecommendationCard(
+                        recommendation: recommendation,
+                        matchMode: state.matchMode,
+                        onTap: () =>
+                            context.push('/buddy/${recommendation.post.id}'),
+                        onFeedback: (BuddyMatchFeedbackAction action) =>
+                            unawaited(
+                          _sendFeedback(
+                            context,
+                            ref,
                             recommendation: recommendation,
-                            matchMode: state.matchMode,
-                            onTap: () =>
-                                context.push('/buddy/${recommendation.post.id}'),
-                            onFeedback: (BuddyMatchFeedbackAction action) => unawaited(
-                              _sendFeedback(
-                                context,
-                                ref,
-                                recommendation: recommendation,
-                                section: state.section,
-                                action: action,
-                                myUserId: myUserId,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                            section: state.section,
+                            action: action,
+                            myUserId: myUserId,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           ),
@@ -130,22 +133,23 @@ class BuddyRecommendPage extends ConsumerWidget {
   }) async {
     try {
       await ref.read(buddyActionsProvider).submitFeedback(
-        BuddyMatchFeedback(
-          // 反馈者由服务端从 JWT 取；这里只是为了满足模型的必填字段。
-          userId: myUserId ?? '',
-          targetPostId: recommendation.post.id,
-          section: section,
-          action: action,
-          createdAt: DateTime.now(),
-        ),
-      );
+            BuddyMatchFeedback(
+              // 反馈者由服务端从 JWT 取；这里只是为了满足模型的必填字段。
+              userId: myUserId ?? '',
+              targetPostId: recommendation.post.id,
+              section: section,
+              action: action,
+              createdAt: DateTime.now(),
+            ),
+          );
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('已记录「${action.label}」，下次推荐会体现')),
       );
     } on Object catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
     }
   }
 }
@@ -223,7 +227,8 @@ class _ListFooter extends StatelessWidget {
             Text(
               '加载更多失败：${state.loadMoreError}',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
+              style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeSm, color: colors.danger),
             ),
             const SizedBox(height: KedaYaTokens.space2),
             OutlinedButton(
@@ -256,7 +261,8 @@ class _ListFooter extends StatelessWidget {
       child: Center(
         child: Text(
           '没有更多推荐了',
-          style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
+          style: TextStyle(
+              fontSize: KedaYaTokens.fontSizeXs, color: colors.textMuted),
         ),
       ),
     );

@@ -43,23 +43,28 @@ void main() {
   test('critical 模块必须要求同意', () {
     for (final KedayaModule module in kedayaModules) {
       if (module.sensitivity == ModuleSensitivity.critical) {
-        expect(module.requiresConsent, isTrue, reason: '${module.id} 是 critical 但未要求同意');
+        expect(module.requiresConsent, isTrue,
+            reason: '${module.id} 是 critical 但未要求同意');
       }
     }
   });
 
   test('wellbeing 是唯一 critical，且危机干预入口属于它', () {
     final List<KedayaModule> critical = kedayaModules
-        .where((KedayaModule module) => module.sensitivity == ModuleSensitivity.critical)
+        .where((KedayaModule module) =>
+            module.sensitivity == ModuleSensitivity.critical)
         .toList(growable: false);
-    expect(critical.map((KedayaModule module) => module.id).toList(), <String>['wellbeing']);
+    expect(critical.map((KedayaModule module) => module.id).toList(),
+        <String>['wellbeing']);
   });
 
   test('modulePath 生成契约 §6.1 的路径形状', () {
-    expect(modulePath('groupbuy', 'items', '123'), 'groupbuy/items/123');
+    expect(
+        modulePath('groupbuy', <Object>['items', '123']), 'groupbuy/items/123');
     expect(modulePath('lost-found'), 'lost-found');
     // 未注册的 id 直接透传，不抛异常（与 TS 实现一致）。
-    expect(modulePath('not-registered', 'items'), 'not-registered/items');
+    expect(modulePath('not-registered', <Object>['items']),
+        'not-registered/items');
   });
 
   test('KedayaModule.path 与 modulePath 等价', () {
@@ -72,7 +77,15 @@ void main() {
     final List<String> ids = sensitiveModules()
         .map((KedayaModule module) => module.id)
         .toList(growable: false);
-    expect(ids, containsAll(<String>['auth', 'campus-card', 'dorm-harmony', 'ai-portrait', 'wellbeing']));
+    expect(
+        ids,
+        containsAll(<String>[
+          'auth',
+          'campus-card',
+          'dorm-harmony',
+          'ai-portrait',
+          'wellbeing'
+        ]));
     expect(ids, isNot(contains('groupbuy')));
   });
 }

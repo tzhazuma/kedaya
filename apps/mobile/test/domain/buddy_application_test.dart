@@ -13,18 +13,18 @@ void main() {
     ];
     const Map<BuddyApplicationStatus, Set<BuddyApplicationStatus>> allowed =
         <BuddyApplicationStatus, Set<BuddyApplicationStatus>>{
-          BuddyApplicationStatus.pending: <BuddyApplicationStatus>{
-            BuddyApplicationStatus.accepted,
-            BuddyApplicationStatus.rejected,
-            BuddyApplicationStatus.withdrawn,
-          },
-          // 撤回后重新申请是**更新同一行**回 PENDING（§2.4 的唯一约束）。
-          BuddyApplicationStatus.withdrawn: <BuddyApplicationStatus>{
-            BuddyApplicationStatus.pending,
-          },
-          BuddyApplicationStatus.accepted: <BuddyApplicationStatus>{},
-          BuddyApplicationStatus.rejected: <BuddyApplicationStatus>{},
-        };
+      BuddyApplicationStatus.pending: <BuddyApplicationStatus>{
+        BuddyApplicationStatus.accepted,
+        BuddyApplicationStatus.rejected,
+        BuddyApplicationStatus.withdrawn,
+      },
+      // 撤回后重新申请是**更新同一行**回 PENDING（§2.4 的唯一约束）。
+      BuddyApplicationStatus.withdrawn: <BuddyApplicationStatus>{
+        BuddyApplicationStatus.pending,
+      },
+      BuddyApplicationStatus.accepted: <BuddyApplicationStatus>{},
+      BuddyApplicationStatus.rejected: <BuddyApplicationStatus>{},
+    };
 
     test('4×4 全矩阵逐格校验', () {
       for (final BuddyApplicationStatus from in real) {
@@ -39,7 +39,8 @@ void main() {
     });
 
     test('自反 false；unknown 永不参与', () {
-      for (final BuddyApplicationStatus status in BuddyApplicationStatus.values) {
+      for (final BuddyApplicationStatus status
+          in BuddyApplicationStatus.values) {
         expect(canTransitionBuddyApplication(status, status), isFalse);
         expect(
           canTransitionBuddyApplication(status, BuddyApplicationStatus.unknown),
@@ -77,8 +78,10 @@ void main() {
     test('wire 与目标状态', () {
       expect(BuddyDecision.accepted.wire, 'ACCEPTED');
       expect(BuddyDecision.rejected.wire, 'REJECTED');
-      expect(BuddyDecision.accepted.targetStatus, BuddyApplicationStatus.accepted);
-      expect(BuddyDecision.rejected.targetStatus, BuddyApplicationStatus.rejected);
+      expect(
+          BuddyDecision.accepted.targetStatus, BuddyApplicationStatus.accepted);
+      expect(
+          BuddyDecision.rejected.targetStatus, BuddyApplicationStatus.rejected);
       expect(BuddyDecision.tryFromWire('accepted'), BuddyDecision.accepted);
       expect(BuddyDecision.tryFromWire('maybe'), isNull);
     });
@@ -86,7 +89,8 @@ void main() {
 
   group('BuddyApplication 解析与序列化', () {
     test('字段往返；展示名回落为 id', () {
-      final BuddyApplication application = BuddyApplication.fromJson(<String, Object?>{
+      final BuddyApplication application =
+          BuddyApplication.fromJson(<String, Object?>{
         'id': 'ba-1',
         'postId': 'bp-1',
         'applicantId': 'u-1',
@@ -144,11 +148,13 @@ void main() {
 
     test('留言里不得写联系方式（规格 §6.2）', () {
       expect(
-        const BuddyJoinCommand(postId: 'bp-1', message: '加我微信：abc').messageError,
+        const BuddyJoinCommand(postId: 'bp-1', message: '加我微信：abc')
+            .messageError,
         contains('微信号'),
       );
       expect(
-        const BuddyJoinCommand(postId: 'bp-1', message: '13800138000').messageError,
+        const BuddyJoinCommand(postId: 'bp-1', message: '13800138000')
+            .messageError,
         contains('手机号'),
       );
     });

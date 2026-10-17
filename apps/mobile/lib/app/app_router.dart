@@ -35,7 +35,8 @@ import '../presentation/pages/not_found_page.dart';
 import '../presentation/pages/profile_page.dart';
 
 /// 根导航器 key（顶层路由——例如拼单详情——会盖住底部导航）。
-final GlobalKey<NavigatorState> kedaYaRootNavigatorKey = GlobalKey<NavigatorState>(
+final GlobalKey<NavigatorState> kedaYaRootNavigatorKey =
+    GlobalKey<NavigatorState>(
   debugLabel: 'kedaya-root',
 );
 
@@ -56,222 +57,242 @@ final GlobalKey<NavigatorState> kedaYaRootNavigatorKey = GlobalKey<NavigatorStat
 ///   - `/campus-card`：校园卡（**独立 OPENID 通道**，与校园会话代持解耦）
 ///   - `/module/:moduleId`：**注册表驱动**的模块落地页（未实现的模块在此如实说明）
 GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
-  navigatorKey: kedaYaRootNavigatorKey,
-  initialLocation: initialLocation,
-  routes: <RouteBase>[
-    StatefulShellRoute.indexedStack(
-      builder:
-          (
+      navigatorKey: kedaYaRootNavigatorKey,
+      initialLocation: initialLocation,
+      routes: <RouteBase>[
+        StatefulShellRoute.indexedStack(
+          builder: (
             BuildContext context,
             GoRouterState state,
             StatefulNavigationShell navigationShell,
-          ) => KedaYaShell(navigationShell: navigationShell),
-      branches: <StatefulShellBranch>[
-        StatefulShellBranch(
-          routes: <RouteBase>[
-            GoRoute(
-              path: '/home',
-              name: 'home',
-              builder: (BuildContext context, GoRouterState state) => const HomePage(),
+          ) =>
+              KedaYaShell(navigationShell: navigationShell),
+          branches: <StatefulShellBranch>[
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: '/home',
+                  name: 'home',
+                  builder: (BuildContext context, GoRouterState state) =>
+                      const HomePage(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: '/modules',
+                  name: 'modules',
+                  builder: (BuildContext context, GoRouterState state) =>
+                      const ModulesPage(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: '/profile',
+                  name: 'profile',
+                  builder: (BuildContext context, GoRouterState state) =>
+                      const ProfilePage(),
+                ),
+              ],
             ),
           ],
         ),
-        StatefulShellBranch(
-          routes: <RouteBase>[
-            GoRoute(
-              path: '/modules',
-              name: 'modules',
-              builder: (BuildContext context, GoRouterState state) => const ModulesPage(),
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: <RouteBase>[
-            GoRoute(
-              path: '/profile',
-              name: 'profile',
-              builder: (BuildContext context, GoRouterState state) => const ProfilePage(),
-            ),
-          ],
-        ),
-      ],
-    ),
-    GoRoute(
-      path: '/groupbuy',
-      name: 'groupbuy',
-      builder: (BuildContext context, GoRouterState state) => const GroupbuyListPage(),
-      routes: <RouteBase>[
         GoRoute(
-          path: ':id',
-          name: 'groupbuy-detail',
+          path: '/groupbuy',
+          name: 'groupbuy',
           builder: (BuildContext context, GoRouterState state) =>
-              GroupbuyDetailPage(orderId: state.pathParameters['id'] ?? ''),
-        ),
-      ],
-    ),
-    GoRoute(
-      path: '/buddy',
-      name: 'buddy',
-      builder: (BuildContext context, GoRouterState state) => const BuddyBoardPage(),
-      routes: <RouteBase>[
-        // ⚠️ 静态段必须声明在 `:id` **之前**，否则 `/buddy/compose`
-        // 会被 `:id` 吃掉（go_router 同级路由按声明顺序匹配）。
-        GoRoute(
-          path: 'compose',
-          name: 'buddy-compose',
-          builder: (BuildContext context, GoRouterState state) => const BuddyComposePage(),
-        ),
-        GoRoute(
-          path: 'recommend',
-          name: 'buddy-recommend',
-          builder: (BuildContext context, GoRouterState state) =>
-              const BuddyRecommendPage(),
-        ),
-        GoRoute(
-          path: 'profile',
-          name: 'buddy-profile',
-          builder: (BuildContext context, GoRouterState state) =>
-              const BuddyProfilePage(),
-        ),
-        GoRoute(
-          path: 'privacy',
-          name: 'buddy-privacy',
-          builder: (BuildContext context, GoRouterState state) =>
-              const BuddyPrivacyPage(),
-        ),
-        GoRoute(
-          path: ':id',
-          name: 'buddy-post',
-          builder: (BuildContext context, GoRouterState state) =>
-              BuddyPostDetailPage(postId: state.pathParameters['id'] ?? ''),
-        ),
-      ],
-    ),
-    GoRoute(
-      path: '/forum',
-      name: 'forum',
-      builder: (BuildContext context, GoRouterState state) => const ForumBoardPage(),
-      routes: <RouteBase>[
-        // ⚠️ `compose` 必须声明在 `:id` **之前**，否则 `/forum/compose`
-        // 会被 `:id` 吃掉（go_router 同级路由按声明顺序匹配）。
-        GoRoute(
-          path: 'compose',
-          name: 'forum-compose',
-          builder: (BuildContext context, GoRouterState state) => const ForumComposePage(),
-        ),
-        GoRoute(
-          path: ':id',
-          name: 'forum-post',
-          builder: (BuildContext context, GoRouterState state) =>
-              ForumPostDetailPage(postId: state.pathParameters['id'] ?? ''),
-        ),
-      ],
-    ),
-    GoRoute(
-      path: '/faq',
-      name: 'faq',
-      builder: (BuildContext context, GoRouterState state) => const FaqHomePage(),
-      routes: <RouteBase>[
-        GoRoute(
-          path: 'tickets',
-          name: 'faq-tickets',
-          builder: (BuildContext context, GoRouterState state) => const FaqTicketsPage(),
-        ),
-      ],
-    ),
-    GoRoute(
-      path: '/wildlife',
-      name: 'wildlife',
-      builder: (BuildContext context, GoRouterState state) => const WildlifeMapPage(),
-      routes: <RouteBase>[
-        // 静态段（report / sightings / zones / tracks）与各自的 `:id` 分开声明，
-        // 同级不冲突；这里仍然把**静态段放在前面**，与 `/forum/compose` 的
-        // 处理保持一致（go_router 同级按声明顺序匹配）。
-        GoRoute(
-          path: 'report',
-          name: 'wildlife-report',
-          builder: (BuildContext context, GoRouterState state) => const WildlifeReportPage(),
-        ),
-        GoRoute(
-          path: 'sightings',
-          name: 'wildlife-sightings',
-          builder: (BuildContext context, GoRouterState state) =>
-              const WildlifeSightingsPage(),
+              const GroupbuyListPage(),
           routes: <RouteBase>[
             GoRoute(
               path: ':id',
-              name: 'wildlife-sighting',
+              name: 'groupbuy-detail',
               builder: (BuildContext context, GoRouterState state) =>
-                  WildlifeSightingDetailPage(sightingId: state.pathParameters['id'] ?? ''),
+                  GroupbuyDetailPage(orderId: state.pathParameters['id'] ?? ''),
             ),
           ],
         ),
         GoRoute(
-          path: 'zones',
-          name: 'wildlife-zones',
-          builder: (BuildContext context, GoRouterState state) => const WildlifeZonesPage(),
+          path: '/buddy',
+          name: 'buddy',
+          builder: (BuildContext context, GoRouterState state) =>
+              const BuddyBoardPage(),
           routes: <RouteBase>[
+            // ⚠️ 静态段必须声明在 `:id` **之前**，否则 `/buddy/compose`
+            // 会被 `:id` 吃掉（go_router 同级路由按声明顺序匹配）。
+            GoRoute(
+              path: 'compose',
+              name: 'buddy-compose',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const BuddyComposePage(),
+            ),
+            GoRoute(
+              path: 'recommend',
+              name: 'buddy-recommend',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const BuddyRecommendPage(),
+            ),
+            GoRoute(
+              path: 'profile',
+              name: 'buddy-profile',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const BuddyProfilePage(),
+            ),
+            GoRoute(
+              path: 'privacy',
+              name: 'buddy-privacy',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const BuddyPrivacyPage(),
+            ),
             GoRoute(
               path: ':id',
-              name: 'wildlife-zone',
+              name: 'buddy-post',
               builder: (BuildContext context, GoRouterState state) =>
-                  WildlifeZoneDetailPage(zoneId: state.pathParameters['id'] ?? ''),
+                  BuddyPostDetailPage(postId: state.pathParameters['id'] ?? ''),
             ),
           ],
         ),
         GoRoute(
-          path: 'tracks',
-          name: 'wildlife-tracks',
-          builder: (BuildContext context, GoRouterState state) => const WildlifeTracksPage(),
+          path: '/forum',
+          name: 'forum',
+          builder: (BuildContext context, GoRouterState state) =>
+              const ForumBoardPage(),
           routes: <RouteBase>[
+            // ⚠️ `compose` 必须声明在 `:id` **之前**，否则 `/forum/compose`
+            // 会被 `:id` 吃掉（go_router 同级路由按声明顺序匹配）。
+            GoRoute(
+              path: 'compose',
+              name: 'forum-compose',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const ForumComposePage(),
+            ),
             GoRoute(
               path: ':id',
-              name: 'wildlife-track',
+              name: 'forum-post',
               builder: (BuildContext context, GoRouterState state) =>
-                  WildlifeTrackDetailPage(trackId: state.pathParameters['id'] ?? ''),
+                  ForumPostDetailPage(postId: state.pathParameters['id'] ?? ''),
             ),
           ],
         ),
+        GoRoute(
+          path: '/faq',
+          name: 'faq',
+          builder: (BuildContext context, GoRouterState state) =>
+              const FaqHomePage(),
+          routes: <RouteBase>[
+            GoRoute(
+              path: 'tickets',
+              name: 'faq-tickets',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const FaqTicketsPage(),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/wildlife',
+          name: 'wildlife',
+          builder: (BuildContext context, GoRouterState state) =>
+              const WildlifeMapPage(),
+          routes: <RouteBase>[
+            // 静态段（report / sightings / zones / tracks）与各自的 `:id` 分开声明，
+            // 同级不冲突；这里仍然把**静态段放在前面**，与 `/forum/compose` 的
+            // 处理保持一致（go_router 同级按声明顺序匹配）。
+            GoRoute(
+              path: 'report',
+              name: 'wildlife-report',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const WildlifeReportPage(),
+            ),
+            GoRoute(
+              path: 'sightings',
+              name: 'wildlife-sightings',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const WildlifeSightingsPage(),
+              routes: <RouteBase>[
+                GoRoute(
+                  path: ':id',
+                  name: 'wildlife-sighting',
+                  builder: (BuildContext context, GoRouterState state) =>
+                      WildlifeSightingDetailPage(
+                          sightingId: state.pathParameters['id'] ?? ''),
+                ),
+              ],
+            ),
+            GoRoute(
+              path: 'zones',
+              name: 'wildlife-zones',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const WildlifeZonesPage(),
+              routes: <RouteBase>[
+                GoRoute(
+                  path: ':id',
+                  name: 'wildlife-zone',
+                  builder: (BuildContext context, GoRouterState state) =>
+                      WildlifeZoneDetailPage(
+                          zoneId: state.pathParameters['id'] ?? ''),
+                ),
+              ],
+            ),
+            GoRoute(
+              path: 'tracks',
+              name: 'wildlife-tracks',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const WildlifeTracksPage(),
+              routes: <RouteBase>[
+                GoRoute(
+                  path: ':id',
+                  name: 'wildlife-track',
+                  builder: (BuildContext context, GoRouterState state) =>
+                      WildlifeTrackDetailPage(
+                          trackId: state.pathParameters['id'] ?? ''),
+                ),
+              ],
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/techpie',
+          name: 'techpie',
+          builder: (BuildContext context, GoRouterState state) =>
+              const TechpieHomePage(),
+          routes: <RouteBase>[
+            // 三个静态子段；本模块没有 `:id` 路由，因此不存在"静态段被 :id 吃掉"的问题。
+            GoRoute(
+              path: 'bindings',
+              name: 'techpie-bindings',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const TechpieBindingsPage(),
+            ),
+            GoRoute(
+              path: 'capabilities',
+              name: 'techpie-capabilities',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const TechpieCapabilitiesPage(),
+            ),
+            GoRoute(
+              path: 'webview',
+              name: 'techpie-webview',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const TechpieWebViewPage(),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/campus-card',
+          name: 'campus-card',
+          builder: (BuildContext context, GoRouterState state) =>
+              const CampusCardPage(),
+        ),
+        GoRoute(
+          path: '/module/:moduleId',
+          name: 'module-detail',
+          builder: (BuildContext context, GoRouterState state) =>
+              ModuleDetailPage(
+                  moduleId: state.pathParameters['moduleId'] ?? ''),
+        ),
       ],
-    ),
-    GoRoute(
-      path: '/techpie',
-      name: 'techpie',
-      builder: (BuildContext context, GoRouterState state) => const TechpieHomePage(),
-      routes: <RouteBase>[
-        // 三个静态子段；本模块没有 `:id` 路由，因此不存在"静态段被 :id 吃掉"的问题。
-        GoRoute(
-          path: 'bindings',
-          name: 'techpie-bindings',
-          builder: (BuildContext context, GoRouterState state) =>
-              const TechpieBindingsPage(),
-        ),
-        GoRoute(
-          path: 'capabilities',
-          name: 'techpie-capabilities',
-          builder: (BuildContext context, GoRouterState state) =>
-              const TechpieCapabilitiesPage(),
-        ),
-        GoRoute(
-          path: 'webview',
-          name: 'techpie-webview',
-          builder: (BuildContext context, GoRouterState state) =>
-              const TechpieWebViewPage(),
-        ),
-      ],
-    ),
-    GoRoute(
-      path: '/campus-card',
-      name: 'campus-card',
-      builder: (BuildContext context, GoRouterState state) => const CampusCardPage(),
-    ),
-    GoRoute(
-      path: '/module/:moduleId',
-      name: 'module-detail',
-      builder: (BuildContext context, GoRouterState state) =>
-          ModuleDetailPage(moduleId: state.pathParameters['moduleId'] ?? ''),
-    ),
-  ],
-  errorBuilder: (BuildContext context, GoRouterState state) =>
-      NotFoundPage(location: state.uri.toString()),
-);
+      errorBuilder: (BuildContext context, GoRouterState state) =>
+          NotFoundPage(location: state.uri.toString()),
+    );

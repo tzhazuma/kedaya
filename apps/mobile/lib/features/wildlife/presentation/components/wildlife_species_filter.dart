@@ -46,12 +46,14 @@ class WildlifeSpeciesFilterBar extends StatelessWidget {
                     Text(item.displayName),
                     if (item.isProtected) ...<Widget>[
                       const SizedBox(width: KedaYaTokens.space1),
-                      Icon(Icons.shield_outlined, size: 13, color: colors.danger),
+                      Icon(Icons.shield_outlined,
+                          size: 13, color: colors.danger),
                     ],
                   ],
                 ),
                 selected: selectedSpeciesId == item.id,
-                onSelected: (bool selected) => onSelected(selected ? item.id : null),
+                onSelected: (bool selected) =>
+                    onSelected(selected ? item.id : null),
               ),
             ),
         ],
@@ -112,7 +114,8 @@ class WildlifeSpeciesPicker extends StatelessWidget {
                   const SizedBox(width: KedaYaTokens.space2),
                   Text(
                     '自动建议',
-                    style: TextStyle(fontSize: KedaYaTokens.fontSizeXs, color: colors.info),
+                    style: TextStyle(
+                        fontSize: KedaYaTokens.fontSizeXs, color: colors.info),
                   ),
                 ],
               ],

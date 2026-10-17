@@ -17,24 +17,26 @@ import 'package:kedaya/features/techpie/application/techpie_providers.dart';
 void main() {
   final DateTime base = DateTime.utc(2026, 10, 17, 2);
 
-  MockTechpieRepository repo({DateTime Function()? clock}) => MockTechpieRepository(
-    controls: MockControls(latency: Duration.zero),
-    clock: clock ?? () => base,
-  );
+  MockTechpieRepository repo({DateTime Function()? clock}) =>
+      MockTechpieRepository(
+        controls: MockControls(latency: Duration.zero),
+        clock: clock ?? () => base,
+      );
 
   CampusWebEntry entry({
     String id = 'ecourse',
     CampusPlatform platform = CampusPlatform.cpdaily,
     String targetUrl = 'https://ecourse.shanghaitech.edu.cn/',
     bool requiresBinding = false,
-  }) => CampusWebEntry(
-    id: id,
-    title: 'E云课堂',
-    description: '课程资料',
-    platform: platform,
-    targetUrl: targetUrl,
-    requiresBinding: requiresBinding,
-  );
+  }) =>
+      CampusWebEntry(
+        id: id,
+        title: 'E云课堂',
+        description: '课程资料',
+        platform: platform,
+        targetUrl: targetUrl,
+        requiresBinding: requiresBinding,
+      );
 
   group('成功路径', () {
     test('创建票据 → 兑换 → 交给宿主；票据不进 outcome', () async {

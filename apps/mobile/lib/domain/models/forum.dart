@@ -113,7 +113,8 @@ enum ForumReportReason {
   final String label;
 
   /// 兼容别名（旧写法 → 本端枚举）。
-  static const Map<String, ForumReportReason> aliases = <String, ForumReportReason>{
+  static const Map<String, ForumReportReason> aliases =
+      <String, ForumReportReason>{
     'privacy': ForumReportReason.privacy,
   };
 
@@ -171,9 +172,11 @@ sealed class ForumAuthor {
   ///     此时合成一个**只用于展示**的匿名身份（不含任何实名信息）。
   /// 匿名判定：`anonymous == true` **或** `authorId == null`。
   factory ForumAuthor.fromJson(Map<String, Object?> json, {String? boardId}) {
-    final bool anonymous = readBoolOr(json, 'anonymous', json['authorId'] == null);
+    final bool anonymous =
+        readBoolOr(json, 'anonymous', json['authorId'] == null);
     if (anonymous) {
-      final Map<String, Object?>? identity = readMapOrNull(json, 'anonymousIdentity');
+      final Map<String, Object?>? identity =
+          readMapOrNull(json, 'anonymousIdentity');
       if (identity != null) {
         return AnonymousAuthor(AnonymousIdentity.fromJson(identity));
       }
@@ -229,13 +232,14 @@ final class RealAuthor extends ForumAuthor {
 
   @override
   Map<String, Object?> toJson() => <String, Object?>{
-    'anonymous': false,
-    'authorId': userId,
-    'authorName': name,
-  };
+        'anonymous': false,
+        'authorId': userId,
+        'authorName': name,
+      };
 
   @override
-  bool operator ==(Object other) => other is RealAuthor && other.userId == userId;
+  bool operator ==(Object other) =>
+      other is RealAuthor && other.userId == userId;
 
   @override
   int get hashCode => userId.hashCode;
@@ -267,12 +271,13 @@ final class AnonymousAuthor extends ForumAuthor {
 
   @override
   Map<String, Object?> toJson() => <String, Object?>{
-    'anonymous': true,
-    'anonymousIdentity': identity.toJson(),
-  };
+        'anonymous': true,
+        'anonymousIdentity': identity.toJson(),
+      };
 
   @override
-  bool operator ==(Object other) => other is AnonymousAuthor && other.identity == identity;
+  bool operator ==(Object other) =>
+      other is AnonymousAuthor && other.identity == identity;
 
   @override
   int get hashCode => identity.hashCode;
@@ -293,13 +298,14 @@ final class ForumBoard {
   });
 
   factory ForumBoard.fromJson(Map<String, Object?> json) => ForumBoard(
-    id: readString(json, 'id'),
-    slug: readStringOr(json, 'slug', ''),
-    name: readString(json, 'name'),
-    visibility: ForumBoardVisibility.fromWire(readStringOr(json, 'visibility', 'public')),
-    description: readStringOrNull(json, 'description'),
-    postCount: readIntOr(json, 'postCount', 0),
-  );
+        id: readString(json, 'id'),
+        slug: readStringOr(json, 'slug', ''),
+        name: readString(json, 'name'),
+        visibility: ForumBoardVisibility.fromWire(
+            readStringOr(json, 'visibility', 'public')),
+        description: readStringOrNull(json, 'description'),
+        postCount: readIntOr(json, 'postCount', 0),
+      );
 
   final String id;
 
@@ -317,13 +323,13 @@ final class ForumBoard {
   bool get requiresSignIn => visibility == ForumBoardVisibility.campusOnly;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    'slug': slug,
-    'name': name,
-    'visibility': visibility.wire,
-    'description': description,
-    'postCount': postCount,
-  };
+        'id': id,
+        'slug': slug,
+        'name': name,
+        'visibility': visibility.wire,
+        'description': description,
+        'postCount': postCount,
+      };
 
   @override
   bool operator ==(Object other) => other is ForumBoard && other.id == id;
@@ -356,7 +362,8 @@ final class ForumPost {
   factory ForumPost.fromJson(Map<String, Object?> json) {
     // `services/api` 的字段名是 `board`（02-domain-model §2.4 写的是 `boardId`）：
     // 两个都认，避免一个字段名差异让整条解析失败。
-    final String boardId = readStringOrNull(json, 'boardId') ?? readString(json, 'board');
+    final String boardId =
+        readStringOrNull(json, 'boardId') ?? readString(json, 'board');
     return ForumPost(
       id: readString(json, 'id'),
       boardId: boardId,
@@ -364,7 +371,8 @@ final class ForumPost {
       body: readString(json, 'body'),
       author: ForumAuthor.fromJson(json, boardId: boardId),
       createdAt: readDateTime(json, 'createdAt'),
-      status: ForumPostStatus.fromWire(readStringOr(json, 'status', 'PUBLISHED')),
+      status:
+          ForumPostStatus.fromWire(readStringOr(json, 'status', 'PUBLISHED')),
       boardName: readStringOrNull(json, 'boardName'),
       tags: readStringList(json, 'tags'),
       replyCount: readIntOr(json, 'replyCount', 0),
@@ -409,20 +417,20 @@ final class ForumPost {
       status == ForumPostStatus.published || status == ForumPostStatus.locked;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    ...author.toJson(),
-    'id': id,
-    'boardId': boardId,
-    'boardName': boardName,
-    'title': title,
-    'body': body,
-    'status': status.wire,
-    'tags': tags,
-    'replyCount': replyCount,
-    'likeCount': likeCount,
-    'pinnedAt': pinnedAt == null ? null : isoUtc(pinnedAt!),
-    'createdAt': isoUtc(createdAt),
-    'updatedAt': updatedAt == null ? null : isoUtc(updatedAt!),
-  };
+        ...author.toJson(),
+        'id': id,
+        'boardId': boardId,
+        'boardName': boardName,
+        'title': title,
+        'body': body,
+        'status': status.wire,
+        'tags': tags,
+        'replyCount': replyCount,
+        'likeCount': likeCount,
+        'pinnedAt': pinnedAt == null ? null : isoUtc(pinnedAt!),
+        'createdAt': isoUtc(createdAt),
+        'updatedAt': updatedAt == null ? null : isoUtc(updatedAt!),
+      };
 
   ForumPost copyWith({
     String? id,
@@ -438,21 +446,22 @@ final class ForumPost {
     DateTime? createdAt,
     DateTime? pinnedAt,
     DateTime? updatedAt,
-  }) => ForumPost(
-    id: id ?? this.id,
-    boardId: boardId ?? this.boardId,
-    boardName: boardName ?? this.boardName,
-    title: title ?? this.title,
-    body: body ?? this.body,
-    author: author ?? this.author,
-    status: status ?? this.status,
-    tags: tags ?? this.tags,
-    replyCount: replyCount ?? this.replyCount,
-    likeCount: likeCount ?? this.likeCount,
-    createdAt: createdAt ?? this.createdAt,
-    pinnedAt: pinnedAt ?? this.pinnedAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-  );
+  }) =>
+      ForumPost(
+        id: id ?? this.id,
+        boardId: boardId ?? this.boardId,
+        boardName: boardName ?? this.boardName,
+        title: title ?? this.title,
+        body: body ?? this.body,
+        author: author ?? this.author,
+        status: status ?? this.status,
+        tags: tags ?? this.tags,
+        replyCount: replyCount ?? this.replyCount,
+        likeCount: likeCount ?? this.likeCount,
+        createdAt: createdAt ?? this.createdAt,
+        pinnedAt: pinnedAt ?? this.pinnedAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
 
   @override
   bool operator ==(Object other) => other is ForumPost && other.id == id;
@@ -461,7 +470,8 @@ final class ForumPost {
   int get hashCode => id.hashCode;
 
   @override
-  String toString() => 'ForumPost($id, $title, ${status.wire}, anonymous=$anonymous)';
+  String toString() =>
+      'ForumPost($id, $title, ${status.wire}, anonymous=$anonymous)';
 }
 
 /// 回复（契约 §2.4 `ForumReply`）。
@@ -477,14 +487,15 @@ final class ForumReply {
   });
 
   factory ForumReply.fromJson(Map<String, Object?> json) => ForumReply(
-    id: readString(json, 'id'),
-    postId: readString(json, 'postId'),
-    body: readString(json, 'body'),
-    author: ForumAuthor.fromJson(json),
-    createdAt: readDateTime(json, 'createdAt'),
-    status: ForumReplyStatus.fromWire(readStringOr(json, 'status', 'PUBLISHED')),
-    parentReplyId: readStringOrNull(json, 'parentReplyId'),
-  );
+        id: readString(json, 'id'),
+        postId: readString(json, 'postId'),
+        body: readString(json, 'body'),
+        author: ForumAuthor.fromJson(json),
+        createdAt: readDateTime(json, 'createdAt'),
+        status: ForumReplyStatus.fromWire(
+            readStringOr(json, 'status', 'PUBLISHED')),
+        parentReplyId: readStringOrNull(json, 'parentReplyId'),
+      );
 
   final String id;
   final String postId;
@@ -504,14 +515,14 @@ final class ForumReply {
       status == ForumReplyStatus.published || status == ForumReplyStatus.hidden;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    ...author.toJson(),
-    'id': id,
-    'postId': postId,
-    'body': body,
-    'status': status.wire,
-    'parentReplyId': parentReplyId,
-    'createdAt': isoUtc(createdAt),
-  };
+        ...author.toJson(),
+        'id': id,
+        'postId': postId,
+        'body': body,
+        'status': status.wire,
+        'parentReplyId': parentReplyId,
+        'createdAt': isoUtc(createdAt),
+      };
 
   @override
   bool operator ==(Object other) => other is ForumReply && other.id == id;
@@ -537,16 +548,20 @@ final class ForumReport {
   });
 
   factory ForumReport.fromJson(Map<String, Object?> json) => ForumReport(
-    id: readString(json, 'id'),
-    targetType: ForumReportTargetType.fromWire(readStringOr(json, 'targetType', 'POST')),
-    targetId: readString(json, 'targetId'),
-    reason: ForumReportReason.fromWire(readStringOr(json, 'reason', 'other')),
-    reporter: ForumAuthor.fromJson(json),
-    createdAt: readDateTime(json, 'createdAt'),
-    status: ForumReportStatus.fromWire(readStringOr(json, 'status', 'PENDING')),
-    // `services/api` 的字段名是 `detail`（02-domain-model §2.4 写的是 `note`）：两个都认。
-    detail: readStringOrNull(json, 'detail') ?? readStringOrNull(json, 'note'),
-  );
+        id: readString(json, 'id'),
+        targetType: ForumReportTargetType.fromWire(
+            readStringOr(json, 'targetType', 'POST')),
+        targetId: readString(json, 'targetId'),
+        reason:
+            ForumReportReason.fromWire(readStringOr(json, 'reason', 'other')),
+        reporter: ForumAuthor.fromJson(json),
+        createdAt: readDateTime(json, 'createdAt'),
+        status:
+            ForumReportStatus.fromWire(readStringOr(json, 'status', 'PENDING')),
+        // `services/api` 的字段名是 `detail`（02-domain-model §2.4 写的是 `note`）：两个都认。
+        detail:
+            readStringOrNull(json, 'detail') ?? readStringOrNull(json, 'note'),
+      );
 
   final String id;
   final ForumReportTargetType targetType;
@@ -565,18 +580,19 @@ final class ForumReport {
   bool get anonymous => reporter.isAnonymous;
 
   Map<String, Object?> toJson() => <String, Object?>{
-    ...reporter.toJson(),
-    'id': id,
-    'targetType': targetType.wire,
-    'targetId': targetId,
-    'reason': reason.wire,
-    'status': status.wire,
-    'detail': detail,
-    'createdAt': isoUtc(createdAt),
-  };
+        ...reporter.toJson(),
+        'id': id,
+        'targetType': targetType.wire,
+        'targetId': targetId,
+        'reason': reason.wire,
+        'status': status.wire,
+        'detail': detail,
+        'createdAt': isoUtc(createdAt),
+      };
 
   @override
-  String toString() => 'ForumReport($id, ${targetType.wire}/$targetId, ${reason.wire})';
+  String toString() =>
+      'ForumReport($id, ${targetType.wire}/$targetId, ${reason.wire})';
 }
 
 /// 主题列表查询（契约 §6.1 游标分页 + 版块筛选）。
@@ -596,12 +612,13 @@ final class ForumPostQuery {
   /// 对齐 `services/api` 的 `GET /forum/items?board=&q=`：过滤参数名是
   /// `board` 与 `q`（02-domain-model 里写的是 `boardId` / `keyword`）。
   Map<String, Object?> toQuery() => <String, Object?>{
-    ...PageQuery(cursor: cursor, limit: limit).toQuery(),
-    if (boardId != null && boardId!.isNotEmpty) 'board': boardId,
-    if (keyword != null && keyword!.trim().isNotEmpty) 'q': keyword!.trim(),
-  };
+        ...PageQuery(cursor: cursor, limit: limit).toQuery(),
+        if (boardId != null && boardId!.isNotEmpty) 'board': boardId,
+        if (keyword != null && keyword!.trim().isNotEmpty) 'q': keyword!.trim(),
+      };
 
-  ForumPostQuery copyWith({String? boardId, String? cursor, int? limit, String? keyword}) =>
+  ForumPostQuery copyWith(
+          {String? boardId, String? cursor, int? limit, String? keyword}) =>
       ForumPostQuery(
         boardId: boardId ?? this.boardId,
         cursor: cursor ?? this.cursor,
@@ -623,9 +640,9 @@ final class ForumReplyQuery {
   final int limit;
 
   Map<String, Object?> toQuery() => <String, Object?>{
-    ...PageQuery(cursor: cursor, limit: limit).toQuery(),
-    'postId': postId,
-  };
+        ...PageQuery(cursor: cursor, limit: limit).toQuery(),
+        'postId': postId,
+      };
 }
 
 /// 发帖草稿 —— 纯逻辑，含**匿名开关语义**（契约 §9）。
@@ -679,7 +696,8 @@ final class ForumPostDraft {
     return null;
   }
 
-  bool get isValid => titleError == null && bodyError == null && tagsError == null;
+  bool get isValid =>
+      titleError == null && bodyError == null && tagsError == null;
 
   /// 匿名开关旁的说明文案（契约 §9）。
   String get anonymityNotice => anonymousPostNotice;
@@ -689,24 +707,26 @@ final class ForumPostDraft {
     String? body,
     List<String>? tags,
     bool? anonymous,
-  }) => ForumPostDraft(
-    title: title ?? this.title,
-    body: body ?? this.body,
-    tags: tags ?? this.tags,
-    anonymous: anonymous ?? this.anonymous,
-  );
+  }) =>
+      ForumPostDraft(
+        title: title ?? this.title,
+        body: body ?? this.body,
+        tags: tags ?? this.tags,
+        anonymous: anonymous ?? this.anonymous,
+      );
 
   /// 转成 `POST /api/v1/forum/items` 的请求体。
   ///
   /// 匿名时请求体里**没有任何实名标识**：只有 `anonymous: true`，
   /// 实名 id 由后端从 JWT 取，客户端不参与。
-  CreateForumPostCommand toCommand({required String boardId}) => CreateForumPostCommand(
-    boardId: boardId,
-    title: title.trim(),
-    body: body.trim(),
-    anonymous: anonymous,
-    tags: tags,
-  );
+  CreateForumPostCommand toCommand({required String boardId}) =>
+      CreateForumPostCommand(
+        boardId: boardId,
+        title: title.trim(),
+        body: body.trim(),
+        anonymous: anonymous,
+        tags: tags,
+      );
 
   @override
   String toString() =>
@@ -750,17 +770,18 @@ final class CreateForumPostCommand {
   /// 对齐 `services/api` 的 `createPostSchema`：字段名是 `board`（不是 `boardId`），
   /// 且**不含任何实名标识**（实名 id 由后端从 JWT 取）。
   Map<String, Object?> toJson() => <String, Object?>{
-    'board': boardId,
-    'title': title,
-    'body': body,
-    'anonymous': anonymous,
-    'tags': tags,
-  };
+        'board': boardId,
+        'title': title,
+        'body': body,
+        'anonymous': anonymous,
+        'tags': tags,
+      };
 }
 
 /// 回复草稿。
 final class ForumReplyDraft {
-  const ForumReplyDraft({this.body = '', this.anonymous = false, this.parentReplyId});
+  const ForumReplyDraft(
+      {this.body = '', this.anonymous = false, this.parentReplyId});
 
   /// 契约 §2.4：回复 ≤5000 字。
   static const int bodyMaxLength = 5000;
@@ -780,12 +801,13 @@ final class ForumReplyDraft {
 
   String get anonymityNotice => anonymousReplyNotice;
 
-  CreateForumReplyCommand toCommand({required String postId}) => CreateForumReplyCommand(
-    postId: postId,
-    body: body.trim(),
-    anonymous: anonymous,
-    parentReplyId: parentReplyId,
-  );
+  CreateForumReplyCommand toCommand({required String postId}) =>
+      CreateForumReplyCommand(
+        postId: postId,
+        body: body.trim(),
+        anonymous: anonymous,
+        parentReplyId: parentReplyId,
+      );
 }
 
 /// 回复命令（`POST /api/v1/forum/items/:id/reply`）。
@@ -811,10 +833,10 @@ final class CreateForumReplyCommand {
   /// 对齐 `services/api` 的 `createReplySchema`：`postId` 在**路径**里
   /// （`POST forum/items/:id/replies`），请求体只有 body / parentReplyId / anonymous。
   Map<String, Object?> toJson() => <String, Object?>{
-    'body': body,
-    'anonymous': anonymous,
-    'parentReplyId': parentReplyId,
-  };
+        'body': body,
+        'anonymous': anonymous,
+        'parentReplyId': parentReplyId,
+      };
 }
 
 /// 举报命令（`POST /api/v1/forum/items/:id/report`，action 名见契约 §11.2）。
@@ -839,8 +861,8 @@ final class CreateForumReportCommand {
   /// 对齐 `services/api` 的 `reportSchema`：`targetType` / `targetId` 由**路径**
   /// 表达（`POST forum/items/:id/report`），请求体只有 reason / detail / anonymous。
   Map<String, Object?> toJson() => <String, Object?>{
-    'reason': reason.wire,
-    'detail': detail,
-    'anonymous': anonymous,
-  };
+        'reason': reason.wire,
+        'detail': detail,
+        'anonymous': anonymous,
+      };
 }

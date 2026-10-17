@@ -87,7 +87,8 @@ void main() {
       );
       expect(_hasGcjKey(track.toJson()), isFalse);
       // GeoJSON 是 [lng, lat]（见 parseGeoJsonLineString 的注释）。
-      final Map<String, Object?> path = track.toJson()['path']! as Map<String, Object?>;
+      final Map<String, Object?> path =
+          track.toJson()['path']! as Map<String, Object?>;
       expect(path['type'], 'LineString');
       final List<Object?> coordinates = path['coordinates']! as List<Object?>;
       expect(coordinates.first, <double>[121.5900, 31.1780]);
@@ -96,7 +97,8 @@ void main() {
 
   group('解析层面：即使 payload 带了 GCJ / 精确坐标 / reporterId 也一律忽略', () {
     test('观测解析只读 geo.lat / geo.lng', () {
-      final WildlifeSighting sighting = WildlifeSighting.fromJson(<String, Object?>{
+      final WildlifeSighting sighting =
+          WildlifeSighting.fromJson(<String, Object?>{
         'id': 'wl-1',
         'species': 'sp-cat',
         'status': 'PUBLISHED',
@@ -153,12 +155,14 @@ void main() {
       ]) {
         final Directory directory = Directory(root);
         if (!directory.existsSync()) continue;
-        for (final FileSystemEntity entity in directory.listSync(recursive: true)) {
+        for (final FileSystemEntity entity
+            in directory.listSync(recursive: true)) {
           if (entity is! File || !entity.path.endsWith('.dart')) continue;
           // 路径直接使用（不做分隔符替换：Flutter 测试跑在 POSIX 路径上，
           // 而且 Dart 的原始字符串不能以反斜杠结尾）。
           final String path = entity.path;
-          if (!path.contains('wildlife') && !path.endsWith('models/geo.dart')) continue;
+          if (!path.contains('wildlife') && !path.endsWith('models/geo.dart'))
+            continue;
           targets.add(path);
         }
       }

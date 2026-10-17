@@ -33,24 +33,27 @@ final class RemoteCampusCardRepository implements CampusCardPort {
 
   @override
   Future<Result<CampusCardLink>> linkStatus() => _api.send<CampusCardLink>(
-    const ApiRequest(path: _link, method: ApiMethod.get),
-    (Object? data) => CampusCardLink.fromJson(requireJsonMap(data, what: 'campus card link')),
-  );
+        const ApiRequest(path: _link, method: ApiMethod.get),
+        (Object? data) => CampusCardLink.fromJson(
+            requireJsonMap(data, what: 'campus card link')),
+      );
 
   @override
   Future<Result<CampusCardLink>> connect({
     required String openId,
     String channel = 'wechat',
-  }) => _api.send<CampusCardLink>(
-    ApiRequest(
-      path: _link,
-      method: ApiMethod.post,
-      // openId 只在这里出现一次；网络层不打印请求体（规格 §10.3）。
-      body: <String, Object?>{'openId': openId, 'channel': channel},
-      idempotencyKey: newIdempotencyKey(),
-    ),
-    (Object? data) => CampusCardLink.fromJson(requireJsonMap(data, what: 'campus card link')),
-  );
+  }) =>
+      _api.send<CampusCardLink>(
+        ApiRequest(
+          path: _link,
+          method: ApiMethod.post,
+          // openId 只在这里出现一次；网络层不打印请求体（规格 §10.3）。
+          body: <String, Object?>{'openId': openId, 'channel': channel},
+          idempotencyKey: newIdempotencyKey(),
+        ),
+        (Object? data) => CampusCardLink.fromJson(
+            requireJsonMap(data, what: 'campus card link')),
+      );
 
   @override
   Future<Result<Unit>> disconnect() =>
@@ -58,37 +61,39 @@ final class RemoteCampusCardRepository implements CampusCardPort {
 
   @override
   Future<Result<CampusCardAccount>> account() => _api.send<CampusCardAccount>(
-    const ApiRequest(path: '$_base/account', method: ApiMethod.get),
-    (Object? data) =>
-        CampusCardAccount.fromJson(requireJsonMap(data, what: 'campus card account')),
-  );
+        const ApiRequest(path: '$_base/account', method: ApiMethod.get),
+        (Object? data) => CampusCardAccount.fromJson(
+            requireJsonMap(data, what: 'campus card account')),
+      );
 
   @override
   Future<Result<Page<CampusCardTransaction>>> listTransactions({
     String? cursor,
     int limit = defaultPageSize,
-  }) => _api.send<Page<CampusCardTransaction>>(
-    ApiRequest(
-      path: '$_base/transactions',
-      method: ApiMethod.get,
-      query: PageQuery(cursor: cursor, limit: limit).toQuery(),
-    ),
-    (Object? data) => Page<CampusCardTransaction>.fromJson(
-      requireJsonMap(data, what: 'campus card transactions'),
-      CampusCardTransaction.fromJson,
-    ),
-  );
+  }) =>
+      _api.send<Page<CampusCardTransaction>>(
+        ApiRequest(
+          path: '$_base/transactions',
+          method: ApiMethod.get,
+          query: PageQuery(cursor: cursor, limit: limit).toQuery(),
+        ),
+        (Object? data) => Page<CampusCardTransaction>.fromJson(
+          requireJsonMap(data, what: 'campus card transactions'),
+          CampusCardTransaction.fromJson,
+        ),
+      );
 
   @override
-  Future<Result<CampusPaymentCode>> paymentCode() => _api.send<CampusPaymentCode>(
-    // 付款码是"现场签发一个短时效凭据"，因此是 POST（契约 §11.3：POST 必须带幂等键）。
-    // 幂等键让"重试同一次取码"不会产生两个不同的码。
-    ApiRequest(
-      path: '$_base/payment-code',
-      method: ApiMethod.post,
-      idempotencyKey: newIdempotencyKey(),
-    ),
-    (Object? data) =>
-        CampusPaymentCode.fromJson(requireJsonMap(data, what: 'campus card payment code')),
-  );
+  Future<Result<CampusPaymentCode>> paymentCode() =>
+      _api.send<CampusPaymentCode>(
+        // 付款码是"现场签发一个短时效凭据"，因此是 POST（契约 §11.3：POST 必须带幂等键）。
+        // 幂等键让"重试同一次取码"不会产生两个不同的码。
+        ApiRequest(
+          path: '$_base/payment-code',
+          method: ApiMethod.post,
+          idempotencyKey: newIdempotencyKey(),
+        ),
+        (Object? data) => CampusPaymentCode.fromJson(
+            requireJsonMap(data, what: 'campus card payment code')),
+      );
 }

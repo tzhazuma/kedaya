@@ -116,7 +116,8 @@ void main() {
       );
       final Set<String> keys = allKeys(post.toJson());
       for (final String forbidden in forbiddenKeys) {
-        expect(keys, isNot(contains(forbidden)), reason: 'BuddyPost 不得含 $forbidden');
+        expect(keys, isNot(contains(forbidden)),
+            reason: 'BuddyPost 不得含 $forbidden');
       }
     });
 
@@ -130,7 +131,8 @@ void main() {
         ).toJson(),
       );
       for (final String forbidden in forbiddenKeys) {
-        expect(keys, isNot(contains(forbidden)), reason: 'BuddyProfile 不得含 $forbidden');
+        expect(keys, isNot(contains(forbidden)),
+            reason: 'BuddyProfile 不得含 $forbidden');
       }
     });
 
@@ -199,7 +201,8 @@ void main() {
 
   group('规格 §6.1：端口里没有「读别人匹配资料」的出口', () {
     test('端口只有 getMyProfile，没有任何他人视角的方法', () {
-      final String source = File('lib/domain/ports/buddy_port.dart').readAsStringSync();
+      final String source =
+          File('lib/domain/ports/buddy_port.dart').readAsStringSync();
       final String code = source
           .split('\n')
           .map((String line) => line.split('///').first)
@@ -226,10 +229,15 @@ void main() {
   group('源码层面：buddy 相关代码里没有 dating 板块（机械扫描）', () {
     test('没有 `dating` 字符串字面量（注释除外）', () {
       final List<String> targets = <String>[];
-      for (final String root in <String>['lib/domain', 'lib/data', 'lib/features/buddy']) {
+      for (final String root in <String>[
+        'lib/domain',
+        'lib/data',
+        'lib/features/buddy'
+      ]) {
         final Directory directory = Directory(root);
         if (!directory.existsSync()) continue;
-        for (final FileSystemEntity entity in directory.listSync(recursive: true)) {
+        for (final FileSystemEntity entity
+            in directory.listSync(recursive: true)) {
           if (entity is! File || !entity.path.endsWith('.dart')) continue;
           final String path = entity.path;
           if (!path.contains('buddy')) continue;

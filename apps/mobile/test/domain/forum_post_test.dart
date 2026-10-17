@@ -4,21 +4,22 @@ import 'package:kedaya/domain/models/forum.dart';
 
 /// 论坛模型的纯逻辑测试（domain 层零框架依赖，因此不需要任何 mock）。
 void main() {
-  Map<String, Object?> realPostJson({String status = 'PUBLISHED'}) => <String, Object?>{
-    'id': 'fp-1',
-    'boardId': 'fb-1',
-    'boardName': '校园生活',
-    'title': '标题',
-    'body': '正文',
-    'anonymous': false,
-    'authorId': 'u-1',
-    'authorName': '鸭鸭一号',
-    'status': status,
-    'tags': <String>['食堂'],
-    'replyCount': 2,
-    'likeCount': 5,
-    'createdAt': '2026-10-16T12:00:00.000Z',
-  };
+  Map<String, Object?> realPostJson({String status = 'PUBLISHED'}) =>
+      <String, Object?>{
+        'id': 'fp-1',
+        'boardId': 'fb-1',
+        'boardName': '校园生活',
+        'title': '标题',
+        'body': '正文',
+        'anonymous': false,
+        'authorId': 'u-1',
+        'authorName': '鸭鸭一号',
+        'status': status,
+        'tags': <String>['食堂'],
+        'replyCount': 2,
+        'likeCount': 5,
+        'createdAt': '2026-10-16T12:00:00.000Z',
+      };
 
   group('ForumPost 解析', () {
     test('实名主题：author 是 RealAuthor，anonymous=false，authorId=userId', () {
@@ -54,7 +55,8 @@ void main() {
     });
 
     test('未知状态收敛为 unknown，且按不可回复处理（保守）', () {
-      final ForumPost post = ForumPost.fromJson(realPostJson(status: 'BRAND_NEW'));
+      final ForumPost post =
+          ForumPost.fromJson(realPostJson(status: 'BRAND_NEW'));
 
       expect(post.status, ForumPostStatus.unknown);
       expect(post.canReply, isFalse);
@@ -105,9 +107,11 @@ void main() {
 
   group('ForumPostQuery', () {
     test('游标分页参数收敛：空 boardId 被丢弃，limit 收敛到上限', () {
-      expect(const ForumPostQuery(boardId: '', limit: 500).toQuery(), <String, Object?>{
-        'limit': 100,
-      });
+      expect(
+          const ForumPostQuery(boardId: '', limit: 500).toQuery(),
+          <String, Object?>{
+            'limit': 100,
+          });
     });
 
     test('boardId 与 keyword 参与查询串，keyword 去空白', () {
@@ -196,7 +200,8 @@ void main() {
       expect(anonymousPostNotice, '匿名后你的实名身份不会与帖子关联');
       expect(anonymousReplyNotice, '匿名后你的实名身份不会与回复关联');
       expect(const ForumPostDraft().anonymous, isFalse);
-      expect(const ForumPostDraft(anonymous: true).anonymityNotice, anonymousPostNotice);
+      expect(const ForumPostDraft(anonymous: true).anonymityNotice,
+          anonymousPostNotice);
     });
 
     test('ReplyDraft：空回复报错，匿名开关同样默认关闭', () {
@@ -245,7 +250,8 @@ void main() {
 
     test('未知举报理由收敛为 other（不会丢举报）', () {
       expect(ForumReportReason.fromWire('nonsense'), ForumReportReason.other);
-      expect(ForumReportTargetType.fromWire('nonsense'), ForumReportTargetType.post);
+      expect(ForumReportTargetType.fromWire('nonsense'),
+          ForumReportTargetType.post);
     });
   });
 
@@ -255,21 +261,22 @@ void main() {
     Map<String, Object?> backendPostJson({
       String status = 'published',
       Object? authorId = 'u-1',
-    }) => <String, Object?>{
-      'id': 'fp-be-1',
-      'board': 'fb-campus',
-      'authorId': authorId,
-      'anonHandle': 'hmac-should-not-be-used',
-      'title': '后端形状的主题',
-      'body': '正文',
-      'status': status,
-      'tags': <String>['x'],
-      'replyCount': 1,
-      'likeCount': 2,
-      'pinnedAt': null,
-      'createdAt': '2026-10-16T12:00:00.000Z',
-      'updatedAt': '2026-10-16T12:00:00.000Z',
-    };
+    }) =>
+        <String, Object?>{
+          'id': 'fp-be-1',
+          'board': 'fb-campus',
+          'authorId': authorId,
+          'anonHandle': 'hmac-should-not-be-used',
+          'title': '后端形状的主题',
+          'body': '正文',
+          'status': status,
+          'tags': <String>['x'],
+          'replyCount': 1,
+          'likeCount': 2,
+          'pinnedAt': null,
+          'createdAt': '2026-10-16T12:00:00.000Z',
+          'updatedAt': '2026-10-16T12:00:00.000Z',
+        };
 
     test('board 字段被接受为 boardId；小写状态被正确解析', () {
       final ForumPost post = ForumPost.fromJson(backendPostJson());
@@ -282,7 +289,8 @@ void main() {
     });
 
     test('authorId 为 null => 判定为匿名，且合成只用于展示的匿名身份', () {
-      final ForumPost post = ForumPost.fromJson(backendPostJson(authorId: null));
+      final ForumPost post =
+          ForumPost.fromJson(backendPostJson(authorId: null));
 
       expect(post.anonymous, isTrue);
       expect(post.author, isA<AnonymousAuthor>());
@@ -317,15 +325,15 @@ void main() {
 
     test('举报的 detail 字段（services/api）与旧 note 都能读', () {
       Map<String, Object?> reportJson(String key) => <String, Object?>{
-        'id': 'frp-1',
-        'targetType': 'POST',
-        'targetId': 'fp-1',
-        'reason': 'spam',
-        'status': 'PENDING',
-        'reporterId': 'u-1',
-        key: '补充说明',
-        'createdAt': '2026-10-16T12:00:00.000Z',
-      };
+            'id': 'frp-1',
+            'targetType': 'POST',
+            'targetId': 'fp-1',
+            'reason': 'spam',
+            'status': 'PENDING',
+            'reporterId': 'u-1',
+            key: '补充说明',
+            'createdAt': '2026-10-16T12:00:00.000Z',
+          };
 
       expect(ForumReport.fromJson(reportJson('detail')).detail, '补充说明');
       expect(ForumReport.fromJson(reportJson('note')).detail, '补充说明');
@@ -379,7 +387,8 @@ void main() {
       expect(identity.boardId, 'fb-campus');
       expect(identity.displayName, '匿名鸭 #7');
       // 相同入参 -> 相同身份（版块内稳定，版主可追溯）。
-      expect(identity, AnonymousIdentity.derive(boardId: 'fb-campus', sequence: 7));
+      expect(identity,
+          AnonymousIdentity.derive(boardId: 'fb-campus', sequence: 7));
       // 不同版块 -> 不同身份（跨版块不可关联）。
       expect(
         identity == AnonymousIdentity.derive(boardId: 'fb-study', sequence: 7),

@@ -22,13 +22,13 @@ final class MockCampusCardRepository implements CampusCardPort {
     CampusCardAccount? account,
     MockControls? controls,
     DateTime Function()? clock,
-  }) : controls = controls ?? MockControls(),
-       _clock = clock ?? DateTime.now,
-       _state = initialState ?? CampusCardLinkState.unlinked,
-       _transactions = List<CampusCardTransaction>.unmodifiable(
-         transactions ?? mockCampusCardTransactions,
-       ),
-       _account = account ?? mockCampusCardAccount;
+  })  : controls = controls ?? MockControls(),
+        _clock = clock ?? DateTime.now,
+        _state = initialState ?? CampusCardLinkState.unlinked,
+        _transactions = List<CampusCardTransaction>.unmodifiable(
+          transactions ?? mockCampusCardTransactions,
+        ),
+        _account = account ?? mockCampusCardAccount;
 
   /// 可在运行时切换延迟与故障（UI 三态演示 / 测试注入）。
   final MockControls controls;
@@ -39,15 +39,20 @@ final class MockCampusCardRepository implements CampusCardPort {
 
   CampusCardLinkState _state;
   String? _channel;
+
+  /// 只保留 OPENID 的脱敏尾巴（末 4 位），**不保存** OPENID 本身。
+  String? _openIdTail;
   DateTime? _linkedAt;
 
   /// 供测试断言"OPENID 与付款码没有留在仓库里"。
   List<String> debugDumpStrings() => <String>[
-    _state.wire,
-    _channel ?? '',
-    _linkedAt?.toIso8601String() ?? '',
-    _transactions.map((CampusCardTransaction item) => item.toJson().toString()).join('|'),
-  ];
+        _state.wire,
+        _channel ?? '',
+        _linkedAt?.toIso8601String() ?? '',
+        _transactions
+            .map((CampusCardTransaction item) => item.toJson().toString())
+            .join('|'),
+      ];
 
   /// 当前开通状态（测试/UI 演示用）。
   CampusCardLinkState get state => _state;
@@ -55,7 +60,8 @@ final class MockCampusCardRepository implements CampusCardPort {
   @override
   Future<Result<CampusCardLink>> linkStatus() async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<CampusCardLink>();
+    if (controls.failure != null)
+      return controls.failureResult<CampusCardLink>();
     return Ok<CampusCardLink>(_link());
   }
 
@@ -65,7 +71,8 @@ final class MockCampusCardRepository implements CampusCardPort {
     String channel = 'wechat',
   }) async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<CampusCardLink>();
+    if (controls.failure != null)
+      return controls.failureResult<CampusCardLink>();
     if (openId.trim().isEmpty) {
       return _err<CampusCardLink>(
         ApiErrorCode.validationFailed,
@@ -77,6 +84,9 @@ final class MockCampusCardRepository implements CampusCardPort {
     _channel = channel;
     _linkedAt = _clock().toUtc();
     // 刻意不保存 openId：只留脱敏尾巴（`CampusCardLink.tailOf`）。
+    // 传进来的 OPENID 的尾巴才是这次开通的真实值；用 fixtures 的常量会让
+    // 「只留尾巴」这个隐私承诺在测试里变成假的。
+    _openIdTail = CampusCardLink.tailOf(openId);
     return Ok<CampusCardLink>(_link());
   }
 
@@ -87,13 +97,15 @@ final class MockCampusCardRepository implements CampusCardPort {
     _state = CampusCardLinkState.unlinked;
     _channel = null;
     _linkedAt = null;
+    _openIdTail = null;
     return Ok<Unit>(Unit.instance);
   }
 
   @override
   Future<Result<CampusCardAccount>> account() async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<CampusCardAccount>();
+    if (controls.failure != null)
+      return controls.failureResult<CampusCardAccount>();
     final ApiError? blocked = _linkGuard();
     if (blocked != null) {
       return Err<CampusCardAccount>(blocked, traceId: MockControls.traceId);
@@ -119,17 +131,15 @@ final class MockCampusCardRepository implements CampusCardPort {
     }
     if (controls.emptyResults) {
       return Ok<Page<CampusCardTransaction>>(
-        const Page<CampusCardTransaction>(items: <CampusCardTransaction>[], total: 0),
+        const Page<CampusCardTransaction>(
+            items: <CampusCardTransaction>[], total: 0),
       );
     }
     final int start = _parseCursor(cursor);
-    final int size = limit < 1
-        ? 1
-        : (limit > maxPageSize ? maxPageSize : limit);
-    final List<CampusCardTransaction> window = _transactions
-        .skip(start)
-        .take(size)
-        .toList(growable: false);
+    final int size =
+        limit < 1 ? 1 : (limit > maxPageSize ? maxPageSize : limit);
+    final List<CampusCardTransaction> window =
+        _transactions.skip(start).take(size).toList(growable: false);
     final int consumed = start + window.length;
     return Ok<Page<CampusCardTransaction>>(
       Page<CampusCardTransaction>(
@@ -143,7 +153,8 @@ final class MockCampusCardRepository implements CampusCardPort {
   @override
   Future<Result<CampusPaymentCode>> paymentCode() async {
     await controls.simulate();
-    if (controls.failure != null) return controls.failureResult<CampusPaymentCode>();
+    if (controls.failure != null)
+      return controls.failureResult<CampusPaymentCode>();
     final ApiError? blocked = _linkGuard();
     if (blocked != null) {
       return Err<CampusPaymentCode>(blocked, traceId: MockControls.traceId);
@@ -160,14 +171,15 @@ final class MockCampusCardRepository implements CampusCardPort {
   }
 
   CampusCardLink _link() => CampusCardLink(
-    state: _state,
-    channel: _channel,
-    openIdTail: _state.isUsable ? mockCampusCardOpenIdTail : null,
-    linkedAt: _linkedAt,
-    expiresAt: _state.isUsable
-        ? (_linkedAt ?? _clock().toUtc()).add(const Duration(days: 365))
-        : null,
-  );
+        state: _state,
+        channel: _channel,
+        openIdTail:
+            _state.isUsable ? (_openIdTail ?? mockCampusCardOpenIdTail) : null,
+        linkedAt: _linkedAt,
+        expiresAt: _state.isUsable
+            ? (_linkedAt ?? _clock().toUtc()).add(const Duration(days: 365))
+            : null,
+      );
 
   /// 未开通/已过期 → `CAMPUS_BINDING_REQUIRED`（409）。
   ///
@@ -177,9 +189,7 @@ final class MockCampusCardRepository implements CampusCardPort {
     if (_state.isUsable) return null;
     return ApiError(
       code: ApiErrorCode.campusBindingRequired,
-      message: _state.needsRebind
-          ? '校园卡授权已过期，请重新开通'
-          : '请先通过校园卡 OPENID 通道开通',
+      message: _state.needsRebind ? '校园卡授权已过期，请重新开通' : '请先通过校园卡 OPENID 通道开通',
       details: const <String, Object?>{'reason': 'CAMPUS_BINDING_REQUIRED'},
     );
   }
@@ -193,11 +203,11 @@ final class MockCampusCardRepository implements CampusCardPort {
   }
 
   Err<T> _err<T>(ApiErrorCode code, String message, {String? reason}) => Err<T>(
-    ApiError(
-      code: code,
-      message: message,
-      details: reason == null ? null : <String, Object?>{'reason': reason},
-    ),
-    traceId: MockControls.traceId,
-  );
+        ApiError(
+          code: code,
+          message: message,
+          details: reason == null ? null : <String, Object?>{'reason': reason},
+        ),
+        traceId: MockControls.traceId,
+      );
 }

@@ -106,7 +106,8 @@ class ForumPostCard extends StatelessWidget {
                     ForumPill(text: '#$tag'),
                     const SizedBox(width: KedaYaTokens.space1),
                   ],
-                  Icon(Icons.mode_comment_outlined, size: 14, color: colors.textMuted),
+                  Icon(Icons.mode_comment_outlined,
+                      size: 14, color: colors.textMuted),
                   const SizedBox(width: KedaYaTokens.space1),
                   Text(
                     '${post.replyCount}',
@@ -116,7 +117,8 @@ class ForumPostCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: KedaYaTokens.space2),
-                  Icon(Icons.thumb_up_outlined, size: 14, color: colors.textMuted),
+                  Icon(Icons.thumb_up_outlined,
+                      size: 14, color: colors.textMuted),
                   const SizedBox(width: KedaYaTokens.space1),
                   Text(
                     '${post.likeCount}',

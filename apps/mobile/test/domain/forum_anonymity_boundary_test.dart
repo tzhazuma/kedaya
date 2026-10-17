@@ -17,25 +17,25 @@ void main() {
   ];
 
   Map<String, Object?> anonymousIdentityJson() => <String, Object?>{
-    'id': 'anon-fb-campus-7',
-    'alias': '匿名鸭 #7',
-    'boardId': 'fb-campus',
-  };
+        'id': 'anon-fb-campus-7',
+        'alias': '匿名鸭 #7',
+        'boardId': 'fb-campus',
+      };
 
   Map<String, Object?> anonymousPostJson() => <String, Object?>{
-    'id': 'fp-1',
-    'boardId': 'fb-campus',
-    'boardName': '校园生活',
-    'title': '匿名主题',
-    'body': '正文',
-    'anonymous': true,
-    'anonymousIdentity': anonymousIdentityJson(),
-    'status': 'PUBLISHED',
-    'tags': <String>[],
-    'replyCount': 0,
-    'likeCount': 0,
-    'createdAt': '2026-10-16T12:00:00.000Z',
-  };
+        'id': 'fp-1',
+        'boardId': 'fb-campus',
+        'boardName': '校园生活',
+        'title': '匿名主题',
+        'body': '正文',
+        'anonymous': true,
+        'anonymousIdentity': anonymousIdentityJson(),
+        'status': 'PUBLISHED',
+        'tags': <String>[],
+        'replyCount': 0,
+        'likeCount': 0,
+        'createdAt': '2026-10-16T12:00:00.000Z',
+      };
 
   group('匿名作者不携带任何实名出口', () {
     test('AnonymousAuthor.realUserIdOrNull 恒为 null', () {
@@ -55,7 +55,8 @@ void main() {
       ).toJson();
 
       expect(json['anonymous'], isTrue);
-      expect(json.containsKey('authorId'), isFalse, reason: '匿名路径不得出现 authorId');
+      expect(json.containsKey('authorId'), isFalse,
+          reason: '匿名路径不得出现 authorId');
       expect(json.containsKey('userId'), isFalse);
       for (final String fragment in forbiddenFragments) {
         expect(

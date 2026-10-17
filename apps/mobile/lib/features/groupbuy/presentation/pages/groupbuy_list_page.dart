@@ -21,7 +21,8 @@ class GroupbuyListPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<GroupbuyListState> value = ref.watch(groupbuyListControllerProvider);
+    final AsyncValue<GroupbuyListState> value =
+        ref.watch(groupbuyListControllerProvider);
     final MockControls? mockControls = ref.watch(mockControlsProvider);
     final GroupbuyListController controller = ref.read(
       groupbuyListControllerProvider.notifier,
@@ -52,7 +53,8 @@ class GroupbuyListPage extends ConsumerWidget {
           emptyDescription: '换个筛选条件，或者下拉刷新试试。',
           loadingMessage: '正在加载拼单…',
           onRetry: controller.refresh,
-          builder: (BuildContext context, GroupbuyListState state) => ListView.separated(
+          builder: (BuildContext context, GroupbuyListState state) =>
+              ListView.separated(
             padding: const EdgeInsets.all(KedaYaTokens.space4),
             itemCount: state.orders.length + 1,
             separatorBuilder: (BuildContext context, int index) =>
