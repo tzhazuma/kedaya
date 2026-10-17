@@ -1231,3 +1231,75 @@ Flutter 端为容错，客户端**同时接受** `title`/`nameZh`、`description
 **裁决：收敛为单一键名**（与 §11.20-D 同一推理 —— 一个概念只有一个 owner）：
 `key` / `nameZh` / `phase` / `available` / `requiredProvider` / `blockedReason`。
 客户端的并集容错**应在本轮之后删除**，而不是长期保留。
+
+
+### 11.22 TechPie Phase 0 收尾裁决（v1.3.10 · 2026-10-17）
+
+四端实现完成后浮现 4 项必须收敛的问题。
+
+#### A. `ticket` 既是 I1 的禁用键、又是 §8.4 要求的响应字段 —— **这是真矛盾**
+
+I1 把 `ticket` 列为 8 个禁用键之一（因为它可能指代会话票据），
+而 §8.4 的 `POST /webview-session` 响应**明文要求**返回 `ticket`。
+后端按 I1 的**本意**执行：只在 `webview-session` 这一个端点放行，其余一律禁止。
+
+**裁决：采纳该处理，并把 I1 的措辞精确化。**
+
+I1 的**本意**是"一级身份会话的序列化不得夹带二级凭证"，
+它约束的对象是 **`KedaYaIdentitySession` 及其派生投影**（`/auth/session`、
+`/auth/campus-bindings`、绑定摘要），**不是全仓每一个叫 `ticket` 的字段**。
+
+**精确化后的 I1**：
+> `KedaYaIdentitySession` 及 `/auth/*` 的全部响应，序列化键名不得包含
+> `cookie` / `cookies` / `session` / `sessionToken` / `tgc` / `castgc` / `ticket` / `tenant`。
+> 其它模块的**领域字段**若语义不同（如 `webview-session` 的一次性票据），
+> 不受该禁令约束 —— 但必须满足它自己的约束（不缓存 / 不进日志 / 不进 URL / 用后即焚）。
+
+理由：把一条**关于身份的**禁令扩大成"全仓禁用某个词"，会让合法字段被迫改名
+（`webviewTicket` → 什么？），而改名**不减少任何风险** —— 风险来自"值泄漏"，
+不来自"键叫什么"。**用词禁令只能约束它真正要约束的那个对象。**
+
+#### B. I3 的豁免面：**只豁免 `*.spec.ts`**
+
+后端为让 I3 的静态扫描**完备而非启发式**，把端口声明写成属性 + 函数类型
+（`cookieHeaderFor: (…) => …`），于是"出现 `cookieHeaderFor(`" ⟺ "有人真的在调用"。
+代价是测试无法直接调用它，故豁免 `*.spec.ts`。
+
+**裁决：接受。** 两个条件同时成立才可接受：
+1. 豁免面**只有** `*.spec.ts`（不能是"任何测试相关文件"或目录级豁免）；
+2. 测试**不随产物发布**（`tsconfig.build.json` 的 `exclude` 钉死）。
+
+理由：I3 的目的是"cookie 只能有一个出口，否则无法审计"。
+`*.spec.ts` 不进生产产物，因此不构成第二个出口。
+**但豁免面必须恰好是这一类** —— 一旦放宽到目录或"测试文件"这种模糊集合，
+I3 就从"结构保证"退化成"看起来像保证"。
+
+#### C. `POST /techpie/webview-session/:ticket` —— **登记为正式端点（第 9 个）**
+
+规格 §8.4 的"换取方式"要求它，但冻结 OpenAPI **只登记了签发端**。
+没有兑换端，票据**根本用不掉** —— 这是契约自身的缺口，不是实现多余。
+
+**裁决：登记。** 形状：`POST /techpie/webview-session/{ticket}` →
+`{url, targetUrl, mode: 'direct', expiresAt, cookieInjected: false, reason: 'W4_PHASE_0'}`。
+`cookieInjected: false` 在 Phase 0 下**恒为 false** —— W4 的定义就是"我们不接触 cookie"。
+这个字段存在的意义是**让"我们没注入 cookie"这件事可被机器断言**，而不是靠文档承诺。
+
+#### D. `POST /webview-session` 的 `platform` 是**可空**的
+
+规格 §8.4 的表格写必填且要求"已绑定"，但 §9.1 的 W4 直连**不需要绑定**。
+Web 端按可空建模，`null` 时**省略该键**（后端 schema 是 `.optional()`）。
+
+**裁决：`platform` 可空，且为可空时省略该键（不下发 `null`）。** 理由见 §11.21-D：
+W4 直连的定义就是"用户自己在校园系统页面登录，我们不接触凭证" ——
+**我们不需要凭证就能把他送到那个页面**。要求先绑定等于给不需要权限的功能加权限门。
+
+> 顺带确立一条通用规则：**可空的可选字段，为空时省略键，而不是下发 `null`。**
+> `null` 与"字段不存在"在多数 JSON 反序列化里是**不同**的语义，
+> 混用会让客户端不得不写 `if (x == null || x === undefined)`。
+
+#### E. 后端需按 §11.20 收敛（本轮遗留）
+
+后端实现时**以规格为准**（`platform` + `UNLINKED|LINKING|LINKED|…` + 加法别名），
+因为它先于 §11.20 完成。§11.20 已裁决**以 OpenAPI 为准**。
+因此后端需：改用 `provider`、改用 `PENDING|ACTIVE|EXPIRED|REVOKED|FAILED`、
+**删除全部加法别名**、并按 §11.21-B 实现校园卡的四条端点。

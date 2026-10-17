@@ -1393,6 +1393,52 @@ paths:
                             items: { $ref: '#/components/schemas/CampusCapability' }
                           unboundCount: { type: integer }
 
+  /techpie/webview-session/{ticket}:
+    parameters:
+      - name: ticket
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [techpie]
+      summary: 兑换一次性票据（**用后即焚**）
+      description: |
+        规格 §8.4 的"换取方式"要求这个端点，但早期契约只登记了签发端 ——
+        没有它票据**根本用不掉**（契约自身的缺口，§11.22-C 已登记）。
+
+        `cookieInjected` 在 Phase 0 下**恒为 false** —— W4 的定义就是"我们不接触 cookie"。
+        该字段存在的意义是**让"没注入 cookie"这件事可被机器断言**，
+        而不是靠文档承诺。
+
+        ⚠️ 票据**一次性**：兑换成功后立即作废，重复兑换必须失败。
+      responses:
+        '200':
+          description: 兑换结果
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          url: { type: string, format: uri }
+                          targetUrl: { type: string, format: uri }
+                          mode:
+                            type: string
+                            enum: [direct, proxy]
+                          expiresAt: { type: string, format: date-time }
+                          cookieInjected:
+                            type: boolean
+                            const: false
+                            description: Phase 0 恒为 false（W4：我们不接触 cookie）
+                          reason:
+                            type: string
+                            enum: [W4_PHASE_0]
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /techpie/sync-jobs:
     get:
       tags: [techpie]
