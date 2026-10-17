@@ -292,7 +292,20 @@ export PATH="/opt/homebrew/bin:$PATH"
 ## 6. wildlife 图层怎么画上去（遵守契约 §11.14）
 
 页面：`/wildlife/map`（`apps/web/src/app/(portal)/wildlife/map/page.tsx`）
-主体：`apps/web/src/features/map/CampusMapView.tsx`
+主体：`apps/web/src/features/map/CampusMapView.tsx`（离线底图）
+外层切换：`apps/web/src/features/map/CampusBasemapToggle.tsx`
+
+### 6.0 两种底图，**离线是默认**
+
+| 模式 | 实现 | 是否需要网络 | 说明 |
+| --- | --- | --- | --- |
+| **离线底图（默认）** | `CampusMapView` + `public/map/campus-basemap*.svg` | ❌ 不需要 | 本任务的硬要求；叠加活动区域/热点/轨迹/观测点，带 25 个地点与数据来源面板 |
+| 在线地图（可选） | `CampusLeafletMap` + OSM 瓦片（`tile.openstreetmap.org`） | ✅ 需要 | 便于看清校园在张江的位置、缩放拖拽；瓦片同样受 ODbL 约束并显示署名 |
+
+默认离线而不是在线，理由：小程序 `web-view`、弱网/断网、以及"不依赖在线瓦片"都是硬约束；
+在线瓦片只是"能看周边"的增强，加载失败时页面提示切回离线底图。
+在线模式使用 OSM 公共瓦片，**只适合开发/小流量演示**；正式上线若流量增大，
+应改为自建瓦片或商业底图（需另做授权与 GCJ-02 转换）。
 
 ### 6.1 数据流
 
@@ -424,32 +437,47 @@ mock fixture（`apps/web/src/data/mock/fixtures/wildlife.ts`）的区域坐标�
 
 ---
 
-## 10. 验证记录（真实输出）
+## 10. 验证记录（真实输出，2026-10-17 21:26）
 
 ```bash
 export PATH="/opt/homebrew/bin:$PATH"
 cd /Users/azuma/Documents/deepseek-harness/default-workspace/kedaya
 
-# 地图资产 + 重投影单测
-cd apps/web && npx vitest run src/features/map
-# → 2 files / 18 tests passed
+npm run typecheck -w @kedaya/web
+# → exit 0（0 errors）
 
-# 全量（基线本身已有 3 条失败，见下）
 npm run test -w @kedaya/web
+# → Test Files 38 passed (38)
+#   Tests      773 passed (773)
+# 其中 18 条是本次新增：src/features/map/campusAssets.test.ts（14）
+#                      src/features/map/campusOverlays.test.ts（4）
+
+npm run build -w @kedaya/web
+# → ✓ Compiled successfully
+#   ✓ Finished TypeScript
+#   ✓ Generating static pages (43/43)
+#   路由表包含  ○ /wildlife/map
+
+npm run start -w @kedaya/web -- --port 3100
+# → 生产模式起服务；/wildlife/map 返回 200，
+#   /map/campus-basemap.svg、/map/campus-poi.json 均 200
 ```
 
-**必须如实说明的基线问题**：任务开始时（尚未改动任何文件）执行
-`npm run typecheck -w @kedaya/web` 已经是 **15 条错误**，
-`npm run test -w @kedaya/web` 是 **752 passed / 3 failed**，失败全部在
-`src/domain/models/delivery.test.ts`：它从 `./modules` 导入
-`MINIAPP_MODULES` / `WEB_READY_MODULES` / `DELIVERED_MODULES` / `API_ONLY_MODULES`，
-而当前提交的 `modules.ts` **没有导出这些符号**（`src/app/page.tsx` 也因此报错）。
-这属于**其它目录的既有缺陷**（不在本次写作用域），不是本次校园地图引入的；
-本次新增文件在该基线下**没有新增任何 typecheck 错误**（用
-`npx tsc --noEmit | grep features/map` 过滤为空验证）。
-在该缺陷修复前，`npm run build -w @kedaya/web` 会被 Next 的类型检查挡住 —— 不是本次改动导致的。
+浏览器实测（截图在 `/Users/azuma/Downloads/kdy-shots/`）：
 
----
+| 截图 | 内容 |
+| --- | --- |
+| `11-map-offline-light.png` / `12-map-offline-light.png` | 离线底图全页（深色 / 浅色主题） |
+| `17-map-detail-light.png` | 离线底图细节：25 个地点标注 + 5 个活动区域 + 3 个热点 + 3 条推断轨迹（虚线） |
+| `18-map-detail-dark.png` | 同一画面的深色底图版本 |
+| `15-map-online-light.png` | 可选的在线 OSM 瓦片模式（含 ODbL 署名） |
+| `16-map-error-state.png` | 错误态：提示 + 重试 + 保留上一次成功数据 |
+
+**关于基线**：任务开始时（尚未改动任何文件）`npm run typecheck -w @kedaya/web` 有 15 条错误，
+`npm run test -w @kedaya/web` 是 752 passed / 3 failed，根因是 `src/domain/models/modules.ts`
+缺少 `MINIAPP_MODULES` / `WEB_READY_MODULES` / `DELIVERED_MODULES` / `API_ONLY_MODULES` 导出
+（不在本次写作用域）。该缺陷在任务进行期间由该模块负责人修复；上面的 0 errors / 773 passed
+是**修复后**的最终结果。本次新增文件在修复前后都没有新增 typecheck 错误。
 
 ## 11. 未决问题
 
