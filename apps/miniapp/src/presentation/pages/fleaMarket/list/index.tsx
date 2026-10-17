@@ -1,4 +1,6 @@
 import { Text, View } from '@tarojs/components'
+import Image from '@taroify/core/image'
+import '@taroify/core/image/style'
 import Taro, { useDidShow, usePullDownRefresh, useReachBottom } from '@tarojs/taro'
 import { useState } from 'react'
 
@@ -11,8 +13,7 @@ import {
 } from '../../../../domain/models/fleaMarket'
 import type { FleaCategory, FleaItemSummary, FleaStatus } from '../../../../domain/models/fleaMarket'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyImageThumb, KdyListSkeleton, KdyTag } from '../../../components'
-import type { KdyTagTone } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyListSkeleton } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -30,42 +31,65 @@ import './index.scss'
 const STATUS_FILTERS: readonly (FleaStatus | 'all')[] = ['all', 'on-sale', 'reserved', 'sold']
 const SORTS = ['latest', 'price-asc', 'price-desc'] as const
 
-function statusTone(status: FleaStatus): KdyTagTone {
-  if (status === 'on-sale') return 'brand'
-  if (status === 'reserved') return 'warning'
-  return 'neutral'
-}
-
+/**
+ * 商品格 —— 跳蚤市场的**双列网格**单元（与其它模块的整宽列表卡刻意不同）。
+ *
+ * 二手交易的决定顺序是「图 → 价 → 成色/地点 → 谁卖的」，所以：
+ *   · 图占满格子（没有图时退化成文字徽标 —— 不编一张假图）；
+ *   · 价格是格子里的最大字；
+ *   · 已售 / 已预定在图上打角标（一眼可见，不用读小字）。
+ * 交易偏好（成色 · 分类）在网格里只留**成色**，分类挪到图上的小pill ——
+ * 两列宽度的每一行都有限，把四个信息塞一行等于都看不清。
+ */
 function FleaCard({ item }: { item: FleaItemSummary }) {
   return (
-    <KdyCard
-      elevated={false}
+    <View
+      className='kdy-flea-card'
+      hoverClass='kdy-flea-card--pressed'
+      hoverStayTime={70}
       onClick={() => {
         void navigateTo(fleaDetailPath(item.id))
       }}
     >
-      <View className='kdy-flea-card'>
+      <View className='kdy-flea-card__cover'>
         {item.thumbnailUrl === null ? (
-          <View className='kdy-flea-card__badge'>{item.badge}</View>
+          <View className='kdy-flea-card__badge'>
+            <Text className='kdy-flea-card__badge-text'>{item.badge}</Text>
+          </View>
         ) : (
-          <KdyImageThumb className='kdy-flea-card__cover' url={item.thumbnailUrl} count={item.imageCount} />
+          <Image className='kdy-flea-card__image' src={item.thumbnailUrl} mode='aspectFill' />
         )}
-        <View className='kdy-flea-card__main'>
-          <View className='kdy-flea-card__head'>
-            <Text className='kdy-flea-card__title'>{item.title}</Text>
-            <KdyTag tone={statusTone(item.status)}>{item.statusLabel}</KdyTag>
-          </View>
-          <Text className='kdy-flea-card__meta'>
-            {item.preference}
-            {item.campusSpot === null ? '' : ` · ${item.campusSpot}`}
-          </Text>
-          <View className='kdy-flea-card__foot'>
-            <Text className='kdy-flea-card__price'>¥{item.priceLabel}</Text>
-            <Text className='kdy-flea-card__time'>{item.mine ? '我发布的 · ' : ''}{item.timeLabel}</Text>
-          </View>
-        </View>
+
+        <Text className='kdy-flea-card__category'>{item.categoryLabel}</Text>
+
+        {item.status === 'on-sale' ? null : (
+          <Text className={`kdy-flea-card__status is-${item.status}`}>{item.statusLabel}</Text>
+        )}
+
+        {item.imageCount > 1 ? (
+          <Text className='kdy-flea-card__count'>{item.imageCount} 图</Text>
+        ) : null}
       </View>
-    </KdyCard>
+
+      <View className='kdy-flea-card__body'>
+        <Text className='kdy-flea-card__title'>{item.title}</Text>
+
+        <Text className='kdy-flea-card__meta'>
+          {item.conditionLabel}
+          {item.campusSpot === null ? '' : ` · ${item.campusSpot}`}
+        </Text>
+
+        <View className='kdy-flea-card__foot'>
+          <Text className={item.sold ? 'kdy-flea-card__price is-sold' : 'kdy-flea-card__price'}>
+            ¥{item.priceLabel}
+          </Text>
+          {item.mine ? <Text className='kdy-flea-card__flag'>我的</Text> : null}
+          {item.reservedByMe ? <Text className='kdy-flea-card__flag'>已预定</Text> : null}
+        </View>
+
+        <Text className='kdy-flea-card__time'>{item.timeLabel}</Text>
+      </View>
+    </View>
   )
 }
 
@@ -240,9 +264,12 @@ export default function FleaMarketListPage() {
         />
       )}
 
-      {state.items.map((item) => (
-        <FleaCard key={item.id} item={item} />
-      ))}
+      {/* 双列商品网格：二手交易先看图、再看价 —— 一行一卡会把图压成缩略图 */}
+      <View className='kdy-flea__grid'>
+        {state.items.map((item) => (
+          <FleaCard key={item.id} item={item} />
+        ))}
+      </View>
 
       {state.nextCursor !== null && state.status === 'ready' && (
         <View className='kdy-flea__more'>
