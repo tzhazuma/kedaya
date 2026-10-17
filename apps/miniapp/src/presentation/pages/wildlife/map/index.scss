@@ -30,6 +30,21 @@
   line-height: $kdy-line-height-normal;
 }
 
+/* 「区域圈」开关：圈是能点掉的（圈会盖住底图细节），因此配一行说明 */
+.kdy-wildlife-map__overlay-toggle {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-2;
+}
+
+.kdy-wildlife-map__overlay-hint {
+  flex: 1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
 .kdy-wildlife-map__hint {
   color: $kdy-color-info;
 }

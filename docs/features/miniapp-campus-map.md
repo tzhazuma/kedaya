@@ -134,7 +134,7 @@ pxPerMeter = scale / CAMPUS_MAP.unit(= 0.5)
 
 | 文件 | 作用 |
 | --- | --- |
-| `index.tsx` | 组件本体（拖动 / 缩放 / 全景 / 搜索 / 叠加层渲染 / 校园外拦截） |
+| `index.tsx` | 组件本体（拖动 / 双指捏合缩放 / 缩放按钮 / 全景 / 搜索 / 叠加层渲染 / 校园外拦截） |
 | `geometry.ts` | 纯函数几何（`fitWidth` / `layoutFor` / `clampOffset` / `circleRect` / `segmentRect` …），**不依赖 Taro**，可单测 |
 | `index.scss` | 样式（色值全部来自设计令牌，坐标尺寸由 JS 内联给出） |
 | `__tests__/geometry.test.ts` | 几何单测（视口铺满、缩放边界、像素→渲染、半径换算、线段旋转） |
@@ -143,9 +143,42 @@ pxPerMeter = scale / CAMPUS_MAP.unit(= 0.5)
 
 | 页面 | 用法 |
 | --- | --- |
-| `wildlife/map` | `markers` + `circles` + `polyline`；点区域卡 / 点标记时 `focus` 居中；`position` 蓝点 |
+| `wildlife/map` | `markers` + `circles` + `polyline`；点区域卡 / 点标记时 `focus` 居中；`position` 蓝点；「区域圈」可一键隐藏 |
 | `wildlife/report` | `picked` 选点 + `onPick` → `setPoint(p, 'gcj02')` |
 | `wildlife/tracks` | `polyline`（`dotted`）+ 起点标记 |
+
+### 5.1 滚动手势为什么用 `ref` 记位置（2026-10-18 修复）
+
+`scroll-view` 的 `scrollLeft` / `scrollTop` 是**受控属性**。第一版把「当前偏移」
+放进 `useState` 并在 `onScroll` 里回写，等于「拖动 → 重渲染 → 重新下发滚动位置」，
+与微信自己的滚动惯性互相打断；真机表现是**缩放时一直跳动、一闪一闪**，
+放大按钮按下去地图会自己弹回来。
+
+现在拆成两半：
+
+- `offsetRef`（`useRef`）：记录**现在滚到哪了**。拖动与惯性滚动只写 ref，不触发重渲染；
+- `scrollTarget`（`useState`）：只在**程序化移动**（缩放 / 居中 / 全景 / 聚焦某个点）时更新，
+  用它驱动 `scroll-view` 的位置。
+
+同时移除了 `enhanced` 属性（它引入另一条渲染路径，对本组件没有收益）。
+
+### 5.2 缩放：按钮 + 双指捏合
+
+- 按钮：`放大` / `缩小` / `全景`，缩放锚点 = **视口中心**（`viewportCenterPixel` → `offsetForPixel`）；
+- 双指捏合：`onTouchStart` / `onTouchMove` 取两指距离比值 → `renderedWidth`
+  （`zoomBounds` 夹在「铺满视野」与「原图 1:1 / 3 倍」之间），同样以视口中心为锚。
+  锚点不用手指中点：那需要容器在屏幕上的矩形，而它在滚动中一直在变，
+  用「上一帧的矩形」去算反而会抖。
+- 捏合结束后**不触发点选**（`pinchedRef` 标记本次手势是捏合），
+  `onTouchCancel` 会清掉这个标记，避免来电 / 切后台后「再也点不动地图」。
+
+### 5.3 区域圈为什么要画名字
+
+底图上的圈如果不带名字，用户唯一能做的就是猜（「这个圆圈是什么？」）。
+`MapCircle` 因此新增可选 `label`，由 `zoneToMapCircle()` 填 `zone.name`，
+`KdyCampusMap` 把名字贴在圈的上沿（`pointer-events: none`，不抢点选手势）。
+区域名是公开信息 —— 敏感区模糊化的是**坐标**，不是名字。
+`wildlife/map` 页另有「区域圈」开关：圈会盖住底图细节，想看清建筑 / 水面可以点掉。
 
 **分包约束**：底图 1 MB 级资源放在 `apps/miniapp/src/presentation/pages/wildlife/assets/`
 （不放 `src/assets/` —— 那会把主包顶穿 2 MiB）。`apps/miniapp/config/index.ts` 的 copy 规则
@@ -175,22 +208,27 @@ npx vitest run packages/contracts/src/campus-map.test.ts
 
 npm run typecheck -w @kedaya/miniapp     # → exit 0
 npm run test -w @kedaya/miniapp
-# → Test Files 79 passed · Tests 1260 passed
-#   （含 KdyCampusMap/__tests__/geometry.test.ts 与 mock 仓储/用例新增测试）
+# → Test Files 80 passed · Tests 1265 passed
+#   （含 KdyCampusMap/__tests__/geometry.test.ts、菜品库用例 dishLibrary.test.ts
+#     与 mock 仓储 / 用例新增测试）
 
 npm run build:weapp                      # → exit 0（Compiled successfully）
 npm run verify:weapp -w @kedaya/miniapp
-# → WeChat build verified: 502 module factories, 3062 JSX imports, coherent chunks,
+# → WeChat build verified: 503 module factories, 3118 JSX imports, coherent chunks,
 #   no temporary diagnostics, main package 1.43 MiB (excludes 15 subpackages),
 #   wildlife subpackage 0.98 MiB.
 ```
+
+> **§5.1 / §5.2 / §5.3 的手势与圈名修复在 2026-10-18 完成，但真机复核仍未做**
+> （见 §7.3）：滚动手势的抖动只能靠真机确认，本机没有微信开发者工具 CLI。
 
 ### 7.3 没做的事（如实标注）
 
 - **真机 / 微信开发者工具视觉复核未做**：本机没有微信开发者工具的 CLI，
   浏览器截图也不能替代真机。请把 `apps/miniapp/dist` 导入微信开发者工具，
   重点看：底图是否铺满、建筑名是否压住 marker、放大后栅格是否可接受、
-  点选在校园边缘的拦截是否合理。
+  点选在校园边缘的拦截是否合理、**双指捏合是否跟手 / 拖动是否还有抖动
+  （§5.1、§5.2 的修复只能在真机确认）**、圈上的区域名是否被遮挡。
 - 底图是**栅格**：放大到 2 倍以上会看到像素化（Web 端的 OSM 矢量底图没有这个问题，
   但小程序端不能用 SVG 内联到 WXSS，换矢量需要另做 canvas 渲染）。
 - 未做底图与真实路网的对照：校园外的导航仍走「在腾讯地图中打开」（`openWildlifePointInMap`）。

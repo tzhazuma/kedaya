@@ -66,6 +66,23 @@
   pointer-events: none;
 }
 
+/*
+ * 圈的名字：贴在圈的上沿、水平居中（`translate(-50%, -100%)`）。
+ * 必须 `pointer-events: none` —— 它只是说明文字，不该抢走点选底图的手势。
+ */
+.kdy-campus__circle-label {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 1px 6px;
+  border-radius: $kdy-radius-sm;
+  background-color: rgba(255, 255, 255, 0.88);
+  font-size: $kdy-font-size-xs;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* 折线的一段：一个旋转后的细长条（transform-origin 必须在左上角） */
 .kdy-campus__segment {
   position: absolute;

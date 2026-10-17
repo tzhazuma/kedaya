@@ -419,10 +419,18 @@ export function isInCampus(point: LatLng): boolean {
 export interface MapCircle {
   latitude: number
   longitude: number
+  /** 半径，**米**（`<map circles>` 与 `KdyCampusMap` 都按米解释） */
   radius: number
   color: string
   fillColor: string
   strokeWidth: number
+  /**
+   * 区域名称（如「黑天鹅湖」）。
+   *
+   * 画在圈上而不是只写进图例：底图上是**一个没有名字的圆**时，
+   * 用户唯一能做的就是猜。区域名是公开信息 —— 敏感区被模糊化的是坐标，不是名字。
+   */
+  label?: string
 }
 
 export interface MapMarker {
@@ -459,6 +467,8 @@ export function zoneToMapCircle(zone: WildlifeZone, colors: { stroke: string; fi
     color: colors.stroke,
     fillColor: colors.fill,
     strokeWidth: 2,
+    // 名字带上：地图上的圈必须能自我解释（敏感区模糊的是坐标，不是名字）
+    label: zone.name,
   }
 }
 

@@ -91,6 +91,14 @@ export default function WildlifeMapPage() {
   /** 用户当前位置（GCJ-02）—— 原生 `<map showLocation>` 的蓝点在这里补齐 */
   const [position, setPosition] = useState<CampusPoint | null>(null)
 
+  /**
+   * 是否显示区域圈。
+   *
+   * 圈是**有用的**（「这片水面归哪个管理区域」），但也确实会盖住底图细节 ——
+   * 与其争论，不如给一个开关：想看清建筑/水域就点掉，想看范围就点回来。
+   */
+  const [showZones, setShowZones] = useState(true)
+
   const sightingSummary = selectedSightingSummary(state, now)
   const activeZone =
     state.selectedZoneId === null
@@ -286,6 +294,15 @@ export default function WildlifeMapPage() {
             ⚠️ 底图 = **校方校园 GIS 的真实底图**（不是腾讯 / 高德的城市街道图）。
             所有叠加层的坐标**已经**是 GCJ-02（由 buildMapOverlays 转换）。
           */}
+          <View className='kdy-wildlife-map__overlay-toggle'>
+            <KdyChip active={showZones} onClick={() => setShowZones(!showZones)}>
+              区域圈
+            </KdyChip>
+            <Text className='kdy-wildlife-map__overlay-hint'>
+              圆圈＝已划定的活动区域（圈上标着区域名，红圈是敏感区）；点掉可以看清底图。
+            </Text>
+          </View>
+
           <KdyCampusMap
             className='kdy-wildlife-map__canvas'
             markers={overlays.markers.map((marker) => ({
@@ -297,7 +314,7 @@ export default function WildlifeMapPage() {
                 marker.kind === 'spot' ? MAP_MARKER_ICONS.spot : MAP_MARKER_ICONS.sighting,
               calloutText: marker.calloutText,
             }))}
-            circles={overlays.circles}
+            circles={showZones ? overlays.circles : []}
             polyline={
               overlays.polyline === null
                 ? null
@@ -314,8 +331,8 @@ export default function WildlifeMapPage() {
           />
 
           <Text className='kdy-wildlife-map__legend'>
-            图例：黄色圆点 = 聚合热点；蓝色圆点 = 历史观测；蓝圈 = 管理区域（红圈 = 敏感区，
-            不公开坐标）；蓝色小字 = 校园建筑与桥。点底图空白处可查看该点落在哪个活动区域内。
+            图例：黄色圆点 = 聚合热点；蓝色圆点 = 历史观测；带名字的圆圈 = 管理区域（红圈 =
+            敏感区，不公开坐标）；蓝色小字 = 校园建筑与桥。双指捏合可缩放，拖动可平移。点底图空白处可查看该点落在哪个活动区域内。
           </Text>
 
           {overlays.hiddenByDelay > 0 && (

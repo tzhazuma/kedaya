@@ -28,7 +28,7 @@ import {
   viewportCenterPixel,
   zoomBounds,
 } from './geometry'
-import type { CampusImageSize, CampusViewport } from './geometry'
+import type { CampusImageSize, CampusOffset, CampusViewport } from './geometry'
 import './index.scss'
 
 /**
@@ -93,6 +93,13 @@ export interface KdyCampusMapCircle {
   color: string
   /** 填充色（设计令牌，可带 alpha） */
   fillColor: string
+  /**
+   * 圈的名字（如「黑天鹅湖」）。
+   *
+   * 有名字就**画在圈上**：地图上出现一个无名的圈，用户唯一能做的就是猜
+   * （「这圆圈是什么？」）。名字是公开信息，与「敏感区坐标被模糊化」不冲突。
+   */
+  label?: string
 }
 
 /** 观测点 / 聚合热点标记 */
@@ -183,9 +190,39 @@ export function KdyCampusMap({
     () => layoutFor(renderedWidth, CAMPUS_IMAGE, CAMPUS_METERS_PER_PIXEL),
     [renderedWidth],
   )
-  const [offset, setOffset] = useState(() =>
+
+  /**
+   * 视口当前滚动位置。**刻意放在 ref 里，而不是 state。**
+   *
+   * `scroll-view` 的 `scrollLeft` / `scrollTop` 是受控属性：如果每次 `onScroll`
+   * 都 `setState` 回写，就等于「用户的每一次拖动 → 重渲染 → 重新下发滚动位置」，
+   * 与微信自己的滚动惯性互相打断。真机上的表现正是「一直跳动、一闪一闪」。
+   *
+   * 于是拆成两半：
+   *   · `offsetRef` —— 只记录**现在滚到哪了**（拖动、惯性滚动时只写 ref，不重渲染）；
+   *   · `scrollTarget` —— 只在**程序化移动**（缩放 / 居中 / 全景 / 选中点位）时更新，
+   *     用它去驱动 `scroll-view` 的位置。
+   * 拖动过程中 `scrollTarget` 不动，微信就不会被我们拽回去。
+   */
+  const offsetRef = useRef<CampusOffset>(
     centeredOffset(layoutFor(fittedWidth, CAMPUS_IMAGE, CAMPUS_METERS_PER_PIXEL), viewport),
   )
+  const [scrollTarget, setScrollTarget] = useState<CampusOffset>(offsetRef.current)
+
+  /** 程序化移动：先更新 ref（后续手势接着算），再把受控滚动位置推过去 */
+  function moveTo(next: CampusOffset): void {
+    offsetRef.current = next
+    setScrollTarget(next)
+  }
+
+  /**
+   * 双指捏合状态：起始指距 + 起始渲染宽度。
+   * 锚点固定取**当前视口中心** —— 见 `handleTouchMove` 里的说明。
+   */
+  const pinchRef = useRef<{ distance: number; width: number } | null>(null)
+  /** 本次手势是捏合：抬手时不要误当成「在底图上选点」 */
+  const pinchedRef = useRef(false)
+
   const [showAllPlaces, setShowAllPlaces] = useState(false)
   const [search, setSearch] = useState('')
   const [notice, setNotice] = useState('')
@@ -204,11 +241,11 @@ export function KdyCampusMap({
     if (previous === fittedWidth) return
     const nextWidth = Math.max(fittedWidth, (renderedWidth / previous) * fittedWidth)
     setRenderedWidth(nextWidth)
-    setOffset(centeredOffset(layoutFor(nextWidth, CAMPUS_IMAGE, CAMPUS_METERS_PER_PIXEL), viewport))
+    moveTo(centeredOffset(layoutFor(nextWidth, CAMPUS_IMAGE, CAMPUS_METERS_PER_PIXEL), viewport))
   }, [fittedWidth, renderedWidth, viewport])
 
   function focusPixel(pixel: { x: number; y: number }): void {
-    setOffset(offsetForPixel(pixel, layout, viewport))
+    moveTo(offsetForPixel(pixel, layout, viewport))
     setNotice('')
   }
 
@@ -224,17 +261,17 @@ export function KdyCampusMap({
     const bounds = zoomBounds(viewport, CAMPUS_IMAGE)
     const nextWidth = Math.min(bounds.max, Math.max(bounds.min, layout.renderedWidth * factor))
     if (Math.abs(nextWidth - layout.renderedWidth) < 0.5) return
-    const center = viewportCenterPixel(offset, layout, viewport)
+    const center = viewportCenterPixel(offsetRef.current, layout, viewport)
     const nextLayout = layoutFor(nextWidth, CAMPUS_IMAGE, CAMPUS_METERS_PER_PIXEL)
     setRenderedWidth(nextWidth)
-    setOffset(offsetForPixel(center, nextLayout, viewport))
+    moveTo(offsetForPixel(center, nextLayout, viewport))
   }
 
   function handleResetView(): void {
     const nextWidth = zoomBounds(viewport, CAMPUS_IMAGE).min
     const nextLayout = layoutFor(nextWidth, CAMPUS_IMAGE, CAMPUS_METERS_PER_PIXEL)
     setRenderedWidth(nextWidth)
-    setOffset(centeredOffset(nextLayout, viewport))
+    moveTo(centeredOffset(nextLayout, viewport))
     setNotice('')
   }
 
@@ -265,13 +302,72 @@ export function KdyCampusMap({
     return touch === undefined ? null : { x: touch.clientX, y: touch.clientY }
   }
 
+  /** 当前按在屏幕上的手指（最多取前两根，够算捏合） */
+  function touchPointsOf(event: BaseEventOrig): Array<{ x: number; y: number }> {
+    const touches = (event as unknown as ITouchEvent).touches ?? []
+    return Array.from(touches)
+      .slice(0, 2)
+      .map((touch) => ({ x: touch.clientX, y: touch.clientY }))
+  }
+
   function handleTouchStart(event: BaseEventOrig): void {
+    const points = touchPointsOf(event)
+    if (points.length >= 2) {
+      const [first, second] = points as [{ x: number; y: number }, { x: number; y: number }]
+      const distance = Math.hypot(first.x - second.x, first.y - second.y)
+      // 双指按下＝捏合手势：记录起始指距与起始缩放，并宣告「这不是点选」
+      pinchRef.current = distance > 0 ? { distance, width: layout.renderedWidth } : null
+      pinchedRef.current = true
+      setFocusedMarkerId(null)
+      return
+    }
     const touch = touchPointOf(event, 'touches')
     if (touch === null) return
     touchStart.current = touch
   }
 
+  /**
+   * 双指捏合缩放 —— 「不能手动放大」的修复点（在此之前只有三个按钮能改缩放）。
+   *
+   * 锚点固定取**当前视口中心**：手指中点更好，但算它需要容器在屏幕上的位置，
+   * 而那个矩形在滚动中一直在变，用「上一帧的矩形」去算反而会抖。
+   * 视口中心不需要任何额外测量，缩放前后中心那块地图停在原地，最稳。
+   *
+   * 手指在动的同时 `scroll-view` 也会按原生滚动走两指的平均位移 ——
+   * 对称的捏合平均位移约等于 0，所以不会互相抢；这也是这里不做
+   * `catchtouchmove` 的原因（拦掉它，拖动就死了）。
+   */
+  function handleTouchMove(event: BaseEventOrig): void {
+    const pinch = pinchRef.current
+    if (pinch === null) return
+    const points = touchPointsOf(event)
+    if (points.length < 2) return
+    const [first, second] = points as [{ x: number; y: number }, { x: number; y: number }]
+    const distance = Math.hypot(first.x - second.x, first.y - second.y)
+    if (distance <= 0) return
+
+    const bounds = zoomBounds(viewport, CAMPUS_IMAGE)
+    const nextWidth = Math.min(
+      bounds.max,
+      Math.max(bounds.min, (pinch.width * distance) / pinch.distance),
+    )
+    if (Math.abs(nextWidth - layout.renderedWidth) < 0.5) return
+
+    // 以视口中心为锚：先记下中心对应哪块底图，缩放后再把它放回正中
+    const anchor = viewportCenterPixel(offsetRef.current, layout, viewport)
+    const nextLayout = layoutFor(nextWidth, CAMPUS_IMAGE, CAMPUS_METERS_PER_PIXEL)
+    setRenderedWidth(nextWidth)
+    moveTo(offsetForPixel(anchor, nextLayout, viewport))
+  }
+
   function handleTouchEnd(event: BaseEventOrig): void {
+    const remaining = touchPointsOf(event).length
+    if (remaining < 2) pinchRef.current = null
+    // 捏合结束（含只剩一根手指）不当作点选；等手指全部离开再复位
+    if (pinchedRef.current) {
+      if (remaining === 0) pinchedRef.current = false
+      return
+    }
     if (onPick === undefined) return
     const touch = touchPointOf(event, 'changedTouches')
     if (touch === null) return
@@ -303,6 +399,12 @@ export function KdyCampusMap({
         onPick(point)
       })
       .exec()
+  }
+
+  /** 触摸被系统打断（来电 / 切后台）：清掉捏合状态，不留下「永远不是点选」的手势 */
+  function handleTouchCancel(): void {
+    pinchRef.current = null
+    pinchedRef.current = false
   }
 
   function handlePlaceTap(point: CampusPoint): void {
@@ -363,12 +465,12 @@ export function KdyCampusMap({
         style={{ height: `${viewport.height}px` }}
         scrollX
         scrollY
-        enhanced
-        scrollLeft={offset.left}
-        scrollTop={offset.top}
+        scrollLeft={scrollTarget.left}
+        scrollTop={scrollTarget.top}
         onScroll={(event) => {
           const detail = event.detail as { scrollLeft?: number; scrollTop?: number }
-          setOffset({ left: detail.scrollLeft ?? 0, top: detail.scrollTop ?? 0 })
+          // 只记位置，**不 setState** —— 见 `offsetRef` 的注释（受控回写会抖）
+          offsetRef.current = { left: detail.scrollLeft ?? 0, top: detail.scrollTop ?? 0 }
         }}
       >
         <View
@@ -376,7 +478,9 @@ export function KdyCampusMap({
           className='kdy-campus__surface'
           style={{ width: `${layout.renderedWidth}px`, height: `${layout.renderedHeight}px` }}
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchCancel}
         >
           <Image
             className='kdy-campus__image'
@@ -401,6 +505,30 @@ export function KdyCampusMap({
                   backgroundColor: circle.fillColor,
                 }}
               />
+            )
+          })}
+
+          {/*
+            圈的名字单独一层渲染（不嵌在圈里）：圈的 `left/top` 是绝对定位的，
+            嵌进去后子元素的坐标就要按圈的局部坐标算，很容易跟着布局漂。
+            「地图上这个圆圈是什么」必须**画在圈上**才答得出来 —— 只放图例里
+            用户对不上号。
+          */}
+          {circles.map((circle, index) => {
+            if (circle.label === undefined) return null
+            const rect = circleRect(campusPixel(circle), circle.radius, layout)
+            return (
+              <Text
+                key={`circle-label-${index}`}
+                className='kdy-campus__circle-label'
+                style={{
+                  left: `${rect.left + rect.size / 2}px`,
+                  top: `${rect.top}px`,
+                  color: circle.color,
+                }}
+              >
+                {circle.label}
+              </Text>
             )
           })}
 
