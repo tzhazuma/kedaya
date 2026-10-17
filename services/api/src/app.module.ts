@@ -93,6 +93,10 @@ import { ContactExchangeModule } from './modules/contact-exchange/contact-exchan
     ContactExchangeModule,
   ],
   providers: [
+    // TraceMiddleware 必须**显式提供**：虽然它由 `configure(consumer)` 挂载，
+    // 但 `app.get(TraceMiddleware)` 是装配测试的核对点 —— 一个只被 `apply()`
+    // 引用、却没进 providers 的类，在新版 Nest 里取不到实例（DI 容器里没有它）。
+    TraceMiddleware,
     /*
      * ⚠️ 必须是 `useValue`，**不能**是 `useClass`。
      *
