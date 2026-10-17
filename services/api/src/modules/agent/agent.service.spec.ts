@@ -5,6 +5,7 @@ import { AgentToolsService } from './agent-tools.service';
 import type {
   AgentLlmPort,
   AgentTool,
+  KnowledgeDoc,
   KnowledgePort,
   RetrievedDoc,
 } from './domain/agent.domain';
@@ -145,6 +146,101 @@ describe('AgentService.suggestions / capabilities', () => {
     const capabilities = service.capabilities();
     expect(capabilities.notIndexed).toContain('校园卡流水');
     expect(capabilities.mode).toBe('rules');
+  });
+});
+
+describe('AgentService 上下文补丁（"这个页面是干什么的"必须答得出来）', () => {
+  /**
+   * 这几条锁的是一个真实事故：页面上把「这个页面是干什么的？」摆在建议问题里，
+   * 用户点下去却得到"我这边查不到 campus-card 模块的说明，换个模块问我" ——
+   * 既没用，又把内部枚举词(tool: campus-card)漏给了用户。
+   *
+   * 根因是检索按关键词打分，"这个页面是干什么的"里没有任何模块名，
+   * 必然召不回那条模块说明。修法：命中这类问句时，由服务端**精确补一条**
+   * 上下文说明（模块说明 / 首页与服务大厅指南 / 《可达鸭能做什么》）。
+   */
+  function buildWith(docs: KnowledgeDoc[]) {
+    const knowledge = new KnowledgeService({ all: vi.fn().mockResolvedValue(docs) });
+    const tools = {
+      matchTools: vi.fn().mockReturnValue([]),
+      tools: vi.fn().mockReturnValue([]),
+    } as unknown as AgentToolsService;
+    return new AgentService(knowledge, tools, () => NOW, null);
+  }
+
+  const corpus = [
+    {
+      id: 'module:campus-card',
+      title: '校园卡 · Campus Card',
+      body: '校园卡模块：余额、流水与付款码。',
+      module: 'campus-card',
+      kind: 'module' as const,
+      updatedAt: null,
+    },
+    {
+      id: 'guide:agent-usage',
+      title: '可达鸭能做什么',
+      body: '可达鸭是内置在小程序里的助手，任何页面都能唤起。',
+      module: null,
+      kind: 'guide' as const,
+      updatedAt: null,
+    },
+    {
+      id: 'guide:home-page',
+      title: '首页与「凑凑」',
+      body: '首页分三块：问候、我的常用宫格、常驻的心理支持出口。',
+      module: null,
+      kind: 'guide' as const,
+      updatedAt: null,
+    },
+    {
+      id: 'guide:service-hall',
+      title: '服务大厅：找入口的地方',
+      body: '服务大厅把全部服务按场景分组，顶上可以搜索模块名。',
+      module: null,
+      kind: 'guide' as const,
+      updatedAt: null,
+    },
+  ];
+
+  it('在校园卡页问"这个页面是干什么的"→ 用模块说明作答，并把它列为首要来源', async () => {
+    const service = buildWith(corpus);
+    const reply = await service.chat({ question: '这个页面是干什么的？', module: 'campus-card' }, null);
+
+    expect(reply.sources[0]?.id).toBe('module:campus-card');
+    expect(reply.answer).toContain('余额、流水与付款码');
+    expect(reply.answer).not.toContain('campus-card');
+  });
+
+  it('没有模块上下文时（可达鸭页自己）→ 答《可达鸭能做什么》而不是"查不到"', async () => {
+    const service = buildWith(corpus);
+    const reply = await service.chat({ question: '这个页面是干什么的？' }, null);
+
+    expect(reply.sources[0]?.id).toBe('guide:agent-usage');
+    expect(reply.answer).toContain('任何页面都能唤起');
+  });
+
+  it('首页 / 服务大厅不是契约模块，但同样有说明可答', async () => {
+    const service = buildWith(corpus);
+    const home = await service.chat({ question: '这个页面是干什么的？', module: 'home' }, null);
+    const hall = await service.chat({ question: '这个页面是干什么的？', module: 'discover' }, null);
+
+    expect(home.sources[0]?.id).toBe('guide:home-page');
+    expect(hall.sources[0]?.id).toBe('guide:service-hall');
+  });
+
+  it('问"我还能用哪些功能"→ 补《可达鸭能做什么》（这句话里也没有模块名）', async () => {
+    const service = buildWith(corpus);
+    const reply = await service.chat({ question: '我还能用哪些功能？' }, null);
+
+    expect(reply.sources[0]?.id).toBe('guide:agent-usage');
+  });
+
+  it('普通问题**不**注入上下文说明（否则每次回答都多一段没用的模块介绍）', async () => {
+    const service = buildWith(corpus);
+    const reply = await service.chat({ question: '校园卡余额怎么算异常扣款？', module: 'campus-card' }, null);
+
+    expect(reply.sources.some((source) => source.id === 'guide:agent-usage')).toBe(false);
   });
 });
 

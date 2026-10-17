@@ -33,7 +33,10 @@ ESLint 会阻止在 presentation 层直接引入 Taro 原始表单控件和其�
   agent 的输入区与悬浮球、`elevated` 的主视觉卡。列表里的十几张卡片一律**不加 blur**
   （滚动会掉帧），层次靠上面的投影实现；用了磨砂的地方必须有 ≥88% 不透明度的底色兜底，
   不支持 `backdrop-filter` 的机型只是"少一点透明感"，不会看不清。
-- 图标统一线性风格，品牌形象可使用原创资源；不混用多套图标（emoji 只用于吉祥物）。
+- 图标统一线性风格，品牌形象可使用原创资源；不混用多套图标。emoji **不再**充当吉祥物：吉祥物是固定贴图
+  `assets/mascot/duck.png`（`presentation/theme/mascot.ts` 的 `DUCK_MASCOT_SRC`，经 `KdyMascot` 使用），
+  因为 emoji 在不同微信版本 / 机型上渲染成各家自己的字形，34px 的头像里几乎认不出是鸭子，颜色也不受控。
+  贴图是黄色鸭子，**不要**垫在品牌黄渐变上（糊成一片），要么直接放白底，要么用 `KdyMascot` 的 `plate`（白色圆盘底）。
   模块图标走 `.kdy-module-icon` + `KdyModuleIcon`：52px、圆角 22px、字形 26px 且
   `line-height: 1`（图标是**字体字形**，不锁行高会被 page 的 1.5 撑高、和旁边的图标对不齐）。
 - **宫格图标用"分类色"而不是彩虹**：每档色相的底 / 边 / 字形都由**同一个令牌色**派生
@@ -80,7 +83,8 @@ ESLint 会阻止在 presentation 层直接引入 Taro 原始表单控件和其�
 | 组件 | 用途 |
 | --- | --- |
 | `KdyButton` | 主/次/幽灵/危险按钮，`block` 撑满，`loading` 表示提交中；`openType` 可透传 `share` / `chooseAvatar` |
-| `KdyAvatar` | 头像展示（无图回退吉祥物图标）；**选择**头像由页面上的 `KdyButton openType='chooseAvatar'` 触发 |
+| `KdyAvatar` | 头像展示（无图回退可达鸭贴图）；**选择**头像由页面上的 `KdyButton openType='chooseAvatar'` 触发 |
+| `KdyMascot` | 吉祥物贴图（`size` / `plate` 白底圆盘）；agent 头像、悬浮球、登录注册卡都用它，不要再写 emoji |
 | `KdyCard` | 内容卡片容器（`title` / `extra` / `onClick`） |
 | `KdyField` | **表单唯一入口**（Taroify Field + Input 薄封装，支持 `type`（含 `nickname`）/ `maxLength` / `hint`） |
 | `KdyChip` | 可点击胶囊：筛选器与单选（分类、成色、状态、排序）都用它 |

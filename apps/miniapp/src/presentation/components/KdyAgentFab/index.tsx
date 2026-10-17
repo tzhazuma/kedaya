@@ -2,6 +2,7 @@ import { Text, View } from '@tarojs/components'
 
 import { PAGE_PATHS } from '../../../app/routes'
 import { navigateTo } from '../../../platform/navigation'
+import { KdyMascot } from '../KdyMascot'
 import './index.scss'
 
 /**
@@ -50,7 +51,7 @@ export function KdyAgentFab({ module, page, raised = false, className }: KdyAgen
       hoverStayTime={70}
     >
       <View className='kdy-agent-fab__ball'>
-        <Text className='kdy-agent-fab__emoji'>🦆</Text>
+        <KdyMascot size={28} plate className='kdy-agent-fab__mascot' />
         <Text className='kdy-agent-fab__label'>可达鸭</Text>
       </View>
     </View>

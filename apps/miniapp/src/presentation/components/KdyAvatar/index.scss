@@ -1,9 +1,16 @@
+/*
+ * 头像框。
+ *
+ * 底是**不透明的浅色**（不是品牌黄渐变）：回退图案是黄色的鸭子，
+ * 垫在黄底上会糊成一片。浅底 + 一圈品牌色细环，鸭子才读得出来。
+ */
+
 .kdy-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: linear-gradient(150deg, rgba($kdy-color-brand, 0.24) 0%, rgba($kdy-color-brand-soft, 0.7) 100%);
+  background-color: $kdy-color-surface;
   border: 1px solid rgba($kdy-color-brand, 0.3);
   border-radius: $kdy-radius-pill;
   flex-shrink: 0;
@@ -11,9 +18,4 @@
 
 .kdy-avatar__image {
   display: block;
-}
-
-.kdy-avatar__fallback {
-  color: $kdy-color-brand-strong;
-  font-size: 32px;
 }

@@ -43,6 +43,54 @@ import {
 /** 回答长度上限：聊天框不是文档页，超过就该改成"打开对应页面" */
 const MAX_ANSWER_CHARS = 420;
 
+/**
+ * 内置指南 id：《可达鸭能做什么》。
+ *
+ * 用户在**可达鸭页自己**问"这个页面是干什么的"时没有模块上下文
+ * （agent 是全局助手，不属于契约里的 20 个模块），这条指南就是那个兜底。
+ */
+const AGENT_USAGE_GUIDE_ID = 'guide:agent-usage';
+
+/**
+ * 是否在问"当前这个页面 / 这个模块是干什么的"。
+ *
+ * 词表刻意写得**窄**：只认明确指向"当前页面"的说法。
+ * 放"是什么""有什么用"这类泛问句进来会把"校园卡是什么"也劫持成页面介绍，
+ * 而那些问题本来有更好的答案。
+ */
+export function asksAboutPage(question: string): boolean {
+  return ['这个页面', '这页', '干什么', '做什么'].some((keyword) => question.includes(keyword));
+}
+
+/**
+ * 是否在问"你还能做什么"。
+ *
+ * 和 `asksAboutPage` 一样，这句话里不会有任何模块名，检索只能撞上别的指南，
+ * 所以也要走上下文补丁（补内置的《可达鸭能做什么》）。
+ */
+export function asksCapabilities(question: string): boolean {
+  return ['哪些功能', '还能用', '有什么功能', '都能做', '能做什么'].some((keyword) =>
+    question.includes(keyword),
+  );
+}
+
+/** 这两类问题都要靠上下文补一条说明，否则检索答非所问 */
+function needsContextDoc(question: string): boolean {
+  return asksAboutPage(question) || asksCapabilities(question);
+}
+
+/**
+ * 非契约模块的入口 → 对应的内置指南。
+ *
+ * 「首页」「服务大厅」是产品入口而不是契约 §4 的模块（它们没有独立 API 路由），
+ * 所以没有 `module:<id>` 文档可用。用户站在首页问"这个页面是干什么的"，
+ * 答案不该是"我查不到这个页面"，而该是下面这两条指南。
+ */
+const PAGE_GUIDES: Record<string, string> = {
+  home: 'guide:home-page',
+  discover: 'guide:service-hall',
+};
+
 @Injectable()
 export class AgentService {
   private readonly logger = new Logger(AgentService.name);
@@ -67,19 +115,23 @@ export class AgentService {
    */
   async chat(input: AgentChatInput, userId: string | null): Promise<AgentReply> {
     const startedAt = this.clock().getTime();
+    // 上下文模块：优先客户端上报的 `module`，其次是页面路径推断出来的
+    // （悬浮球从某个页面跳过来时会带上两者，但只带 `page` 的调用方也要能用）
+    const contextModule = input.module ?? pageToModule(input.page);
     const context: AgentToolContext = {
       userId,
       ...(input.page === undefined ? {} : { page: input.page }),
-      ...(input.module === undefined ? {} : { module: input.module }),
+      ...(contextModule === undefined ? {} : { module: contextModule }),
     };
 
     const selected = this.tools.matchTools(input.question);
     const { facts, actions, steps, notices, simulated } = await this.runTools(selected, context);
 
-    const docs = await this.knowledge.retrieve(input.question, {
-      ...(input.module === undefined ? {} : { module: input.module }),
+    const retrieved = await this.knowledge.retrieve(input.question, {
+      ...(contextModule === undefined ? {} : { module: contextModule }),
       limit: 3,
     });
+    const docs = await this.withContextDoc(input.question, contextModule, retrieved);
 
     let answer: string;
     let usedModel: string | null = null;
@@ -93,7 +145,7 @@ export class AgentService {
           docs,
           context: {
             ...(input.page === undefined ? {} : { page: input.page }),
-            ...(input.module === undefined ? {} : { module: input.module }),
+            ...(contextModule === undefined ? {} : { module: contextModule }),
           },
         });
         usedModel = this.llm.model;
@@ -168,6 +220,43 @@ export class AgentService {
   }
 
   /* ---------------- 内部 ---------------- */
+
+  /**
+   * 上下文补丁：把「用户现在在哪儿 / 在问哪种能力」需要的那条说明补进知识片段。
+   *
+   * 触发条件只有两种，都是**这句话检索自己答不上来**的情形：
+   *   1. 问的是「这个页面是干什么的」—— 句子里没有任何模块名，
+   *      按关键词打分必然召不回那条模块说明（用户点了页面上的建议问题，
+   *      得到的却是"我这边查不到，换个模块问我"：既没用，又漏了内部枚举词）；
+   *   2. 问的是「我还能用哪些功能」—— 这句话同样没有模块名，
+   *      检索会把「还能」「功能」这些碎片词匹配到别的指南上（实测召回了
+   *      《微信快捷登录后还要做什么》），答非所问。
+   *
+   * 刻意**不**无条件注入：那样每问一次余额都会附一段"校园卡是基础能力模块、
+   * 敏感级：低"的说明书，答案变长，`sources` 也会挂一条其实没被用上的引用。
+   */
+  private async withContextDoc(
+    question: string,
+    contextModule: string | undefined,
+    retrieved: RetrievedDoc[],
+  ): Promise<RetrievedDoc[]> {
+    if (!needsContextDoc(question) && retrieved.length > 0) return retrieved;
+
+    const doc =
+      contextModule !== undefined && asksAboutPage(question)
+        ? await this.knowledge.byId(PAGE_GUIDES[contextModule] ?? `module:${contextModule}`)
+        : null;
+    const anchor = doc ?? (await this.knowledge.byId(AGENT_USAGE_GUIDE_ID));
+    if (anchor === null || retrieved.some((item) => item.doc.id === anchor.id)) return retrieved;
+
+    /**
+     * score 必须 > 0：规则回答器（`composeDeterministic`）是靠 `score > 0`
+     * 挑"这条回答的主材料"的。补进来的这条恰恰是答这句话**最直接**的材料
+     * （"你所在的模块是什么"），给 0 分等于白补 —— 用户还是会看到那条
+     * 关键词撞上来的无关指南。
+     */
+    return [{ doc: anchor, score: 1, matched: [] }, ...retrieved].slice(0, 3);
+  }
 
   private async runTools(
     selected: AgentTool[],

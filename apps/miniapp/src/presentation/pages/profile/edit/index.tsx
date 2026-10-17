@@ -130,10 +130,10 @@ export default function ProfileEditPage() {
         />
       </KdyCard>
 
-      {notice !== null && <Text className='kdy-auth__tip'>{notice}</Text>}
-      {error !== null && <Text className='kdy-auth__error'>{error}</Text>}
+      {notice !== null && <Text className='kdy-auth__tip kdy-auth__tip--page'>{notice}</Text>}
+      {error !== null && <Text className='kdy-auth__error kdy-auth__error--page'>{error}</Text>}
 
-      <View className='kdy-auth__actions'>
+      <View className='kdy-auth__actions kdy-auth__actions--page'>
         <KdyButton block loading={saving} onClick={() => void handleSave()}>
           保存
         </KdyButton>

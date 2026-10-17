@@ -110,6 +110,9 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 | --- | --- |
 | `DATABASE_URL` | 数据库连接串 |
 | `JWT_SECRET` | 签发/校验 JWT（缺失会直接报错，不会静默降级） |
+| `CAMPUS_SESSION_ENC_KEY` | 校园系统绑定会话的 AES-256-GCM 密钥（32 字节 hex/base64）。缺失**启动失败** |
+| `CONTACT_EXCHANGE_ENC_KEY` | 联系方式交换的加密密钥（同上）。缺失**启动失败**（fail closed：联系方式绝不能明文落库） |
+| `WILDLIFE_FUZZ_SECRET` | 野生动物位置加噪密钥（≥32 字节）。缺失**启动失败** —— 加噪是隐私防线，静默降级等于静默泄漏（规格 §9.7） |
 | `AUTH_DEV_EXPOSE_CODES` | `"true"` 时**仅开发环境**在发送验证码的响应里回显 `devCode` |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | 邮件发信。本机**不用配**：开发环境默认走日志实现（验证码打控制台）；生产环境不配会让服务起不来（详见 `docs/deploy.md` §5.7） |
 | `MAIL_TRANSPORT` | 不配即可。`console` 强制日志实现（生产环境设了会拒绝启动）；`smtp` 强制真发信 |
@@ -123,6 +126,11 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 
 `AUTH_DEV_EXPOSE_CODES` 只是为了真机联调方便；生产必须关闭，
 否则任何人都能拿到别人的注册验证码。关闭时验证码会打印到 API 控制台（`ConsoleMailAdapter`）。
+
+上面三条「缺失即启动失败」的密钥是**故意** fail closed 的：宁可服务起不来，
+也不能在没有密钥时把隐私数据以明文/弱密钥落库。本地直接用样例里的开发值即可 ——
+`cp services/api/.env.example services/api/.env` 一句话就能起服务；密钥可以用
+`openssl rand -hex 32` 换成自己的（换掉之后数据库里已加密的旧数据要重新产生）。
 
 想在本机验证**真实发信链路**（邮件组装、SMTP 对话、错误分支），不用去注册邮箱服务商：
 `SMTP_HOST=127.0.0.1 SMTP_PORT=2525 SMTP_ALLOW_INSECURE=true SMTP_FROM=... node <一个假 SMTP 服务器>`，
@@ -338,11 +346,18 @@ npm run typecheck -w @kedaya/web && npm run test -w @kedaya/web && npm run lint 
 
 ## 6. 两个容易踩的坑（已修，别改回去）
 
-**共享包的相对导入必须带 `.ts` 扩展名。** `@kedaya/contracts` 与 `@kedaya/shared` 的
-`main` 指向 TS 源码，后端 `tsc` 产物在运行时直接 `require` 它们，由 Node 的类型剥离执行源码；
-Node 的 ESM 解析器不做扩展名补全，少写扩展名会在**启动时**报 `ERR_MODULE_NOT_FOUND`
-（单测发现不了，因为 vitest 会补全）。`tsconfig.base.json` 里用
-`rewriteRelativeImportExtensions` 保证编译产物中重写回 `.js`。
+**打包产物要靠预加载补丁去 `dist/packages/**` 取共享包。** `@kedaya/contracts` 与
+`@kedaya/shared` 的 `main` 指向 **TS 源码**（`./src/index.ts`，内部是 extensionless
+相对导入）—— 小程序 / Web 的打包器直接吃 TS，没问题；但服务端是 `tsc` 产物 + Node
+直接跑 CJS，Node 顺着 `node_modules` 软链找到 `src/index.ts` 后无法解析 `./envelope`，
+启动时报 `ERR_MODULE_NOT_FOUND`（单测发现不了，vitest 会补全扩展名）。
+
+我们的 `tsconfig.json` 把 `rootDir` 指到仓库根，`tsc` 已经把这几个包一起编译成了
+CJS 放在 `dist/packages/**`，缺的只是"让 Node 去那里找"。`npm run start` /
+`dev:serve` 用 `node -r ./register-workspace-modules.cjs` 预加载一个小补丁
+（`services/api/register-workspace-modules.cjs`）完成这件事 —— 不引入任何依赖，
+也不影响 `tsc` / vitest / 小程序构建。**直接 `node dist/services/api/src/main.js`
+会绕过它，看到的就是上面那个 `ERR_MODULE_NOT_FOUND`。**
 
 **全局提供者必须能被容器无参实例化。** `APP_PIPE` / `APP_INTERCEPTOR` / `APP_FILTER`
 以及 `main.ts` 里 `app.get()` 取用的 `TraceMiddleware`，都要么 `@Optional()`，

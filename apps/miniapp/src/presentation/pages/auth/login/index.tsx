@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { getContainer } from '../../../../app/container'
 import { PAGE_PATHS } from '../../../../app/routes'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard } from '../../../components'
+import { KdyButton, KdyCard, KdyMascot } from '../../../components'
 import { KdyField } from '../../../components/KdyField'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useWechatAuth } from '../../../hooks'
@@ -62,7 +62,7 @@ export default function LoginPage() {
       <KdyCard className='kdy-auth__quick-card' elevated>
         <View className='kdy-auth__quick'>
           <View className='kdy-auth__quick-mark'>
-            <Text className='kdy-auth__quick-emoji'>🦆</Text>
+            <KdyMascot size={46} />
           </View>
           <View className='kdy-auth__quick-body'>
             <Text className='kdy-auth__quick-title'>微信一键登录</Text>

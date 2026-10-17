@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import { getContainer } from '../../../app/container'
 import type { AgentMessage, AgentReply, AgentSource } from '../../../domain/models/agent'
 import { navigateTo } from '../../../platform/navigation'
-import { KdyButton } from '../../components'
+import { KdyButton, KdyMascot } from '../../components'
 import { useStore } from '../../hooks'
 import './index.scss'
 
@@ -174,9 +174,7 @@ function MessageBubble({
   const reply = message.reply
   return (
     <View className='kdy-agent__row kdy-agent__row--agent' id={message.id}>
-      <View className='kdy-agent__avatar'>
-        <Text className='kdy-agent__avatar-emoji'>🦆</Text>
-      </View>
+      <KdyMascot size={34} plate className='kdy-agent__avatar' />
       <View className='kdy-agent__bubble kdy-agent__bubble--agent'>
         <AnswerBody text={message.text} />
 
@@ -207,9 +205,7 @@ function MessageBubble({
 function PendingBubble() {
   return (
     <View className='kdy-agent__row kdy-agent__row--agent'>
-      <View className='kdy-agent__avatar'>
-        <Text className='kdy-agent__avatar-emoji'>🦆</Text>
-      </View>
+      <KdyMascot size={34} plate className='kdy-agent__avatar' />
       <View className='kdy-agent__bubble kdy-agent__bubble--agent kdy-agent__bubble--pending'>
         <View className='kdy-agent__dots'>
           <View className='kdy-agent__dot' />
@@ -261,9 +257,7 @@ export default function AgentPage() {
   return (
     <View className='kdy-page kdy-agent'>
       <View className='kdy-agent__header'>
-        <View className='kdy-agent__avatar kdy-agent__avatar--header'>
-          <Text className='kdy-agent__avatar-emoji'>🦆</Text>
-        </View>
+        <KdyMascot size={40} plate />
         <View className='kdy-agent__header-main'>
           <Text className='kdy-agent__title'>可达鸭</Text>
           <Text className='kdy-agent__subtitle'>课表、余额、绑定流程，都能问我</Text>
@@ -276,6 +270,9 @@ export default function AgentPage() {
 
       {state.messages.length === 0 && (
         <View className='kdy-agent__welcome'>
+          <View className='kdy-agent__welcome-hero'>
+            <KdyMascot size={76} />
+          </View>
           <Text className='kdy-agent__welcome-title'>有什么可以帮你的？</Text>
           <Text className='kdy-agent__welcome-sub'>
             我的回答只依据两类东西：你自己的实时数据（按你的权限查），以及公开的模块说明与常见问题。

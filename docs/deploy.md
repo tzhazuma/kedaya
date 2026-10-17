@@ -98,8 +98,14 @@ docker push <registry-host>/<namespace>/kedaya-api:v1
 
 - **构建上下文不是仓库根** → `npm ci -w @kedaya/api` 找不到 workspace，镜像里没有
   `node_modules/@kedaya/contracts` 符号链接，启动即 `Cannot find module '@kedaya/contracts'`。
-- **基础镜像 Node < 22.18** → 运行时要在 Node 的类型剥离下直接加载
-  `packages/contracts` 的 **TS 源码**，低版本会解析失败。请沿用 Dockerfile 里的 `node:22.23-alpine`。
+- **基础镜像 Node < 22.18** → 运行时要用 Node 的类型剥离去加载
+  `packages/contracts`/`shared` 的 TS 源码（预加载补丁会把它改指到
+  `dist/packages/**` 的 CJS 副本，但这项能力本身要求 Node ≥ 22.18）。
+  请沿用 Dockerfile 里的 `node:22.23-alpine`。
+- **启动命令漏了 `-r /repo/services/api/register-workspace-modules.cjs`** →
+  `require('@kedaya/contracts')` 会顺着 node_modules 软链找到 TS 源码，
+  报 `ERR_MODULE_NOT_FOUND: .../packages/contracts/src/envelope`。云托管若在控制台
+  自定义了启动命令，要照着 Dockerfile 的 `CMD` 抄全（别只写 `node dist/.../main.js`）。
 - **在 Dockerfile 里写多条 `CMD`** → 只有最后一条生效。
 
 ---
@@ -757,6 +763,7 @@ node -e '
 | 部署后「健康检查失败」 | 容器端口是不是 `80`；健康检查路径是不是 `/health`；容器日志有没有启动异常（例如 `DATABASE_URL 未配置`） |
 | 启动日志 `Cannot find module '@kedaya/contracts'` | 构建上下文不是仓库根，`node_modules` 里的 workspace 符号链接没打进去 |
 | 启动日志 `Cannot find module '@kedaya/shared/src/index.ts'` 之类 | 基础镜像 Node < 22.18，类型剥离不可用 |
+| 启动日志 `ERR_MODULE_NOT_FOUND: .../packages/contracts/src/envelope` | 启动命令漏了 `-r register-workspace-modules.cjs` 预加载（见 §3 自查清单） |
 | 接口全 500，日志 `数据库连接失败` | `DATABASE_URL` 错、PG 白名单没放行、迁移没跑 |
 | 时间差 8 小时 | 容器时区被改成 UTC（应为 `Asia/Shanghai`） |
 | 小程序登录偶发失败 | 是否开启了「开放接口服务」（会让自管 `access_token` 超时） |

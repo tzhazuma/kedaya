@@ -87,6 +87,9 @@ export type { KdyListSkeletonProps } from './KdyListSkeleton'
 export { KdyModuleIcon } from './KdyModuleIcon'
 export type { KdyModuleIconTone } from './KdyModuleIcon'
 
+export { KdyMascot } from './KdyMascot'
+export type { KdyMascotProps } from './KdyMascot'
+
 export { KdyProgress } from './KdyProgress'
 export type { KdyProgressProps } from './KdyProgress'
 

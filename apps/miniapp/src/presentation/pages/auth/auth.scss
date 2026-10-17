@@ -32,7 +32,12 @@
   gap: $kdy-space-3;
 }
 
-/* 吉祥物方块：与宫格图标同一套语言（同色相底 + 同色相描边 + 墨色字形） */
+/*
+ * 吉祥物方块：与宫格图标同一套语言（浅色底 + 同色相描边 + 居中图案）。
+ *
+ * 底色是**白色**而不是品牌黄：里面是黄色的可达鸭贴图，
+ * 黄底 + 黄图案会糊成一团，白色方块反而让它像一枚贴纸，更抓眼。
+ */
 .kdy-auth__quick-mark {
   display: flex;
   flex-shrink: 0;
@@ -40,15 +45,10 @@
   justify-content: center;
   width: 52px;
   height: 52px;
-  border: 1px solid rgba($kdy-color-brand-strong, 0.3);
+  border: 1px solid rgba($kdy-color-brand, 0.28);
   border-radius: $kdy-radius-2xl;
-  background: $kdy-gradient-brand;
+  background-color: $kdy-color-surface;
   box-shadow: $kdy-shadow-accent;
-  font-size: 26px;
-  line-height: 1;
-}
-
-.kdy-auth__quick-emoji {
   line-height: 1;
 }
 
@@ -99,6 +99,19 @@
   flex-direction: column;
   gap: $kdy-space-3;
   margin-top: $kdy-space-5;
+}
+
+/*
+ * 页面级变体：`__actions` / `__tip` / `__error` 默认是给**卡片内部**用的
+ * （登录 / 注册 / 找回密码都把表单和按钮放在同一张卡里，由卡片给左右留白）。
+ * 但编辑资料这类页面把它们直接挂在 `.kdy-page` 下 —— 这时必须自己带 20px，
+ * 否则按钮会左右贴边、与上方卡片的左边缘对不齐（真机上一眼就能看出歪）。
+ */
+.kdy-auth__actions--page,
+.kdy-auth__tip--page,
+.kdy-auth__error--page {
+  margin-left: $kdy-space-5;
+  margin-right: $kdy-space-5;
 }
 
 .kdy-auth__inline {

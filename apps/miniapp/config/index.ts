@@ -70,8 +70,14 @@ const baseConfig: UserConfigExport<'webpack5'> = {
      *
      * `from` 相对 appPath（`apps/miniapp`），`to` 也相对 appPath
      * （见 `WebpackPlugin.getCopyWebpackPlugin` 的 `context: appPath`）。
+     *
+     * 吉祥物（可达鸭贴图）走同一条路：`theme/mascot.ts` 以
+     * `/assets/mascot/duck.png` 引用，避免被 webpack 内联成 base64 塞进主包 JS。
      */
-    patterns: [{ from: 'src/assets/wildlife', to: 'dist/assets/wildlife' }],
+    patterns: [
+      { from: 'src/assets/wildlife', to: 'dist/assets/wildlife' },
+      { from: 'src/assets/mascot', to: 'dist/assets/mascot' },
+    ],
     options: {},
   },
   framework: 'react',

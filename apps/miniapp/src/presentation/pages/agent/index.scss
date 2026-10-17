@@ -104,6 +104,13 @@
   box-shadow: $kdy-shadow-card;
 }
 
+/* 空态主视觉：一张大图先把"这是谁"说清楚，再谈能问什么 */
+.kdy-agent__welcome-hero {
+  display: flex;
+  justify-content: center;
+  margin-bottom: $kdy-space-3;
+}
+
 .kdy-agent__welcome-title {
   display: block;
   color: $kdy-color-ink;
@@ -190,27 +197,15 @@
   }
 }
 
+/*
+ * 助手头像：白色圆盘上的可达鸭贴图（由 `KdyMascot` 提供圆盘底）。
+ *
+ * 这里只做对齐 —— 圆盘与气泡第一行的视觉中线对齐，不要让它顶到气泡上沿。
+ * 之前这里是一个 `🦆` emoji：不同微信版本渲染成不同字形，34px 下几乎认不出，
+ * 现在换成固定贴图，和悬浮球、登录页用的是同一张。
+ */
 .kdy-agent__avatar {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid rgba($kdy-color-surface, 0.7);
-  border-radius: $kdy-radius-pill;
-  background: $kdy-gradient-brand;
-  box-shadow: 0 4px 10px rgba($kdy-color-brand-strong, 0.3);
-}
-
-.kdy-agent__avatar--header {
-  width: 38px;
-  height: 38px;
-}
-
-.kdy-agent__avatar-emoji {
-  font-size: $kdy-font-size-md;
-  line-height: 1;
+  margin-top: 2px;
 }
 
 /*
