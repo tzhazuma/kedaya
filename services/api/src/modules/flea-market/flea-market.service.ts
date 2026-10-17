@@ -1,5 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
-import type { Page } from '@kedaya/contracts';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { MINIAPP_PAGES, type Page } from '@kedaya/contracts';
 import {
   ConflictError,
   ForbiddenError,
@@ -7,6 +7,11 @@ import {
   UnauthenticatedError,
   ValidationError,
 } from '../../common/errors/app-error';
+import {
+  NOTIFICATION_PORT,
+  miniappDetailLink,
+  type NotificationPort,
+} from '../../common/notifications/notification.port';
 import {
   FLEA_CATEGORIES,
   FLEA_CONDITIONS,
@@ -33,10 +38,14 @@ import {
  *
  * 依赖用**显式 token** 注入（不使用 design:paramtypes），
  * 因此 `new FleaItemService(fakeRepo)` 就能在 vitest 里直接测，无需 DI 容器。
+ * `notifier` 是 `@Optional()` 的：纯领域单测可以不提供它。
  */
 @Injectable()
 export class FleaItemService {
-  constructor(@Inject(FLEA_ITEM_REPOSITORY) private readonly repo: FleaItemRepository) {}
+  constructor(
+    @Inject(FLEA_ITEM_REPOSITORY) private readonly repo: FleaItemRepository,
+    @Optional() @Inject(NOTIFICATION_PORT) private readonly notifier?: NotificationPort,
+  ) {}
 
   async list(query: Partial<FleaItemListQuery> = {}): Promise<Page<FleaItemModel>> {
     return this.repo.list({
@@ -115,7 +124,19 @@ export class FleaItemService {
         item.status === FLEA_STATUS.reserved ? '该商品已被预定' : '该商品已售出',
       );
     }
-    return this.repo.applyState(id, { status: FLEA_STATUS.reserved, reservedById: actorId });
+    const updated = await this.repo.applyState(id, { status: FLEA_STATUS.reserved, reservedById: actorId });
+
+    // 通知卖家：有人想要。预定是"线下当面交易"的起点，
+    // 卖家很可能不会一直盯着列表页，这条通知是他唯一的及时提醒。
+    await this.notifySafely({
+      userId: item.sellerId,
+      title: '有人预定了你的闲置',
+      body: `「${item.title}」被同学预定了，请尽快联系确认交易方式。`,
+      source: 'flea-market',
+      link: miniappDetailLink(MINIAPP_PAGES.fleaDetail, id),
+    });
+
+    return updated;
   }
 
   /** 卖家解除预定（买家反悔 / 卖家改主意） */
@@ -125,7 +146,21 @@ export class FleaItemService {
     if (item.status !== FLEA_STATUS.reserved) {
       throw new ConflictError('该商品当前没有被预定');
     }
-    return this.repo.applyState(id, { status: FLEA_STATUS.onSale, reservedById: null });
+
+    const updated = await this.repo.applyState(id, { status: FLEA_STATUS.onSale, reservedById: null });
+
+    // 通知原预定人：预定被解除了。不发的话，买家会一直等一个不会到来的交易。
+    if (item.reservedById) {
+      await this.notifySafely({
+        userId: item.reservedById,
+        title: '你的预定已被解除',
+        body: `「${item.title}」的卖家解除了预定，商品重新上架。`,
+        source: 'flea-market',
+        link: miniappDetailLink(MINIAPP_PAGES.fleaDetail, id),
+      });
+    }
+
+    return updated;
   }
 
   /** 卖家标记已售出（终态） */
@@ -144,6 +179,20 @@ export class FleaItemService {
   private assertOwner(item: FleaItemModel, actorId: string | undefined, message: string): void {
     if (!actorId) throw new UnauthenticatedError('请先登录');
     if (item.sellerId !== actorId) throw new ForbiddenError(message);
+  }
+
+  /**
+   * 写站内信（best-effort）。
+   * 预定/解除预定这样的**状态已经落库**，通知失败只意味着"对方晚点才知道"，
+   * 绝不能因此让请求失败（用户重试会造成状态机二次跃迁）。
+   */
+  private async notifySafely(input: Parameters<NotificationPort['notify']>[0]): Promise<void> {
+    if (!this.notifier) return;
+    try {
+      await this.notifier.notify(input);
+    } catch {
+      // 已在 NotificationService 内记日志；这里只保证不向上抛
+    }
   }
 }
 

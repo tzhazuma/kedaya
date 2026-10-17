@@ -1,5 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
-import type { Page } from '@kedaya/contracts';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { MINIAPP_PAGES, type Page } from '@kedaya/contracts';
 import {
   ConflictError,
   ForbiddenError,
@@ -7,6 +7,11 @@ import {
   UnauthenticatedError,
   ValidationError,
 } from '../../common/errors/app-error';
+import {
+  NOTIFICATION_PORT,
+  miniappDetailLink,
+  type NotificationPort,
+} from '../../common/notifications/notification.port';
 import { anonymousHandle } from '../auth/domain/verification-code';
 import {
   FORUM_BOARDS,
@@ -37,10 +42,14 @@ import {
  *   · 匿名帖不存 authorId ⇒ 作者不可辨 ⇒ 关闭 / 删除一律 FORBIDDEN（明确文案）。
  *
  * 依赖用**显式 token** 注入，因此 `new ForumPostService(fakeRepo)` 可直接在 vitest 里测。
+ * `notifier` 是 `@Optional()` 的：纯领域单测可以不提供它。
  */
 @Injectable()
 export class ForumPostService {
-  constructor(@Inject(FORUM_POST_REPOSITORY) private readonly repo: ForumPostRepository) {}
+  constructor(
+    @Inject(FORUM_POST_REPOSITORY) private readonly repo: ForumPostRepository,
+    @Optional() @Inject(NOTIFICATION_PORT) private readonly notifier?: NotificationPort,
+  ) {}
 
   /** 版块清单 + 每版块帖子数（按契约顺序补齐 0 的后端计算） */
   async boards(): Promise<ForumBoardStat[]> {
@@ -115,8 +124,25 @@ export class ForumPostService {
       body: normalizeBody(input.body, 2000, '回复内容'),
     });
 
-    if (!anonymous) return reply;
-    return this.repo.updateReply(reply.id, { anonHandle: anonymousHandle(`${reply.id}:${actorId}`) });
+    const finalReply = anonymous
+      ? await this.repo.updateReply(reply.id, { anonHandle: anonymousHandle(`${reply.id}:${actorId}`) })
+      : reply;
+
+    // 通知楼主：有三条排除规则，每条都对应一种"通知会变成骚扰"的情形 ——
+    //   1. 匿名帖没有 authorId（平台也不知道作者是谁），无法通知；
+    //   2. 自己回复自己，不必通知；
+    //   3. 楼主已关闭主题时上面已经抛错了，走不到这里。
+    if (post.authorId && post.authorId !== actorId) {
+      await this.notifySafely({
+        userId: post.authorId,
+        title: '你的主题收到新回复',
+        body: `「${post.title}」有新回复，去看看。`,
+        source: 'forum',
+        link: miniappDetailLink(MINIAPP_PAGES.forumDetail, id),
+      });
+    }
+
+    return finalReply;
   }
 
   /** 关闭主题（仅实名作者；匿名帖作者不可辨） */
@@ -153,6 +179,21 @@ export class ForumPostService {
       throw new ForbiddenError(`匿名主题不保存作者身份，出于隐私保护无法${action}`);
     }
     if (post.authorId !== actorId) throw new ForbiddenError(`只能${action}自己发布的内容`);
+  }
+
+  /**
+   * 写站内信（best-effort）。
+   *
+   * 回复本身已经落库，通知失败只意味着"楼主晚点才知道"。
+   * 这里额外包一层 try/catch，保证换了 NotificationPort 实现也不会破坏这条规则。
+   */
+  private async notifySafely(input: Parameters<NotificationPort['notify']>[0]): Promise<void> {
+    if (!this.notifier) return;
+    try {
+      await this.notifier.notify(input);
+    } catch {
+      // 已在 NotificationService 内记日志
+    }
   }
 }
 

@@ -2,8 +2,14 @@ import { createListGroupBuysUseCase } from '../application/groupbuy/listGroupBuy
 import type { ListGroupBuysUseCase } from '../application/groupbuy/listGroupBuys'
 import { createGroupBuyDetailUseCase } from '../application/groupbuy/groupBuyDetail'
 import type { GroupBuyDetailUseCase } from '../application/groupbuy/groupBuyDetail'
+import { createCreateGroupBuyUseCase } from '../application/groupbuy/createGroupBuy'
+import type { CreateGroupBuyUseCase } from '../application/groupbuy/createGroupBuy'
+import { createMyGroupBuysUseCase } from '../application/groupbuy/myGroupBuys'
+import type { MyGroupBuysUseCase } from '../application/groupbuy/myGroupBuys'
 import { createJoinGroupBuyUseCase } from '../application/groupbuy/joinGroupBuy'
 import type { JoinGroupBuyUseCase } from '../application/groupbuy/joinGroupBuy'
+import { createNotificationUseCases } from '../application/notification/notificationUseCases'
+import type { NotificationUseCases } from '../application/notification/notificationUseCases'
 import { createSessionUseCase } from '../application/auth/session'
 import type { SessionUseCase } from '../application/auth/session'
 import { createAuthAccountUseCase } from '../application/auth/authAccount'
@@ -30,6 +36,8 @@ import { createApiClient, createAuthRefresher, createTaroHttpPort, createTracePo
 import type { ApiClient } from '../data/api'
 import { createHttpGroupBuyRepository } from '../data/repositories/httpGroupBuyRepository'
 import { createMockGroupBuyRepository } from '../data/repositories/mockGroupBuyRepository'
+import { createHttpNotificationRepository } from '../data/repositories/httpNotificationRepository'
+import { createMockNotificationRepository } from '../data/repositories/mockNotificationRepository'
 import { createHttpAuthRepository } from '../data/repositories/httpAuthRepository'
 import { createMockAuthRepository } from '../data/repositories/mockAuthRepository'
 import { createHttpFleaMarketRepository } from '../data/repositories/httpFleaMarketRepository'
@@ -55,6 +63,8 @@ import { createMockAgentRepository } from '../data/repositories/mockAgentReposit
 import { mockNow } from '../data/mock/fixtures'
 import { createAvatarPickerPort } from '../platform/avatarPicker'
 import { createWechatCodePort } from '../platform/wechatLogin'
+import { setUnreadBadge } from '../platform/tabBar'
+import { PAGE_PATHS } from './routes'
 import type { MockGroupBuyRepository } from '../data/repositories/mockGroupBuyRepository'
 import { createMemoryStorage } from '../data/storage/memoryStorage'
 import { createSessionStore, createTokenStore } from '../data/storage/sessionStore'
@@ -72,6 +82,7 @@ import type { FleaItemRepository } from '../domain/ports/fleaMarketRepository'
 import type { ForumRepository } from '../domain/ports/forumRepository'
 import type { LostFoundRepository } from '../domain/ports/lostFoundRepository'
 import type { GroupBuyRepository } from '../domain/ports/groupbuyRepository'
+import type { NotificationRepository } from '../domain/ports/notificationRepository'
 import type { AuthRefresherPort, SessionStorePort, TokenStorePort } from '../domain/ports/sessionPort'
 import type { TracePort } from '../domain/ports/tracePort'
 import type { IdentityRepository } from '../domain/ports/identityRepository'
@@ -127,6 +138,7 @@ export interface AppContainer {
   /** 本地头像选择（平台能力：`chooseAvatar` → 压缩后的 data URL） */
   avatarPicker: AvatarPickerPort
   groupBuyRepository: GroupBuyRepository
+  notificationRepository: NotificationRepository
   authRepository: AuthRepository
   fleaMarketRepository: FleaItemRepository
   errandRepository: ErrandTaskRepository
@@ -146,7 +158,10 @@ export interface AppContainer {
     auth: AuthAccountUseCase
     listGroupBuys: ListGroupBuysUseCase
     groupBuyDetail: GroupBuyDetailUseCase
+    createGroupBuy: CreateGroupBuyUseCase
     joinGroupBuy: JoinGroupBuyUseCase
+    myGroupBuys: MyGroupBuysUseCase
+    notifications: NotificationUseCases
     fleaMarket: FleaMarketUseCases
     errand: ErrandUseCases
     buddy: BuddyUseCases
@@ -185,6 +200,15 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
   const sessionStore = createSessionStore(cache)
   const tokenStore = createTokenStore(sessionStore)
 
+  /**
+   * 当前登录用户 —— 六个业务模块都需要它来判定「这是我发布的 / 我能否操作」。
+   *
+   * 做成**函数**而不是快照：用户可能在页面停留期间登录/登出，
+   * 函数形式能让 `list.load()` 或详情页刷新时立刻拿到最新的主体，
+   * 而不是停留在容器创建那一刻的旧值。
+   */
+  const viewerId = (): string | null => sessionStore.getSnapshot().profile?.id ?? null
+
   const http = createTaroHttpPort()
   const refresher = createAuthRefresher({ baseUrl: env.apiBaseUrl, http, trace })
   const apiClient = createApiClient({
@@ -200,7 +224,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
   })
 
   const mockRepository = env.useMock
-    ? createMockGroupBuyRepository({ latencyMs: env.mockLatencyMs, now: clock.now })
+    ? createMockGroupBuyRepository({ latencyMs: env.mockLatencyMs, now: clock.now, viewerId })
     : null
 
   const groupBuyRepository: GroupBuyRepository =
@@ -227,15 +251,6 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     wechatCode,
     now: clock.now,
   })
-
-  /**
-   * 当前登录用户 —— 六个业务模块都需要它来判定「这是我发布的 / 我能否操作」。
-   *
-   * 做成**函数**而不是快照：用户可能在页面停留期间登录/登出，
-   * 函数形式能让 `list.load()` 或详情页刷新时立刻拿到最新的主体，
-   * 而不是停留在容器创建那一刻的旧值。
-   */
-  const viewerId = (): string | null => sessionStore.getSnapshot().profile?.id ?? null
 
   const fleaMarketRepository: FleaItemRepository = env.useMock
     ? createMockFleaMarketRepository({ cache, viewerId, latencyMs: env.mockLatencyMs, now: clock.now })
@@ -376,10 +391,43 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     clock,
     cacheKeyFor: (id) => `${StorageKeys.groupBuyDetailCache}:${id}`,
   })
+  const createGroupBuy = createCreateGroupBuyUseCase({
+    repository: groupBuyRepository,
+    session: sessionStore,
+    clock,
+    // 新建的拼单必须能立刻出现在列表里：列表用例清掉状态后由页面重新 load
+    onCreated: () => listGroupBuys.reset(),
+  })
   const joinGroupBuy = createJoinGroupBuyUseCase({
     repository: groupBuyRepository,
     session: sessionStore,
     clock,
+  })
+  /** 「我的资产」页专用：独立 state + 独立缓存 key，避免与拼单广场互相污染 */
+  const myGroupBuys = createMyGroupBuysUseCase({
+    repository: groupBuyRepository,
+    cache,
+    clock,
+    cacheKey: `${StorageKeys.groupBuyListCache}:mine`,
+  })
+
+  /**
+   * 站内信：未读数变化时同步 tabBar 红点。
+   *
+   * `setUnreadBadge` 是唯一调用 tabBar 角标 API 的地方（`platform/tabBar.ts`），
+   * 且它内部吞掉了 H5 / 旧基础库的报错 —— 红点失败不能影响页面。
+   */
+  const notificationRepository: NotificationRepository = env.useMock
+    ? createMockNotificationRepository({ latencyMs: env.mockLatencyMs, now: clock.now })
+    : createHttpNotificationRepository(apiClient)
+
+  const notifications = createNotificationUseCases({
+    repository: notificationRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.notificationListCache,
+    knownPaths: Object.values(PAGE_PATHS),
+    onUnreadChange: setUnreadBadge,
   })
 
   return {
@@ -394,6 +442,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     wechatCode,
     avatarPicker,
     groupBuyRepository,
+    notificationRepository,
     authRepository,
     fleaMarketRepository,
     errandRepository,
@@ -412,7 +461,10 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       auth,
       listGroupBuys,
       groupBuyDetail,
+      createGroupBuy,
       joinGroupBuy,
+      myGroupBuys,
+      notifications,
       fleaMarket,
       errand,
       buddy,

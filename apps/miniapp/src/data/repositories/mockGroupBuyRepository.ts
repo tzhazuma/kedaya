@@ -3,6 +3,7 @@ import { err, ok, type Result } from '@kedaya/shared'
 import type { GroupBuy } from '../../domain/models/groupbuy'
 import type { RepositoryError } from '../../domain/ports/errors'
 import type {
+  CreateGroupBuyInput,
   GroupBuyPage,
   GroupBuyRepository,
   JoinGroupBuyInput,
@@ -32,6 +33,8 @@ export interface MockGroupBuyRepositoryOptions {
   seed?: readonly GroupBuy[]
   latencyMs?: number
   now?: () => Date
+  /** 当前登录用户 —— 只用于「我的拼单」筛选 */
+  viewerId?: () => string | null
 }
 
 function delay(ms: number): Promise<void> {
@@ -44,7 +47,9 @@ function delay(ms: number): Promise<void> {
 export function createMockGroupBuyRepository(
   options: MockGroupBuyRepositoryOptions = {},
 ): MockGroupBuyRepository {
-  const db: MemoryDatabase = createMemoryDatabase(options.seed ?? MOCK_GROUP_BUYS)
+  const db: MemoryDatabase = createMemoryDatabase(options.seed ?? MOCK_GROUP_BUYS, {
+    ...(options.viewerId === undefined ? {} : { viewerId: options.viewerId }),
+  })
   const now = options.now ?? mockNow
   let latencyMs = options.latencyMs ?? 220
   let remainingFailures = 0
@@ -70,6 +75,18 @@ export function createMockGroupBuyRepository(
         const found = db.find(id)
         if (found === null) return err({ code: 'NOT_FOUND', message: '拼单不存在或已被下架' })
         return ok(found)
+      })
+    },
+
+    create(input: CreateGroupBuyInput): Promise<Result<GroupBuy, RepositoryError>> {
+      return guard(() => {
+        // 归属必须来自会话：mock 里跟真后端一样"不信请求体"。
+        // `initiatorId` 由用例层从会话填好，拿不到就干脆不创建（等价于未登录）。
+        const initiatorId = input.initiatorId
+        if (initiatorId === undefined || initiatorId === '') {
+          return err({ code: 'UNAUTHENTICATED', message: '请先登录后再发起拼单' })
+        }
+        return ok(db.create({ ...input, initiatorId }, now()))
       })
     },
 

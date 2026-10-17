@@ -1,5 +1,7 @@
 import { Text, View } from '@tarojs/components'
 import { useDidShow, useRouter, useShareAppMessage } from '@tarojs/taro'
+import Progress from '@taroify/core/progress'
+import '@taroify/core/progress/style'
 import { fenToYuan } from '@kedaya/shared'
 import { useEffect, useState } from 'react'
 
@@ -19,8 +21,6 @@ import {
 import { KdyButton, KdyCard, KdyEmpty, KdyTag } from '../../../components'
 import { useStore } from '../../../hooks'
 import './index.scss'
-import Progress from '@taroify/core/progress'
-import '@taroify/core/progress/style'
 import { KdyHeading } from '../../../components/KdyHeading'
 
 /**

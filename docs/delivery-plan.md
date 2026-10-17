@@ -1,0 +1,271 @@
+# 小程序上线交付计划（可执行轮次）
+
+> 上游：[`docs/architecture/06-roadmap.md`](./architecture/06-roadmap.md)（M0–M4 战略路线，管"为什么这个顺序"）。
+> 本文管**执行**：每一轮改什么文件、做完怎么验证、门禁怎么过。
+> 冻结契约 [`00-FROZEN-CONTRACT.md`](./architecture/00-FROZEN-CONTRACT.md) 仍然是最高约束，本文不改变它。
+
+版本：`v1` · 2026-10-17 · 范围：`apps/miniapp` + `services/api`（Web 门户不在本轮范围）
+
+---
+
+## 0. 现状盘点（2026-10-17，逐条可复核）
+
+### 0.1 已经「真能用」的（有业务逻辑的后端 + 有小程序页面）
+
+| 模块 | 后端 | 小程序页面 | 状态 |
+| --- | --- | --- | --- |
+| `groupbuy` 拼单 | 创建/参团/成团（含行锁幂等） | 列表、详情 | ⚠️ **缺"发起拼单"页** |
+| `flea-market` 跳蚤 | 发布/筛选/状态流转 | 列表、发布、详情 | ✅ |
+| `errand` 跑腿 | 发布/接单/送达 | 列表、发布、详情 | ✅ |
+| `buddy` 找搭子 | 招募/加入/关闭 | 列表、发布、详情 | ✅ |
+| `lost-found` 失物招领 | 双向登记/匹配 | 列表、发布、详情 | ✅ |
+| `forum` 论坛 | 发帖/回复/匿名/治理 | 列表、发帖、详情 | ✅ |
+| `dorm-harmony` 宿舍矛盾 | 匿名提交/二次同意/追踪码 | 提交 + 凭码跟踪 | ⚠️ 缺调解员侧 |
+| `auth` 身份 | 两級身份 + 校园绑定 + 实名脱敏 | 绑定页 | ✅ |
+| `schedule` 课表 | 今日/本周/同步/冲突 | 今日 + 本周 | ✅ |
+| `campus-card` 校园卡 | 余额/流水/异常/挂失 | 完整 | ✅ |
+| `profile` 我的 | 隐私开关/同意/导出 | 我的 + 编辑 + 隐私与数据 | ✅ |
+| `agent` 可达鸭 | facts-first + 白名单 RAG | 全局 FAB + 页面 | ✅ |
+| `notifications` | 站内信 CRUD（**无人写入**） | 仅"订阅授权" | ❌ 站内信全空 |
+
+### 0.2 只有脚手架、端上没有页面的（7 个）
+
+`takeout-guard` 偷外卖 · `canteen` 食堂营养 · `faq` 常见问题 · `wildlife` 猫鸟黑天鹅 ·
+`techpie` TechPie 整合 · `ai-portrait` AI 校园画像 · `wellbeing` 心理治疗
+
+> 后端这 7 个都是 `scripts/scaffold.mjs` 生成的通用 CRUD：
+> `GET/POST /items`、`GET/PATCH/DELETE /items/:id`，每个约 220–380 行，**没有领域规则**。
+> 也就是说：**能存能查，但不是产品功能**。
+
+### 0.3 页面级缺失（已交付模块内部）
+
+> 状态截至 2026-10-17 本轮（R0+R1）结束：已修复项标注 ✅ 并给出落点。
+
+| # | 缺失 | 证据 | 本轮状态 |
+| --- | --- | --- | --- |
+| 1 | **无法发起拼单** | `presentation/pages/groupbuy/` 只有 `list` + `detail` | ✅ 新增 `groupbuy/create`（列表悬浮入口 + 登录门禁） |
+| 2 | **站内信全空** | `messages/index.tsx` 只有订阅按钮；后端无任何模块写 `Notification` | ✅ 后端 5 个写入点 + 小程序真实列表/未读/tabBar 红点 |
+| 3 | **发现 tab 是"平台能力演示台"** | `discover/index.tsx` 全是扫码/地图/分享的试跑按钮 | ✅ 真实内容在上，能力试跑收进 `KdyDemoTools` |
+| 4 | **无图片** | 全仓库无 `chooseImage`/`chooseMedia`/`uploadFile` | ⛔ 未做（R2）。容器无持久化存储 → 必须接 COS |
+| 5 | **无举报入口** | UI 层 0 处「举报」 | ⛔ 未做（R2） |
+| 6 | **无分享** | 只有 `groupbuy/detail` 一个页面上报分享 | ⛔ 未做（R2） |
+| 7 | **无"我的资产"** | 我发布的/我拼的/我接的单，散在页面里靠筛选 | ⚠️ 部分完成：`profile/assets` 内联拼单两角色 + 其余模块入口（不做假聚合） |
+| 8 | **无全局搜索** | 搜索框各列表页各写一遍，不跨模块 | ⛔ 未做 |
+| 9 | **无骨架屏/下拉刷新** | 只有 `groupbuy/list` 有 | ⛔ 未做（R5）；消息页本轮已补下拉刷新 |
+| 10 | **无用户协议 / 隐私政策页** | 小程序审核必需项 | ✅ `pages/legal/{terms,privacy}`，文案单一真相来源 |
+
+### 0.4 工程化 / 上线缺失
+
+| # | 缺失 | 影响 | 本轮状态 |
+| --- | --- | --- | --- |
+| 1 | **没有 `prisma/seed.ts`** | `npm run prisma:seed` 直接失败；所有列表都是空的 | ✅ 已写并跑通（幂等；生产需 `SEED_FORCE=1`） |
+| 2 | **没有 compose 文件** | `local-development.md` 让用 Docker 起 PG，但仓库里没有 | ✅ 实际存在 `services/api/docker-compose.yml`（盘点有误）；已修正文档命令指向它，**不再新增第二份**（容器名冲突） |
+| 3 | **无部署文档 / 生产配置** | 没有环境变量清单、迁移流程、HTTPS/域名说明 | ✅ `docs/deploy.md`；并补了 `GET /health` 与「生产缺 `DATABASE_URL` 即启动失败」的护栏 |
+| 4 | **无分包** | 补模块后必然超限 | ⛔ 本轮 `dist` 1.6 MB，仍在上限内；分包挪到 R6（见 R0 表格里的取舍说明） |
+| 5 | **无错误上报** | 线上白屏无法发现 | ⛔ 未做（R6）。当前靠 `X-KedaYa-Trace` 关联日志 |
+| 6 | **无审核材料清单** | 提交审核会来回被拒 | ✅ `docs/deploy.md` §10 有提审前自查清单与页面路径 |
+
+### 0.5 诚实的边界（我做不到的）
+
+| 项 | 为什么 | 谁来做 |
+| --- | --- | --- |
+| 真实校园数据（课表/余额/CAS） | 需要**学校官方授权**；已有 `live` 适配器，等授权 | 你去跟信息办谈 |
+| 真机视觉验收 | 本机微信 IDE 服务端口关闭 | 你导入 `apps/miniapp/dist` |
+| 小程序**发布**（提审、类目、备案域名、HTTPS 证书） | 需要企业主体 + 微信后台操作 | 你 |
+| 高敏模块的**合规门禁** G1–G3（隐私政策复核、同意文案、PIA） | 需要法务/心理中心排期（契约 §4.3 A3.17） | 你去指派 |
+| 高敏模块上线 | 契约硬门禁：G1–G3 未过**不发布** | — |
+
+---
+
+## 1. 目标的可检验定义
+
+| 口号 | 可检验的判据 |
+| --- | --- |
+| **完备功能** | 19 个模块中，端上可用的 ≥ 15 个；余下 4 个（`techpie`/`ai-portrait`/`wellbeing` 的敏感部分）在页面上**如实说明"为什么现在不能用"** + 给出下一步动作，不留死路 |
+| **UI 好看** | 每个页面有：清晰标题与副标题、统一卡片节奏、空态有插画与动作、无裸文字列表；令牌零硬编码色值（已有 `wxss-safety.test.ts` 与令牌注入保障） |
+| **交互丝滑** | 每个列表页有骨架屏 + 下拉刷新 + 触底加载；页面冷启动先出缓存（契约 §8，已有基础）；关键写操作 ≤ 1 次确认；无 300ms 以上的"无反馈点击" |
+| **可上线部署** | 干净 clone 后 4 条命令能起本地环境（含演示数据）；`docs/deploy.md` 覆盖生产环境变量、迁移、回滚；主包 < 2MB；隐私政策/用户协议页存在 |
+| **门禁** | 每轮结束：api/miniapp/web 的 typecheck+test+lint 全绿 + `npm run build:weapp` 成功 |
+
+---
+
+## 2. 差距优先级（为什么是这个顺序）
+
+```mermaid
+flowchart TB
+  subgraph P0["P0 · 不上线就不能算" ]
+    seed["演示数据 seed<br/>（空 App 看不出好坏）"]
+    infra["docker-compose + 部署文档"]
+    legal["用户协议 / 隐私政策页"]
+    split["分包（否则加模块必超限）"]
+  end
+  subgraph P1["P1 · 主链路断裂"]
+    gb["发起拼单"]
+    msg["站内信落地 + 未读红点"]
+    mine["我的资产（我发的/我拼的/我接的）"]
+    discover["发现 tab 变真实内容页"]
+  end
+  subgraph P2["P2 · 内容能力"]
+    img["图片上传（压缩 + EXIF 剥离）"]
+    report["举报 UI"]
+    share["分享转发卡片"]
+  end
+  subgraph P3["P3 · 补齐模块"]
+    m_faq["faq 常见问题"]
+    m_canteen["canteen 食堂营养"]
+    m_takeout["takeout-guard 偷外卖"]
+    m_wild["wildlife 猫鸟黑天鹅"]
+    m_safe["wellbeing / ai-portrait 安全子集"]
+    m_techpie["techpie 诚实占位"]
+  end
+  subgraph P4["P4 · 体验打磨"]
+    polish["骨架屏 / 动效 / 空态插画 / 深色模式 / 无障碍"]
+  end
+  P0 --> P1 --> P2 --> P3 --> P4
+```
+
+**排序理由**
+
+1. **P0 里最"划算"的是 seed**：它是唯一一个能立刻把"空壳"变成"像模像样"的动作，且后续每一轮的视觉打磨都要靠它来验收。
+2. **P1 在 P3 之前**：缺少"发起拼单"和"站内信"是**主链路断裂**（首页主打拼单却发不了；消息 tab 点进去是空的）。断裂的主链路比缺失的边缘模块严重得多。
+3. **P2 在 P3 之前**：图片是跳蚤/失物/论坛**从"能存文字"到"能真用"**的门槛。不先解决，补再多模块也只是多几个文字列表。
+4. **P3 内部按"合规风险从低到高"**：faq/canteen/takeout/wildlife 是低敏；`wellbeing`/`ai-portrait` 是**最高敏**，必须最后，且只能做合规允许的子集。
+5. **P4 放最后但要每轮顺手做**：组件层先留好扩展位（如 `KdyCard` 的 `elevated`），最后统一补齐动效与插画，避免反复改页面。
+
+---
+
+## 3. 轮次计划
+
+> 每轮 = 一次可提交的增量；结束时跑固定门禁（§4）。
+> 每轮产物都**可独立上线**，不存在"做一半的中间态"。
+
+### R0 · 地基补齐 —— ✅ 已完成（2026-10-17）
+
+| 产物 | 文件 | 验收 | 结果 |
+| --- | --- | --- | --- |
+| 本地一键起 PG | `services/api/docker-compose.yml` | `docker compose -f services/api/docker-compose.yml up -d postgres` 后连接串直接可用 | ✅ 沿用既有 compose（**未新增第二个 compose**：根目录再放一份会让容器名 `kedaya-postgres` 冲突。已把 `docs/local-development.md` 的命令改成指向既有文件） |
+| 演示数据 | `services/api/prisma/seed.ts` | `npm run prisma:seed` 成功；每个列表页有 ≥ 8 条中文校园数据 | ✅ 幂等可重复执行；生产环境除非 `SEED_FORCE=1` 否则拒绝；覆盖十余类数据 + 6 个演示账号 |
+| 生产部署说明 | `docs/deploy.md` | 环境变量逐条说明；含迁移/回滚/小程序发布流程 | ✅ 12 节，含验收 curl 清单、故障排查表、以及**未验证项诚实清单** |
+| 容器化 | `services/api/Dockerfile` + 根 `.dockerignore` | 多阶段构建、非 root、单 `CMD`、`TZ=Asia/Shanghai`、`PORT=80` | ⚠️ **未本地验证**（交付本机没有 Docker）；已在 `docs/deploy.md` 给出验证步骤 |
+| 健康检查 | `services/api/src/main.ts` 的 `GET /health` | 云托管探针可用；**只探进程存活，不查库** | ✅ 实测 200（`curl -i localhost:3999/health`） |
+| 生产配置自检 | `prisma.service.ts` + `prisma.config.ts` | 生产环境缺 `DATABASE_URL` 时**启动即报错**，而不是静默空连接 | ✅ 这是本轮新加的护栏（原先会以空串启动、之后每个请求 500） |
+| 分包配置 | `config/index.ts` + `app.config.ts` | 主包 < 2MB 且 `dist` 出现 `subPackages` | ❌ **本轮不做**：主包 1.6 MB 仍在上限内，而分包要把 `presentation/pages/**` 整体搬家、改动所有页面的相对 import 深度与 `routes.test.ts` 断言，风险 > 收益。已记入 R6 |
+| 法务页面 | `pages/legal/{terms,privacy}/index.tsx` | 「我的」页可进入；审核材料可引用 | ✅ 文案集中在 `presentation/content/legal.ts`（与隐私设置页共用），含 `TODO(上线)` 标注待补项 |
+
+### R1 · 主链路断裂修复 —— ✅ 已完成（2026-10-17）
+
+| 产物 | 验收 | 结果 |
+| --- | --- | --- |
+| 发起拼单（`groupbuy/create`） | 能创建 → 出现在列表首位 → 分享出去能参团 | ✅ 后端归属只认 JWT（实测请求体里的 `ownerId` 被忽略）；小程序端单价「元 → 整数分」、截止时间用相对预设（不会选中过去）；列表页有悬浮发起入口 + 登录门禁 |
+| 站内信真实落地 | 参团/成团/被接单时**后端写入**；消息页有真实列表 + 未读 + tabBar 红点 | ✅ 后端 5 个写入点（拼单参团/成团、跳蚤预订/解除、跑腿接单/送达/完成、论坛回复），`notify` best-effort（吞异常 + 记日志，主流程不会因通知失败 500）；小程序端真实列表 + 未读筛选 + 全部已读 + 点击按 `link` 跳转（未知页面不可点）+ tabBar 红点 |
+| 我的资产 | 「我的」页进入"我发起的/我参与的/我发布的/我接的单"三合一，每类都有空态与动作 | ⚠️ **按实际情况收窄**：`profile/assets` 内联「我的拼单（发起/参与）」，其余模块给各列表页入口（各模块列表页已有自己的「我的」筛选）。不做假聚合 —— 把五个模块硬塞进一页只会让每条都看不全 |
+| 发现 tab 改造 | 首页/发现不再是演示台；平台能力试跑收进 `KdyDemoTools` | ✅ 发现页现在真实内容在上（六个生活模块 + 校园服务入口），能力试跑与差异矩阵收进折叠的 `KdyDemoTools`；同时**修掉了一句已经在骗人的文案**（旧版写着"拼单是当前唯一跑通的业务模块"） |
+| 拼单后端富视图 | 列表/详情返回可展示视图而非数据库行 | ✅ 顺带修掉一个**静默 bug**：小程序端 `httpGroupBuyRepository` 原先把后端行直接强转成富形状 `GroupBuy`，字段全 `undefined`。现在两边同名同义，且 `description`/`pickupPlace` 的 `null` 会归一化成 `''` |
+
+### R2 · 内容与媒体能力
+
+| 产物 | 验收 |
+| --- | --- |
+| 图片上传链路 | 后端上传端点（适配器模式：本地磁盘 → 可换 OSS）+ 压缩到 1600px + **EXIF GPS 剥离**（契约 A2.5） |
+| 三处接入 | 跳蚤发布可传图；失物招领可传图；论坛发帖可传图；详情页可预览大图 |
+| 举报 UI | 跳蚤/论坛/跑腿详情可举报；举报后该内容对举报人不可见 |
+| 分享 | 跳蚤/拼单/失物详情可转发卡片（带参数直达） |
+
+### R3 · 补齐低敏模块（4 个）
+
+`faq`（与可达鸭知识库同源，避免两份答案）→ `canteen` → `takeout-guard` → `wildlife`。
+每个模块：后端补领域逻辑（不能停在通用 CRUD）+ 小程序列表/发布/详情三页 + 单测。
+
+### R4 · 高敏模块的安全子集
+
+| 模块 | 做什么 | 不做什么（并说明原因） |
+| --- | --- | --- |
+| `wellbeing` | 危机资源出口（首页两次点击内可达）、预约**意向**登记、自助资源 | **不做量表解读**（PHQ-9 等需心理中心背书 + 值班 SLA）、不做真实排班预约 |
+| `ai-portrait` | 默认关闭的开关 + 可解释标签展示 + 关闭即级联删除 | 不生成画像（无行为数据积累 + 需 PIA） |
+| `dorm-harmony` 补齐 | 进度查询、调解员侧骨架 | 不做跨案件检索 |
+
+> 这一轮的产物**默认不可发布**：页面上明确标注"待合规审批（G1–G3）"，代码就绪但 `CAMPUS/WELLBEING_ENABLED` 类开关关闭。
+
+### R5 · 体验打磨（好看 + 丝滑）
+
+骨架屏组件化 → 下拉刷新与触底加载统一到 `application/common/listUseCase` → 列表入场与按钮反馈动效 →
+原创吉祥物空态插画（**ADR 0005：不得使用宝可梦素材**）→ 深色模式（令牌已支持）→ 对比度与无障碍。
+每个页面按清单过一遍，逐页截图对比。
+
+### R6 · 上线准备
+
+分包细化与按需注入 → 图片懒加载与 CDN → 错误上报与性能埋点 →
+审核材料（类目、截图、隐私说明、域名白名单）→ 压测与容量评估。
+
+---
+
+## 4. 每轮固定门禁
+
+```bash
+npm run typecheck -w @kedaya/api && npm run test -w @kedaya/api && npm run lint -w @kedaya/api
+npm run typecheck -w @kedaya/miniapp && npm run test -w @kedaya/miniapp && npm run lint -w @kedaya/miniapp
+npm run build:weapp
+npm run typecheck -w @kedaya/web && npm run test -w @kedaya/web && npm run lint -w @kedaya/web
+```
+
+外加两条本仓特有的硬规则（已有测试守着，别踩）：
+
+- `apps/miniapp/src/presentation/theme/__tests__/wxss-safety.test.ts`：禁止 `> :first-child` / 裸 `*` 等
+  WXSS 不支持的选择器（会导致 `common.wxss` 编译失败、全局白屏）；
+- 色值只能来自 `packages/design-tokens/tokens.json`。
+
+## 5. 每轮结束的固定记录
+
+1. 更新本文件对应轮次的"实际完成 / 未完成 / 新发现的问题"；
+2. 更新 `apps/miniapp/README.md` 的已实现/未实现清单与测试表；
+3. 更新 `apps/web/src/domain/models/delivery.ts`（Web 门户的模块状态唯一真相来源）；
+4. 新分支提交并推送，写明**验证方式**（跑了什么、看到什么）。
+
+---
+
+## 6. 本轮记录（R0 + R1 · 2026-10-17）
+
+### 新增 / 改动
+
+- 新增 `services/api/prisma/seed.ts`（幂等；生产需 `SEED_FORCE=1`）。
+- 新增 `services/api/Dockerfile` + 根 `.dockerignore`（多阶段、`node:22.23-alpine`、`TZ=Asia/Shanghai`、`PORT=80`）。
+- 新增 `docs/deploy.md`（微信云托管部署 + 小程序提审 + 未验证项诚实清单）。
+- 新增 `apps/miniapp/.env.example`（`TARO_APP_*` 构建期变量）。
+- 新增法务页：`presentation/content/legal.ts` + `components/KdyLegalDoc` +
+  `pages/legal/{terms,privacy}`；「我的 → 关于」与隐私页共用同一份文案。
+- 新增 `pages/groupbuy/create`（发起拼单）与 `pages/profile/assets`（我的资产）。
+- 重写站内信：后端新增 `common/notifications/notification.port.ts` + notifications 模块；
+  小程序端新增 `domain/models/notification.ts`、`httpNotificationRepository`、
+  `application/notification/notificationUseCases.ts`、`platform/tabBar.ts`，并重写
+  `pages/messages`（真实列表 + 未读 + 红点）。
+- 拼单后端重写为**富视图**（`initiatorName` / `priceFen` / `pickupPlace` / `participants` / 派生 `status`），
+  分类白名单、`sort`、`mine+role`；小程序端 `httpGroupBuyRepository` 改为归一化映射
+  （原先把后端行强转成富形状，字段全 `undefined`）。
+- 发现页改为真实模块入口（`MODULE_ENTRY_PATHS` 与首页共用），能力试跑收进 `KdyDemoTools`。
+- 新增 `GET /health`（存活探针，刻意不查库）；生产环境缺 `DATABASE_URL` 时**启动即报错**。
+
+### 未完成 / 主动推迟
+
+- **分包**：主包 1.6 MB 仍在上限内，搬家风险 > 收益 → 推迟到 R6（详见 R0 表格）。
+- **图片上传**：仍未实现（云托管容器无持久化存储 → 必须接 COS）。
+- **Docker 镜像本地构建**：**未验证**（交付本机没有 Docker）。`docs/deploy.md` §3/§9 给出验证步骤。
+- **小程序真机 / 开发者工具验证**：未做（本机 IDE 服务端口关闭）。
+- **Web 门户**：不在本轮范围（仅同步了 `delivery.ts` 的模块交付状态）。
+
+### 新发现的问题（本轮顺手修掉）
+
+1. **拼单列表静默 bug**：小程序端把后端数据库行直接强转成富形状 `GroupBuy`，
+   字段全 `undefined`，UI 显示空白但不报错 → 改为后端返回富视图 + 前端归一化。
+2. **未读数非幂等**：`markRead` 在本地按"返回值已读"就 -1，重复点同一条会多扣 →
+   改为重新向服务端要未读数。
+3. **`POST /notifications/items` 可被外部调用**：脚手架泄露的写接口 → 已移除，
+   只保留内部 `NotificationPort`。
+4. **文档与实现不符**：`mine=1` 缺省 role 注释写"两者都算"，实现是 `member` → 已按实现纠正。
+
+### 验证方式
+
+- 门禁四条命令全绿（api 461 / miniapp 409 / web 88 测试通过；`build:weapp` 产物 1.6 MB）。
+- 后端端到端实测（curl，`PORT=3999`）：拼单列表/详情/创建/参团/满员冲突/权限、
+  通知 4 个端点、`/health` 200 —— 详见提交信息。
+- **未做**：Docker 构建、云托管部署、真机预览（环境限制，已在 `docs/deploy.md` 标注）。
+

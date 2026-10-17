@@ -206,3 +206,44 @@ export function summarize(groupBuy: GroupBuy, now: Date): GroupBuySummary {
     joinable: status === 'open',
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * 发起拼单：截止时间怎么选
+ * ------------------------------------------------------------------ */
+
+/**
+ * 「相对当前时间」的截止时间预设。
+ *
+ * 不用日期选择器是刻意的（`apps/miniapp/AGENTS.md`：小程序禁用原生 Picker）：
+ * 相对预设还能天然保证"不会选中过去的时间"——拼单截止时间在将来是服务端硬规则。
+ *
+ * 为什么在本模块内再定义一份 `OffsetPreset` 而不是复用跑腿/找搭子的：
+ * 三个模块的预设**语义不同**（跑腿按分钟、拼单按天），共用一个类型只会让
+ * 某天改一个模块时误伤另外两个。仓库里跑腿与找搭子也是各持一份。
+ */
+export interface OffsetPreset {
+  id: string
+  label: string
+  offsetMinutes: number
+}
+
+export const GROUP_BUY_DEADLINE_PRESETS: readonly OffsetPreset[] = [
+  { id: '6h', label: '6 小时后', offsetMinutes: 360 },
+  { id: '12h', label: '12 小时后', offsetMinutes: 720 },
+  { id: '1d', label: '明天此刻', offsetMinutes: 1_440 },
+  { id: '3d', label: '3 天后', offsetMinutes: 4_320 },
+  { id: '7d', label: '一周后', offsetMinutes: 10_080 },
+]
+
+/** `now + minutes` 的 ISO 字符串 */
+export function offsetIso(now: Date, minutes: number): string {
+  return new Date(now.getTime() + minutes * 60_000).toISOString()
+}
+
+export function findOffsetPreset(
+  presets: readonly OffsetPreset[],
+  presetId: string,
+): OffsetPreset | null {
+  return presets.find((preset) => preset.id === presetId) ?? null
+}
+

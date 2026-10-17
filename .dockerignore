@@ -1,0 +1,53 @@
+# Docker 构建上下文排除清单（构建上下文 = 仓库根）
+#
+# 目的有二：
+#   1. **速度**：node_modules / dist 动辄几百 MB，送进构建上下文纯属浪费；
+#   2. **正确**：`.env` 绝不能进镜像（里面有 JWT_SECRET / 校园 session 加密密钥）。
+#
+# 注意：`package.json` 与 `package-lock.json` **不能**排除，
+# `npm ci` 在容器里要靠它们还原 workspace 结构。
+
+# ---- 依赖与产物 ----
+node_modules
+**/node_modules
+**/dist
+**/build
+**/.turbo
+**/coverage
+**/.next
+**/.swc
+
+# ---- 密钥与本地环境 ----
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+
+# ---- 版本控制与编辑器 ----
+.git
+.gitignore
+.github
+.DS_Store
+**/.DS_Store
+.idea
+.vscode
+
+# ---- 与后端镜像无关的端（小程序 / Web 源码）----
+# 只保留它们的 package.json（npm workspaces 需要），源码不进镜像。
+apps/miniapp/src
+apps/miniapp/config
+apps/miniapp/dist
+apps/web/src
+apps/web/public
+
+# ---- 文档与素材 ----
+# 注意 `*.md` 只匹配仓库根目录下的 md（dockerignore 的 `*` 不跨越 `/`），
+# 嵌套文档无需逐条排除。
+docs
+assets
+*.md
+
+# ---- 安装备份与临时文件 ----
+.node_modules-install-backup-*
+*.log

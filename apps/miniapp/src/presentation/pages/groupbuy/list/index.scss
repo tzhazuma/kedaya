@@ -5,6 +5,21 @@
   padding: $kdy-space-3 $kdy-space-4 $kdy-space-1;
 }
 
+.kdy-gb-list__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  padding: $kdy-space-2 $kdy-space-4 0;
+}
+
+.kdy-gb-list__fab {
+  position: fixed;
+  right: $kdy-space-4;
+  bottom: calc(#{$kdy-space-6} + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: $kdy-z-index-sticky;
+}
+
 .kdy-gb-list__filter {
   padding: 2px 0;
 }

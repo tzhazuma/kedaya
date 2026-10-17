@@ -60,6 +60,8 @@ export const StorageKeys = {
   campusCardCache: `${STORAGE_PREFIX}cache:campus-card:overview`,
   /** 隐私开关缓存：断网时开关仍可展示（但不允许假装保存成功） */
   privacySettingsCache: `${STORAGE_PREFIX}cache:privacy:settings`,
+  /** 站内信列表缓存：断网进「消息」页也能看到上次拉到的通知 */
+  notificationListCache: `${STORAGE_PREFIX}cache:notifications:list`,
 } as const
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys]

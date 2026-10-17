@@ -29,16 +29,19 @@ describe('模块交付状态', () => {
     }
   });
 
-  it('小程序已上线的模块 = 账号 + 我的 + 六个业务模块', () => {
+  it('小程序已上线的模块 = 五个核心模块 + 六个生活模块（拼单走 Web）', () => {
     expect(MINIAPP_MODULES.map((m) => m.id).sort()).toEqual([
       'auth',
       'buddy',
+      'campus-card',
       'dorm-harmony',
       'errand',
       'flea-market',
       'forum',
       'lost-found',
+      'notifications',
       'profile',
+      'schedule',
     ]);
     for (const mod of MINIAPP_MODULES) {
       // 小程序模块在 Web 上没有页面，必须去说明页
@@ -51,7 +54,8 @@ describe('模块交付状态', () => {
   it('其余模块一律只有接口，不算已交付', () => {
     expect(API_ONLY_MODULES).toHaveLength(MODULES.length - DELIVERED_MODULES.length);
     expect(API_ONLY_MODULES.map((m) => m.id)).toContain('wellbeing');
-    expect(API_ONLY_MODULES.map((m) => m.id)).toContain('campus-card');
+    expect(API_ONLY_MODULES.map((m) => m.id)).toContain('canteen');
+    expect(API_ONLY_MODULES.map((m) => m.id)).toContain('takeout-guard');
     for (const mod of API_ONLY_MODULES) {
       expect(mod.delivery.stage).toBe('api-only');
       expect(mod.href).toBe(`/m/${mod.id}`);

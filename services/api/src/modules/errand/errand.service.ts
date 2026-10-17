@@ -1,5 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
-import type { Page } from '@kedaya/contracts';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { MINIAPP_PAGES, type Page } from '@kedaya/contracts';
 import {
   ConflictError,
   ForbiddenError,
@@ -7,6 +7,11 @@ import {
   UnauthenticatedError,
   ValidationError,
 } from '../../common/errors/app-error';
+import {
+  NOTIFICATION_PORT,
+  miniappDetailLink,
+  type NotificationPort,
+} from '../../common/notifications/notification.port';
 import {
   ERRAND_MAX_REWARD_FEN,
   ERRAND_SORTS,
@@ -32,10 +37,14 @@ import {
  *
  * 依赖用**显式 token** 注入（不使用 design:paramtypes），
  * 因此 `new ErrandTaskService(fakeRepo)` 就能在 vitest 里直接测，无需 DI 容器。
+ * `notifier` 是 `@Optional()` 的：纯领域单测可以不提供它。
  */
 @Injectable()
 export class ErrandTaskService {
-  constructor(@Inject(ERRAND_TASK_REPOSITORY) private readonly repo: ErrandTaskRepository) {}
+  constructor(
+    @Inject(ERRAND_TASK_REPOSITORY) private readonly repo: ErrandTaskRepository,
+    @Optional() @Inject(NOTIFICATION_PORT) private readonly notifier?: NotificationPort,
+  ) {}
 
   async list(query: Partial<ErrandTaskListQuery> = {}): Promise<Page<ErrandTaskModel>> {
     return this.repo.list({
@@ -113,11 +122,23 @@ export class ErrandTaskService {
       throw new ConflictError('该任务已被接单或已结束');
     }
 
-    return this.repo.applyState(id, {
+    const updated = await this.repo.applyState(id, {
       status: ERRAND_STATUS.accepted,
       runnerId: actorId,
       acceptedAt: new Date(),
     });
+
+    // 通知发布者：有人接单了。正文**不含**接单者昵称 —— 拉昵称要再查一次用户表，
+    // 而这条通知的价值在"去确认"，不在"谁接的"（详情页里有）。
+    await this.notifySafely({
+      userId: task.requesterId,
+      title: '你的跑腿悬赏已被接单',
+      body: `「${task.title}」已被同学接单，完成后请及时确认。`,
+      source: 'errand',
+      link: miniappDetailLink(MINIAPP_PAGES.errandDetail, id),
+    });
+
+    return updated;
   }
 
   /** 接单者确认送达：只有 runner 本人、且状态为 accepted 时可操作 */
@@ -132,10 +153,20 @@ export class ErrandTaskService {
       throw new ConflictError('只有「已接单」的任务可以确认送达');
     }
 
-    return this.repo.applyState(id, {
+    const updated = await this.repo.applyState(id, {
       status: ERRAND_STATUS.delivered,
       deliveredAt: new Date(),
     });
+
+    await this.notifySafely({
+      userId: task.requesterId,
+      title: '你的跑腿任务已送达',
+      body: `「${task.title}」已被接单者标记为送达，确认后即可结算。`,
+      source: 'errand',
+      link: miniappDetailLink(MINIAPP_PAGES.errandDetail, id),
+    });
+
+    return updated;
   }
 
   /** 发布者确认完成：状态必须是 delivered */
@@ -146,10 +177,23 @@ export class ErrandTaskService {
       throw new ConflictError('只有「已送达」的任务可以确认完成');
     }
 
-    return this.repo.applyState(id, {
+    const updated = await this.repo.applyState(id, {
       status: ERRAND_STATUS.completed,
       settledAt: new Date(),
     });
+
+    // 通知接单者：任务已确认完成（这是 TA 唯一能收到"对方确认了"的渠道）
+    if (task.runnerId) {
+      await this.notifySafely({
+        userId: task.runnerId,
+        title: '跑腿任务已确认完成',
+        body: `「${task.title}」发布者已确认完成，悬赏请按双方约定结算。`,
+        source: 'errand',
+        link: miniappDetailLink(MINIAPP_PAGES.errandDetail, id),
+      });
+    }
+
+    return updated;
   }
 
   /** 发布者取消：open / accepted 时可用；completed / cancelled 后不再受理 */
@@ -167,6 +211,22 @@ export class ErrandTaskService {
   private assertOwner(task: ErrandTaskModel, actorId: string | undefined, message: string): void {
     if (!actorId) throw new UnauthenticatedError('请先登录');
     if (task.requesterId !== actorId) throw new ForbiddenError(message);
+  }
+
+  /**
+   * 写站内信（best-effort）。
+   *
+   * 这里再包一层 `try/catch`，而不是只依赖 `NotificationService.notify` 自己吞异常：
+   * 端口是接口，将来换实现（例如发订阅消息的实现忘了吞异常）时，
+   * 这一层能保证"通知失败绝不影响跑腿状态机"这条规则不被破坏。
+   */
+  private async notifySafely(input: Parameters<NotificationPort['notify']>[0]): Promise<void> {
+    if (!this.notifier) return;
+    try {
+      await this.notifier.notify(input);
+    } catch {
+      // 通知失败只影响"用户晚一点知道"，不影响任务状态已经落库的事实
+    }
   }
 
   /** completed / cancelled 之后任务已经结束，不再允许修改或删除 */

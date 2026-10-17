@@ -699,10 +699,17 @@ model Notification {
   body      String
   /// inapp | wechat-subscribe | push
   channel   String    @default("inapp")
+  /// 业务来源：groupbuy | errand | flea-market | forum | campus-card | schedule | system …
+  /// 前端据此选图标与分组（不解析 title 猜来源）
+  source    String    @default("system")
+  /// 点击后跳转的小程序页面路径（取自 @kedaya/contracts 的 MINIAPP_PAGES）。
+  /// 允许为空 —— 有些通知只是"告知"，没有可跳转的目标，前端必须能处理这种情况。
+  link      String?
   readAt    DateTime?
   createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt, createdAt])
+  @@index([userId, createdAt])
 }

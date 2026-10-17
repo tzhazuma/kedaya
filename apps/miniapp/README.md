@@ -29,6 +29,9 @@ npm run test      -w @kedaya/miniapp
 npm run lint      -w @kedaya/miniapp
 ```
 
+> **上线部署**（微信云托管 + 小程序提审）见 [`docs/deploy.md`](../../docs/deploy.md)，
+> 本端的环境变量样例见 [`.env.example`](./.env.example)。
+
 > ⚠️ 本仓库有多个工作流并行，`node_modules` 是共享的。
 > 任何会改动 `node_modules` 的命令（`npm install` / `npm ci`）都必须串行化：
 >
@@ -90,7 +93,10 @@ apps/miniapp/
     │   └── routes.ts          #   页面路径常量（纯数据，无 Taro 依赖）
     ├── application/           # 用例层：编排，不含 IO
     │   ├── auth/              #   session.ts（会话读取）、authAccount.ts（注册/登录/微信/资料/绑定）
-    │   └── groupbuy/          #   listGroupBuys / groupBuyDetail / joinGroupBuy
+    │   ├── common/            #   listUseCase / detailUseCase（列表与详情状态机骨架）
+    │   ├── groupbuy/          #   listGroupBuys / myGroupBuys / groupBuyDetail / createGroupBuy / joinGroupBuy
+    │   ├── notification/      #   notificationUseCases（站内信列表 + 未读数 store）
+    │   └── flee-market…       #   fleaMarket / errand / buddy / lostFound / forum / dormHarmony / schedule / campusCard / privacy / agent
     ├── domain/                # 纯领域：零框架依赖
     │   ├── models/            #   groupbuy.ts（状态推导/参团资格）、auth.ts、profile.ts、session.ts
     │   └── ports/             #   GroupBuyRepository / AuthRepository / WechatCodePort / AvatarPickerPort / HttpPort ...
@@ -99,12 +105,13 @@ apps/miniapp/
     │   ├── repositories/      #   http / mock 两套 GroupBuyRepository
     │   ├── storage/           #   Taro 同步存储、内存存储、会话存储
     │   └── mock/              #   内存数据库 + 确定性种子数据
-    ├── platform/              # 平台差异适配（订阅消息 / 扫码 / 分享 / 地图 / 导航）
+    ├── platform/              # 平台差异适配（订阅消息 / 扫码 / 分享 / 地图 / 导航 / tabBar 红点）
     └── presentation/          # UI
-        ├── components/        #   KdyCard / KdyButton / KdyEmpty / KdyTag
+        ├── components/        #   KdyCard / KdyButton / KdyEmpty / KdyTag / KdyLegalDoc
+        ├── content/           #   legal.ts（用户协议 + 隐私政策文案的唯一真相来源）
         ├── hooks/             #   useStore（useSyncExternalStore 封装）
         ├── theme/tokens.scss  #   设计令牌入口（全局注入）
-        └── pages/             #   home / discover / messages / profile / groupbuy/*
+        └── pages/             #   home / discover / messages / profile / groupbuy / legal / …
 ```
 
 **依赖方向（硬规则）**：`presentation → application → domain ← data`。
@@ -190,15 +197,26 @@ UI 可以据此区分「这个端没有」「用户拒绝」「调用出错」�
 
 ## 6. 已实现的垂直切片：拼单（`groupbuy`）
 
-- **列表页** `presentation/pages/groupbuy/list`：分类筛选、下拉刷新、触底加载（游标分页）、
+- **列表页** `presentation/pages/groupbuy/list`：**三组筛选**（范围「全部 / 我发起的 / 我参与的」、
+  分类、排序「最新发布 / 即将截止」）、下拉刷新、触底加载（游标分页）、
   卡片展示（进度条 / 剩余份数 / 截止倒计时 / 状态标签）。
+  「我发起的 / 我参与的」需要登录：未登录时先引导登录，**不发注定 401 的请求**。
+  底部悬浮「发起拼单」入口（叠加 `env(safe-area-inset-bottom)`）。
+- **发起页** `presentation/pages/groupbuy/create`：标题/说明/单价/份数/取货地点/分类 +
+  截止时间预设（6 小时 / 12 小时 / 明天此刻 / 3 天 / 一周 / 自定义小时）。
+  单价输入收「元」，提交前 `yuanToFen` 换算成**整数分**；
+  截止时间用**相对当前时间**的预设，天然不会选中过去的时间（服务端硬规则是必须晚于现在）。
+  归属只认会话：服务端从 JWT 取发起人，客户端连 `initiatorId` 都不发（只给 mock 记账用）。
 - **详情页** `presentation/pages/groupbuy/detail`：完整信息 + 参与人列表 + 四个动作
   （参团 / 分享 / 复制链接 / 查看地图）。
 - **参团动作**：`application/groupbuy/joinGroupBuy.ts` —— 先查会话 → 再用 domain 的
   `canJoin` 本地预校验 → 最后才发请求（带幂等键）。
 - **三态齐全**：`loading` / `empty` / `error`（+ `ready`）。
-  列表页顶部有「模拟错误态 / 模拟空态 / 重置演示数据」三个按钮，
+  列表页的「模拟错误态 / 模拟空态 / 重置演示数据」放在折叠的「演示与调试工具」里，
   走的是 mock 仓储的真实控制面（`failNextRequests` / `clearAll`），**不是硬编码假状态**。
+- **「我的资产」** `presentation/pages/profile/assets`：内联「我发起的 / 我参与的」拼单，
+  其余模块给出列表页入口（各模块列表页都有自己的「我的」筛选）。
+  它用**独立的列表用例与缓存 key**（`myGroupBuys`），避免与拼单广场互相闪数据。
 
 默认 `TARO_APP_USE_MOCK !== 'false'` → 走 mock。接真后端：
 
@@ -207,6 +225,19 @@ TARO_APP_USE_MOCK=false \
 TARO_APP_API_BASE_URL=https://api.example.com \
 npm run build:weapp -w @kedaya/miniapp
 ```
+
+---
+
+## 6.1 站内信（`notifications`）
+
+- **五个业务模块都会写站内信**（后端 best-effort：通知失败绝不让主流程 500）：
+  拼单参团/成团、跳蚤预订/解除预定、跑腿接单/送达/完成、论坛回复。
+- **消息页** `presentation/pages/messages`：真实列表（游标分页 + 下拉刷新 + 触底加载）、
+  「全部 / 未读」筛选、未读高亮、单条与「全部已读」、
+  **点击按 `link` 跳转**、`link` 为空或指向未知页面时**不可点**（不假装可点、不跳白屏页）。
+- **tabBar 红点**：未读数是独立于列表的 store（tabBar 红点必须在「消息页没打开」时也正确），
+  由装配层经 `platform/tabBar.ts` 同步；该封装吞掉 H5 / 旧基础库的报错 —— 红点失败不影响页面。
+- **订阅消息**保留在消息页底部：微信一次性授权，成团时下发服务通知（订阅失败会原样显示错误码）。
 
 ---
 
@@ -232,6 +263,8 @@ npm run test -w @kedaya/miniapp
 | `src/application/auth/__tests__/authAccount.test.ts` | 用例职责：本地校验先拦、成功后会话落盘、未登录拒绝、微信登录编排（配置探测 / 首次建号 / 凭证失败不落盘） |
 | `src/app/__tests__/routes.test.ts` | 路由一致性闸门：`PAGE_PATHS` ↔ 契约 `MINIAPP_PAGES` ↔ `app.config.ts` 的 `pages` ↔ tabBar 列表逐条对齐（漂移即红） |
 | `src/app/__tests__/campusUseCases.test.ts` | 校园三件套 + 可达鸭的高可用：缓存 hydrate、**刷新失败不清空**、`needsBinding` 与网络错误分流、解绑清明文、agent 失败也落带重试的消息 |
+| `src/application/notification/__tests__/notificationUseCases.test.ts` | 站内信：link 白名单（未知页面降级为不可点）、未读数只在真正变化时通知、拉取失败保留旧值、未登录归零、markAllRead 幂等 |
+| `src/application/groupbuy/__tests__/createGroupBuy.test.ts` | 发起拼单：客户端校验与服务端同规则、归属只认会话（未登录不发请求）、空说明传 `null`、成功后作废列表缓存 |
 
 ---
 
@@ -253,7 +286,17 @@ npm run test -w @kedaya/miniapp
     首次登录自动建号并引导「完善资料」（`KdyField type='nickname'` + `KdyButton openType='chooseAvatar'`）
   - **账号安全**：昵称/头像编辑、绑定邮箱（给只有微信的账号补后路）、绑定/解绑微信
   - 客户端与后端**同一套校验规则**（验证码一次性、密码强度、昵称按码点截断、头像 ≤64KB）
-- 拼单垂直切片：列表 + 详情 + 参团，三态齐全，默认 mock
+- 拼单垂直切片：列表（三组筛选 + 排序）+ **发起** + 详情 + 参团，三态齐全，默认 mock
+- **六个生活模块**（跳蚤、宿舍矛盾、跑腿、找搭子、失物招领、论坛）全部接线：
+  统一「列表 → 发布 → 详情」三页结构，列表都有「我的」筛选与真实三态
+- **站内信**（`notifications`）：真实列表 + 未读筛选 + tabBar 红点 + 点击按 `link` 跳转
+  （未知页面一律不可点）；订阅消息保留为微信特有的一次性授权
+- **我的资产**（`profile/assets`）：内联「我发起的 / 我参与的」拼单 + 其余模块入口
+- **法务页**：用户协议 + 隐私政策（`presentation/content/legal.ts` 是唯一真相来源，
+  「我的 → 关于」与隐私与数据页共用同一份文案，不重复维护）
+- **发现页**：六个生活模块入口（清单来自 `@kedaya/contracts` 的 `MODULES`，
+  「模块 id → 页面」的映射与首页共用 `app/routes.ts` 的 `MODULE_ENTRY_PATHS`）+
+  校园服务入口 + 收进折叠演示工具的「平台能力试跑 / 能力差异矩阵」
 - **四个核心模块**（真实接线，非占位）：
   - **身份**（`auth`）：四个校园系统各自的绑定状态 + 一键绑定/解绑；实名默认服务端脱敏，
     展开明文是用户主动动作并写审计
@@ -267,8 +310,8 @@ npm run test -w @kedaya/miniapp
   点击带上下文跳转；服务端 **facts-first**（先查受 `userId` 约束的事实 → 再检索公共知识 →
   模型只负责组织语言），**未配置模型也完全可用**（规则回答 + `degraded: true`）；
   失败落带「重试」的消息；会话只在内存
-- 复用组件：`KdyCard` / `KdyButton` / `KdyField` / `KdyChip` / `KdyTag` / `KdyEmpty` / `KdyHeading` / `KdyAvatar` / `KdyAgentFab`（全部取自设计令牌）
-- Vitest 测试（node 环境，无需模拟器）：domain / 网络层 / mock 仓储 / 用例 / 会话存储 / WXSS 安全
+- 复用组件：`KdyCard` / `KdyButton` / `KdyField` / `KdyChip` / `KdyTag` / `KdyEmpty` / `KdyHeading` / `KdyAvatar` / `KdyAgentFab` / `KdyLegalDoc` / `KdyDemoTools`（全部取自设计令牌）
+- Vitest 测试（node 环境，无需模拟器）：domain / 网络层 / mock 仓储 / 用例 / 会话存储 / 站内信 / 发起拼单 / WXSS 安全
 
 ### ❌ 未实现（诚实清单）
 
@@ -279,15 +322,28 @@ npm run test -w @kedaya/miniapp
   `simulated: true`）。`live` 模式的适配器已写好（`http-campus-data.adapter.ts`），
   但**没有官方凭据可测**，因此端到端只有 mock 路径经过验证。
   这不是"未实现"，而是"已实现但只能在授权后启用"，UI 与接口在两种模式下完全一致。
-- **站内信列表**（`notifications`）：只有订阅消息链路，站内信列表是空态。
-- **其余业务模块**：契约 §4 已登记，端上未实现（首页明确显示「开发中」/「需二次同意」）。
+- **高敏模块（心理支持 / AI 校园画像）**：后端有接口与领域约束
+  （`wellbeing`：预约 CRUD、二次同意、危机干预出口与升级；`ai-portrait`：画像档案 CRUD，
+  并把 `wellbeing` / `dorm-harmony` 列为**禁止来源**）。
+  但**量表（PHQ-9/GAD-7）与真实画像生成尚未实现**，且 `G1–G3` 合规审批未过 ——
+  因此小程序端**没有页面**，首页/发现页点击会明确提示「需二次同意，该流程尚未实现」。
+  这是刻意的：宁可不可用，也不上线一个合规状态不明的敏感功能。
+- **后端 7 个薄模块**：偷外卖（`takeout-guard`）、食堂（`canteen`）、FAQ、野生动植物
+  （`wildlife`）、TechPie、AI 画像、心理（`wellbeing`）在契约里已登记、后端有接口，
+  但小程序端**没有页面**。首页/发现页点击会明确提示「契约已登记，页面尚未实现」，
+  不会假装可用。
 - **tabBar 图标**：未配置 `iconPath`（品牌图标未就位），当前只显示文字。
+- **分包（subPackages）**：当前 `dist` 约 1.6 MB，全部在主包。**未做分包**是刻意的取舍 ——
+  分包需要把 `presentation/pages/**` 整体搬家，会同时改动所有页面的相对 import 深度
+  与 `app.config.ts` 结构，风险高于收益。主包体积目前仍在上限内；
+  后续做分包时请一并更新 `src/app/__tests__/routes.test.ts` 的断言。
 - **H5 端未实机验证**：`build:h5` 脚本已就绪，但本轮只验证了 `weapp` 构建。
 - **CI / 真机预览**：未在真机与微信开发者工具中打开验证（本机 IDE 服务端口关闭，
   需手动导入 `apps/miniapp/dist`）。
 - **E2E 测试**：未接入小程序自动化（miniprogram-automator）。
-- **头像存储**：当前没有对象存储，微信头像压成 ≤64KB 的 data URL 存 `User.avatarUrl`；
-  接入 OSS 后应改成「上传返回 URL」（只需替换 `platform/avatarPicker.ts` 的实现）。
+- **图片上传**：各模块目前是纯文本 + 头像 data URL（≤64KB）。
+  云托管容器**没有持久化存储**，做图片必须接 **COS**，
+  只需替换 `platform/avatarPicker.ts` 的实现并把 URL 落库。
 
 ### ⚠️ 已知问题 / 需要在别处修
 

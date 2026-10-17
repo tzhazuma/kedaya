@@ -3,7 +3,7 @@ import { MODULES } from '@kedaya/contracts'
 import type { KedayaModule } from '@kedaya/contracts'
 
 import { getContainer } from '../../../app/container'
-import { PAGE_PATHS } from '../../../app/routes'
+import { MODULE_ENTRY_PATHS, PAGE_PATHS } from '../../../app/routes'
 import { navigateTo, toast } from '../../../platform/navigation'
 import { KdyAgentFab, KdyCard, KdyTag } from '../../components'
 import { KdyModuleIcon } from '../../components/KdyModuleIcon'
@@ -26,24 +26,10 @@ import './index.scss'
 /**
  * 已实现垂直切片的模块 → 入口页。
  *
- * 这里只做「契约模块 id → 页面路径」的映射，模块清单本身仍然来自
- * `@kedaya/contracts`（契约 §4 硬规则：禁止各端硬编码模块清单）。
- * 未登记的模块点击后明确提示「开发中」，不假装可用。
+ * 映射统一放在 `app/routes.ts` 的 `MODULE_ENTRY_PATHS`（首页与「发现」页共用），
+ * 模块清单本身仍然来自 `@kedaya/contracts`（契约 §4 硬规则：禁止各端硬编码模块清单）。
  */
-const MODULE_ROUTES: Readonly<Record<string, string>> = {
-  groupbuy: PAGE_PATHS.groupBuyList,
-  'flea-market': PAGE_PATHS.fleaList,
-  errand: PAGE_PATHS.errandList,
-  buddy: PAGE_PATHS.buddyList,
-  'lost-found': PAGE_PATHS.lostFoundList,
-  forum: PAGE_PATHS.forumList,
-  'dorm-harmony': PAGE_PATHS.dormHarmonyHome,
-  // 四个核心模块（身份 / 课表 / 校园卡 / 我的）
-  auth: PAGE_PATHS.identity,
-  schedule: PAGE_PATHS.schedule,
-  'campus-card': PAGE_PATHS.campusCard,
-  profile: PAGE_PATHS.profile,
-}
+const MODULE_ROUTES = MODULE_ENTRY_PATHS
 
 function moduleTone(module: KedayaModule): KdyTagTone {
   if (module.requiresConsent) return 'danger'

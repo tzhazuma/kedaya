@@ -49,6 +49,22 @@ async function bootstrap(): Promise<void> {
     exposedHeaders: [TRACE_HEADER],
   });
 
+  /**
+   * 健康检查 —— 微信云托管 / 负载均衡都要求配置探测路径。
+   *
+   * 三条刻意的设计：
+   *   1. 路径是 `/health`，**不带** `/api/v1` 前缀，也**不走**统一信封
+   *      （探测方只关心 HTTP 200，套一层 `{ok,data}` 只会让配置更容易写错）；
+   *   2. 用 adapter 直接注册，不经过 Nest 的路由表 —— 这样它不受全局前缀与
+   *      全局拦截器影响，也就不会因为业务层改动而失效；
+   *   3. 只探**进程存活**，刻意不查数据库：数据库短暂抖动时，
+   *      探针失败会让平台反复重启容器，把小故障放大成雪崩。
+   *      数据库连通性由业务请求自己暴露（5xx + 日志）。
+   */
+  app.use('/health', (_req: Request, res: Response) => {
+    res.status(200).json({ ok: true, uptimeSec: Math.round(process.uptime()) });
+  });
+
   // ---- Swagger：/api/v1/docs ----
   const swaggerConfig = new DocumentBuilder()
     .setTitle('可达鸭 KedaYa API')

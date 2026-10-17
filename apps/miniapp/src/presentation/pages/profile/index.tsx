@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { getContainer } from '../../../app/container'
 import { PAGE_PATHS } from '../../../app/routes'
 import type { WechatStatusDto } from '../../../domain/models/auth'
+import { PRIVACY_RULES } from '../../../presentation/content/legal'
 import { navigateTo, toast } from '../../../platform/navigation'
 import { KdyAgentFab, KdyAvatar, KdyButton, KdyCard, KdyTag } from '../../components'
 import { KdyHeading } from '../../components/KdyHeading'
@@ -13,7 +14,7 @@ import { useStore } from '../../hooks'
 import './index.scss'
 
 /**
- * 我的 —— 账号信息 + 账号安全 + 隐私合规声明。
+ * 我的 —— 账号信息 + 账号安全 + 校园服务入口 + 隐私合规声明。
  *
  * 账号体系接真实后端（`/auth/account/*`、`/auth/wechat/*`、`/auth/me`）：
  *   · 未登录 → 提供「登录」「注册」入口；
@@ -26,35 +27,6 @@ import './index.scss'
  * 登录 ≠ 绑定校园系统：`campusBound` 为 false 时，校园能力会被后端
  * 以 `CAMPUS_BINDING_REQUIRED` 拦下（契约 §5 硬规则 3）。
  */
-
-/** 契约 §9 不可妥协的隐私规则（原文摘录，让用户与开发者都能看到） */
-const PRIVACY_RULES: readonly { title: string; detail: string }[] = [
-  {
-    title: '敏感模块独立同意',
-    detail:
-      '心理治疗 / 宿舍矛盾 / AI 画像首次进入必须显式二次同意，可随时撤回；登录与开卡本身即同意，不再叠门。',
-  },
-  {
-    title: '数据最小化',
-    detail: '心理与宿舍矛盾数据不进入通用画像；AI 画像不得读取这两个域。',
-  },
-  {
-    title: '匿名可用',
-    detail: '论坛 / 宿舍矛盾 / 偷外卖支持匿名身份，与实名身份解耦存储。',
-  },
-  {
-    title: '审计',
-    detail: '敏感模块的读写全部落审计日志（谁、何时、对哪条记录、什么动作）。',
-  },
-  {
-    title: '危机出口',
-    detail: '心理模块必须提供危机干预热线入口，且不可被埋进二级菜单。',
-  },
-  {
-    title: '无官方冒充',
-    detail: '全站显著标注「第三方非官方平台」，不冒充学校官方系统。',
-  },
-]
 
 export default function ProfilePage() {
   const container = getContainer()
@@ -268,6 +240,23 @@ export default function ProfilePage() {
         </KdyCard>
       )}
 
+      <KdyCard title='我的资产' elevated={false}>
+        <View
+          className='kdy-profile__nav'
+          onClick={() => {
+            void navigateTo(PAGE_PATHS.profileAssets)
+          }}
+        >
+          <View className='kdy-profile__nav-body'>
+            <Text className='kdy-profile__nav-title'>我的拼单</Text>
+            <Text className='kdy-profile__nav-detail'>
+              我发起的、我参与的拼单；其余模块的"我的"入口在各模块列表页
+            </Text>
+          </View>
+          <ArrowRight />
+        </View>
+      </KdyCard>
+
       <KdyCard title='校园服务' elevated={false}>
         {[
           { label: '身份与校园绑定', detail: '统一身份 / 教务 / 校园卡，逐系统授权', path: PAGE_PATHS.identity },
@@ -301,6 +290,31 @@ export default function ProfilePage() {
       </KdyCard>
 
       <KdyCard title='关于' elevated={false}>
+        <View
+          className='kdy-profile__nav'
+          onClick={() => {
+            void navigateTo(PAGE_PATHS.legalTerms)
+          }}
+        >
+          <View className='kdy-profile__nav-body'>
+            <Text className='kdy-profile__nav-title'>用户协议</Text>
+            <Text className='kdy-profile__nav-detail'>服务范围、发布规范与交易免责</Text>
+          </View>
+          <ArrowRight />
+        </View>
+        <View
+          className='kdy-profile__nav'
+          onClick={() => {
+            void navigateTo(PAGE_PATHS.legalPrivacy)
+          }}
+        >
+          <View className='kdy-profile__nav-body'>
+            <Text className='kdy-profile__nav-title'>隐私政策</Text>
+            <Text className='kdy-profile__nav-detail'>收集范围、使用目的、撤回与导出</Text>
+          </View>
+          <ArrowRight />
+        </View>
+
         <Text className='kdy-profile__hint'>
           可达鸭（KedaYa）· 上海科技大学统一校园服务平台 · 第三方开源项目（非官方）。
         </Text>

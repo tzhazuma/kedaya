@@ -1,3 +1,5 @@
 export default {
   navigationBarTitleText: '消息',
+  enablePullDownRefresh: true,
+  backgroundTextStyle: 'dark',
 }

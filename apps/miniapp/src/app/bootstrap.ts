@@ -43,7 +43,11 @@ export function bootstrapSync(container: AppContainer): BootstrapSnapshot {
  * 内部所有失败都被吞掉（静默降级），错误状态由各用例写入自己的 state。
  */
 export function refreshInBackground(container: AppContainer): void {
-  void refreshSessionToken(container).then(() => container.useCases.listGroupBuys.load())
+  void refreshSessionToken(container).then(() => {
+    // 登录态确定之后再刷未读：未登录时服务端会返回 UNAUTHENTICATED，红点自动归零
+    void container.useCases.notifications.refreshUnread()
+    return container.useCases.listGroupBuys.load()
+  })
 }
 
 async function refreshSessionToken(container: AppContainer): Promise<void> {

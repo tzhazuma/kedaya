@@ -21,6 +21,7 @@ export default {
     'presentation/pages/profile/index',
     'presentation/pages/profile/edit/index',
     'presentation/pages/groupbuy/list/index',
+    'presentation/pages/groupbuy/create/index',
     'presentation/pages/groupbuy/detail/index',
     'presentation/pages/auth/login/index',
     'presentation/pages/auth/register/index',
@@ -47,7 +48,10 @@ export default {
     'presentation/pages/schedule/index',
     'presentation/pages/campusCard/index',
     'presentation/pages/profile/settings/index',
+    'presentation/pages/profile/assets/index',
     'presentation/pages/agent/index',
+    'presentation/pages/legal/terms/index',
+    'presentation/pages/legal/privacy/index',
   ],
   window: {
     backgroundTextStyle: 'light',

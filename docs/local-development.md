@@ -55,7 +55,7 @@ Mock 账号复刻了真实后端的规则（验证码一次性、密码错误文
 
 ```bash
 # 方式 A：Docker（注意 compose 里映射的是 5432）
-docker compose up -d postgres
+docker compose -f services/api/docker-compose.yml up -d postgres
 
 # 方式 B：本机 PostgreSQL.app / Homebrew，手动建库建角色以匹配默认连接串
 createuser -s kedaya
@@ -69,12 +69,23 @@ createdb -O kedaya kedaya
 
 ```bash
 npm run prisma:migrate -w @kedaya/api      # 应用迁移
+npm run prisma:seed    -w @kedaya/api      # 灌演示数据（幂等，可重复执行）
 npm run dev -w @kedaya/api                 # 终端 A：tsc 监听编译
 npm run dev:serve -w @kedaya/api           # 终端 B：node --watch 跑编译产物
 # 或一次性：npm run build -w @kedaya/api && npm run start -w @kedaya/api
 ```
 
+`prisma:seed` 覆盖 6 个演示账号与十余类业务数据（课表 / 校园卡流水 / 拼单 /
+跳蚤 / 跑腿 / 搭子 / 失物招领 / 论坛帖与回复 / 食堂菜品 / 野生动植物 / TechPie /
+FAQ / 外卖被拿报备 / 站内信），让每个列表页打开就有中文数据可看。
+密码统一为 `Kedaya2026`，账号：`demo@kedaya.dev`、`zhang.yf@kedaya.dev`、
+`chen.mx@kedaya.dev`、`liu.zy@kedaya.dev`、`wang.h@kedaya.dev`、`zhou.qr@kedaya.dev`。
+生产环境**默认拒绝执行**（需要 `SEED_FORCE=1` 才会跑）。
+
 服务地址 <http://localhost:3000/api/v1>（统一前缀 `/api/v1`，响应统一信封）。
+存活探针在 `GET /health`（**不带** `/api/v1` 前缀、**不走**信封）。
+
+> 上线部署（微信云托管、数据库、小程序提审）见 [`deploy.md`](./deploy.md)。
 
 > 本机 3000 常被其他项目占用（占用时 `curl` 会打到别人的服务上，症状是返回
 > 非信封格式的 JSON）。用 `PORT=3999 npm run start -w @kedaya/api` 换端口，

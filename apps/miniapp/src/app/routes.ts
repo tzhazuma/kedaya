@@ -11,7 +11,9 @@ export const PAGE_PATHS = {
   discover: '/presentation/pages/discover/index',
   messages: '/presentation/pages/messages/index',
   profile: '/presentation/pages/profile/index',
+  // 拼单
   groupBuyList: '/presentation/pages/groupbuy/list/index',
+  groupBuyCreate: '/presentation/pages/groupbuy/create/index',
   groupBuyDetail: '/presentation/pages/groupbuy/detail/index',
   // 账号（自建账号体系：注册 / 登录 / 找回密码 / 修改密码）
   authLogin: '/presentation/pages/auth/login/index',
@@ -48,8 +50,13 @@ export const PAGE_PATHS = {
   schedule: '/presentation/pages/schedule/index',
   campusCard: '/presentation/pages/campusCard/index',
   profileSettings: '/presentation/pages/profile/settings/index',
+  /** 「我的资产」：我的拼单（发起/参与）+ 各模块入口 */
+  profileAssets: '/presentation/pages/profile/assets/index',
   // 内置全局助手「可达鸭」
   agent: '/presentation/pages/agent/index',
+  // 法务页（微信审核必备；内容与 PRIVACY_RULES 同源，避免两处漂移）
+  legalTerms: '/presentation/pages/legal/terms/index',
+  legalPrivacy: '/presentation/pages/legal/privacy/index',
 } as const
 
 export type PagePath = (typeof PAGE_PATHS)[keyof typeof PAGE_PATHS]
@@ -65,6 +72,42 @@ export const TAB_BAR_PATHS: readonly string[] = [
 export function isTabBarPath(path: string): boolean {
   const [base] = path.split('?')
   return base !== undefined && TAB_BAR_PATHS.includes(base)
+}
+
+/**
+ * tabBar 下标 —— `Taro.setTabBarBadge` 只认数字下标，不认页面路径。
+ *
+ * 从 `TAB_BAR_PATHS` 推导而不是在平台层写死 `2`：将来调整 tabBar 顺序时，
+ * 红点会跟着走，而不是悄悄挂到错误的 tab 上。
+ */
+export function tabBarIndex(path: string): number {
+  const [base] = path.split('?')
+  return base === undefined ? -1 : TAB_BAR_PATHS.indexOf(base)
+}
+
+/**
+ * 已实现垂直切片的模块 → 入口页。
+ *
+ * 这里只做「契约模块 id → 页面路径」的映射，模块清单本身仍然来自
+ * `@kedaya/contracts`（契约 §4 硬规则：禁止各端硬编码模块清单）。
+ * 未登记的模块点击后明确提示「开发中」，不假装可用。
+ *
+ * 放在 `app/routes.ts` 而不是页面里：首页宫格与「发现」页都要用它，
+ * 各写一份必然漂移（新增页面时只改了一处，另一处静默点不进去）。
+ */
+export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
+  groupbuy: PAGE_PATHS.groupBuyList,
+  'flea-market': PAGE_PATHS.fleaList,
+  errand: PAGE_PATHS.errandList,
+  buddy: PAGE_PATHS.buddyList,
+  'lost-found': PAGE_PATHS.lostFoundList,
+  forum: PAGE_PATHS.forumList,
+  'dorm-harmony': PAGE_PATHS.dormHarmonyHome,
+  // 四个核心模块（身份 / 课表 / 校园卡 / 我的）
+  auth: PAGE_PATHS.identity,
+  schedule: PAGE_PATHS.schedule,
+  'campus-card': PAGE_PATHS.campusCard,
+  profile: PAGE_PATHS.profile,
 }
 
 /** 从页面参数里安全取 id（`useRouter().params.id` 可能是 string | undefined） */

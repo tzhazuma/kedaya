@@ -61,6 +61,9 @@ function createFakeRepository(
     async detail(): Promise<Result<GroupBuy, RepositoryError>> {
       return { ok: false, error: { code: 'NOT_FOUND', message: '未实现' } }
     },
+    async create(): Promise<Result<GroupBuy, RepositoryError>> {
+      return { ok: false, error: { code: 'INTERNAL', message: '未实现' } }
+    },
     async join(_id: string, _input: JoinGroupBuyInput): Promise<Result<GroupBuy, RepositoryError>> {
       return { ok: false, error: { code: 'INTERNAL', message: '未实现' } }
     },
