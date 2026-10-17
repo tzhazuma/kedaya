@@ -1,0 +1,251 @@
+/**
+ * 可达鸭页面样式。
+ *
+ * 布局要点：
+ *   · 头部 sticky，滚动时"我是谁 / 现在是规则还是模型"始终可见；
+ *   · 气泡左右分栏 —— 用户靠右，可达鸭靠左带头像，符合聊天直觉；
+ *   · 事实（facts）用独立的小卡片块与正文区分：正文是"话"，
+ *     事实是"数据"，两者的可信度不一样，视觉上必须分开。
+ */
+
+.kdy-agent {
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    position: sticky;
+    top: 0;
+    z-index: $kdy-z-index-sticky;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: $kdy-space-4 $kdy-space-5 $kdy-space-3;
+    background: color.mix($kdy-color-brand-soft, $kdy-color-bg, 60%);
+  }
+
+  &__header-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-right: $kdy-space-3;
+  }
+
+  &__title {
+    color: $kdy-color-ink;
+    font-size: $kdy-font-size-lg;
+    font-weight: 700;
+  }
+
+  &__subtitle {
+    margin-top: 2px;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: $kdy-line-height-normal;
+  }
+
+  &__muted {
+    display: block;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__chips {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    margin-top: $kdy-space-2;
+  }
+
+  &__caps {
+    margin-top: $kdy-space-3;
+    padding-top: $kdy-space-3;
+    border-top: 1px solid $kdy-color-border;
+  }
+
+  &__caps-title {
+    display: block;
+    margin-bottom: $kdy-space-1;
+    color: $kdy-color-ink-soft;
+    font-size: $kdy-font-size-sm;
+    font-weight: 600;
+  }
+
+  &__caps-line {
+    display: block;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: $kdy-line-height-loose;
+  }
+
+  &__row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    margin: $kdy-space-2 $kdy-space-5;
+
+    &--user {
+      justify-content: flex-end;
+    }
+
+    &--agent {
+      justify-content: flex-start;
+    }
+  }
+
+  &__avatar {
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    margin-right: $kdy-space-2;
+    border-radius: $kdy-radius-pill;
+    background: $kdy-color-brand;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__avatar-emoji {
+    font-size: $kdy-font-size-md;
+    line-height: 1;
+  }
+
+  &__bubble {
+    max-width: 78%;
+    padding: $kdy-space-3;
+    border-radius: $kdy-radius-lg;
+
+    &--user {
+      background: $kdy-color-brand;
+    }
+
+    &--agent {
+      background: $kdy-color-surface;
+      box-shadow: $kdy-shadow-sm;
+    }
+  }
+
+  &__bubble-text {
+    color: $kdy-color-text;
+    font-size: $kdy-font-size-sm;
+    line-height: $kdy-line-height-loose;
+    word-break: break-word;
+  }
+
+  &__answer {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__answer-line {
+    color: $kdy-color-text;
+    font-size: $kdy-font-size-sm;
+    line-height: $kdy-line-height-loose;
+    word-break: break-word;
+  }
+
+  &__facts {
+    margin-top: $kdy-space-2;
+    padding-top: $kdy-space-2;
+    border-top: 1px solid $kdy-color-border;
+  }
+
+  &__fact {
+    margin-bottom: $kdy-space-2;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__fact-label {
+    display: block;
+    color: $kdy-color-ink-soft;
+    font-size: $kdy-font-size-xs;
+    font-weight: 600;
+  }
+
+  &__fact-value {
+    display: block;
+    margin-top: 2px;
+    color: $kdy-color-text;
+    font-size: $kdy-font-size-sm;
+    line-height: $kdy-line-height-normal;
+    word-break: break-word;
+  }
+
+  &__sources {
+    margin-top: $kdy-space-2;
+  }
+
+  &__sources-title {
+    display: block;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__source {
+    display: block;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: $kdy-line-height-loose;
+  }
+
+  &__meta {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: $kdy-space-1;
+    margin-top: $kdy-space-2;
+  }
+
+  &__badge {
+    padding: 2px $kdy-space-2;
+    border-radius: $kdy-radius-sm;
+    background: $kdy-color-surface-alt;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    margin-top: $kdy-space-3;
+  }
+
+  &__retry {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    margin-top: $kdy-space-2;
+  }
+
+  &__composer {
+    position: sticky;
+    bottom: 0;
+    margin: $kdy-space-3 $kdy-space-5 0;
+    padding: $kdy-space-3;
+    border-radius: $kdy-radius-xl;
+    background: $kdy-color-surface;
+    box-shadow: $kdy-shadow-md;
+  }
+
+  &__composer-action {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: $kdy-space-2;
+  }
+
+  &__footnote {
+    display: block;
+    padding: $kdy-space-4 $kdy-space-5;
+    color: $kdy-color-text-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: $kdy-line-height-loose;
+    text-align: center;
+  }
+}

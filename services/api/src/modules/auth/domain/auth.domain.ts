@@ -57,6 +57,8 @@ export interface CampusBindingRecord {
   platform: CampusPlatform;
   status: string;
   scopes: string[];
+  /** 绑定建立时间（UI 展示"绑定于 …"；过期时间由 expiresAt 给出） */
+  createdAt: Date;
   expiresAt: Date;
   lastUsedAt: Date | null;
 }

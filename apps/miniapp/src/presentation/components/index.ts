@@ -29,3 +29,6 @@ export type { KdyFieldProps, KdyFieldType } from './KdyField'
 
 export { KdyChip } from './KdyChip'
 export type { KdyChipProps } from './KdyChip'
+
+export { KdyAgentFab, agentPathWithContext } from './KdyAgentFab'
+export type { KdyAgentFabProps } from './KdyAgentFab'

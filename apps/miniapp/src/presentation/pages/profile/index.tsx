@@ -1,12 +1,13 @@
 import { Text, View } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
+import { ArrowRight } from '@taroify/icons'
 import { useState } from 'react'
 
 import { getContainer } from '../../../app/container'
 import { PAGE_PATHS } from '../../../app/routes'
 import type { WechatStatusDto } from '../../../domain/models/auth'
 import { navigateTo, toast } from '../../../platform/navigation'
-import { KdyAvatar, KdyButton, KdyCard, KdyTag } from '../../components'
+import { KdyAgentFab, KdyAvatar, KdyButton, KdyCard, KdyTag } from '../../components'
 import { KdyHeading } from '../../components/KdyHeading'
 import { useStore } from '../../hooks'
 import './index.scss'
@@ -267,6 +268,29 @@ export default function ProfilePage() {
         </KdyCard>
       )}
 
+      <KdyCard title='校园服务' elevated={false}>
+        {[
+          { label: '身份与校园绑定', detail: '统一身份 / 教务 / 校园卡，逐系统授权', path: PAGE_PATHS.identity },
+          { label: '我的课表', detail: '今天上什么、下一节在哪、还有多久', path: PAGE_PATHS.schedule },
+          { label: '校园卡', detail: '余额、消费集中地、异常扣款与挂失指引', path: PAGE_PATHS.campusCard },
+          { label: '隐私与数据', detail: '隐私开关、同意管理、导出我的数据', path: PAGE_PATHS.profileSettings },
+        ].map((item) => (
+          <View
+            key={item.path}
+            className='kdy-profile__nav'
+            onClick={() => {
+              void navigateTo(item.path)
+            }}
+          >
+            <View className='kdy-profile__nav-body'>
+              <Text className='kdy-profile__nav-title'>{item.label}</Text>
+              <Text className='kdy-profile__nav-detail'>{item.detail}</Text>
+            </View>
+            <ArrowRight />
+          </View>
+        ))}
+      </KdyCard>
+
       <KdyCard title='隐私与合规' elevated={false}>
         {PRIVACY_RULES.map((rule) => (
           <View key={rule.title} className='kdy-profile__rule'>
@@ -291,6 +315,8 @@ export default function ProfilePage() {
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
       </Text>
+
+      <KdyAgentFab module='profile' page={PAGE_PATHS.profile} hint='问我校园生活的事' />
     </View>
   )
 }

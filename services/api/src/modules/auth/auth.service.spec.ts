@@ -68,6 +68,7 @@ function makeBindings(): CampusBindingRecord[] {
       platform: 'CARD',
       status: 'active',
       scopes: ['balance:read'],
+      createdAt: new Date('2026-11-01T00:00:00.000Z'),
       expiresAt: new Date('2026-12-01T00:00:00.000Z'),
       lastUsedAt: null,
     },

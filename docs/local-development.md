@@ -98,6 +98,11 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 | `JWT_SECRET` | 签发/校验 JWT（缺失会直接报错，不会静默降级） |
 | `AUTH_DEV_EXPOSE_CODES` | `"true"` 时**仅开发环境**在发送验证码的响应里回显 `devCode` |
 | `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | 访问/刷新令牌有效期（秒） |
+| `CAMPUS_DATA_MODE` | `mock`（默认，模拟校园数据，响应标 `simulated: true`）/ `live`（真实上游，需配 `CAMPUS_*_DATA_URL`） |
+| `CAMPUS_EGATE_DATA_URL` / `CAMPUS_JWC_DATA_URL` / `CAMPUS_CARD_DATA_URL` | 各校园系统上游地址，仅 `live` 模式使用；未配置则明确报错 |
+| `CAMPUS_UPSTREAM_TIMEOUT_MS` | 校园上游请求超时（毫秒，默认 6000） |
+| `AGENT_LLM_BASE_URL` / `AGENT_LLM_API_KEY` / `AGENT_LLM_MODEL` | 可达鸭的 OpenAI 兼容模型；**全部留空即走规则回答**，功能完整 |
+| `AGENT_LLM_TIMEOUT_MS` | 模型调用超时（毫秒，默认 8000），超时即降级为规则回答 |
 
 `AUTH_DEV_EXPOSE_CODES` 只是为了真机联调方便；生产必须关闭，
 否则任何人都能拿到别人的注册验证码。关闭时验证码会打印到 API 控制台（`ConsoleMailAdapter`）。
@@ -163,7 +168,52 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 绑定冲突（该微信已属于另一个账号）返回 `CONFLICT`，**不做静默账号合并**；
 账号只剩微信一种登录方式时拒绝解绑（`FORBIDDEN`），避免把自己锁在门外。
 
+### 3.6 校园数据（身份 / 课表 / 校园卡）与可达鸭
+
+这两块都**默认不需要任何凭据**就能跑通全链路，只在拿到校方授权后才需要配置。
+
+**校园数据来源**由 `CAMPUS_DATA_MODE` 决定：
+
+| 模式 | 行为 |
+| --- | --- |
+| `mock`（默认） | 确定性的本地模拟数据（同一个账号永远拿到同一份课表/流水），所有校园数据在响应里带 `simulated: true`，UI 会显著标注「演示数据」 |
+| `live` | 请求真实上游，必须配置对应 `CAMPUS_*_DATA_URL`，否则**明确报错**（宁可报错，也不返回空数据让用户以为"我这学期没课/卡里没钱"） |
+
+真实对接的接入点集中在两处，拿到授权后只改这两处：
+
+- `services/api/src/modules/auth/domain/campus-data.domain.ts`（端口契约）
+- `services/api/src/modules/auth/data/http-campus-data.adapter.ts`（上游 JSON 解析）
+- CAS 侧另见 `services/api/src/modules/auth/data/mock-campus-auth.provider.ts`
+
+演示凭据 `demo:<platform>:<userId>` 仅在 `mock` + 非生产环境签发，仍走
+同一套 `CampusSessionPort` 加密落库与权限判定 —— 也就是说**权限逻辑不是 mock 的**。
+
+相关端点（都需要登录）：
+
+| 动作 | 端点 |
+| --- | --- |
+| 四个校园系统各自的绑定状态 | `GET /auth/campus/overview` |
+| 实名信息（默认脱敏，`reveal=1` 返回明文并写审计） | `GET /auth/campus-identity` |
+| 绑定 / 解绑校园系统 | `POST` / `DELETE /auth/campus-bindings` |
+| 今日课表（含正在上 / 下一节 / 还有几分钟） | `GET /schedule/today` |
+| 本周课表（含冲突与可切换学期） | `GET /schedule/week` |
+| 从教务系统整体同步 | `POST /schedule/sync` |
+| 手动加课（临时调课兜底） | `POST /schedule/items` |
+| 校园卡总览（余额 / 流水 / 低于阈值 / 异常扣款 / 还能撑几天） | `GET /campus-card/overview` |
+| 挂失指引（写审计；不谎称已挂失） | `GET /campus-card/lost-report` |
+| 隐私开关 / 同意管理 / 数据导出 | `GET`/`PATCH /profile/me`、`/profile/consents`、`/profile/export` |
+
+**可达鸭（内置助手）** 的端点是 `POST /agent/chat`、`GET /agent/suggestions`、
+`GET /agent/capabilities`。它**不配置模型也能用**：
+
+- 未配置 `AGENT_LLM_*` → 服务端用确定性规则组织语言（响应 `degraded: true`、`usedModel: null`）；
+- 配置了模型但调用失败/超时 → 同样降级为规则回答，不会让用户等不到回应；
+- 无论走哪条路，涉及个人数据的部分都由**受 `userId` 约束的实时工具**取数，
+  个人信息**永远不会**进入检索索引（白名单只有模块说明 / 内置指南 / FAQ 表）；
+- 未绑定校园系统、上游不可用、未登录，都会转成人话 + 一个可执行的动作，不编造数字。
+
 ## 4. 小程序联调真实后端
+
 
 ```bash
 TARO_APP_USE_MOCK=false TARO_APP_API_BASE_URL=http://localhost:3000 ./scripts/dev.sh weapp

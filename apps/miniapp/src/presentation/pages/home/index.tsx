@@ -5,7 +5,7 @@ import type { KedayaModule } from '@kedaya/contracts'
 import { getContainer } from '../../../app/container'
 import { PAGE_PATHS } from '../../../app/routes'
 import { navigateTo, toast } from '../../../platform/navigation'
-import { KdyCard, KdyTag } from '../../components'
+import { KdyAgentFab, KdyCard, KdyTag } from '../../components'
 import { KdyModuleIcon } from '../../components/KdyModuleIcon'
 import { KdyHeading } from '../../components/KdyHeading'
 import { LikeOutlined, ArrowRight } from '@taroify/icons'
@@ -38,6 +38,11 @@ const MODULE_ROUTES: Readonly<Record<string, string>> = {
   'lost-found': PAGE_PATHS.lostFoundList,
   forum: PAGE_PATHS.forumList,
   'dorm-harmony': PAGE_PATHS.dormHarmonyHome,
+  // 四个核心模块（身份 / 课表 / 校园卡 / 我的）
+  auth: PAGE_PATHS.identity,
+  schedule: PAGE_PATHS.schedule,
+  'campus-card': PAGE_PATHS.campusCard,
+  profile: PAGE_PATHS.profile,
 }
 
 function moduleTone(module: KedayaModule): KdyTagTone {
@@ -173,6 +178,8 @@ export default function HomePage() {
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
       </Text>
+
+      <KdyAgentFab module='home' page={PAGE_PATHS.home} hint='不认识的地方，问我' />
     </View>
   )
 }

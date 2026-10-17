@@ -112,6 +112,7 @@ function toBindingRecord(row: CampusBinding): CampusBindingRecord {
     platform: row.platform as CampusPlatform,
     status: row.status,
     scopes: row.scopes,
+    createdAt: row.createdAt,
     expiresAt: row.expiresAt,
     lastUsedAt: row.lastUsedAt,
   };

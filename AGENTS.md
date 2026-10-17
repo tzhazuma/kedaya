@@ -11,6 +11,14 @@ Web 与小程序是独立客户端，避免为单端视觉调整改变另一个�
 **邮箱 + 密码**（注册/登录/改密/找回）、**微信小程序快捷登录**（首次自动建号，可后补邮箱密码）；
 账号自助包括改昵称/头像、绑定/解绑微信（至少保留一种登录方式）。
 六个业务模块（跳蚤、宿舍矛盾、跑腿、找搭子、失物招领、论坛）小程序端与后端已实现；
+四个核心模块（身份 `auth`、课表 `schedule`、校园卡 `campus-card`、我的 `profile` 的
+隐私与数据页）与内置全局助手「可达鸭」（`agent`，含 `KdyAgentFab` 悬浮入口）已实现，
+校园数据默认走 `CAMPUS_DATA_MODE=mock`（确定性模拟数据，响应标 `simulated: true`，
+真实对接点见 `services/api/src/modules/auth/data/http-campus-data.adapter.ts`；
+CAS 侧见 `mock-campus-auth.provider.ts` 顶部注释），拿到校方授权后切 `live` 即可，
+权限逻辑（`CampusSessionPort` / 加密落库 / 审计）在两种模式下完全相同。
+可达鸭 **facts-first**：受 `userId` 约束的实时工具取事实 → 检索白名单公共知识 → 模型只组织语言；
+未配置 `AGENT_LLM_*` 时用规则回答（`degraded: true`），功能完整。
 Web 门户目前只交付拼单垂直切片与管理后台占位。
 Web 的模块交付状态以 `apps/web/src/domain/models/delivery.ts` 为**唯一真相**
 （宫格角标与模块说明页都由它驱动，别在组件里另写一份判断）。本地启动、数据库与真实联调方式见 `docs/local-development.md`。

@@ -230,6 +230,8 @@ npm run test -w @kedaya/miniapp
 | `src/domain/models/__tests__/auth.test.ts` | 邮箱/blob 校验、密码强度提示、会话 DTO 形状校验 |
 | `src/data/repositories/__tests__/mockAuthRepository.test.ts` | mock 复刻后端语义：验证码一次性、改密踢下线、微信 openid 与邮箱是同一份身份、绑定冲突、解绑护栏 |
 | `src/application/auth/__tests__/authAccount.test.ts` | 用例职责：本地校验先拦、成功后会话落盘、未登录拒绝、微信登录编排（配置探测 / 首次建号 / 凭证失败不落盘） |
+| `src/app/__tests__/routes.test.ts` | 路由一致性闸门：`PAGE_PATHS` ↔ 契约 `MINIAPP_PAGES` ↔ `app.config.ts` 的 `pages` ↔ tabBar 列表逐条对齐（漂移即红） |
+| `src/app/__tests__/campusUseCases.test.ts` | 校园三件套 + 可达鸭的高可用：缓存 hydrate、**刷新失败不清空**、`needsBinding` 与网络错误分流、解绑清明文、agent 失败也落带重试的消息 |
 
 ---
 
@@ -252,21 +254,37 @@ npm run test -w @kedaya/miniapp
   - **账号安全**：昵称/头像编辑、绑定邮箱（给只有微信的账号补后路）、绑定/解绑微信
   - 客户端与后端**同一套校验规则**（验证码一次性、密码强度、昵称按码点截断、头像 ≤64KB）
 - 拼单垂直切片：列表 + 详情 + 参团，三态齐全，默认 mock
-- 复用组件：`KdyCard` / `KdyButton` / `KdyField` / `KdyChip` / `KdyTag` / `KdyEmpty` / `KdyHeading` / `KdyAvatar`（全部取自设计令牌）
+- **四个核心模块**（真实接线，非占位）：
+  - **身份**（`auth`）：四个校园系统各自的绑定状态 + 一键绑定/解绑；实名默认服务端脱敏，
+    展开明文是用户主动动作并写审计
+  - **课表**（`schedule`）：今日（正在上 / 下一节还有多久 / 今天还剩几节）、本周（切换星期、
+    冲突提示、切换学期）、一键同步教务系统、手动加课（节次区间校验，前后端同规则）
+  - **校园卡**（`campus-card`）：余额 + 低余额提醒 + 「还能撑几天」+ 异常扣款 + 消费集中地 +
+    流水；挂失给可执行指引（可达鸭对校园卡系统没有写权限，不谎称已挂失）
+  - **我的 → 隐私与数据**（`profile`）：隐私开关、敏感模块同意（可撤回、能看出哪些没授权）、
+    数据导出（账号 + 开关 + 同意 + 内容条数 + 审计摘要）
+- **内置全局助手「可达鸭」**（`agent`）：`KdyAgentFab` 悬浮入口挂在四个 tabBar 页与四个核心模块页，
+  点击带上下文跳转；服务端 **facts-first**（先查受 `userId` 约束的事实 → 再检索公共知识 →
+  模型只负责组织语言），**未配置模型也完全可用**（规则回答 + `degraded: true`）；
+  失败落带「重试」的消息；会话只在内存
+- 复用组件：`KdyCard` / `KdyButton` / `KdyField` / `KdyChip` / `KdyTag` / `KdyEmpty` / `KdyHeading` / `KdyAvatar` / `KdyAgentFab`（全部取自设计令牌）
 - Vitest 测试（node 环境，无需模拟器）：domain / 网络层 / mock 仓储 / 用例 / 会话存储 / WXSS 安全
 
 ### ❌ 未实现（诚实清单）
 
-- **CAS / Egate OAuth**：契约 §5 第一级身份层里的**校园统一身份认证**未接入
-  （邮箱密码与微信小程序登录已可用，且签发同一套 KedaYa 自有 JWT）。
-- **校园系统绑定**：契约 §5 第二级能力层（`CampusSessionPort`）未实现。
-  `profile.campusBound` 目前是手工切换的占位开关。
-- **敏感模块二次同意**：契约 §9 的同意流程与审计日志未实现（首页对这类模块只做标注 + 提示）。
+- **CAS / Egate OAuth 真实对接**：契约 §5 第一级身份层里的**校园统一身份认证**
+  目前是**开发用 Mock 适配器**（`services/api/src/modules/auth/data/mock-campus-auth.provider.ts`），
+  真实对接点与所需凭据写在该文件顶部注释里；拿到校方授权后只改这一处。
+- **校园数据真实上游**：默认 `CAMPUS_DATA_MODE=mock`（确定性模拟数据，全部标
+  `simulated: true`）。`live` 模式的适配器已写好（`http-campus-data.adapter.ts`），
+  但**没有官方凭据可测**，因此端到端只有 mock 路径经过验证。
+  这不是"未实现"，而是"已实现但只能在授权后启用"，UI 与接口在两种模式下完全一致。
 - **站内信列表**（`notifications`）：只有订阅消息链路，站内信列表是空态。
-- **其余 18 个业务模块**：契约 §4 已登记，端上未实现（首页明确显示「开发中」）。
+- **其余业务模块**：契约 §4 已登记，端上未实现（首页明确显示「开发中」/「需二次同意」）。
 - **tabBar 图标**：未配置 `iconPath`（品牌图标未就位），当前只显示文字。
 - **H5 端未实机验证**：`build:h5` 脚本已就绪，但本轮只验证了 `weapp` 构建。
-- **CI / 真机预览**：未在真机与微信开发者工具中打开验证（无图形环境）。
+- **CI / 真机预览**：未在真机与微信开发者工具中打开验证（本机 IDE 服务端口关闭，
+  需手动导入 `apps/miniapp/dist`）。
 - **E2E 测试**：未接入小程序自动化（miniprogram-automator）。
 - **头像存储**：当前没有对象存储，微信头像压成 ≤64KB 的 data URL 存 `User.avatarUrl`；
   接入 OSS 后应改成「上传返回 URL」（只需替换 `platform/avatarPicker.ts` 的实现）。

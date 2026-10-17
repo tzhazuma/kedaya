@@ -1,12 +1,13 @@
 import { Text, View } from '@tarojs/components'
 import { useState } from 'react'
 
+import { PAGE_PATHS } from '../../../app/routes'
 import { KdyHeading } from '../../components/KdyHeading'
 import {
   SUBSCRIBE_TEMPLATES,
   requestSubscribeMessage,
 } from '../../../platform/subscribeMessage'
-import { KdyButton, KdyCard, KdyEmpty, KdyTag } from '../../components'
+import { KdyAgentFab, KdyButton, KdyCard, KdyEmpty, KdyTag } from '../../components'
 import './index.scss'
 
 /**
@@ -78,6 +79,8 @@ export default function MessagesPage() {
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
       </Text>
+
+      <KdyAgentFab module='notifications' page={PAGE_PATHS.messages} hint='通知看不懂？问我' />
     </View>
   )
 }

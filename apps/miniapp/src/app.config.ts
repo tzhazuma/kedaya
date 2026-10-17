@@ -43,6 +43,11 @@ export default {
     'presentation/pages/forum/create/index',
     'presentation/pages/forum/detail/index',
     'presentation/pages/dormHarmony/index/index',
+    'presentation/pages/identity/index',
+    'presentation/pages/schedule/index',
+    'presentation/pages/campusCard/index',
+    'presentation/pages/profile/settings/index',
+    'presentation/pages/agent/index',
   ],
   window: {
     backgroundTextStyle: 'light',

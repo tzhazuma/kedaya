@@ -14,6 +14,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ScheduleModule } from './modules/schedule/schedule.module';
 import { CampusCardModule } from './modules/campus-card/campus-card.module';
 import { ProfileModule } from './modules/profile/profile.module';
+import { AgentModule } from './modules/agent/agent.module';
 import { NotificationModule } from './modules/notifications/notifications.module';
 
 // 契约 §4.1 业务模块（14）
@@ -61,6 +62,7 @@ import { WildlifeModule } from './modules/wildlife/wildlife.module';
     ScheduleModule,
     CampusCardModule,
     ProfileModule,
+    AgentModule,
     NotificationModule,
     GroupbuyModule,
     TakeoutGuardModule,

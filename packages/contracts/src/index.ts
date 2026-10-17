@@ -13,3 +13,4 @@
 
 export * from './envelope.ts';
 export * from './modules.ts';
+export * from './pages.ts';

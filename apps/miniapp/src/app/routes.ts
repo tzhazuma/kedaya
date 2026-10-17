@@ -43,6 +43,13 @@ export const PAGE_PATHS = {
   forumDetail: '/presentation/pages/forum/detail/index',
   // 宿舍矛盾（匿名，凭追踪码查看）
   dormHarmonyHome: '/presentation/pages/dormHarmony/index/index',
+  // 四个核心模块：身份 / 课表 / 校园卡 / 我的（隐私与数据）
+  identity: '/presentation/pages/identity/index',
+  schedule: '/presentation/pages/schedule/index',
+  campusCard: '/presentation/pages/campusCard/index',
+  profileSettings: '/presentation/pages/profile/settings/index',
+  // 内置全局助手「可达鸭」
+  agent: '/presentation/pages/agent/index',
 } as const
 
 export type PagePath = (typeof PAGE_PATHS)[keyof typeof PAGE_PATHS]

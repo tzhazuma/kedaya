@@ -24,6 +24,7 @@ import {
   type UserRepository,
 } from './domain/auth.domain';
 import { sanitizeDisplayName, validateAvatarDataUrl } from './domain/display-name';
+import { buildDemoCampusSessionRef } from './domain/campus-data.domain';
 import {
   LOCAL_ACCOUNT_REPOSITORY,
   REFRESH_SESSION_REPOSITORY,
@@ -32,6 +33,14 @@ import {
   type RefreshSessionRepository,
 } from './domain/local-account.domain';
 import { sha256Hex } from './domain/verification-code';
+
+/** 各校园系统默认申请的权限域（真实对接时以官方文档为准） */
+const DEFAULT_SCOPES: Record<CampusPlatform, string[]> = {
+  EGATE: ['identity:read'],
+  JWC: ['schedule:read'],
+  CPDAILY: ['notice:read'],
+  CARD: ['card:read'],
+};
 
 /** 登录结果（与邮箱密码 / 微信路径同构，客户端只写一套解析） */
 export type LoginResult = Omit<AccountSession, 'isNewUser'>;
@@ -268,12 +277,40 @@ export class AuthService {
 
   /* ---------------- 第二级：校园系统绑定 ---------------- */
 
+  /**
+   * 绑定校园系统。
+   *
+   * `sessionCookie` 缺省时（`CAMPUS_DATA_MODE=mock` 且非生产）服务端签发演示凭据 ——
+   * 这样「身份 / 课表 / 校园卡」三个模块在没有官方授权的前提下也能验证全链路，
+   * 且**走的是同一套加密落库与权限判定代码**（不是绕过）。
+   */
   bindCampus(
     userId: string,
     platform: CampusPlatform,
-    credentials: CampusBindCredentials,
+    credentials: Partial<CampusBindCredentials>,
   ): Promise<CampusBindingRecord> {
-    return this.campusSession.bind(userId, platform, credentials);
+    const sessionCookie = credentials.sessionCookie ?? this.demoSessionRef(platform, userId);
+
+    return this.campusSession.bind(userId, platform, {
+      sessionCookie,
+      ...(credentials.scopes === undefined
+        ? { scopes: DEFAULT_SCOPES[platform] }
+        : { scopes: credentials.scopes }),
+      ...(credentials.ttlSeconds === undefined ? {} : { ttlSeconds: credentials.ttlSeconds }),
+    });
+  }
+
+  private demoSessionRef(platform: CampusPlatform, userId: string): string {
+    const mode = this.config.get<string>('CAMPUS_DATA_MODE') ?? 'mock';
+    const production = (this.config.get<string>('NODE_ENV') ?? 'development') === 'production';
+
+    if (mode === 'mock' && !production) {
+      return buildDemoCampusSessionRef(platform, userId);
+    }
+    throw new ValidationError(
+      `绑定 ${platform} 需要提供校园系统 sessionCookie（当前数据模式：${mode}）`,
+      { platform, dataMode: mode },
+    );
   }
 
   listCampusBindings(userId: string): Promise<CampusBindingRecord[]> {

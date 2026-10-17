@@ -47,4 +47,42 @@ export class CampusCardTransactionPrismaRepository
       totalInFen: incoming._sum.amountFen ?? 0,
       count: out._count._all + incoming._count._all,
     };
+  }
+
+  async listRecent(userId: string, limit: number): Promise<CampusCardTransactionModel[]> {
+    return this.prisma.campusCardTransaction.findMany({
+      where: { userId },
+      orderBy: [{ happenedAt: 'desc' }, { id: 'desc' }],
+      take: limit,
+    });
+  }
+
+  async replaceAll(
+    userId: string,
+    rows: CreateCampusCardTransactionInput[],
+  ): Promise<number> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.campusCardTransaction.deleteMany({ where: { userId } });
+      if (rows.length === 0) return 0;
+      await tx.campusCardTransaction.createMany({
+        data: rows.map((row) => ({
+          userId,
+          amountFen: row.amountFen,
+          direction: row.direction,
+          merchant: row.merchant,
+          happenedAt: row.happenedAt,
+          balanceAfterFen: row.balanceAfterFen,
+        })),
+      });
+      return rows.length;
+    });
+  }
+
+  async lastCachedAt(userId: string): Promise<Date | null> {
+    const newest = await this.prisma.campusCardTransaction.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    });
+    return newest?.createdAt ?? null;
   }}

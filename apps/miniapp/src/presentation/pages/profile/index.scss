@@ -86,3 +86,38 @@
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
+
+/* 「校园服务」入口：一列可点击的导航行（箭头用 @taroify/icons，不用 emoji） */
+.kdy-profile__nav {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: $kdy-space-3 0;
+  border-bottom: 1px solid $kdy-color-border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.kdy-profile__nav-body {
+  flex: 1;
+  min-width: 0;
+  padding-right: $kdy-space-3;
+}
+
+.kdy-profile__nav-title {
+  display: block;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-md;
+  font-weight: 500;
+}
+
+.kdy-profile__nav-detail {
+  display: block;
+  margin-top: 2px;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}

@@ -11,7 +11,7 @@ import {
   SUBSCRIBE_TEMPLATES,
   requestSubscribeMessage,
 } from '../../../platform/subscribeMessage'
-import { KdyButton, KdyCard, KdyTag } from '../../components'
+import { KdyAgentFab, KdyButton, KdyCard, KdyTag } from '../../components'
 import './index.scss'
 import { KdyHeading } from '../../components/KdyHeading'
 import { KdyDemoTools } from '../../components/KdyDemoTools'
@@ -205,6 +205,8 @@ export default function DiscoverPage() {
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
       </Text>
+
+      <KdyAgentFab module='discover' page={PAGE_PATHS.discover} hint='想找什么？问我' />
     </View>
   )
 }

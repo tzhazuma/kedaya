@@ -21,8 +21,15 @@ const refreshSchema = z.object({
 
 const bindSchema = z.object({
   platform: z.enum(['EGATE', 'CPDAILY', 'JWC', 'CARD']),
-  /** 上游回调拿到的 session cookie；服务端加密后落库，绝不明文存储 */
-  sessionCookie: z.string().min(1, 'sessionCookie 不能为空').max(4096),
+  /**
+   * 上游回调拿到的 session cookie；服务端加密后落库，绝不明文存储。
+   *
+   * 可省略：`CAMPUS_DATA_MODE=mock`（默认）且非生产环境时，
+   * 服务端会签发一份**演示凭据**（`demo:<platform>:<userId>`）让
+   * 「绑定 → 取数 → 解绑」全链路在没有官方授权时也能跑通，
+   * 响应里会如实标注 `simulated: true`。真实模式（`live`）下必填。
+   */
+  sessionCookie: z.string().min(1).max(4096).optional(),
   scopes: z.array(z.string().min(1).max(64)).max(20).optional(),
   ttlSeconds: z
     .number()
@@ -108,16 +115,18 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: '第二级：绑定校园系统（session 加密存储）',
-    description: '与身份层物理分离；绑定失败不影响已登录状态。',
+    description:
+      '与身份层物理分离；绑定失败不影响已登录状态。' +
+      'mock 模式（默认、非生产）可省略 sessionCookie，服务端签发演示凭据并在响应里标注。',
   })
   bind(
     @CurrentUser() userId: string,
     @ZodBody(bindSchema) body: z.infer<typeof bindSchema>,
   ) {
     return this.authService.bindCampus(userId, body.platform, {
-      sessionCookie: body.sessionCookie,
-      scopes: body.scopes,
-      ttlSeconds: body.ttlSeconds,
+      ...(body.sessionCookie === undefined ? {} : { sessionCookie: body.sessionCookie }),
+      ...(body.scopes === undefined ? {} : { scopes: body.scopes }),
+      ...(body.ttlSeconds === undefined ? {} : { ttlSeconds: body.ttlSeconds }),
     });
   }
 

@@ -20,6 +20,12 @@ import { createForumUseCases } from '../application/forum/forumUseCases'
 import type { ForumUseCases } from '../application/forum/forumUseCases'
 import { createDormHarmonyUseCases } from '../application/dormHarmony/dormHarmonyUseCases'
 import type { DormHarmonyUseCases } from '../application/dormHarmony/dormHarmonyUseCases'
+import { createCampusUseCases } from '../application/campus/campusUseCases'
+import type { CampusUseCases } from '../application/campus/campusUseCases'
+import { createPrivacyUseCase } from '../application/privacy/privacyUseCases'
+import type { PrivacyUseCase } from '../application/privacy/privacyUseCases'
+import { createAgentUseCase } from '../application/agent/agentUseCases'
+import type { AgentUseCase } from '../application/agent/agentUseCases'
 import { createApiClient, createAuthRefresher, createTaroHttpPort, createTracePort } from '../data/api'
 import type { ApiClient } from '../data/api'
 import { createHttpGroupBuyRepository } from '../data/repositories/httpGroupBuyRepository'
@@ -38,6 +44,14 @@ import { createHttpForumRepository } from '../data/repositories/httpForumReposit
 import { createMockForumRepository } from '../data/repositories/mockForumRepository'
 import { createHttpDormHarmonyRepository } from '../data/repositories/httpDormHarmonyRepository'
 import { createMockDormHarmonyRepository } from '../data/repositories/mockDormHarmonyRepository'
+import { createHttpIdentityRepository } from '../data/repositories/httpIdentityRepository'
+import { createHttpScheduleRepository } from '../data/repositories/httpScheduleRepository'
+import { createHttpCampusCardRepository } from '../data/repositories/httpCampusCardRepository'
+import { createHttpPrivacyRepository } from '../data/repositories/httpPrivacyRepository'
+import { createHttpAgentRepository } from '../data/repositories/httpAgentRepository'
+import { createMockCampusRepositories } from '../data/repositories/mockCampusRepository'
+import { createMockPrivacyRepository } from '../data/repositories/mockPrivacyRepository'
+import { createMockAgentRepository } from '../data/repositories/mockAgentRepository'
 import { mockNow } from '../data/mock/fixtures'
 import { createAvatarPickerPort } from '../platform/avatarPicker'
 import { createWechatCodePort } from '../platform/wechatLogin'
@@ -60,6 +74,11 @@ import type { LostFoundRepository } from '../domain/ports/lostFoundRepository'
 import type { GroupBuyRepository } from '../domain/ports/groupbuyRepository'
 import type { AuthRefresherPort, SessionStorePort, TokenStorePort } from '../domain/ports/sessionPort'
 import type { TracePort } from '../domain/ports/tracePort'
+import type { IdentityRepository } from '../domain/ports/identityRepository'
+import type { ScheduleRepository } from '../domain/ports/scheduleRepository'
+import type { CampusCardRepository } from '../domain/ports/campusCardRepository'
+import type { PrivacyRepository } from '../domain/ports/privacyRepository'
+import type { AgentRepository } from '../domain/ports/agentRepository'
 
 /**
  * 装配层（契约 §7 `app/`：DI、路由注册、运行时工厂）。
@@ -115,6 +134,11 @@ export interface AppContainer {
   lostFoundRepository: LostFoundRepository
   forumRepository: ForumRepository
   dormHarmonyRepository: DormHarmonyRepository
+  identityRepository: IdentityRepository
+  scheduleRepository: ScheduleRepository
+  campusCardRepository: CampusCardRepository
+  privacyRepository: PrivacyRepository
+  agentRepository: AgentRepository
   /** 仅 mock 模式下非空 —— 页面用它演示「三态」 */
   mockControls: MockGroupBuyRepository | null
   useCases: {
@@ -129,6 +153,9 @@ export interface AppContainer {
     lostFound: LostFoundUseCases
     forum: ForumUseCases
     dormHarmony: DormHarmonyUseCases
+    campus: CampusUseCases
+    privacy: PrivacyUseCase
+    agent: AgentUseCase
   }
 }
 
@@ -276,6 +303,67 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     cache,
     clock,
   })
+
+  /* ---------------- 校园第二级能力：身份 / 课表 / 校园卡 ---------------- */
+
+  /**
+   * 三个模块共用一个"校园上游"。mock 模式下由**本地模拟上游**同时扮演
+   * 身份系统、教务系统与校园卡系统（三者状态互相咬合：先绑定才有数据），
+   * 这样 UI 的空态 → 绑定 → 有数据这条链路在离线时也能被真正验证。
+   */
+  const mockCampus = env.useMock
+    ? createMockCampusRepositories({ cache, viewerId, latencyMs: env.mockLatencyMs, now: clock.now })
+    : null
+
+  const identityRepository: IdentityRepository = mockCampus?.identity ?? createHttpIdentityRepository(apiClient)
+  const scheduleRepository: ScheduleRepository = mockCampus?.schedule ?? createHttpScheduleRepository(apiClient)
+  const campusCardRepository: CampusCardRepository = mockCampus?.campusCard ?? createHttpCampusCardRepository(apiClient)
+
+  const campus = createCampusUseCases({
+    identityRepository,
+    scheduleRepository,
+    campusCardRepository,
+    cache,
+    clock,
+    viewerId,
+    cacheKeys: {
+      identity: (owner) => `${StorageKeys.campusBindings}:${owner}`,
+      scheduleToday: StorageKeys.scheduleTodayCache,
+      scheduleWeek: StorageKeys.scheduleWeekCache,
+      campusCard: StorageKeys.campusCardCache,
+    },
+  })
+
+  const privacyRepository: PrivacyRepository = env.useMock
+    ? createMockPrivacyRepository({ cache, viewerId, latencyMs: env.mockLatencyMs, now: clock.now })
+    : createHttpPrivacyRepository(apiClient)
+
+  const privacy = createPrivacyUseCase({
+    repository: privacyRepository,
+    cache,
+    clock,
+    viewerId,
+    cacheKeys: { settings: (owner) => `${StorageKeys.privacySettingsCache}:${owner}` },
+  })
+
+  /**
+   * 可达鸭 agent：mock 模式下是一个本地规则实现（复用上面的 mock 校园仓储），
+   * 因此"离线也能问课表和余额"这条**演示路径**成立。
+   * 接真后端时只是换掉仓储 —— 页面与用例完全不变。
+   */
+  const agentRepository: AgentRepository = env.useMock
+    ? createMockAgentRepository({
+        schedule: scheduleRepository,
+        campusCard: campusCardRepository,
+        identity: identityRepository,
+        privacy: privacyRepository,
+        viewerId,
+        latencyMs: env.mockLatencyMs,
+        now: clock.now,
+      })
+    : createHttpAgentRepository(apiClient)
+
+  const agent = createAgentUseCase({ repository: agentRepository, clock })
   const listGroupBuys = createListGroupBuysUseCase({
     repository: groupBuyRepository,
     cache,
@@ -313,6 +401,11 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     lostFoundRepository,
     forumRepository,
     dormHarmonyRepository,
+    identityRepository,
+    scheduleRepository,
+    campusCardRepository,
+    privacyRepository,
+    agentRepository,
     mockControls: mockRepository,
     useCases: {
       session,
@@ -326,6 +419,9 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       lostFound,
       forum,
       dormHarmony,
+      campus,
+      privacy,
+      agent,
     },
   }
 }
