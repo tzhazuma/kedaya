@@ -31,8 +31,9 @@ final class MockGroupbuyRepository implements GroupbuyPort {
   @override
   Future<Result<Page<GroupbuyOrder>>> listOrders(GroupbuyQuery query) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<Page<GroupbuyOrder>>();
+    }
     if (controls.emptyResults) {
       return Ok<Page<GroupbuyOrder>>(
         const Page<GroupbuyOrder>(items: <GroupbuyOrder>[], total: 0),
@@ -59,8 +60,9 @@ final class MockGroupbuyRepository implements GroupbuyPort {
   @override
   Future<Result<GroupbuyOrder>> getOrder(String id) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<GroupbuyOrder>();
+    }
     final GroupbuyOrder? order = _orders[id];
     if (order == null) {
       return Err<GroupbuyOrder>(
@@ -75,8 +77,9 @@ final class MockGroupbuyRepository implements GroupbuyPort {
   Future<Result<GroupbuyOrder>> createOrder(
       CreateGroupbuyOrderCommand command) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<GroupbuyOrder>();
+    }
     if (command.title.trim().isEmpty) {
       return Err<GroupbuyOrder>(
         const ApiError(
@@ -114,8 +117,9 @@ final class MockGroupbuyRepository implements GroupbuyPort {
   Future<Result<GroupbuyOrder>> joinOrder(String id,
       {required int quantity}) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<GroupbuyOrder>();
+    }
     final GroupbuyOrder? order = _orders[id];
     if (order == null) {
       return Err<GroupbuyOrder>(
@@ -154,8 +158,9 @@ final class MockGroupbuyRepository implements GroupbuyPort {
   @override
   Future<Result<GroupbuyOrder>> cancelOrder(String id) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<GroupbuyOrder>();
+    }
     final GroupbuyOrder? order = _orders[id];
     if (order == null) {
       return Err<GroupbuyOrder>(

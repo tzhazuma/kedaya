@@ -161,8 +161,9 @@ void main() {
           // 路径直接使用（不做分隔符替换：Flutter 测试跑在 POSIX 路径上，
           // 而且 Dart 的原始字符串不能以反斜杠结尾）。
           final String path = entity.path;
-          if (!path.contains('wildlife') && !path.endsWith('models/geo.dart'))
+          if (!path.contains('wildlife') && !path.endsWith('models/geo.dart')) {
             continue;
+          }
           targets.add(path);
         }
       }

@@ -54,7 +54,8 @@ final class BuddyTag {
   final bool isActive;
 
   /// 搜索用文本（key + label + aliases 的小写拼接）。
-  String get searchText => <String>[key, label, ...aliases].join(' ').toLowerCase();
+  String get searchText =>
+      <String>[key, label, ...aliases].join(' ').toLowerCase();
 
   @override
   String toString() => 'BuddyTag($key, $label)';

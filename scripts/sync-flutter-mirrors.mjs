@@ -17,7 +17,14 @@
  * 也能从头部看出「生成时基于哪个版本的源」。
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  mkdtempSync,
+  rmSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -367,9 +374,53 @@ function generateBuddyTags() {
 /* ================================================================== *
  * 写出 / 校验
  * ================================================================== */
+/**
+ * 用 Dart 官方 formatter 规范化生成物。
+ *
+ * 生成器输出的换行不可能永远与 `dart format` 一致；如果不在生成阶段格式化，
+ * `dart format --set-exit-if-changed` 与生成器的 `--check` 会互相打架。
+ * 没有 dart 的环境（例如只跑 Node 的 CI）退回原文，`--check` 仍能发现内容漂移。
+ */
+function resolveDart() {
+  const candidates = [
+    process.env.DART,
+    process.env.HOME ? join(process.env.HOME, 'toolchains/flutter/bin/dart') : null,
+    'dart',
+  ].filter(Boolean);
+  for (const candidate of candidates) {
+    try {
+      execFileSync(candidate, ['--version'], { stdio: 'ignore' });
+      return candidate;
+    } catch {
+      // 继续试下一个
+    }
+  }
+  return null;
+}
+
+function formatDart(content) {
+  const dart = resolveDart();
+  if (!dart) {
+    throw new Error(
+      '找不到 dart。生成物必须经 `dart format` 规范化（否则与 format 门禁冲突）；请把 Flutter 的 bin 加入 PATH，或设置 DART=/path/to/dart。',
+    );
+  }
+  const dir = mkdtempSync(join(tmpdir(), 'kedaya-dart-mirror-'));
+  const tmp = join(dir, 'mirror.dart');
+  try {
+    writeFileSync(tmp, content, 'utf8');
+    execFileSync(dart, ['format', tmp], { stdio: 'ignore' });
+    return readFileSync(tmp, 'utf8');
+  } catch {
+    return content;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 const outputs = [
-  [TOKENS_OUT, generateTokens()],
-  [BUDDY_OUT, generateBuddyTags()],
+  [TOKENS_OUT, formatDart(generateTokens())],
+  [BUDDY_OUT, formatDart(generateBuddyTags())],
 ];
 
 let stale = 0;

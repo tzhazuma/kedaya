@@ -29,6 +29,7 @@ import {
   CONTACT_EXCHANGE_PENDING_TTL_MS,
   CONTACT_EXCHANGE_RATE_LIMIT_ENV,
   CONTACT_EXCHANGE_WINDOW_MS,
+  type ContactExchangeRequestWire,
   type ContactExchangeStatus,
   type ContactKind,
   type ExchangedContactsWire,
@@ -179,7 +180,10 @@ export class ContactExchangeService {
     }
   }
 
-  async list(userId: string, query: ListContactExchangeQuery): Promise<Page<ReturnType<typeof toContactExchangeRequestWire>>> {
+  async list(
+    userId: string,
+    query: ListContactExchangeQuery,
+  ): Promise<Page<ContactExchangeRequestWire>> {
     await this.repo.expireStaleRequests(new Date());
     const page = await this.repo.listRequests(userId, {
       direction: query.direction,

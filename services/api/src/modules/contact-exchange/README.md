@@ -158,8 +158,10 @@ contact-exchange/
 │   └── contact-exchange.domain.spec.ts
 ├── testing/pglite.ts                 真实 PostgreSQL（PGlite）夹具
 ├── contact-exchange.http.spec.ts     29 个 HTTP 端到端用例
-└── contact-exchange.security.spec.ts 11 个安全 / 迁移 / 启动用例
+└── contact-exchange.security.spec.ts 13 个安全 / 迁移 / 启动 / 架构用例
 ```
+
+合计 **65 个测试**（另有 `packages/contracts/src/contact-exchange.test.ts` 4 个 wire 契约测试）。
 
 ## 测试
 

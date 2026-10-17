@@ -360,6 +360,8 @@ void main() {
     });
 
     test('标签：封闭表 + 数量上限（UNKNOWN_TAG:<key>）', () {
+      expect(isKnownBuddyTag('badminton'), isTrue);
+      expect(isKnownBuddyTag('quidditch'), isFalse);
       expect(
         valid()
             .copyWith(tags: const <String>['badminton', 'quidditch']).tagsError,

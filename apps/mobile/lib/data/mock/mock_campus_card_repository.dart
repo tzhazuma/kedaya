@@ -60,8 +60,9 @@ final class MockCampusCardRepository implements CampusCardPort {
   @override
   Future<Result<CampusCardLink>> linkStatus() async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<CampusCardLink>();
+    }
     return Ok<CampusCardLink>(_link());
   }
 
@@ -71,8 +72,9 @@ final class MockCampusCardRepository implements CampusCardPort {
     String channel = 'wechat',
   }) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<CampusCardLink>();
+    }
     if (openId.trim().isEmpty) {
       return _err<CampusCardLink>(
         ApiErrorCode.validationFailed,
@@ -104,8 +106,9 @@ final class MockCampusCardRepository implements CampusCardPort {
   @override
   Future<Result<CampusCardAccount>> account() async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<CampusCardAccount>();
+    }
     final ApiError? blocked = _linkGuard();
     if (blocked != null) {
       return Err<CampusCardAccount>(blocked, traceId: MockControls.traceId);
@@ -153,8 +156,9 @@ final class MockCampusCardRepository implements CampusCardPort {
   @override
   Future<Result<CampusPaymentCode>> paymentCode() async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<CampusPaymentCode>();
+    }
     final ApiError? blocked = _linkGuard();
     if (blocked != null) {
       return Err<CampusPaymentCode>(blocked, traceId: MockControls.traceId);

@@ -165,7 +165,7 @@ List<Object?> readListOrEmpty(Map<String, Object?> json, String key) {
 /// 读取字符串数组；非字符串元素被丢弃（后端新增字段时不至于整条解析失败）。
 List<String> readStringList(Map<String, Object?> json, String key) =>
     readListOrEmpty(json, key)
-        .where((Object? value) => value is String)
+        .whereType<String>()
         .map((Object? value) => value! as String)
         .toList(growable: false);
 

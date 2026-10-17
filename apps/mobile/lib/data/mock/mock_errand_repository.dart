@@ -25,8 +25,9 @@ final class MockErrandRepository implements ErrandPort {
   Future<Result<Page<ErrandTask>>> listTasks(
       {String? cursor, int limit = defaultPageSize}) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<Page<ErrandTask>>();
+    }
     final List<ErrandTask> all = _sorted();
     final int start = _parseCursor(cursor);
     final int size =

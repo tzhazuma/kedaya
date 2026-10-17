@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schemaVersion": "1.0.0",
-    "generatedAt": "2026-10-17T20:07:34+08:00",
+    "generatedAt": "2026-10-17T20:31:14+08:00",
     "crs": "WGS84 / EPSG:4326（本文件所有经纬度均为 WGS84）",
     "source": "OpenStreetMap",
     "sourceUrl": "https://www.openstreetmap.org/relation/5390610",
@@ -75,7 +75,7 @@
     "precision": {
       "campusBoundary": "OSM relation 5390610 的多边形；面积与形状为 OSM 编辑成果，未与校方红线核对",
       "poi": "OSM 节点/way 中心点；平面误差估计 3–15 m（依赖航拍描图与志愿编辑），未实测",
-      "locations": "25 个地点中，11 个直接命中 OSM 命名要素，8 个为就近推断，6 个为近似放置；见 locations[].confidence",
+      "locations": "25 个地点中，10 个为 high（直接命中 OSM 命名要素或由多栋宿舍几何中心导出）、7 个 medium（就近推断）、8 个 low（近似放置/未测绘）；见 locations[].confidence",
       "projection": "WGS84 → 局部 ENU（原点 31.1795,121.591）→ 线性视口；校园尺度误差 < 0.1%"
     },
     "caveats": [
@@ -3997,12 +3997,12 @@
   ],
   "counts": {
     "amenity": 20,
-    "building": 115,
+    "building": 86,
     "gate": 15,
-    "landuse": 45,
-    "leisure": 26,
+    "landuse": 38,
+    "leisure": 8,
     "transit": 5,
-    "water": 40,
+    "water": 14,
     "locations": 25,
     "libraries": 1,
     "dormitories": 14,

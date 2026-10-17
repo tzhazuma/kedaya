@@ -212,7 +212,12 @@ void main() {
     test('academic 按「同院系 → 共同兴趣 → 共同活动」输出，兴趣最多 3 个', () {
       const BuddyRuleSignals signals = BuddyRuleSignals(
         sameDepartment: true,
-        commonInterestTags: <String>['badminton', 'programming', 'movie', 'pets'],
+        commonInterestTags: <String>[
+          'badminton',
+          'programming',
+          'movie',
+          'pets'
+        ],
         commonActivityTags: <String>['gym'],
       );
       expect(

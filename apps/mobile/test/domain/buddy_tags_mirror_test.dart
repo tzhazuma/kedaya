@@ -28,9 +28,9 @@ void main() {
   }
 
   List<Map<String, String>> objects(String body) => RegExp(r'\{([^{}]*)\}')
-      .allMatches(body)
-      .map((RegExpMatch match) => match.group(1)!)
-      .map((String item) {
+          .allMatches(body)
+          .map((RegExpMatch match) => match.group(1)!)
+          .map((String item) {
         String? field(String name) =>
             RegExp("$name:\\s*'([^']*)'").firstMatch(item)?.group(1);
         final RegExpMatch? aliases = RegExp(
@@ -43,13 +43,12 @@ void main() {
           'aliases': aliases == null
               ? ''
               : RegExp("'([^']*)'")
-                    .allMatches(aliases.group(1)!)
-                    .map((RegExpMatch m) => m.group(1)!)
-                    .join('\u0001'),
+                  .allMatches(aliases.group(1)!)
+                  .map((RegExpMatch m) => m.group(1)!)
+                  .join('\u0001'),
           'isActive': item.contains('isActive: false') ? 'false' : 'true',
         };
-      })
-      .toList(growable: false);
+      }).toList(growable: false);
 
   test('标签表：62 条，key / label / group / aliases / isActive 逐条一致', () {
     final List<Map<String, String>> tags = objects(sliceArray('BUDDY_TAGS'));
@@ -75,7 +74,8 @@ void main() {
     final List<Map<String, String>> locations = objects(
       sliceArray('CAMPUS_LOCATION_DEFS'),
     );
-    expect(locations, hasLength(25), reason: 'CAMPUS_LOCATION_DEFS 的唯一真相是 25 条');
+    expect(locations, hasLength(25),
+        reason: 'CAMPUS_LOCATION_DEFS 的唯一真相是 25 条');
     expect(buddyCampusLocationDefs, hasLength(locations.length));
     expect(buddyCampusLocations, hasLength(locations.length));
     for (int i = 0; i < locations.length; i++) {
@@ -107,10 +107,13 @@ void main() {
     expect(generated, contains('DO NOT EDIT'));
     expect(generated, contains('source-blob-sha1: '));
 
-    final ProcessResult result = Process.runSync('git', <String>[
-      'hash-object',
-      'packages/contracts/src/buddy-tags.ts',
-    ], workingDirectory: '../..');
+    final ProcessResult result = Process.runSync(
+        'git',
+        <String>[
+          'hash-object',
+          'packages/contracts/src/buddy-tags.ts',
+        ],
+        workingDirectory: '../..');
     if (result.exitCode != 0) return; // 无 git 的环境由脚本 --check 负责
     final String hash = (result.stdout as String).trim();
     expect(generated, contains('source-blob-sha1: $hash'));

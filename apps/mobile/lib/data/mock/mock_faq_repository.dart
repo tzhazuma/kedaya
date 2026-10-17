@@ -56,8 +56,9 @@ final class MockFaqRepository implements FaqPort {
   @override
   Future<Result<List<FaqCategory>>> listCategories() async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<List<FaqCategory>>();
+    }
     final List<FaqCategory> all = _categories.values.toList(growable: false);
     all.sort((FaqCategory a, FaqCategory b) => a.id.compareTo(b.id));
     return Ok<List<FaqCategory>>(all);
@@ -66,8 +67,9 @@ final class MockFaqRepository implements FaqPort {
   @override
   Future<Result<Page<FaqArticle>>> listArticles(FaqQuery query) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<Page<FaqArticle>>();
+    }
     if (controls.emptyResults) {
       return Ok<Page<FaqArticle>>(
           const Page<FaqArticle>(items: <FaqArticle>[], total: 0));
@@ -110,8 +112,9 @@ final class MockFaqRepository implements FaqPort {
     required String voterId,
   }) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<FaqHelpfulResult>();
+    }
 
     final FaqArticle? article = _articles[articleId];
     if (article == null) {
@@ -158,8 +161,9 @@ final class MockFaqRepository implements FaqPort {
   Future<Result<Page<FaqTicket>>> listMyTickets(
       {String? cursor, int limit = defaultPageSize}) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<Page<FaqTicket>>();
+    }
     if (controls.emptyResults) {
       return Ok<Page<FaqTicket>>(
           const Page<FaqTicket>(items: <FaqTicket>[], total: 0));

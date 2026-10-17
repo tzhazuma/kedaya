@@ -38,8 +38,9 @@ final class MockCampusSessionRepository implements CampusSessionPort {
   Future<Result<CampusBinding>> bind(CampusSystem system,
       {required String credential}) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<CampusBinding>();
+    }
     if (credential.trim().isEmpty) {
       return Err<CampusBinding>(
         const ApiError(code: ApiErrorCode.validationFailed, message: '凭据不能为空'),

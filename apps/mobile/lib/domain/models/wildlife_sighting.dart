@@ -140,8 +140,9 @@ bool looksLikeImage(List<int> bytes) => sniffMimeType(bytes) != null;
 /// 按文件头返回真实 MIME；不认识返回 null。
 String? sniffMimeType(List<int> bytes) {
   if (bytes.length < 12) return null;
-  if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
+  if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
     return 'image/jpeg';
+  }
   if (bytes[0] == 0x89 &&
       bytes[1] == 0x50 &&
       bytes[2] == 0x4E &&

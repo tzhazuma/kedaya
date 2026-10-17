@@ -29,8 +29,9 @@ final class MockLostFoundRepository implements LostFoundPort {
     LostFoundKind? kind,
   }) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<Page<LostFoundItem>>();
+    }
     final List<LostFoundItem> all = _sorted()
         .where((LostFoundItem item) => kind == null || item.kind == kind)
         .toList(growable: false);
@@ -52,8 +53,9 @@ final class MockLostFoundRepository implements LostFoundPort {
   @override
   Future<Result<LostFoundItem>> getItem(String id) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<LostFoundItem>();
+    }
     return _require(id);
   }
 
@@ -61,8 +63,9 @@ final class MockLostFoundRepository implements LostFoundPort {
   Future<Result<LostFoundItem>> createItem(
       CreateLostFoundItemCommand command) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<LostFoundItem>();
+    }
     if (command.title.trim().isEmpty) {
       return Err<LostFoundItem>(
         const ApiError(code: ApiErrorCode.validationFailed, message: '标题不能为空'),
@@ -95,8 +98,9 @@ final class MockLostFoundRepository implements LostFoundPort {
   Future<Result<LostFoundItem>> _transition(
       String id, LostFoundStatus next) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<LostFoundItem>();
+    }
     final Result<LostFoundItem> found = _require(id);
     final LostFoundItem? item = found.valueOrNull;
     if (item == null) return found;

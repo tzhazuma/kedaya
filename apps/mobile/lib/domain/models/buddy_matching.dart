@@ -267,8 +267,9 @@ bool buddyAvailabilityIntersects(
   for (final AvailabilitySlot left in a) {
     for (final AvailabilitySlot right in b) {
       if (left.dow != right.dow) continue;
-      if (left.startMin < right.endMin && right.startMin < left.endMin)
+      if (left.startMin < right.endMin && right.startMin < left.endMin) {
         return true;
+      }
     }
   }
   return false;
@@ -474,8 +475,9 @@ enum BuddyMatchMode {
   static BuddyMatchMode fromWire(String wire) {
     final String normalized = wire.trim().toLowerCase();
     for (final BuddyMatchMode value in BuddyMatchMode.values) {
-      if (value != BuddyMatchMode.unknown && value.wire == normalized)
+      if (value != BuddyMatchMode.unknown && value.wire == normalized) {
         return value;
+      }
     }
     return BuddyMatchMode.unknown;
   }

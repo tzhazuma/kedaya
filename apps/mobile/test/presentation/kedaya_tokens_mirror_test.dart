@@ -10,17 +10,16 @@ import 'package:kedaya/presentation/theme/kedaya_tokens.dart';
 /// 逐组、逐键比较值；不是只数个数。色值按 `#RRGGBB` 解析后再比较，
 /// 因此「手改生成物里的某一位十六进制」也会被抓住。
 void main() {
-  final Map<String, Object?> tokens =
-      jsonDecode(
-            File('../../packages/design-tokens/tokens.json').readAsStringSync(),
-          )
-          as Map<String, Object?>;
+  final Map<String, Object?> tokens = jsonDecode(
+    File('../../packages/design-tokens/tokens.json').readAsStringSync(),
+  ) as Map<String, Object?>;
 
   Map<String, Object?> group(String name) =>
       tokens[name]! as Map<String, Object?>;
 
   Color colorOf(Object? hex) {
-    final int value = int.parse(String(hex).replaceFirst('#', ''), radix: 16);
+    final int value =
+        int.parse(hex.toString().replaceFirst('#', ''), radix: 16);
     return Color(0xFF000000 | value);
   }
 
@@ -88,14 +87,16 @@ void main() {
       'normal': KedaYaTokens.lineHeightNormal,
       'loose': KedaYaTokens.lineHeightLoose,
     };
-    for (final MapEntry<String, Map<String, double>> entry in <String, Map<String, double>>{
+    for (final MapEntry<String, Map<String, double>> entry
+        in <String, Map<String, double>>{
       'space': space,
       'radius': radius,
       'fontSize': fontSize,
       'lineHeight': lineHeight,
     }.entries) {
       final Map<String, Object?> expected = group(entry.key);
-      expect(entry.value.keys.toSet(), expected.keys.toSet(), reason: entry.key);
+      expect(entry.value.keys.toSet(), expected.keys.toSet(),
+          reason: entry.key);
       for (final MapEntry<String, Object?> token in expected.entries) {
         expect(
           entry.value[token.key],
@@ -114,7 +115,8 @@ void main() {
       'bold': KedaYaTokens.fontWeightBold,
     };
     for (final MapEntry<String, Object?> entry in group('fontWeight').entries) {
-      expect(weight[entry.key], FontWeight.values[entry.value! as int ~/ 100 - 1]);
+      expect(weight[entry.key],
+          FontWeight.values[(entry.value! as int) ~/ 100 - 1]);
     }
 
     final Map<String, String> shadow = <String, String>{
@@ -156,10 +158,13 @@ void main() {
     expect(generated, contains('DO NOT EDIT'));
     expect(generated, contains('source-blob-sha1: '));
 
-    final ProcessResult result = Process.runSync('git', <String>[
-      'hash-object',
-      'packages/design-tokens/tokens.json',
-    ], workingDirectory: '../..');
+    final ProcessResult result = Process.runSync(
+        'git',
+        <String>[
+          'hash-object',
+          'packages/design-tokens/tokens.json',
+        ],
+        workingDirectory: '../..');
     if (result.exitCode != 0) return; // 无 git 的环境由脚本 --check 负责
     final String hash = (result.stdout as String).trim();
     expect(generated, contains('source-blob-sha1: $hash'));

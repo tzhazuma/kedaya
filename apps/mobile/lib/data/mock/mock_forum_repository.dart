@@ -81,8 +81,9 @@ final class MockForumRepository implements ForumPort {
   @override
   Future<Result<List<ForumBoard>>> listBoards() async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<List<ForumBoard>>();
+    }
     final List<ForumBoard> all = _boards.values.toList(growable: false);
     all.sort((ForumBoard a, ForumBoard b) => a.id.compareTo(b.id));
     return Ok<List<ForumBoard>>(all);
@@ -91,8 +92,9 @@ final class MockForumRepository implements ForumPort {
   @override
   Future<Result<Page<ForumPost>>> listPosts(ForumPostQuery query) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<Page<ForumPost>>();
+    }
     if (controls.emptyResults) {
       return Ok<Page<ForumPost>>(
           const Page<ForumPost>(items: <ForumPost>[], total: 0));
@@ -141,8 +143,9 @@ final class MockForumRepository implements ForumPort {
   @override
   Future<Result<Page<ForumReply>>> listReplies(ForumReplyQuery query) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<Page<ForumReply>>();
+    }
     final ForumPost? post = _posts[query.postId];
     if (post == null || !post.isVisible) {
       return Err<Page<ForumReply>>(

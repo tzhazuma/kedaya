@@ -412,7 +412,11 @@ def build_features(raw: dict, campus: dict) -> tuple[list[dict], dict]:
         kept.append(feature)
 
     kept.sort(key=lambda f: (f["category"], f["name"] or "", f["osmId"]))
-    return kept, counts
+    # 计数必须按**过滤后**的要素统计 —— 否则页面上的"186 个 POI"会和分类明细对不上
+    final_counts: dict[str, int] = {}
+    for feature in kept:
+        final_counts[feature["category"]] = final_counts.get(feature["category"], 0) + 1
+    return kept, final_counts
 
 
 # --------------------------------------------------------------------------- #
@@ -602,7 +606,10 @@ def build_svg(
     parts.append(f'<rect x="0" y="0" width="{width}" height="{height}" fill="{p["bg"]}"/>')
 
     # 校园多边形
-    parts.append(f'<path d="{outline}" fill="{p["surface"]}" stroke="{p["border"]}" stroke-width="3"/>')
+    parts.append(
+        f'<path d="{outline}" fill="{p["surface"]}" stroke="{p["muted"]}" '
+        f'stroke-opacity="0.55" stroke-width="3"/>'
+    )
     parts.append('<clipPath id="campus-clip"><path d="%s"/></clipPath>' % outline)
     parts.append('<g clip-path="url(#campus-clip)">')
 
@@ -648,12 +655,29 @@ def build_svg(
     parts.append("</g>")
 
     # 建筑
-    parts.append(f'<g fill="{p["surfaceAlt"]}" stroke="{p["border"]}" stroke-width="1">')
+    parts.append(
+        f'<g fill="{p["surfaceAlt"]}" stroke="{p["muted"]}" stroke-opacity="0.35" stroke-width="1">'
+    )
     for element in buildings:
         parts.append(f'<path d="{polygon_path(element["geometry"])}"/>')
     parts.append("</g>")
 
     parts.append("</g>")  # /clip
+
+    # 水面标注（OSM 未命名的水面只写「人工湖」，不臆造正式名称）
+    water_labels = [
+        ("人工湖", 31.177020, 121.591950, "OSM 未命名水面（两个相邻 polygon，合计 7,632 m²）；名称未确认"),
+        ("向阳河", 31.178200, 121.596500, "OSM waterway=canal「向阳河」"),
+    ]
+    for label, lat, lng, note in water_labels:
+        x, y = viewport.px(lat, lng)
+        parts.append(
+            f'<g><text x="{x:.1f}" y="{y:.1f}" text-anchor="middle" font-size="11" '
+            f'font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, Noto Sans CJK SC, sans-serif" '
+            f'fill="{p["info"]}" stroke="{p["surface"]}" stroke-width="3" stroke-linejoin="round" '
+            f'paint-order="stroke">{escape(label)}</text>'
+            f'<title>{escape(note)}</title></g>'
+        )
 
     # 校门
     parts.append(f'<g fill="{p["brand"]}" stroke="{p["warning"]}" stroke-width="1.5">')
@@ -724,8 +748,19 @@ def build_svg(
         f'<line x1="{scale_x + bar:.1f}" y1="{scale_y - 4}" x2="{scale_x + bar:.1f}" y2="{scale_y + 4}" stroke="{p["text"]}" stroke-width="2"/>'
         f'<text x="{scale_x}" y="{scale_y + 18}" font-size="11" fill="{p["muted"]}">0</text>'
         f'<text x="{scale_x + bar:.1f}" y="{scale_y + 18}" font-size="11" fill="{p["muted"]}" text-anchor="end">100 m</text>'
-        f'<text x="{scale_x + bar / 2:.1f}" y="{scale_y + 18}" font-size="10" fill="{p["muted"]}" text-anchor="middle">北 ↑</text>'
         "</g>"
+    )
+
+    # 指北针（与比例尺分开，避免读成「0 北 ↑ 100 m」）
+    north_x = width - 54
+    north_y = 48
+    parts.append(
+        f'<g><line x1="{north_x}" y1="{north_y + 20}" x2="{north_x}" y2="{north_y - 4}" '
+        f'stroke="{p["text"]}" stroke-width="2"/>'
+        f'<path d="M{north_x - 6},{north_y + 2} L{north_x},{north_y - 8} L{north_x + 6},{north_y + 2} Z" '
+        f'fill="{p["text"]}"/>'
+        f'<text x="{north_x}" y="{north_y + 36}" text-anchor="middle" font-size="11" '
+        f'fill="{p["muted"]}">北</text></g>'
     )
 
     # 署名 / 许可（ODbL 硬要求）
@@ -930,7 +965,7 @@ def main() -> None:
             "precision": {
                 "campusBoundary": "OSM relation 5390610 的多边形；面积与形状为 OSM 编辑成果，未与校方红线核对",
                 "poi": "OSM 节点/way 中心点；平面误差估计 3–15 m（依赖航拍描图与志愿编辑），未实测",
-                "locations": "25 个地点中，11 个直接命中 OSM 命名要素，8 个为就近推断，6 个为近似放置；见 locations[].confidence",
+                "locations": "25 个地点中，10 个为 high（直接命中 OSM 命名要素或由多栋宿舍几何中心导出）、7 个 medium（就近推断）、8 个 low（近似放置/未测绘）；见 locations[].confidence",
                 "projection": "WGS84 → 局部 ENU（原点 31.1795,121.591）→ 线性视口；校园尺度误差 < 0.1%",
             },
             "caveats": [
@@ -982,7 +1017,7 @@ def main() -> None:
         "widthPx": viewport.width,
         "heightPx": viewport.height,
         "affine": [round(value, 10) for value in viewport.affine],
-        "pixelsPerMeter": round(viewport.scale, 6),
+        "pixelsPerMeter": round(viewport.scale, 10),
         "boundsLocalM": {
             "xMin": round(viewport.x_min, 3),
             "xMax": round(viewport.x_max, 3),

@@ -175,7 +175,7 @@ class _BuddyComposePageState extends ConsumerState<BuddyComposePage> {
           const SizedBox(height: KedaYaTokens.space3),
           _FieldLabel(label: '地点（校园地点白名单）', colors: colors),
           DropdownButtonFormField<String>(
-            value: _draft.location.isEmpty ? null : _draft.location,
+            initialValue: _draft.location.isEmpty ? null : _draft.location,
             isExpanded: true,
             hint: const Text('选择地点'),
             decoration: InputDecoration(

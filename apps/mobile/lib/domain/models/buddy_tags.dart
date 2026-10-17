@@ -38,8 +38,9 @@ final Map<String, BuddyTag> buddyTagByKey = <String, BuddyTag>{
 };
 
 /// 当前**可选**的标签（`isActive`）。选择器只展示这些。
-List<BuddyTag> get buddyActiveTags =>
-    buddyTagCatalog.where((BuddyTag tag) => tag.isActive).toList(growable: false);
+List<BuddyTag> get buddyActiveTags => buddyTagCatalog
+    .where((BuddyTag tag) => tag.isActive)
+    .toList(growable: false);
 
 /// 按分组取可选标签。
 List<BuddyTag> buddyActiveTagsOfGroup(BuddyTagGroup group) => buddyTagCatalog
@@ -64,7 +65,8 @@ List<BuddyTag> searchBuddyTags(String keyword, {BuddyTagGroup? group}) {
   final String needle = keyword.trim().toLowerCase();
   return buddyActiveTags
       .where((BuddyTag tag) => group == null || tag.group == group)
-      .where((BuddyTag tag) => needle.isEmpty || tag.searchText.contains(needle))
+      .where(
+          (BuddyTag tag) => needle.isEmpty || tag.searchText.contains(needle))
       .toList(growable: false);
 }
 

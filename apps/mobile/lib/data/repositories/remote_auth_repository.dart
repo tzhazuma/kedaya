@@ -196,8 +196,9 @@ final class RemoteAuthRepository implements AuthPort {
 
   Future<String> _refreshTokenForRefresh() async {
     final AuthSession? session = _current;
-    if (session != null && session.refreshToken.isNotEmpty)
+    if (session != null && session.refreshToken.isNotEmpty) {
       return session.refreshToken;
+    }
     return await _credentials.read(_refreshKey) ?? '';
   }
 

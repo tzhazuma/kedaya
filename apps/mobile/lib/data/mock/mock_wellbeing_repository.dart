@@ -61,8 +61,9 @@ final class MockWellbeingRepository implements WellbeingPort {
   @override
   Future<Result<WellbeingAppointment>> getAppointment(String id) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<WellbeingAppointment>();
+    }
     return _require(id);
   }
 
@@ -71,8 +72,9 @@ final class MockWellbeingRepository implements WellbeingPort {
     BookWellbeingAppointmentCommand command,
   ) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<WellbeingAppointment>();
+    }
     if (!command.endsAt.isAfter(command.startsAt)) {
       return Err<WellbeingAppointment>(
         const ApiError(
@@ -97,8 +99,9 @@ final class MockWellbeingRepository implements WellbeingPort {
   @override
   Future<Result<WellbeingAppointment>> cancelAppointment(String id) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<WellbeingAppointment>();
+    }
     final Result<WellbeingAppointment> found = _require(id);
     final WellbeingAppointment? item = found.valueOrNull;
     if (item == null) return found;

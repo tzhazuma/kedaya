@@ -82,10 +82,12 @@ final class MockTechpieRepository implements TechpiePort {
   @override
   Future<Result<List<TechpieLink>>> listLinks() async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<List<TechpieLink>>();
-    if (controls.emptyResults)
+    }
+    if (controls.emptyResults) {
       return Ok<List<TechpieLink>>(const <TechpieLink>[]);
+    }
     return Ok<List<TechpieLink>>(_sortedLinks());
   }
 
@@ -199,8 +201,9 @@ final class MockTechpieRepository implements TechpiePort {
     required String targetUrl,
   }) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<WebViewTicket>();
+    }
     final DateTime now = _clock().toUtc();
     // 服务端侧校验（规格 §8.4 的校验表；客户端传的 targetUrl 一律不可信）。
     final Uri? uri = Uri.tryParse(targetUrl.trim());
@@ -248,8 +251,9 @@ final class MockTechpieRepository implements TechpiePort {
   Future<Result<WebViewHandoff>> redeemWebViewTicket(
       WebViewTicket ticket) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<WebViewHandoff>();
+    }
     final String value = ticket.ticket;
     if (_consumedTickets.contains(value)) {
       // 防重放：一次性票据用后即焚。

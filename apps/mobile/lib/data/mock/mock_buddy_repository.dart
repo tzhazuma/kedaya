@@ -170,8 +170,9 @@ final class MockBuddyRepository implements BuddyPort {
   @override
   Future<Result<Page<BuddyPost>>> listPosts(BuddyPostQuery query) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<Page<BuddyPost>>();
+    }
     if (controls.emptyResults) {
       return Ok<Page<BuddyPost>>(
           const Page<BuddyPost>(items: <BuddyPost>[], total: 0));
@@ -359,8 +360,9 @@ final class MockBuddyRepository implements BuddyPort {
   @override
   Future<Result<BuddyApplication>> join(BuddyJoinCommand command) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<BuddyApplication>();
+    }
 
     final String? messageError = command.messageError;
     if (messageError != null) {
@@ -453,8 +455,9 @@ final class MockBuddyRepository implements BuddyPort {
   @override
   Future<Result<BuddyApplication>> leave(String postId) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<BuddyApplication>();
+    }
 
     final BuddyApplication? existing = _applicationOf(postId, currentUserId);
     if (existing == null) return _notFoundApplication<BuddyApplication>();
@@ -485,8 +488,9 @@ final class MockBuddyRepository implements BuddyPort {
   @override
   Future<Result<BuddyApplication>> decide(BuddyDecideCommand command) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<BuddyApplication>();
+    }
 
     final BuddyPost? post = _posts[command.postId];
     if (post == null) return _notFoundApplication<BuddyApplication>();
@@ -733,8 +737,9 @@ final class MockBuddyRepository implements BuddyPort {
     BuddyMatchFeedback feedback,
   ) async {
     await controls.simulate();
-    if (controls.failure != null)
+    if (controls.failure != null) {
       return controls.failureResult<BuddyMatchFeedback>();
+    }
 
     final BuddyPost? post = _posts[feedback.targetPostId];
     if (post == null) return _notFoundPost<BuddyMatchFeedback>();

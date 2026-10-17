@@ -26,18 +26,7 @@ import {
   type RefreshSessionRepository,
   type VerificationCodeRepository,
 } from './domain/local-account.domain';
-import {
-  CODE_MAX_ATTEMPTS,
-  CODE_MAX_SENDS_PER_HOUR,
-  CODE_RESEND_COOLDOWN_MS,
-  CODE_TTL_MS,
-  generateCode,
-  hashCode,
-  isEmailLike,
-  normalizeEmail,
-  verifyCode,
-  type VerificationPurpose,
-} from './domain/verification-code';
+import { CODE_MAX_ATTEMPTS, CODE_MAX_SENDS_PER_HOUR, CODE_RESEND_COOLDOWN_MS, CODE_TTL_MS, generateCode, hashCode, isCampusEmail, isEmailLike, normalizeEmail, type VerificationPurpose, verifyCode } from './domain/verification-code';
 import { assertPasswordStrength, hashPassword, verifyPassword } from './domain/password';
 import { AuthService } from './auth.service';
 
@@ -105,6 +94,9 @@ export interface ChangePasswordInput {
  *   · 令牌签发/轮换/撤销统一走 `AuthService.issueTokens`，
  *     保证两条登录路径（CAS 与邮箱）签发出来的令牌完全同构。
  */
+/** 免密账号的 `passwordHash` 占位值：不含 `$`，`verifyPassword` 永远返回 false。 */
+const NO_PASSWORD_SENTINEL = '!no-password:sign-in-with-email-code';
+
 @Injectable()
 export class LocalAuthService {
   constructor(
@@ -277,6 +269,64 @@ export class LocalAuthService {
     return this.issueSession(user, false, context);
   }
 
+  /* ---------------- 验证码免密登录 ---------------- */
+
+  /**
+   * 发送**登录用**验证码（免密码登录）。
+   *
+   * 与 `sendResetCode` 同一取舍：**不区分邮箱是否已注册** ——
+   * 未注册同样返回 `sent: true`，只是不发信。否则这个接口就变成了
+   * 「查询某邮箱是否是上科大师生」的枚举器。
+   *
+   * 首次登录会自动建号（校园邮箱已证明身份，不需要再设密码）。
+   */
+  async sendLoginCode(email: string, context: AuthRequestContext = {}): Promise<CodeReceipt> {
+    const target = this.normalizeTarget(email);
+    const account = await this.accounts.findByEmail(target);
+
+    if (!account) {
+      // 未注册：同样走发送流程（会写入一条验证码，但收不到信），
+      // 这样响应形状与已注册**完全一致**。
+      return this.sendCode(target, 'login', context);
+    }
+    return this.sendCode(target, 'login', context);
+  }
+
+  /**
+   * 用验证码登录。首次登录自动建号。
+   *
+   * 验证码校验走 `consumeCode`（一次性 + 尝试次数 + TTL 都在那里强制）。
+   */
+  async loginWithCode(
+    input: { email: string; code: string },
+    context: AuthRequestContext = {},
+  ): Promise<LoginOutcome> {
+    const target = this.normalizeTarget(input.email);
+    const account = await this.accounts.findByEmail(target);
+
+    await this.consumeCode(target, 'login', input.code);
+
+    if (!account) {
+      // 首次登录：建号。校园邮箱已验证，因此 isNewUser=true，
+      // 但**不设密码** —— 用户以后仍可用验证码登录，也可在设置里补密码。
+      // 免密账号：`passwordHash` 用**不可验证**的哨兵值。
+      // `verifyPassword` 期望 `scrypt$N$r$p$salt$hash` 格式，任何不含 `$` 的值
+      // 都会让它返回 false，因此这个账号永远无法用密码登录 —— 这正是我们要的。
+      const account = await this.accounts.createAccount({
+        email: target,
+        passwordHash: NO_PASSWORD_SENTINEL,
+        displayName: deriveNameFromEmail(target),
+      });
+      const user = await this.requireUser(account.userId);
+      return this.issueSession(user, true, context);
+    }
+
+    this.assertAccountUsable(account);
+    await this.accounts.markLogin(account.id, this.now());
+    const user = await this.requireUser(account.userId);
+    return this.issueSession(user, false, context);
+  }
+
   /**
    * 给当前账号补一套邮箱密码（绑定邮箱）。
    *
@@ -381,8 +431,17 @@ export class LocalAuthService {
   }
 
   /** 当前账号是否设置了密码（供 UI 决定是否展示「修改密码」） */
+  /**
+   * 该账号**是否有可用的密码**。
+   *
+   * ⚠️ 这里不是「有没有凭据行」—— 免密账号同样有 `UserCredential` 行，
+   * 只是 `passwordHash` 是哨兵值。如果按「行是否存在」判断，
+   * UI 会对免密账号显示「修改密码」而不是「设置密码」，然后操作必然失败。
+   */
   async hasPassword(userId: string): Promise<boolean> {
-    return (await this.accounts.findByUserId(userId)) !== null;
+    const account = await this.accounts.findByUserId(userId);
+    if (account === null) return false;
+    return account.passwordHash !== NO_PASSWORD_SENTINEL && account.passwordHash.includes('$');
   }
 
   /** 登出：撤销本次登录；未给 refreshToken 则撤销全部会话 */
@@ -396,7 +455,16 @@ export class LocalAuthService {
     if (typeof email !== 'string' || !isEmailLike(email)) {
       throw new ValidationError('请填写正确的邮箱地址', { field: 'email' });
     }
-    return normalizeEmail(email);
+    const target = normalizeEmail(email);
+    // ⚠️ 只允许校园邮箱。可达鸭的所有"仅本校可见"功能都建立在身份可信之上，
+    // 放开成任意邮箱会让这个前提失效（见 `CAMPUS_EMAIL_DOMAINS` 的注释）。
+    if (!isCampusEmail(target)) {
+      throw new ValidationError('请使用上海科技大学邮箱（@shanghaitech.edu.cn 或 @stu.shanghaitech.edu.cn）注册 / 登录', {
+        field: 'email',
+        code: 'CAMPUS_EMAIL_REQUIRED',
+      });
+    }
+    return target;
   }
 
   private assertAccountUsable(account: LocalAccountRecord): void {
@@ -462,6 +530,8 @@ function purposeSubject(purpose: VerificationPurpose): string {
   switch (purpose) {
     case 'register':
       return '注册';
+    case 'login':
+      return '登录';
     case 'reset-password':
       return '找回密码';
     case 'change-password':

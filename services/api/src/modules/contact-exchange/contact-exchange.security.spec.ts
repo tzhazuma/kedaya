@@ -1,6 +1,8 @@
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CONTACT_EXCHANGE_ENC_KEY_ENV } from '@kedaya/contracts';
 import type { ContactCryptoPort, ContactExchangeRepository } from './domain/contact-exchange.domain';
@@ -354,5 +356,39 @@ describe('查看联系方式 · 日志与审计（结构性防泄漏）', () => 
     });
     expect(decrypt).not.toHaveBeenCalled();
     expect(appendAudit).not.toHaveBeenCalled();
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 架构约束（静态检查）
+ * ------------------------------------------------------------------ */
+
+describe('架构约束', () => {
+  function readFirstExisting(paths: string[]): string {
+    for (const path of paths) {
+      if (existsSync(path)) return readFileSync(path, 'utf8');
+    }
+    throw new Error(`找不到文件：${paths.join(' / ')}`);
+  }
+
+  it('domain 层零框架依赖（不 import @nestjs/* / @prisma/*）', () => {
+    const source = readFirstExisting([
+      join(process.cwd(), 'src/modules/contact-exchange/domain/contact-exchange.domain.ts'),
+      join(process.cwd(), 'services/api/src/modules/contact-exchange/domain/contact-exchange.domain.ts'),
+    ]);
+    // 只看 import 语句，不看文档注释里的"禁止 import ..."说明
+    expect(source).not.toMatch(/^\s*import[^;]*from\s+['"]@nestjs\//m);
+    expect(source).not.toMatch(/^\s*import[^;]*from\s+['"]@prisma\//m);
+    expect(source).not.toMatch(/^\s*import[^;]*PrismaService/m);
+  });
+
+  it('contact-exchange 不在 scaffold SPEC 表里（不会被 npm run scaffold 覆盖）', () => {
+    const source = readFirstExisting([
+      join(process.cwd(), 'scripts/scaffold.mjs'),
+      join(process.cwd(), 'services/api/scripts/scaffold.mjs'),
+    ]);
+    expect(source).not.toMatch(/id:\s*'contact-exchange'/);
+    // 但必须在"手写模块"清单里登记，避免以后有人手滑加进 SPEC
+    expect(source).toContain('contact-exchange');
   });
 });

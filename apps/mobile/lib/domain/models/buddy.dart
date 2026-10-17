@@ -76,8 +76,9 @@ enum BuddySection {
   static BuddySection? tryFromWire(String wire) {
     final String normalized = wire.trim().toLowerCase();
     for (final BuddySection value in BuddySection.values) {
-      if (value != BuddySection.unknown && value.wire == normalized)
+      if (value != BuddySection.unknown && value.wire == normalized) {
         return value;
+      }
     }
     return null;
   }
@@ -188,8 +189,9 @@ enum BuddyPostStatus {
   static BuddyPostStatus fromWire(String wire) {
     final String normalized = wire.trim().toUpperCase();
     for (final BuddyPostStatus value in BuddyPostStatus.values) {
-      if (value != BuddyPostStatus.unknown && value.wire == normalized)
+      if (value != BuddyPostStatus.unknown && value.wire == normalized) {
         return value;
+      }
     }
     return BuddyPostStatus.unknown;
   }
