@@ -73,10 +73,22 @@ const baseConfig: UserConfigExport<'webpack5'> = {
      *
      * 吉祥物（可达鸭贴图）走同一条路：`theme/mascot.ts` 以
      * `/assets/mascot/duck.png` 引用，避免被 webpack 内联成 base64 塞进主包 JS。
+     *
+     * ⚠️ **校园底图（`campus.jpg`，约 1 MB）刻意放在 wildlife 分包目录里**：
+     * 微信**主包上限 2 MiB**，主包当前已用到 1.4 MiB，一份 1 MB 的底图
+     * 会把主包顶穿、直接传不上去；放进分包则由**分包**体积（上限 2 MiB）承担。
+     * 因此它不能跟着 `src/assets/wildlife` 一起拷到 `dist/assets/`（那是主包目录），
+     * 只能拷进 `presentation/pages/wildlife/assets/`。
+     * 引用它的三页（地图 / 上报 / 轨迹）都在同一分包里，符合微信「分包只能引用自己包内文件」的约束。
+     * `scripts/verify-weapp-build.cjs` 会同时守住主包与这个分包的上限。
      */
     patterns: [
       { from: 'src/assets/wildlife', to: 'dist/assets/wildlife' },
       { from: 'src/assets/mascot', to: 'dist/assets/mascot' },
+      {
+        from: 'src/presentation/pages/wildlife/assets',
+        to: 'dist/presentation/pages/wildlife/assets',
+      },
     ],
     options: {},
   },

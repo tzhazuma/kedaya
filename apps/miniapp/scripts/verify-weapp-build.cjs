@@ -93,6 +93,13 @@ for (const tab of app.tabBar.list) assert.ok(app.pages.includes(tab.pagePath), `
 const project = JSON.parse(fs.readFileSync(path.join(root, 'project.config.json'), 'utf8'));
 assert.equal(project.setting.compileHotReLoad, false);
 assert.equal(project.setting.useApiHook, false);
+// 校园底图：它在 **wildlife 分包**里（1 MB 级资源，放主包会顶穿 2 MiB 上限）。
+// 这条断言的价值在于：`config/index.ts` 的 copy 规则一旦被改错，底图会静默 404，
+// 用户看到的是「一片空白的地图」而不是构建失败。
+assert.ok(
+  fs.existsSync(path.join(root, 'presentation/pages/wildlife/assets/campus.jpg')),
+  'Missing campus basemap: presentation/pages/wildlife/assets/campus.jpg',
+);
 // 微信**主包**上限 2 MiB：只统计主包（排除分包根目录下的文件）。
 // 早先的实现把整份 dist 当主包统计，分包一多必然误报（分包天然属于"总包 20 MiB"那一档）。
 const bytes = fs
@@ -103,4 +110,15 @@ const bytes = fs
     const stat = fs.statSync(path.join(root, name)); return sum + (stat.isFile() ? stat.size : 0);
   }, 0);
 assert.ok(bytes < 2 * 1024 * 1024, `Main package exceeds 2 MiB: ${bytes}`);
-console.log(`WeChat build verified: ${Object.keys(factories).length} module factories, ${componentImports} JSX imports, coherent chunks, no temporary diagnostics, main package ${(bytes / 1024 / 1024).toFixed(2)} MiB (excludes ${subpackageRoots.length} subpackages).`);
+// 微信**单个分包**上限也是 2 MiB。校园底图进了分包，所以这条必须一起守：
+// 以后往 wildlife 分包里再塞资源时，超了要在这里就红，而不是等上传被拒。
+const wildlifeRoot = 'presentation/pages/wildlife/';
+const wildlifeBytes = fs
+  .readdirSync(root, { recursive: true })
+  .map(name => String(name).split(path.sep).join('/'))
+  .filter(name => name.startsWith(wildlifeRoot))
+  .reduce((sum, name) => {
+    const stat = fs.statSync(path.join(root, name)); return sum + (stat.isFile() ? stat.size : 0);
+  }, 0);
+assert.ok(wildlifeBytes < 2 * 1024 * 1024, `Wildlife subpackage exceeds 2 MiB: ${wildlifeBytes}`);
+console.log(`WeChat build verified: ${Object.keys(factories).length} module factories, ${componentImports} JSX imports, coherent chunks, no temporary diagnostics, main package ${(bytes / 1024 / 1024).toFixed(2)} MiB (excludes ${subpackageRoots.length} subpackages), wildlife subpackage ${(wildlifeBytes / 1024 / 1024).toFixed(2)} MiB.`);

@@ -29,6 +29,7 @@ import {
   spotToMapMarker,
   summarizeSighting,
   toApiPoint,
+  toCampusMapPoint,
   toCreateSightingBody,
   toMapPoint,
   toMapPoints,
@@ -110,6 +111,17 @@ describe('wildlife · 坐标系（规格 §3 / §11.1）', () => {
     // 必须**不是**恒等 —— 否则就是把 WGS84 直接丢给了 <map>
     expect(rendered.lat).not.toBe(CAMPUS_POINT.lat)
     expect(rendered.lng).not.toBe(CAMPUS_POINT.lng)
+  })
+
+  it('渲染路径：toCampusMapPoint 一次给出 GCJ-02 + 契约点形状', () => {
+    const campus = toCampusMapPoint(CAMPUS_POINT)
+    const rendered = toMapPoint(CAMPUS_POINT)
+
+    expect(campus).toEqual({ latitude: rendered.lat, longitude: rendered.lng })
+    // 形状必须是 `latitude` / `longitude`（`KdyCampusMap` 与 campusPixel 的口径）——
+    // 少了这一层，页面就会退化成手写 `{ latitude: p.lat, ... }`，然后忘掉转换
+    expect(Object.keys(campus).sort()).toEqual(['latitude', 'longitude'])
+    expect(campus.latitude).not.toBe(CAMPUS_POINT.lat)
   })
 
   it('渲染路径：上海范围内偏移量级必须在 200–800 米（抓住「恒等函数」）', () => {

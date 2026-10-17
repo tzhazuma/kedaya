@@ -30,5 +30,7 @@
 - 新增页面必须同步 `src/app/routes.ts`、`src/app.config.ts` 与首页的模块入口映射。
 - 修改后执行 `npm run typecheck -w @kedaya/miniapp`、`npm run test -w @kedaya/miniapp`、`npm run build:weapp`、`npm run verify:weapp -w @kedaya/miniapp`；涉及视觉需在微信开发者工具检查，H5 预览不能替代真机验证。
 - `src/assets/` **只放被代码引用的资源**：`assets/tabs/*.png` 是 tabBar 图标（必须在主包），`assets/wildlife/marker-{spot,sighting,sensitive,track}.png` 由 `presentation/theme/mapColors.ts` 的 `MAP_MARKER_ICONS` 引用，`assets/mascot/duck.png` 是吉祥物贴图、由 `presentation/theme/mascot.ts` 的 `DUCK_MASCOT_SRC` 引用（经 `KdyMascot` 用在 agent 页 / 悬浮球 / 登录注册卡 / 头像兜底）。**不要提交没人引用的图片** —— 微信**主包上限 2 MiB**，一份 1 MB 的底图就能把主包顶穿、导致无法上传。`verify:weapp` 会守住主包体积、全部分包页面齐全、构建指纹（`// kedaya-build:<hash>`，由 `config/coherent-build.ts` 注入）一致。
+- 1 MB 级资源必须放**分包**：校园底图 `presentation/pages/wildlife/assets/campus.jpg`（`KdyCampusMap` 用，三个使用页同在该分包；`config/index.ts` 有对应 copy 规则，`verify:weapp` 会断言它存在且 wildlife 分包 ≤ 2 MiB）。溯源、署名与坐标链路见 `docs/features/miniapp-campus-map.md`。
+- 食堂分类白名单（`CANTEEN_NAMES`）是**跨端单一真相**，在 `@kedaya/shared/src/nutrition.ts`：菜品的筛选 / 录入只从它取值，不要再在页面里写一份（名字漂移的表现是「筛选点下去是空列表」）。
 
 详细设计规范见仓库 `docs/miniapp-ui.md`。

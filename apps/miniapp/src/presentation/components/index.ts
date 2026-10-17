@@ -105,3 +105,18 @@ export type { KdyBarProps, KdyRingProps, KdyRingTone } from './KdyRing'
 
 export { KdyShareEntry } from './KdyShareEntry'
 export type { KdyShareEntryProps } from './KdyShareEntry'
+
+/**
+ * 校园底图（真实校园 GIS 栅格，替代原生 `<map>`）。
+ *
+ * 观测点 / 区域圈 / 推断轨迹三条叠加层全在这里渲染，坐标系一律 **GCJ-02**
+ * （与 `<map>` 时代一致，页面继续用 `buildMapOverlays()` 输出）。
+ * 底图与投影数据来自 `@kedaya/contracts` 的 `campus-map` 模块。
+ */
+export { KdyCampusMap } from './KdyCampusMap'
+export type {
+  KdyCampusMapCircle,
+  KdyCampusMapMarker,
+  KdyCampusMapPolyline,
+  KdyCampusMapProps,
+} from './KdyCampusMap'

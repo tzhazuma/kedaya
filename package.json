@@ -18,6 +18,7 @@
     "build:weapp": "npm run build:weapp -w @kedaya/miniapp",
     "tokens": "node packages/design-tokens/scripts/generate.mjs",
     "check:nutrition-imports": "node scripts/check-nutrition-imports.mjs",
+    "sync:campus-map": "node scripts/sync-campus-map.mjs",
     "typecheck": "turbo run typecheck",
     "build": "turbo run build",
     "test": "turbo run test",

@@ -15,7 +15,9 @@ Web 与小程序是独立客户端，避免为单端视觉调整改变另一个�
 偷外卖 `takeout-guard`）也是真实可用的垂直切片（后端筛选/归属安全 + 小程序三页 + 测试），
 其中偷外卖是**本人可见的报备记录**而非公开举报墙（归属只从 JWT 取）；
 `canteen` 已升级为**「营养管家」**（模块 id 不变，取舍见 `docs/adr/0006-nutrition-butler.md`）：
-菜品库检索 → 拍照/点选记当餐（营养从菜品库**快照**，请求不带营养值）→ 六项营养汇总与趋势 →
+菜品库检索（**食堂分类筛选**：白名单是 `@kedaya/shared` 的 `CANTEEN_NAMES`，
+三端唯一真相，小程序侧别名 `CANTEEN_OPTIONS` 保留；筛选与菜名是叠加条件）
+→ 拍照/点选记当餐（营养从菜品库**快照**，请求不带营养值）→ 六项营养汇总与趋势 →
 每日需求（用户自提，估算器只预填）→ 缺口推荐（`sodiumMg` 是上限值，超标不推加钠的菜）；
 识别走 **mock 适配器 + Port seam**，响应 `mode: 'mock'` 且界面必须明示「演示期识别」；
 计算核心在 `packages/shared/src/nutrition.ts` 一份、三端共用；**菜品写操作收在 `AdminGuard`**
@@ -51,6 +53,10 @@ CAS 侧见 `mock-campus-auth.provider.ts` 顶部注释），拿到校方授权�
 权限逻辑（`CampusSessionPort` / 加密落库 / 审计）在两种模式下完全相同。
 可达鸭 **facts-first**：受 `userId` 约束的实时工具取事实 → 检索白名单公共知识 → 模型只组织语言；
 未配置 `AGENT_LLM_*` 时用规则回答（`degraded: true`），功能完整。
+小程序的校园地图**不再用原生 `<map>`（腾讯/高德街道图）**：`/wildlife` 三页改用校方校园 GIS 的
+**真实栅格底图**（`KdyCampusMap` + `@kedaya/contracts` 的 `campus-map` 投影模块，底图在 wildlife 分包内），
+叠加层坐标系仍是 GCJ-02（页面继续走 `buildMapOverlays()`），「在腾讯地图中打开」作为导航出口保留；
+来源/署名/授权状态见 `docs/features/miniapp-campus-map.md`（校方授权**未确认**，上线前需确认）。
 Web 门户目前只交付拼单垂直切片与管理后台占位。
 Web 的模块交付状态以 `apps/web/src/domain/models/delivery.ts` 为**唯一真相**
 （宫格角标与模块说明页都由它驱动，别在组件里另写一份判断）。本地启动、数据库与真实联调方式见 `docs/local-development.md`。

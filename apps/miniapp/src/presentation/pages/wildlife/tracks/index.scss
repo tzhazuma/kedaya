@@ -39,12 +39,10 @@
   line-height: $kdy-line-height-normal;
 }
 
-/* `<map>` 必须有确定高度 */
+/* 底图容器：高度由 KdyCampusMap 按视口自己算（原生 `<map>` 的固定高度已不再需要） */
 .kdy-wildlife-tracks__canvas {
-  width: 100%;
-  height: 460px;
+  display: block;
   margin-bottom: $kdy-space-3;
-  border-radius: $kdy-radius-lg;
 }
 
 .kdy-wildlife-tracks__hint {

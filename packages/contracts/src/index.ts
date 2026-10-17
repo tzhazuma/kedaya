@@ -18,3 +18,4 @@ export * from './modules';
 export * from './buddy-tags';
 export * from './pages';
 export * from './contact-exchange';
+export * from './campus-map';
