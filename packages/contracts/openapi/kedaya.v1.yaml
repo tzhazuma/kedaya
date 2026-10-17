@@ -242,7 +242,8 @@ paths:
               properties:
                 platform:
                   type: string
-                  enum: [egate, cp-daily, academic, campus-card]
+                  # ⚠️ §11.20-C 统一枚举；原为 [egate, cp-daily, academic, campus-card]
+                  enum: [cas, egate, cpdaily, jwc, ecard, techpie]
                 credentials:
                   type: object
                   description: 各平台不同的凭据形状；服务端加密存储
@@ -266,7 +267,8 @@ paths:
           required: true
           schema:
             type: string
-            enum: [egate, cp-daily, academic, campus-card]
+            # ⚠️ §11.20-C 统一枚举
+            enum: [cas, egate, cpdaily, jwc, ecard, techpie]
       responses:
         '200':
           description: 解绑成功
@@ -782,26 +784,93 @@ paths:
       responses:
         '201': { $ref: '#/components/responses/ModuleCreated' }
 
-  /campus-card/items:
+  # ==================================================================
+  # campus-card —— 校园卡（OPENID 通道，与 CASTGC 完全解耦）
+  # 形状由契约 §11.21-B 冻结。原先这里是 scaffold 生成的通用 CRUD
+  # （`items` + `summary`，而 `summary` 是**汇总**不是余额），
+  # 导致四端各写一套路由、端到端必然 404。
+  # ==================================================================
+  /campus-card/account:
     get:
       tags: [campus-card]
-      summary: 交易流水
+      summary: 校园卡账户（余额）
+      description: |
+        ⚠️ **金额一律整数分**（`balanceFen`）。原 scaffold 形状用 `summary`，
+        但那是"汇总"而这里是"余额" —— 两个概念，不能共用一个字段名。
+      responses:
+        '200':
+          description: 账户
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/CampusCardAccount' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [campus-card]
+      summary: 解绑 / 注销校园卡
+      responses:
+        '200': { $ref: '#/components/responses/ModuleCreated' }
+
+  /campus-card/account/activate:
+    post:
+      tags: [campus-card]
+      summary: 开通校园卡（**OPENID 通道**）
+      description: |
+        走**独立的 OPENID 通道**，与 CASTGC 完全解耦 —— 这是 Phase 0
+        能在**零合规风险**下开工的原因（不需要学校授权代持校园会话）。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [authCode]
+              properties:
+                authCode:
+                  type: string
+                  description: 一次性凭证交换码（**不是**长期标识，见 §11.19-B）
+      responses:
+        '201': { $ref: '#/components/responses/ModuleCreated' }
+        '502': { $ref: '#/components/responses/UpstreamUnavailable' }
+
+  /campus-card/transactions:
+    get:
+      tags: [campus-card]
+      summary: 消费流水（游标分页）
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
       responses:
         '200': { $ref: '#/components/responses/ModuleList' }
-        '409': { $ref: '#/components/responses/CampusBindingRequired' }
-    post:
+
+  /campus-card/payment-code:
+    get:
       tags: [campus-card]
-      summary: 创建充值单
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/CampusCardTxnCreate' }
+      summary: 付款码（短时效）
+      description: |
+        ⚠️ **短时效**，客户端**禁止缓存、禁止进日志/埋点、禁止放进 URL**。
+
+        真实校园卡通道打通前，本端点返回 `UPSTREAM_UNAVAILABLE`，
+        **不返回假数据** —— 让"还没接通"这件事对用户和测试都可见，
+        比编一个能返回的假付款码安全得多。
       responses:
-        '201': { $ref: '#/components/responses/ModuleCreated' }
+        '200':
+          description: 付款码
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/CampusCardPaymentCode' }
+        '502': { $ref: '#/components/responses/UpstreamUnavailable' }
 
   /profile/items:
     get:
@@ -1874,6 +1943,53 @@ components:
         email: { type: string, format: email }
         avatarUrl: { type: string, format: uri }
 
+    CampusCardAccount:
+      type: object
+      required: [activated, balanceFen]
+      properties:
+        activated:
+          type: boolean
+          description: 是否已开通（未开通时 `balanceFen` 为 0，且客户端应引导去开通而非报错）
+        balanceFen:
+          type: integer
+          description: 余额，**整数分**（不是"汇总"，也不允许浮点）
+        updatedAt: { type: string, format: date-time }
+
+    CampusCardTxn:
+      type: object
+      description: 一条消费流水
+      required: [id, amountFen, direction, occurredAt]
+      properties:
+        id: { type: string }
+        amountFen:
+          type: integer
+          description: 金额，**整数分**（绝对值；方向由 `direction` 表达）
+        direction:
+          type: string
+          enum: [DEBIT, CREDIT]
+          description: |
+            ⚠️ **大写 `DEBIT`/`CREDIT`**，不是 scaffold 形状的 `out`/`in` ——
+            `out`/`in` 有方向歧义（从谁的角度？），且与全仓其它枚举的大小写习惯不一致。
+        balanceAfterFen:
+          type: integer
+          description: 该笔交易后的余额，**整数分**
+        occurredAt:
+          type: string
+          format: date-time
+          description: |
+            **交易发生时刻**。不是 `happenedAt` —— 与全仓 `observedAt`/`startsAt`/`createdAt`
+            的命名习惯一致，并与"入库时刻"明确区分（契约 §11.10-A 已确立该区分）。
+        merchant: { type: string }
+
+    CampusCardPaymentCode:
+      type: object
+      required: [code, expiresAt]
+      properties:
+        code:
+          type: string
+          description: 付款码。**短时效；客户端禁止缓存、禁止进日志、禁止放进 URL**
+        expiresAt: { type: string, format: date-time }
+
     CampusBindingSummary:
       type: object
       description: |
@@ -2050,20 +2166,6 @@ components:
         teacher: { type: string, maxLength: 60 }
         location: { type: string, maxLength: 120 }
         weekday: { type: integer, minimum: 1, maximum: 7 }
-
-    CampusCardTxn:
-      type: object
-      properties:
-        id: { type: string }
-        amountFen: { type: integer }
-        balanceFen: { type: integer }
-        merchant: { type: string }
-        occurredAt: { type: string, format: date-time }
-    CampusCardTxnCreate:
-      type: object
-      required: [amountFen]
-      properties:
-        amountFen: { type: integer, minimum: 100 }
 
     ProfileItem:
       type: object
