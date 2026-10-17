@@ -68,7 +68,20 @@ export const CONTACT_EXCHANGE_CONTEXT_MODULES = [
 export type ContactExchangeContextModule = (typeof CONTACT_EXCHANGE_CONTEXT_MODULES)[number];
 
 /** 路由段（不是用户可见模块，故不进 `MODULES`） */
-export const CONTACT_EXCHANGE_ROUTE = 'contact-exchange';
+/**
+ * 联系方式交换的**路由前缀**。
+ *
+ * ⚠️ 它挂在 `profile` 下，而不是自成一个 `contact-exchange` 模块。
+ * 理由：契约 §6 有一条硬性不变式 —— **每个端点都必须属于某个用户可见模块**
+ * （`openapi.test.ts` 会断言"所有路径的首段都是已注册模块路由"）。
+ * 联系方式就是「我的资料」的一部分，挂在 `profile` 下既符合这条规则，
+ * 语义上也对。
+ *
+ * 实现仍然是**独立模块**（`modules/contact-exchange/`）：
+ * `profile` 的通用 CRUD 表达不了「条目级授权 + 明文加密 + 查看审计」。
+ * **路由归属**与**代码归属**是两件事。
+ */
+export const CONTACT_EXCHANGE_ROUTE = 'profile';
 
 /** 环境变量名：密钥**无默认值**，缺失时应用启动失败（fail closed） */
 export const CONTACT_EXCHANGE_ENC_KEY_ENV = 'CONTACT_EXCHANGE_ENC_KEY';

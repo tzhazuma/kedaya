@@ -120,7 +120,7 @@ async function apply(
   addressee: UserSession,
   overrides: Partial<{ contextModule: string; contextId: string; message: string }> = {},
 ): Promise<ContactExchangeRequestWire> {
-  const response = await call<ContactExchangeRequestWire>('/requests', {
+  const response = await call<ContactExchangeRequestWire>('/contact-requests', {
     method: 'POST',
     token: requester.token,
     key: nextKey('apply'),
@@ -137,7 +137,7 @@ async function apply(
 }
 
 async function approve(addressee: UserSession, requestId: string): Promise<ContactExchangeRequestWire> {
-  const response = await call<ContactExchangeRequestWire>(`/requests/${requestId}/approve`, {
+  const response = await call<ContactExchangeRequestWire>(`/contact-requests/${requestId}/approve`, {
     method: 'POST',
     token: addressee.token,
     key: nextKey('approve'),
@@ -210,7 +210,8 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
 
     await app.listen(0);
     const address = app.getHttpServer().address() as AddressInfo;
-    baseUrl = `http://127.0.0.1:${address.port}${API_BASE_PATH}/contact-exchange`;
+    // 路由挂在 profile 下（契约 §6：每个端点都属于某个用户可见模块）
+    baseUrl = `http://127.0.0.1:${address.port}${API_BASE_PATH}/profile`;
   }, 120_000);
 
   afterAll(async () => {
@@ -383,7 +384,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     const alice = await makeUser();
     const bob = await makeUser();
 
-    const self = await call('/requests', {
+    const self = await call('/contact-requests', {
       method: 'POST',
       token: alice.token,
       key: nextKey('self'),
@@ -392,7 +393,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     expect(self.status).toBe(400);
     expect(self.body.error?.code).toBe('VALIDATION_FAILED');
 
-    const sensitive = await call('/requests', {
+    const sensitive = await call('/contact-requests', {
       method: 'POST',
       token: alice.token,
       key: nextKey('ctx'),
@@ -401,7 +402,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     expect(sensitive.status).toBe(400);
     expect(sensitive.body.error?.code).toBe('VALIDATION_FAILED');
 
-    const leaky = await call('/requests', {
+    const leaky = await call('/contact-requests', {
       method: 'POST',
       token: alice.token,
       key: nextKey('leaky'),
@@ -419,7 +420,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     const created = await apply(alice, bob);
     expect(created.status).toBe('PENDING');
 
-    const detail = await call<ContactExchangeRequestWire>(`/requests/${created.id}`, {
+    const detail = await call<ContactExchangeRequestWire>(`/contact-requests/${created.id}`, {
       token: alice.token,
     });
     expect(detail.status).toBe(200);
@@ -445,7 +446,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     const outsider = await makeUser();
     const created = await apply(alice, bob);
 
-    const response = await call(`/requests/${created.id}`, { token: outsider.token });
+    const response = await call(`/contact-requests/${created.id}`, { token: outsider.token });
     expect(response.status).toBe(404);
     expect(response.body.error?.code).toBe('NOT_FOUND');
   });
@@ -455,7 +456,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     const bob = await makeUser();
     const created = await apply(alice, bob);
 
-    const response = await call(`/requests/${created.id}/approve`, {
+    const response = await call(`/contact-requests/${created.id}/approve`, {
       method: 'POST',
       token: alice.token,
       key: nextKey('self-approve'),
@@ -469,7 +470,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     const bob = await makeUser();
     const created = await apply(alice, bob);
 
-    const duplicate = await call('/requests', {
+    const duplicate = await call('/contact-requests', {
       method: 'POST',
       token: alice.token,
       key: nextKey('dup-pending'),
@@ -482,7 +483,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     expect(accepted.status).toBe('ACCEPTED');
     expect(accepted.respondedAt).toBeTruthy();
 
-    const again = await call('/requests', {
+    const again = await call('/contact-requests', {
       method: 'POST',
       token: bob.token,
       key: nextKey('already'),
@@ -496,7 +497,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     const bob = await makeUser();
     const created = await apply(alice, bob);
 
-    const rejected = await call<ContactExchangeRequestWire>(`/requests/${created.id}/reject`, {
+    const rejected = await call<ContactExchangeRequestWire>(`/contact-requests/${created.id}/reject`, {
       method: 'POST',
       token: bob.token,
       key: nextKey('reject'),
@@ -518,7 +519,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
       data: { expiresAt: new Date(Date.now() - 1_000) },
     });
 
-    const response = await call(`/requests/${created.id}/approve`, {
+    const response = await call(`/contact-requests/${created.id}/approve`, {
       method: 'POST',
       token: bob.token,
       key: nextKey('expired-approve'),
@@ -526,7 +527,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     expect(response.status).toBe(409);
     expect(response.body.error?.code).toBe('CONFLICT');
 
-    const detail = await call<ContactExchangeRequestWire>(`/requests/${created.id}`, {
+    const detail = await call<ContactExchangeRequestWire>(`/contact-requests/${created.id}`, {
       token: bob.token,
     });
     expect(detail.body.data.status).toBe('EXPIRED');
@@ -537,7 +538,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     const bob = await makeUser();
 
     const pending = await apply(alice, bob);
-    const cancelled = await call<ContactExchangeRequestWire>(`/requests/${pending.id}/revoke`, {
+    const cancelled = await call<ContactExchangeRequestWire>(`/contact-requests/${pending.id}/revoke`, {
       method: 'POST',
       token: alice.token,
       key: nextKey('cancel'),
@@ -546,7 +547,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     expect(cancelled.body.data.status).toBe('REVOKED');
 
     const accepted = await acceptedPair();
-    const revoked = await call<ContactExchangeRequestWire>(`/requests/${accepted.request.id}/revoke`, {
+    const revoked = await call<ContactExchangeRequestWire>(`/contact-requests/${accepted.request.id}/revoke`, {
       method: 'POST',
       token: accepted.addressee.token,
       key: nextKey('revoke-accepted'),
@@ -565,7 +566,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     await createEntry(bob, 'phone', '13812345678', true);
     const request = await apply(alice, bob);
 
-    const response = await call(`/requests/${request.id}/contacts`, { token: alice.token });
+    const response = await call(`/contact-requests/${request.id}/contacts`, { token: alice.token });
     expect(response.status).toBe(403);
     expect(response.body.error?.code).toBe('CONSENT_REQUIRED');
 
@@ -587,7 +588,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     const request = await apply(alice, bob);
     await approve(bob, request.id);
 
-    const response = await call<ExchangedContactsWire>(`/requests/${request.id}/contacts`, {
+    const response = await call<ExchangedContactsWire>(`/contact-requests/${request.id}/contacts`, {
       token: alice.token,
     });
     expect(response.status).toBe(200);
@@ -614,7 +615,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     const request = await apply(alice, bob);
     await approve(bob, request.id);
 
-    const response = await call<ExchangedContactsWire>(`/requests/${request.id}/contacts`, {
+    const response = await call<ExchangedContactsWire>(`/contact-requests/${request.id}/contacts`, {
       token: bob.token,
     });
     expect(response.status).toBe(200);
@@ -632,7 +633,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     const request = await apply(alice, bob);
     await approve(bob, request.id);
 
-    const before = await call<ExchangedContactsWire>(`/requests/${request.id}/contacts`, {
+    const before = await call<ExchangedContactsWire>(`/contact-requests/${request.id}/contacts`, {
       token: alice.token,
     });
     expect(before.body.data.entries).toHaveLength(2);
@@ -643,7 +644,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
       body: { shared: false },
     });
 
-    const after = await call<ExchangedContactsWire>(`/requests/${request.id}/contacts`, {
+    const after = await call<ExchangedContactsWire>(`/contact-requests/${request.id}/contacts`, {
       token: alice.token,
     });
     expect(after.body.data.entries.map((item) => item.id)).toEqual([email.id]);
@@ -658,13 +659,13 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
 
     await call(`/contacts/${entry.id}`, { method: 'DELETE', token: bob.token });
 
-    const response = await call<ExchangedContactsWire>(`/requests/${request.id}/contacts`, {
+    const response = await call<ExchangedContactsWire>(`/contact-requests/${request.id}/contacts`, {
       token: alice.token,
     });
     expect(response.status).toBe(200);
     expect(response.body.data.entries).toEqual([]);
 
-    const detail = await call<ContactExchangeRequestWire>(`/requests/${request.id}`, {
+    const detail = await call<ContactExchangeRequestWire>(`/contact-requests/${request.id}`, {
       token: alice.token,
     });
     expect(detail.body.data.status).toBe('ACCEPTED');
@@ -674,16 +675,16 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     const { requester, addressee, request } = await acceptedPair();
     await createEntry(addressee, 'wechat', 'wxrevoked', true);
 
-    const before = await call(`/requests/${request.id}/contacts`, { token: requester.token });
+    const before = await call(`/contact-requests/${request.id}/contacts`, { token: requester.token });
     expect(before.status).toBe(200);
 
-    await call(`/requests/${request.id}/revoke`, {
+    await call(`/contact-requests/${request.id}/revoke`, {
       method: 'POST',
       token: requester.token,
       key: nextKey('revoke-before-view'),
     });
 
-    const after = await call(`/requests/${request.id}/contacts`, { token: requester.token });
+    const after = await call(`/contact-requests/${request.id}/contacts`, { token: requester.token });
     expect(after.status).toBe(403);
     expect(after.body.error?.code).toBe('CONSENT_REQUIRED');
   });
@@ -696,12 +697,12 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     const { requester, addressee, request } = await acceptedPair();
     await createEntry(addressee, 'phone', '13600006666', true);
 
-    const viewed = await call<ExchangedContactsWire>(`/requests/${request.id}/contacts`, {
+    const viewed = await call<ExchangedContactsWire>(`/contact-requests/${request.id}/contacts`, {
       token: requester.token,
     });
     expect(viewed.status).toBe(200);
 
-    const inbound = await call<Page<ContactAccessAuditWire>>('/audit?direction=inbound', {
+    const inbound = await call<Page<ContactAccessAuditWire>>('/contact-audit?direction=inbound', {
       token: addressee.token,
     });
     expect(inbound.status).toBe(200);
@@ -715,7 +716,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     });
     expect(inbound.body.data.items[0]?.entryKinds).toContain('phone');
 
-    const outbound = await call<Page<ContactAccessAuditWire>>('/audit?direction=outbound', {
+    const outbound = await call<Page<ContactAccessAuditWire>>('/contact-audit?direction=outbound', {
       token: requester.token,
     });
     expect(outbound.body.data.items).toHaveLength(1);
@@ -730,11 +731,11 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     const { requester, addressee, request } = await acceptedPair();
     const entry = await createEntry(addressee, 'email', 'audit-keep@example.com', true);
 
-    await call(`/requests/${request.id}/contacts`, { token: requester.token });
+    await call(`/contact-requests/${request.id}/contacts`, { token: requester.token });
     await call(`/contacts/${entry.id}`, { method: 'DELETE', token: addressee.token });
-    await call(`/requests/${request.id}/contacts`, { token: requester.token });
+    await call(`/contact-requests/${request.id}/contacts`, { token: requester.token });
 
-    const inbound = await call<Page<ContactAccessAuditWire>>('/audit', {
+    const inbound = await call<Page<ContactAccessAuditWire>>('/contact-audit', {
       token: addressee.token,
     });
     expect(inbound.body.data.items.length).toBeGreaterThanOrEqual(2);
@@ -753,7 +754,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
 
     for (let index = 0; index < 3; index += 1) {
       const request = await apply(index % 2 === 0 ? alice : bob, index % 2 === 0 ? bob : alice);
-      const rejected = await call(`/requests/${request.id}/reject`, {
+      const rejected = await call(`/contact-requests/${request.id}/reject`, {
         method: 'POST',
         token: (index % 2 === 0 ? bob : alice).token,
         key: nextKey('reject-rl'),
@@ -761,7 +762,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
       expect(rejected.status).toBe(200);
     }
 
-    const blocked = await call('/requests', {
+    const blocked = await call('/contact-requests', {
       method: 'POST',
       token: alice.token,
       key: nextKey('rate-limited'),
@@ -779,14 +780,14 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
 
     for (let index = 0; index < 3; index += 1) {
       const request = await apply(alice, bob);
-      await call(`/requests/${request.id}/reject`, {
+      await call(`/contact-requests/${request.id}/reject`, {
         method: 'POST',
         token: bob.token,
         key: nextKey('reject-isolation'),
       });
     }
 
-    const blocked = await call('/requests', {
+    const blocked = await call('/contact-requests', {
       method: 'POST',
       token: alice.token,
       key: nextKey('blocked-ab'),
@@ -794,7 +795,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
     });
     expect(blocked.status).toBe(429);
 
-    const allowed = await call('/requests', {
+    const allowed = await call('/contact-requests', {
       method: 'POST',
       token: alice.token,
       key: nextKey('allowed-ac'),
@@ -825,7 +826,7 @@ describe('联系方式交换 · HTTP（真库 + 真实控制器 / 守卫 / 幂�
   it('数据库里 ContactAccessAudit 不含任何联系方式明文', async () => {
     const { requester, addressee, request } = await acceptedPair();
     await createEntry(addressee, 'wechat', 'wxauditraw', true);
-    await call(`/requests/${request.id}/contacts`, { token: requester.token });
+    await call(`/contact-requests/${request.id}/contacts`, { token: requester.token });
 
     const raw = await ctx.db.query<Record<string, unknown>>('SELECT * FROM "ContactAccessAudit"');
     const dump = JSON.stringify(raw.rows);

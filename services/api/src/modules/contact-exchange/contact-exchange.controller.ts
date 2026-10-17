@@ -166,7 +166,7 @@ export class ContactExchangeController {
 
   /* ---------------- 交换申请 ---------------- */
 
-  @Post('requests')
+  @Post('contact-requests')
   @ApiOperation({ summary: '发起联系方式交换申请（双方同意后才可读取；24h 限流）' })
   apply(
     @CurrentUser() userId: string,
@@ -180,7 +180,7 @@ export class ContactExchangeController {
     });
   }
 
-  @Get('requests')
+  @Get('contact-requests')
   @ApiOperation({ summary: '我的交换申请列表（游标分页；可按方向 / 状态过滤）' })
   listRequests(
     @CurrentUser() userId: string,
@@ -194,34 +194,34 @@ export class ContactExchangeController {
     });
   }
 
-  @Get('requests/:id')
+  @Get('contact-requests/:id')
   @ApiOperation({ summary: '申请详情（只有关系元数据，绝不含联系方式）' })
   detail(@CurrentUser() userId: string, @Param('id') id: string) {
     return this.exchange.detail(userId, id);
   }
 
-  @Post('requests/:id/approve')
+  @Post('contact-requests/:id/approve')
   @HttpCode(200)
   @ApiOperation({ summary: '同意申请（仅被申请人）' })
   approve(@CurrentUser() userId: string, @Param('id') id: string) {
     return this.exchange.approve(userId, id);
   }
 
-  @Post('requests/:id/reject')
+  @Post('contact-requests/:id/reject')
   @HttpCode(200)
   @ApiOperation({ summary: '拒绝申请（仅被申请人）' })
   reject(@CurrentUser() userId: string, @Param('id') id: string) {
     return this.exchange.reject(userId, id);
   }
 
-  @Post('requests/:id/revoke')
+  @Post('contact-requests/:id/revoke')
   @HttpCode(200)
   @ApiOperation({ summary: '撤销申请 / 解除交换（任一方；撤销后对方立即不可见）' })
   revoke(@CurrentUser() userId: string, @Param('id') id: string) {
     return this.exchange.revoke(userId, id);
   }
 
-  @Get('requests/:id/contacts')
+  @Get('contact-requests/:id/contacts')
   @ApiOperation({
     summary: '查看对方**已授权**的联系方式（仅 ACCEPTED；本次读取写审计）',
     description:
@@ -234,7 +234,7 @@ export class ContactExchangeController {
 
   /* ---------------- 审计 ---------------- */
 
-  @Get('audit')
+  @Get('contact-audit')
   @ApiOperation({ summary: '审计查询：谁看过我的联系方式 / 我看过谁（不含明文）' })
   listAudit(
     @CurrentUser() userId: string,

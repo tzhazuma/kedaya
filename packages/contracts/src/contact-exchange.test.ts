@@ -51,7 +51,8 @@ describe('联系方式交换 wire 契约（U8）', () => {
   });
 
   it('路由与限流窗口是冻结常量', () => {
-    expect(CONTACT_EXCHANGE_ROUTE).toBe('contact-exchange');
+    // 挂在 profile 下：契约 §6 要求每个端点都属于某个用户可见模块
+expect(CONTACT_EXCHANGE_ROUTE).toBe('profile');
     expect(CONTACT_EXCHANGE_DEFAULT_RATE_LIMIT).toBe(3);
     expect(CONTACT_EXCHANGE_WINDOW_MS).toBe(24 * 60 * 60 * 1000);
   });

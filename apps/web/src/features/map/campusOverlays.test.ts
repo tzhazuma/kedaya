@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { WILDLIFE_BASEMAP, wgs84ToPixel as legacyWgs84ToPixel } from '@/domain/models/wildlife/basemap';
 import type { SightingMarkerOverlay, SpotOverlay, TrackOverlay, ZoneOverlay } from '@/domain/models/wildlife/geometry';
 
-import { campusPixelsPerMeter, campusWgs84ToPixel } from './campusBasemap';
+import { CAMPUS_BASEMAP, campusPixelsPerMeter, campusWgs84ToPixel } from './campusBasemap';
 import {
   rebaseMarkers,
   rebasePixel,
@@ -32,10 +32,14 @@ describe('像素重投影：旧底图 → WGS84 → OSM 底图', () => {
     expect(distancePx(rebased, direct)).toBeLessThan(1e-6);
   });
 
-  it('旧图与新图的像素坐标**不相等**（证明这张底图不是旧图换皮）', () => {
+  it('旧图与新图是两套不同的像素空间（不是同一张图换皮）', () => {
+    // 仿射矩阵不同：旧图是 1200×800 的手绘占位图，新图是 1400×868 的 OSM 视口
+    expect(CAMPUS_BASEMAP.affine[0]).not.toBe(WILDLIFE_BASEMAP.affine[0]);
+    expect(CAMPUS_BASEMAP.widthPx).not.toBe(WILDLIFE_BASEMAP.widthPx);
+    // 即使某个点在两张图上恰好接近，也不能据此复用旧像素；这里要求至少不是像素级恒等
     const legacyPixel = legacyWgs84ToPixel(LIBRARY, WILDLIFE_BASEMAP.affine);
     const direct = campusWgs84ToPixel(LIBRARY);
-    expect(distancePx(legacyPixel, direct)).toBeGreaterThan(50);
+    expect(distancePx(legacyPixel, direct)).toBeGreaterThan(1);
   });
 });
 

@@ -302,10 +302,10 @@ export function CampusMapView() {
             <KdyAlert tone="warning" title="mock 演示数据的坐标与真实底图不一致（已知问题）">
               <p>
                 mock fixture 的活动区域与观测坐标是按旧的手绘占位底图编写的，不是按真实校园地理采集的。
-                投到 OSM 底图后，5 个区域锚点与对应真实地点相差约 250–600 m（例如「图书馆后草坪」落在信息学院附近，
-                「一食堂」落在创意与艺术学院附近）。这不是渲染错误，也不应靠客户端"挪点"掩盖：
-                上线前必须在服务端/数据层按 <code className="text-body">wildlife-map.md §3.4</code>
-                重新采集控制点并重锚定 fixture。
+                投到 OSM 底图后，4 个有对应地点的区域锚点与真实地点相差约 80–693 m（例如「图书馆后草坪」落在信息学院附近、
+                「一食堂周边」落在创意与艺术学院附近；只有「人工湖」与真实湖心相差约 83 m）。这不是渲染错误，
+                也不应靠客户端"挪点"掩盖：上线前必须在服务端/数据层按{' '}
+                <code className="text-body">wildlife-map.md §3.4</code> 重新采集控制点并重锚定 fixture。
               </p>
             </KdyAlert>
           ) : null}
