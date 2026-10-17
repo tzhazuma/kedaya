@@ -44,13 +44,13 @@ void main() {
         activity: BuddyActivity.sport,
         title: '周六下午羽毛球，缺 2 人',
         description: '体育馆 3 号场，打两小时，新手也行。',
-        location: '体育馆 3 号场',
+        location: '体育馆',
         // 上海 2026-10-19（周一）14:00
         startsAt: DateTime.utc(2026, 10, 19, 6),
         durationMin: 120,
         capacity: 4,
         joinedCount: 2,
-        tags: const <String>['badminton', 'indoor'],
+        tags: const <String>['badminton', 'gym'],
         minSkillLevel: BuddySkillLevel.beginner,
         creator: const BuddyCreator(id: 'u-2001', nickname: '鸭鸭一号'),
       );
@@ -61,10 +61,10 @@ void main() {
 
       expect(find.text('周六下午羽毛球，缺 2 人'), findsOneWidget);
       expect(find.text('10月19日 周一 14:00 · 120 分钟'), findsOneWidget);
-      expect(find.text('体育馆 3 号场'), findsOneWidget);
+      expect(find.text('体育馆'), findsOneWidget);
       expect(find.text('2/4 人 · 还缺 2 人'), findsOneWidget);
       expect(find.text('羽毛球'), findsOneWidget);
-      expect(find.text('室内'), findsOneWidget);
+      expect(find.text('健身'), findsOneWidget);
       expect(find.text('要求至少「入门」水平'), findsOneWidget);
       expect(find.text('发起人：鸭鸭一号'), findsOneWidget);
       expect(find.textContaining('体育馆 3 号场，打两小时'), findsNothing,

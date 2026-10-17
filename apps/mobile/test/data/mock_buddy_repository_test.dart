@@ -236,11 +236,11 @@ void main() {
     CreateBuddyPostCommand command({
       String title = '周六下午羽毛球，缺 2 人',
       String? description,
-      String location = '体育馆 3 号场',
+      String location = '体育馆',
       DateTime? startsAt,
       int capacity = 4,
       int? durationMin = 120,
-      List<String> tags = const <String>['badminton', 'indoor'],
+      List<String> tags = const <String>['badminton', 'gym'],
     }) =>
         CreateBuddyPostCommand(
           activity: BuddyActivity.sport,

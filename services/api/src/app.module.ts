@@ -38,7 +38,10 @@ import { WildlifeModule } from './modules/wildlife/wildlife.module';
 import { ContactExchangeModule } from './modules/contact-exchange/contact-exchange.module';
 
 /**
- * 应用根模块 —— 契约 §4 的 **20 个模块全部装配**（v1.2 §11.10-C 新增 `facility`）。
+ * 应用根模块 —— 契约 §4 的 **20 个模块全部装配**（v1.2 §11.10-C 新增 `facility`），
+ * 另加一个**非用户可见**的跨模块隐私基础设施 `contact-exchange`（U8 联系方式交换）。
+ * 后者刻意不进 `@kedaya/contracts` 的 `MODULES`：它没有首页宫格，也不改变
+ * 三端"20 个模块"的交付状态断言。
  *
  * 三个全局提供者（契约 §6.1 的统一约定都靠它们落地）：
  *   APP_PIPE       ZodValidationPipe   —— 全站唯一校验入口

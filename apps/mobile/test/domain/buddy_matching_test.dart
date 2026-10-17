@@ -212,7 +212,7 @@ void main() {
     test('academic 按「同院系 → 共同兴趣 → 共同活动」输出，兴趣最多 3 个', () {
       const BuddyRuleSignals signals = BuddyRuleSignals(
         sameDepartment: true,
-        commonInterestTags: <String>['badminton', 'coding', 'movie', 'pet'],
+        commonInterestTags: <String>['badminton', 'programming', 'movie', 'pets'],
         commonActivityTags: <String>['gym'],
       );
       expect(
@@ -358,19 +358,19 @@ void main() {
       final BuddyRuleScore score = buddyRuleScoreFor(
         section: BuddySection.sport,
         post: post(
-          tags: const <String>['badminton', 'indoor', 'fitness'],
+          tags: const <String>['badminton', 'gym', 'gym'],
           durationMin: 60,
         ),
         me: profile(
-          interestTags: const <String>['badminton', 'coding'],
-          activityTags: const <String>['badminton', 'indoor', 'fitness'],
+          interestTags: const <String>['badminton', 'programming'],
+          activityTags: const <String>['badminton', 'gym', 'gym'],
           preferredAreas: const <String>['体育馆'],
           availability: const <AvailabilitySlot>[
             AvailabilitySlot(dow: 1, startMin: 19 * 60, endMin: 22 * 60),
           ],
         ),
         creatorProfile: profile(
-          interestTags: const <String>['badminton', 'coding'],
+          interestTags: const <String>['badminton', 'programming'],
           preferredAreas: const <String>['体育馆'],
         ),
       );
@@ -383,16 +383,16 @@ void main() {
         section: BuddySection.academic,
         post: post(
           activity: BuddyActivity.study,
-          tags: const <String>['selfstudy'],
+          tags: const <String>['self-study'],
         ),
         me: profile(
-          department: '信息科学与技术学院',
-          interestTags: const <String>['coding', 'movie', 'reading'],
-          activityTags: const <String>['selfstudy'],
+          department: '信息学院',
+          interestTags: const <String>['programming', 'movie', 'reading'],
+          activityTags: const <String>['self-study'],
         ),
         creatorProfile: profile(
-          department: '信息科学与技术学院',
-          interestTags: const <String>['coding', 'movie', 'reading'],
+          department: '信息学院',
+          interestTags: const <String>['programming', 'movie', 'reading'],
         ),
       );
       expect(academic.score, closeTo(0.8, 1e-12));
@@ -424,7 +424,7 @@ void main() {
         section: BuddySection.sport,
         post: post(tags: const <String>['badminton']),
         me: profile(activityTags: const <String>['badminton']),
-        creatorProfile: profile(activityTags: const <String>['fitness']),
+        creatorProfile: profile(activityTags: const <String>['gym']),
       );
       expect(score.signals.commonActivityTags, <String>['badminton']);
       expect(score.reason, contains('共同活动：羽毛球'));

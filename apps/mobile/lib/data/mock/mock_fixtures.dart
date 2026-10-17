@@ -15,7 +15,7 @@ const User mockUser = User(
   userId: 'u-1001',
   studentId: '20240001',
   displayName: '可达鸭测试账号',
-  department: '信息科学与技术学院',
+  department: '信息学院',
   email: 'test@shanghaitech.edu.cn',
 );
 
@@ -47,7 +47,7 @@ final List<GroupbuyOrder> mockGroupbuyOrders = <GroupbuyOrder>[
     status: GroupbuyStatus.recruiting,
     initiatorId: 'u-2002',
     initiatorName: '咖啡因驱动',
-    pickupLocation: '图书馆一楼咖啡角',
+    pickupLocation: '咖啡厅',
     deadline: mockNow.add(const Duration(days: 1)),
     createdAt: mockNow.subtract(const Duration(hours: 5)),
     updatedAt: mockNow.subtract(const Duration(hours: 1)),

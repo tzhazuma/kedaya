@@ -33,7 +33,7 @@ void main() {
           userId: 'u-1001',
           studentId: '20240001',
           displayName: '可达鸭测试账号',
-          department: '信息科学与技术学院',
+          department: '信息学院',
           email: 'test@shanghaitech.edu.cn',
         ),
         accessToken: 'access-token',

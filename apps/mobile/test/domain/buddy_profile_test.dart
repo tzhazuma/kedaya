@@ -265,13 +265,13 @@ void main() {
     BuddyProfile base() => BuddyProfile(
           userId: 'u-1',
           sections: const <BuddySection>[BuddySection.sport],
-          interestTags: const <String>['badminton', 'coding'],
+          interestTags: const <String>['badminton', 'programming'],
           activityTags: const <String>['badminton'],
           availability: const <AvailabilitySlot>[
             AvailabilitySlot(dow: 1, startMin: 19 * 60, endMin: 22 * 60),
           ],
           preferredAreas: const <String>['体育馆'],
-          department: '信息科学与技术学院',
+          department: '信息学院',
           bio: '常泡图书馆',
           matchEnabled: true,
         );

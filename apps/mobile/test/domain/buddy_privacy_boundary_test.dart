@@ -126,7 +126,7 @@ void main() {
         BuddyProfile(
           userId: 'u-1',
           sections: const <BuddySection>[BuddySection.sport],
-          department: '信息科学与技术学院',
+          department: '信息学院',
           matchEnabled: true,
         ).toJson(),
       );

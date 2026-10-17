@@ -1,0 +1,28 @@
+{
+  "version": "campus-basemap-v1",
+  "widthPx": 1400,
+  "heightPx": 868,
+  "affine": [
+    0.9410692043,
+    0.0,
+    625.6779147525,
+    0.0,
+    -0.9410692043,
+    410.6417508174
+  ],
+  "pixelsPerMeter": 0.941069,
+  "boundsLocalM": {
+    "xMin": -664.859,
+    "xMax": 822.811,
+    "yMin": -485.159,
+    "yMax": 436.357
+  },
+  "origin": {
+    "lat": 31.1795,
+    "lng": 121.591
+  },
+  "imageLight": "/map/campus-basemap.svg",
+  "imageDark": "/map/campus-basemap-dark.svg",
+  "attribution": "© OpenStreetMap contributors",
+  "license": "odbl"
+}

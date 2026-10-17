@@ -240,7 +240,7 @@ void main() {
           BuddyActivity.sport,
           BuddyActivity.game
         ],
-        tags: const <String>['badminton', 'indoor'],
+        tags: const <String>['badminton', 'gym'],
         startsAfter: DateTime.utc(2026, 10, 17, 4),
         cursor: 'opaque-cursor',
         limit: 20,
@@ -248,7 +248,7 @@ void main() {
 
       expect(query['section'], 'sport');
       expect(query['activity'], 'sport,game');
-      expect(query['tags'], 'badminton,indoor');
+      expect(query['tags'], 'badminton,gym');
       expect(query['startsAfter'], '2026-10-17T04:00:00.000Z');
       expect(query['cursor'], 'opaque-cursor');
       expect(query['limit'], 20);
@@ -273,11 +273,11 @@ void main() {
           activity: BuddyActivity.sport,
           title: '周六下午羽毛球，缺 2 人',
           description: '体育馆 3 号场，打两小时，新手也行',
-          location: '体育馆 3 号场',
+          location: '体育馆',
           startsAt: now.add(const Duration(days: 2)),
           durationMin: 120,
           capacity: 4,
-          tags: const <String>['badminton', 'indoor'],
+          tags: const <String>['badminton', 'gym'],
         );
 
     test('合法草稿：无错误，且命令里不含 creatorId / section', () {
@@ -289,7 +289,7 @@ void main() {
       expect(body.containsKey('creatorId'), isFalse, reason: '发起人由后端从 JWT 取');
       expect(body.containsKey('section'), isFalse, reason: '板块由 activity 派生');
       expect(body['activity'], 'sport');
-      expect(body['tags'], <String>['badminton', 'indoor']);
+      expect(body['tags'], <String>['badminton', 'gym']);
       expect(body['startsAt'], isA<String>());
     });
 
@@ -369,10 +369,10 @@ void main() {
         valid().copyWith(
           tags: const <String>[
             'badminton',
-            'indoor',
-            'outdoor',
+            'gym',
+            'hiking',
             'running',
-            'fitness',
+            'gym',
             'swimming',
             'tennis',
             'yoga',
