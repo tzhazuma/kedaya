@@ -82,7 +82,8 @@
   justify-content: space-between;
   gap: $kdy-space-3;
   padding: $kdy-space-2 $kdy-space-3;
-  background: $kdy-tone-milk;
+  /* 危机卡本身是奶白功能面：热线用白块"浮"在它上面，分组感不丢 */
+  background: $kdy-color-campus-white;
   border-radius: $kdy-radius-2xl;
 }
 

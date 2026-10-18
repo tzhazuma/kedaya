@@ -5,7 +5,7 @@
  * 或裸 `*` —— 它们会让 common.wxss 编译失败、全部页面白屏。
  * 因此所有选择器都是**单类名**或后代选择器。
  *
- * 贴纸簿语言：图块是奶白面 + 校园描边；「添加」是淡黄贴纸块；说明条是奶白面。
+ * 贴纸簿语言：图块是奶白面 + 2px 墨色手绘轮廓；「添加」是淡黄贴纸块；说明条是奶白面。
  */
 
 .kdy-uploader {
@@ -30,7 +30,8 @@
   margin-bottom: $kdy-space-2;
   overflow: hidden;
   background: $kdy-tone-milk;
-  border: 1px solid $kdy-tone-border;
+  /* 图块是「缩略图」：圆角保持小而方，但描边与卡片同一根手绘墨色轮廓 */
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-xl;
 }
 

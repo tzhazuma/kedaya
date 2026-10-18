@@ -85,17 +85,42 @@ page,
 /*
  * 页面标题。
  *
- * 28px / 字重 700 / 负字距：这是参考稿里"大标题压住整页"的做法 ——
+ * 32px / 字重 800 / 负字距：这是参考稿里"大标题压住整页"的做法 ——
  * 一屏只有一个最大的字，用户扫一眼就知道这是哪一页。
  * 负字距对中文生效（字面本来就留有边距），所以不会挤在一起。
+ *
+ * 右侧那只**可达鸭贴纸**（`.kdy-page-heading__duck`）是贴纸簿统一页头的关键：
+ * 每个页面的标题旁边都有一只歪着的鸭子，整站的"卡通感"就来自这里 +
+ * 手绘圆角（tokens.scss 的四角不一致）+ 淡色功能卡。
  */
+.kdy-page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $kdy-space-3;
+}
+
+.kdy-page-heading__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.kdy-page-heading__duck {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  /* 歪一点点：手绘贴纸不会是正的 */
+  transform: rotate(-7deg);
+  pointer-events: none;
+}
+
 .kdy-page-title {
   display: block;
   color: $kdy-color-campus-ink;
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 800;
   line-height: 1.15;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.8px;
 }
 
 .kdy-page-subtitle {
@@ -134,7 +159,7 @@ page,
   box-sizing: border-box;
   width: 52px;
   height: 52px;
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-2xl;
   background-color: $kdy-tone-yellow;
   color: $kdy-color-campus-ink;

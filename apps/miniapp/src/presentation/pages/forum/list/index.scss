@@ -5,21 +5,22 @@
   padding: $kdy-space-3 $kdy-space-5 $kdy-space-1;
 }
 
-/* 板块卡：白底 + 校园描边；选中是一整块淡黄贴纸 + 墨字 */
+/* 板块卡：白底 + 手绘墨色轮廓；选中是一整块淡黄贴纸 + 墨字 */
 .kdy-forum-list__board {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
   padding: $kdy-space-1 $kdy-space-3;
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-2xl;
-  background: $kdy-color-campus-white;
+  background-color: $kdy-color-campus-white;
 }
 
 .kdy-forum-list__board.is-active {
-  border-color: $kdy-tone-border;
-  background: $kdy-tone-yellow;
+  /* 选中只换一整块淡黄面：描边保持手绘墨色（`$kdy-outline-ink`） */
+  border-color: $kdy-outline-ink;
+  background-color: $kdy-tone-yellow;
 }
 
 .kdy-forum-list__board-name {

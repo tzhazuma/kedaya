@@ -58,3 +58,8 @@
   gap: $kdy-space-2;
   padding: 0 $kdy-space-4;
 }
+
+/* 目标系统概览是这一页的入口卡：奶白中性面 + 更大一档的手绘圆角 */
+.kdy-techpie-webview .kdy-card--milk {
+  border-radius: $kdy-radius-3xl;
+}

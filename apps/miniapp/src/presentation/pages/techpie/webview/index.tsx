@@ -108,6 +108,7 @@ export default function TechpieWebviewPage() {
 
       <KdyCard
         elevated={false}
+        tone='milk'
         title={target.nameZh}
         extra={<KdyTag tone={target.domainVerified ? 'success' : 'warning'}>
           {target.domainVerified ? '域名已确认' : '域名待确认'}

@@ -130,7 +130,7 @@ export default function DiscoverPage() {
     <View className='kdy-page kdy-discover'>
       <KdyHeading title='发现' />
 
-      <KdyCard title='生活模块' elevated={false}>
+      <KdyCard title='生活模块' tone='pink' elevated={false}>
         <View className='kdy-discover__grid'>
           {lifeModules.map((module) => (
             <View
@@ -185,7 +185,7 @@ export default function DiscoverPage() {
         </Text>
       </KdyCard>
 
-      <KdyCard title='论坛与常见问题' elevated={false}>
+      <KdyCard title='论坛与常见问题' tone='pink' elevated={false}>
         <Text className='kdy-discover__hint'>
           同学之间的问答与互助：论坛发帖、常见问题里找答案，找不到可以提工单。
         </Text>
@@ -225,7 +225,7 @@ export default function DiscoverPage() {
         </View>
       </KdyCard>
 
-      <KdyCard title='野生动物' elevated={false}>
+      <KdyCard title='野生动物' tone='mint' elevated={false}>
         <Text className='kdy-discover__hint'>
           认识校园里的野生居民，看看它们在哪活动；偶遇了可以上报一条观测。
         </Text>

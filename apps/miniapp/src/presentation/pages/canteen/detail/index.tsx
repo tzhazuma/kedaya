@@ -147,7 +147,7 @@ export default function CanteenDetailPage() {
         subtitle={`${dish.canteen} · ${caloriesLabel(dish.caloriesKcal)}`}
       />
 
-      <KdyCard title='营养成分表' elevated={false}>
+      <KdyCard title='营养成分表' elevated={false} tone='yellow'>
         <View className='kdy-canteen-detail__hero'>
           <View className='kdy-canteen-detail__calories'>
             <Text className='kdy-canteen-detail__calories-value'>{dish.caloriesKcal}</Text>

@@ -27,13 +27,33 @@ const TOKENS_SCSS = path.resolve(
   'tokens.scss',
 )
 
+/**
+ * 产物目录。
+ *
+ * H5 与小程序**必须**分开（原因见下面 `outputRoot` 的注释）：跑一次 `build:h5`
+ * 就冲掉了 `dist/app.json`，微信开发者工具会对每一页报「未找到 app.json」。
+ * `copy.patterns` 的 `to` 也走这个变量，否则 H5 预览里 `/assets/*` 全是 404。
+ */
+const OUTPUT_ROOT = process.env.TARO_ENV === 'h5' ? 'dist-h5' : 'dist'
+
 const baseConfig: UserConfigExport<'webpack5'> = {
   projectName: 'kedaya-miniapp',
   date: '2026-10-16',
   designWidth: 375,
   deviceRatio: { 640: 2.34 / 2, 750: 1, 828: 1.81 / 2, 375: 2 },
   sourceRoot: 'src',
-  outputRoot: 'dist',
+  /**
+   * ⚠️ H5 产物**必须**与小程序产物分开。
+   *
+   * 之前两者都写在 `dist/`：跑一次 `build:h5` 就会把 `dist/app.json` 冲掉，
+   * 微信开发者工具随即报「未找到 app.json」（H5 产物里没有 app.json）。
+   * 这不是理论问题 —— 为了做近似预览跑过一次 H5 构建，开发者工具就红了。
+   * 现在 H5 落到 `dist-h5/`，两边互不覆盖。
+   *
+   * 下面的 `copy.patterns` 的 `to` 也用同一个变量：漏了它，H5 预览里所有
+   * `/assets/*`（页头可达鸭、dock、立绘）都会 404 —— 预览就白做了。
+   */
+  outputRoot: OUTPUT_ROOT,
   alias: {
     '@taroify/core': path.dirname(
       require.resolve('@taroify/core/package.json'),
@@ -92,12 +112,12 @@ const baseConfig: UserConfigExport<'webpack5'> = {
      * `scripts/verify-weapp-build.cjs` 会同时守住主包与这个分包的上限。
      */
     patterns: [
-      { from: 'src/assets/wildlife', to: 'dist/assets/wildlife' },
-      { from: 'src/assets/mascot', to: 'dist/assets/mascot' },
-      { from: 'src/assets/campus', to: 'dist/assets/campus' },
+      { from: 'src/assets/wildlife', to: `${OUTPUT_ROOT}/assets/wildlife` },
+      { from: 'src/assets/mascot', to: `${OUTPUT_ROOT}/assets/mascot` },
+      { from: 'src/assets/campus', to: `${OUTPUT_ROOT}/assets/campus` },
       {
         from: 'src/presentation/pages/wildlife/assets',
-        to: 'dist/presentation/pages/wildlife/assets',
+        to: `${OUTPUT_ROOT}/presentation/pages/wildlife/assets`,
       },
     ],
     options: {},

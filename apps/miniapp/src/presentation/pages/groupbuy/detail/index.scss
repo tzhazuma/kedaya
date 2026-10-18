@@ -100,12 +100,12 @@
   font-size: $kdy-font-size-xs;
 }
 
-/* 底部操作块：白卡 + 1px 校园描边 + 极淡投影（贴纸簿不叠玻璃） */
+/* 底部操作块：白卡 + 手绘墨色轮廓 + 极淡投影（贴纸簿不叠玻璃） */
 .kdy-gb-detail__actions {
   margin: $kdy-space-4 $kdy-space-5;
   padding: $kdy-space-4;
-  background: $kdy-color-campus-white;
-  border: 1px solid $kdy-tone-border;
+  background-color: $kdy-color-campus-white;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-2xl;
   box-shadow: $kdy-shadow-card;
 }

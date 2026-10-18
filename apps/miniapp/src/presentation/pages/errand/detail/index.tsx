@@ -267,7 +267,7 @@ export default function ErrandDetailPage() {
         subtitle={`${task.fromPlace} → ${task.toPlace}`}
       />
 
-      <KdyCard elevated={false}>
+      <KdyCard tone='milk' elevated={false}>
         <View className='kdy-errand-detail__hero'>
           <View className='kdy-errand-detail__reward-box'>
             <Text className='kdy-errand-detail__reward-label'>悬赏</Text>

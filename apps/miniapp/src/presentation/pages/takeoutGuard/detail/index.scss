@@ -113,3 +113,8 @@
   color: $kdy-color-danger;
   font-size: $kdy-font-size-xs;
 }
+
+/* 记录概要是这一页的主视觉（只有本人可见）：淡黄功能面 + 更大一档的手绘圆角 */
+.kdy-tg-detail .kdy-card--yellow {
+  border-radius: $kdy-radius-3xl;
+}

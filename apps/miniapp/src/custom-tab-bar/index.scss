@@ -1,0 +1,12 @@
+/**
+ * 自定义 tabBar 组件自己的样式出口。
+ *
+ * 这个文件**必须存在**，而且 `index.tsx` 必须 import 它。原因见 index.tsx 里的注释：
+ * 微信自定义组件默认样式隔离（`styleIsolation: isolated`），app.wxss / 页面 wxss 的
+ * class 选择器进不来，`custom-tab-bar` 也不是页面、不会 import `common.wxss`。
+ * 结果就是 dock 渲染了但完全没有样式 —— 5 个 `<image>` 退回默认 320×240，
+ * 一屏巨大图标（真机截图里就是这个现象）。
+ *
+ * 这里只做转出：dock 的样式只有一份，定义在 `presentation/components/KdyDock/index.scss`。
+ */
+@import '../presentation/components/KdyDock/index.scss';

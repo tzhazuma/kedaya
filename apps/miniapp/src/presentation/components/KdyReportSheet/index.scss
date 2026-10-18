@@ -1,7 +1,10 @@
 /**
- * KdyReportSheet 样式 —— 贴纸簿语言：白底 + 1px 校园描边，淡色面只取四档。
+ * KdyReportSheet 样式 —— 贴纸簿语言：白底 + 手绘墨色轮廓，淡色面只取四档。
  *
  * ⚠️ 只使用单类名 / 后代选择器（WXSS 不支持 `>` 组合与裸 `*`，见 apps/miniapp/AGENTS.md）。
+ *
+ * 弹层本体（`.kdy-report`）不画描边：外框由 Taroify `Popup rounded` 提供，
+ * 里面再套一圈线就成了「双层框」。
  */
 
 .kdy-report {
@@ -81,7 +84,7 @@
   text-align: center;
 }
 
-/* 完成字形：一块淡黄贴纸 + 墨色字形 */
+/* 完成字形：一块淡黄贴纸 + 2px 墨色手绘轮廓 + 墨色字形 */
 .kdy-report__done-glyph {
   display: flex;
   align-items: center;
@@ -90,7 +93,7 @@
   height: 64px;
   margin-bottom: $kdy-space-4;
   background: $kdy-tone-yellow;
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-xl;
   color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-display;

@@ -4,7 +4,7 @@
  * 放在 `pages/auth/` 下由各页 `@import '../auth.scss'` 引入 ——
  * 页面样式仍然按页面分包，不污染全局。
  *
- * 视觉语言：**校园贴纸簿**。真白底 + 墨蓝黑字 + 1px 校园描边 + 极淡投影；
+ * 视觉语言：**校园贴纸簿**。真白底 + 墨蓝黑字 + 手绘墨色轮廓 + 极淡投影；
  * 淡色面只从 `$kdy-tone-*` 四档取，且淡面上只用墨色文字。
  */
 
@@ -25,9 +25,10 @@
  */
 .kdy-card.kdy-auth__quick-card {
   padding: $kdy-space-5;
-  border-color: $kdy-tone-border;
+  /* 只改描边颜色：宽度与样式由 `.kdy-card` 的 `$kdy-border-sticker` 提供 */
+  border-color: $kdy-outline-ink;
   border-radius: $kdy-radius-3xl;
-  background: $kdy-tone-yellow;
+  background-color: $kdy-tone-yellow;
   box-shadow: $kdy-shadow-card;
 }
 
@@ -39,7 +40,7 @@
 }
 
 /*
- * 吉祥物方块：与宫格图标同一套语言（淡底 + 校园描边 + 居中图案）。
+ * 吉祥物方块：与宫格图标同一套语言（淡底 + 手绘墨色轮廓 + 居中图案）。
  *
  * 底色是**白色**而不是品牌黄：里面是黄色的可达鸭贴图，
  * 黄底 + 黄图案会糊成一团，白色方块反而让它像一枚贴纸，更抓眼。
@@ -51,7 +52,7 @@
   justify-content: center;
   width: 52px;
   height: 52px;
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-2xl;
   background-color: $kdy-color-campus-white;
   line-height: 1;

@@ -123,6 +123,21 @@ for (const asset of CAMPUS_ASSETS)
     fs.existsSync(path.join(root, `assets/campus/${asset}`)),
     `Missing campus sticker asset: assets/campus/${asset}（检查 config/index.ts 的 copy 规则）`,
   );
+// 自定义 tabBar（手绘 dock）**必须有自己的一份 wxss**。
+//
+// 微信自定义组件默认样式隔离：app.wxss / 页面 wxss 里的 class 选择器对组件内节点
+// 无效，而 `custom-tab-bar` 不是页面、不会 import `common.wxss`。少这一份样式时，
+// 组件照样渲染，只是「完全没样式」—— `<image>` 退回默认 320×240，真机上是一屏被
+// 巨大图标压住的主页面（构建、单测、其余 verify 断言全绿）。所以在这里点住它。
+const customTabBarWxss = path.join(root, 'custom-tab-bar/index.wxss');
+assert.ok(
+  fs.existsSync(customTabBarWxss),
+  'Missing custom-tab-bar/index.wxss：dock 会以「无样式」渲染（漏 import ./index.scss？）',
+);
+assert.ok(
+  fs.readFileSync(customTabBarWxss, 'utf8').includes('kdy-dock'),
+  'custom-tab-bar/index.wxss 里没有 .kdy-dock 规则：dock 会以「无样式」渲染',
+);
 // 微信**主包**上限 2 MiB：只统计主包（排除分包根目录下的文件）。
 // 早先的实现把整份 dist 当主包统计，分包一多必然误报（分包天然属于"总包 20 MiB"那一档）。
 const bytes = fs

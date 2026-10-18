@@ -143,7 +143,7 @@ export default function NutritionDishesPage() {
 
   return (
     <View className='kdy-page kdy-nu-dishes'>
-      <KdyCard title='按食堂看菜品' elevated={false}>
+      <KdyCard title='按食堂看菜品' elevated={false} tone='mint'>
         <Text className='kdy-nu-dishes__hint'>
           食堂分类与营养管家的其它页面共用同一份白名单。点一个食堂看它有哪些菜；菜名与品类是叠加条件
           （「第二食堂」+「素菜」两个一起生效）。

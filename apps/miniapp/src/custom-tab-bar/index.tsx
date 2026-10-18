@@ -3,6 +3,17 @@ import { getCurrentInstance, getCurrentPages } from '@tarojs/taro'
 import { PAGE_PATHS } from '../app/routes'
 import { KdyDock, type DockTab } from '../presentation/components/KdyDock'
 
+// ⚠️ 必须在这里**再 import 一次样式**（不能只靠组件内部的 `import './index.scss'`）。
+//
+// 微信的自定义组件默认 `styleIsolation: isolated`：**app.wxss 与页面的 wxss 里的
+// class 选择器对组件内的节点无效**（只有标签选择器会穿透）。`KdyDock` 的样式平时
+// 被 Taro 提取进 `common.wxss`（页面能用），但 `custom-tab-bar` 不是页面、
+// 也不会去 import `common.wxss`，于是组件会「渲染出来但没有样式」——
+// 表现是 5 个 `<image>` 退回微信默认的 320×240，整屏巨大图标压在内容上。
+//
+// 让 Taro 为这个组件单独产出 `custom-tab-bar/index.wxss`，样式自带、不依赖宿主。
+import './index.scss'
+
 /**
  * 微信**自定义 tabBar**（`app.config.ts` 的 `tabBar.custom: true`）。
  *

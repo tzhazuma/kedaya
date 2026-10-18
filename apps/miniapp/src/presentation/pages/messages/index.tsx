@@ -217,7 +217,7 @@ export default function MessagesPage() {
         </View>
       )}
 
-      <KdyCard title='订阅消息' extra={<KdyTag tone='danger'>微信特有</KdyTag>} elevated={false}>
+      <KdyCard title='订阅消息' extra={<KdyTag tone='danger'>微信特有</KdyTag>} tone='milk' elevated={false}>
         <Text className='kdy-messages__hint'>
           开启本次成团提醒，拼单有进展时通过微信服务通知及时知晓。微信订阅为一次性授权，下次参与时可再次开启。
         </Text>

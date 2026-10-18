@@ -27,7 +27,7 @@ nvm use
 配置会自动读取 `apps/miniapp/dist/`。游客 AppID 适用于本地体验，真机与发布需要自己的 AppID。
 终端保持运行，修改代码后会自动重新编译；按 Ctrl+C 停止。
 
-预览相关的两个已知坑（都已修，别改回去）：
+预览相关的三个已知坑（都已修，别改回去）：
 
 - **图标字体不再走网络**：Taroify 自带样式里的 `@font-face` 指向 `//at.alicdn.com/...`，
   真机需要配置「下载合法域名」、部分基础库还不解析协议相对地址，图标会变空白方框。
@@ -37,6 +37,11 @@ nvm use
   微信编译器不支持，一旦写进任何一个 `.scss`，`common.wxss` 编译失败、全部页面白屏
   （报错形如 `[ WXSS 文件编译错误] ./common.wxss(1:xxxxx): error at token ':'`）。
   单测 `src/presentation/theme/__tests__/wxss-safety.test.ts` 会扫描全部 scss 拦截。
+- **H5 预览产物必须写 `apps/miniapp/dist-h5/`**（`config/index.ts` 的 `outputRoot` 按
+  `TARO_ENV` 分流，`.gitignore` 也已忽略）。别改回共用一个 `dist/`：跑一次
+  `npm run build:h5 -w @kedaya/miniapp` 就会把 `dist/app.json` 冲掉，
+  微信开发者工具随即报「未找到 app.json」并让**每一页**都显示错误
+  （踩过一次，排查了很久）。H5 只用来近似看版式，**真机观感必须在开发者工具里确认**。
 
 小程序默认 Mock，**账号也是 Mock**。凭据**不显示在登录页**（那是给真实用户看的门面）：
 

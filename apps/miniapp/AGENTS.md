@@ -11,15 +11,20 @@
   手绘胶囊导航（`KdyDock`）。取色来自 `packages/design-tokens/tokens.json` 的
   `colorCampus` 分组；尺寸/材料档位来自 `presentation/theme/tokens.scss` 的派生层。
   三条硬规矩：
-  1. **卡与页面都是白的**，靠 1px 校园描边（`$kdy-tone-border`）+ 极淡投影
+  1. **卡与页面都是白的**，靠一圈**手绘墨色轮廓**（`$kdy-border-sticker` = 2px
+     `rgba(ink, .10)` —— 设计稿里的"轻微不规则的细描边"）+ 贴纸投影
      （`$kdy-shadow-card`）分开 —— 不要用灰底 / 半透明玻璃"制造层次"
-     （白底上的半透明白只会发灰）；
+     （白底上的半透明白只会发灰）。**列表行之间的分隔线仍是 1px
+     `$kdy-tone-border`**，不要跟着变粗；
   2. **一整块淡色面只用于功能卡**（淡粉＝社交/一起做事、淡绿＝校园自然、
      淡黄＝主操作、奶白＝中性），面上**只用墨色字**；正文区永远白底，
-     正文不用黄字 / 彩色小字；淡色档位是全局类 `.kdy-tone--pink|--mint|--yellow|--milk`，
-     不要在页面里手写色面；
-  3. 圆角只有三档：卡片 `$kdy-radius-2xl`(20px) / 主视觉容器 `$kdy-radius-3xl`(24px) /
-     胶囊 `$kdy-radius-pill`；不要再写 48px/60px 这类手写圆角。
+     正文不用黄字 / 彩色小字；淡色档位是全局类 `.kdy-tone--pink|--mint|--yellow|--milk`
+     或 `KdyCard` 的 `tone` prop，不要在页面里手写色面；同一屏**不超过 3 种色相**；
+  3. 圆角只有三档：卡片 `$kdy-radius-2xl`（24px）/ 主视觉容器 `$kdy-radius-3xl`
+     （30px）/ 胶囊 `$kdy-radius-pill`。**前两档是"四个角不一致"的手绘圆角**
+     （多值，只能整体用在 `border-radius` 上；单独改某一个角用
+     `$kdy-radius-2xl-flat` / `$kdy-radius-3xl-flat`）—— 这是整站卡通感的一半，
+     不要换成几何圆角，也不要再写 48px/60px 这类手写圆角。
   主按钮是**实心鸭黄 + 墨字**（黄底白字在阳光下看不清）；选中的 `KdyChip` 是
   **鸭黄实心**而不是浅黄描边（一屏十几个胶囊时深浅差别看不出来）；
   宫格图标是"淡色贴纸 + 墨色字形"（`KdyModuleIcon` 的 `MODULE_TONES` 六档 tone，
@@ -27,9 +32,15 @@
   `assets/mascot/duck.png` 经 `KdyMascot`，贴纸簿的大标题立绘是
   `assets/campus/duck.png` 经 `CampusChrome` —— emoji 在不同微信版本 / 机型上
   渲染成各家字形，颜色与形状都不可控）。
-- 大标题只出现在页头：`.kdy-head__title`（主页面的问句标题，34–40px）或
-  `CampusChrome` 的 `.campus-title`（入口页 / 首页的贴纸簿大标题）。
-  卡片里不要再出现同尺寸标题，否则一屏就没有主次。
+- 大标题只出现在页头：`.kdy-head__title`（主页面的问句标题，34px）或
+  `CampusChrome` 的 `.campus-title`（入口页 / 首页的贴纸簿大标题，40px）。
+  **模块页的页头由 `KdyHeading` 渲染**（`.kdy-page-title` 32px / 800 字重），
+  它右侧固定挂一只歪着的可达鸭贴纸（`assets/campus/duck.png`，纯装饰、
+  `aria-hidden` + `pointer-events: none`）—— 这是"每个页面都是一页贴纸册"的关键，
+  不要在页面里再手写一套标题（会没有鸭子、也会打架）。
+- `app.config.ts` 的 `outputRoot`：**H5 产物写 `dist-h5/`**，小程序写 `dist/`。
+  两者绝不能共用目录 —— 跑一次 `build:h5` 会把 `dist/app.json` 冲掉，
+  微信开发者工具立刻报「未找到 app.json」（踩过一次）。
 - 底部导航有**两种挂载方式，不要重复挂**：四个主页面（首页 / 发现 / 消息 / 我的）
   走微信自定义 tabBar（`app.config.ts` 的 `tabBar.custom: true` + `src/custom-tab-bar/`
   → `KdyDock`），tab 页里**不要**再写 `<KdyDock />`；入口页等非 tab 页面显式写
@@ -53,7 +64,7 @@
 - 样式里禁止 WXSS 不支持的选择器：`.a > :first-child` / `>` + `*` / 裸 `*`（会让 `common.wxss` 编译失败、全部页面白屏）。图标字体已在 `src/presentation/theme/icon-font.scss` 里 base64 内联，入口由 `config/index.ts` 的 alias 接管，不要改回 `//at.alicdn.com` 网络字体。`src/presentation/theme/__tests__/wxss-safety.test.ts` 会守住这些约束。
 - 新增页面必须同步 `src/app/routes.ts`、`src/app.config.ts` 与首页的模块入口映射。
 - 修改后执行 `npm run typecheck -w @kedaya/miniapp`、`npm run test -w @kedaya/miniapp`、`npm run build:weapp`、`npm run verify:weapp -w @kedaya/miniapp`；涉及视觉需在微信开发者工具检查，H5 预览不能替代真机验证。
-- `src/assets/` **只放被代码引用的资源**：`assets/tabs/*.png` 是 tabBar 图标（必须在主包），`assets/wildlife/marker-{spot,sighting,sensitive,track}.png` 由 `presentation/theme/mapColors.ts` 的 `MAP_MARKER_ICONS` 引用，`assets/mascot/duck.png` 是吉祥物贴图、由 `presentation/theme/mascot.ts` 的 `DUCK_MASCOT_SRC` 引用（经 `KdyMascot` 用在 agent 页 / 悬浮球 / 登录注册卡 / 头像兜底），`assets/campus/*` 是贴纸簿素材：`dock-sketch-frame.svg` + `sketch-{home,map,create,discover,profile}.svg` 归 `KdyDock`（**必须在主包**，tab 页都要画它），`duck.png` / `arrow.svg` 归 `CampusChrome`，`bag.png` / `paw.png` 归 `KdyFeatureArtwork`，`map-preview.webp` 归首页的校园地图卡。**不要提交没人引用的图片** —— 微信**主包上限 2 MiB**，一份 1 MB 的底图就能把主包顶穿、导致无法上传。`verify:weapp` 会守住主包体积、全部分包页面齐全、构建指纹（`// kedaya-build:<hash>`，由 `config/coherent-build.ts` 注入）一致。⚠️ 目前**还没接入**的贴纸簿素材（沿用 main 早期从 pingdan 抽取时的状态，别以为是活的）：`module-*.svg`（17 个模块的线稿图标 —— 宫格现在走 `KdyModuleIcon` + Taroify 字形，全站统一优先）、`nav-{home,discover,messages,profile}.svg`、`{sun,moon}.svg`（深色模式未落地）。要用它们就**一次性**替换掉对应的通用实现，不要在某一页单独用一套、造成同名模块两种图标。
+- `src/assets/` **只放被代码引用的资源**：`assets/tabs/*.png` 是 tabBar 图标（必须在主包），`assets/wildlife/marker-{spot,sighting,sensitive,track}.png` 由 `presentation/theme/mapColors.ts` 的 `MAP_MARKER_ICONS` 引用，`assets/mascot/duck.png` 是吉祥物贴图、由 `presentation/theme/mascot.ts` 的 `DUCK_MASCOT_SRC` 引用（经 `KdyMascot` 用在 agent 页 / 悬浮球 / 登录注册卡 / 头像兜底），`assets/campus/*` 是贴纸簿素材：`dock-sketch-frame.svg` + `sketch-{home,map,create,discover,profile}.svg` 归 `KdyDock`（**必须在主包**，tab 页都要画它），`duck.png` / `arrow.svg` 归 `CampusChrome`（大标题立绘）与 `KdyHeading`（每个模块页页头那只小鸭，同一张图），`bag.png` / `paw.png` 归 `KdyFeatureArtwork`，`map-preview.webp` 归首页的校园地图卡。**不要提交没人引用的图片** —— 微信**主包上限 2 MiB**，一份 1 MB 的底图就能把主包顶穿、导致无法上传。`verify:weapp` 会守住主包体积、全部分包页面齐全、构建指纹（`// kedaya-build:<hash>`，由 `config/coherent-build.ts` 注入）一致。⚠️ 目前**还没接入**的贴纸簿素材（沿用 main 早期从 pingdan 抽取时的状态，别以为是活的）：`module-*.svg`（17 个模块的线稿图标 —— 宫格现在走 `KdyModuleIcon` + Taroify 字形，全站统一优先）、`nav-{home,discover,messages,profile}.svg`、`{sun,moon}.svg`（深色模式未落地）。要用它们就**一次性**替换掉对应的通用实现，不要在某一页单独用一套、造成同名模块两种图标。
 - 1 MB 级资源必须放**分包**：校园底图 `presentation/pages/wildlife/assets/campus.jpg`（`KdyCampusMap` 用，三个使用页同在该分包；`config/index.ts` 有对应 copy 规则，`verify:weapp` 会断言它存在且 wildlife 分包 ≤ 2 MiB）。溯源、署名与坐标链路见 `docs/features/miniapp-campus-map.md`。
 - 食堂分类白名单（`CANTEEN_NAMES`）是**跨端单一真相**，在 `@kedaya/shared/src/nutrition.ts`：菜品的筛选 / 录入只从它取值，不要再在页面里写一份（名字漂移的表现是「筛选点下去是空列表」）。
 

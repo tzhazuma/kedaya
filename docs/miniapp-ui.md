@@ -15,13 +15,20 @@ ESLint 会阻止在 presentation 层直接引入 Taro 原始表单控件和其�
 - 375px 为设计基准；Taro 将 CSS px 转换为 rpx，避免把现有令牌错误地缩小一半。
   ⚠️ 从设计稿（或 `feature/pingdan`，那是 **750rpx** 基准）搬运数字时**一律除以 2** ——
   直接把 `80rpx` 写成 `80px` 在真机上是两倍大（入口页/首页的标题踩过一次）。
-- **圆角只有三档**：卡片 / 宫格 / 浮层 20px（`$kdy-radius-2xl`），主视觉容器
-  （首页功能卡、身份卡、账号页的一键登录卡）24px（`$kdy-radius-3xl`），胶囊 999px。
+- **圆角只有三档**：卡片 / 宫格 / 浮层 24px（`$kdy-radius-2xl`），主视觉容器
+  （首页功能卡、入口横卡、汇总块）30px（`$kdy-radius-3xl`），胶囊 999px。
   贴纸簿的"卡"是**圆角矩形**，不是玻璃胶囊。
+  ⚠️ 前两档是**四个角不一致**的手绘圆角（多值，例如 `24px 20px 23px 21px`），
+  对应设计稿的"轻微不规则的细描边"：整站的卡通感有一半来自这里。
+  它们**只能整体用于 `border-radius`**；要单独改某一个角（气泡尾巴等）用
+  `$kdy-radius-2xl-flat` / `$kdy-radius-3xl-flat` 标量 —— 把多值塞进
+  `border-top-left-radius` 是非法值，整条声明会被编译器丢掉（静默失效）。
 - **页面与卡片都是白的**：`.kdy-page` 是纯白（`$kdy-color-campus-white`），只在顶部
   留一层极淡的鸭黄环境光（`$kdy-gradient-aurora`，200px 内衰减到 0，长列表滚动时是纯白）。
-  卡与页面靠 **1px 校园描边**（`$kdy-tone-border` = `colorCampus.border`）分开，
-  而不是靠灰底 —— 白底上的半透明白只会发灰。
+  卡与页面靠一圈**手绘墨色轮廓**（`$kdy-border-sticker` = `2px solid rgba(ink,.10)`）
+  分开，而不是靠灰底 —— 白底上的半透明白只会发灰。
+  ⚠️ 只有**卡片 / 面 / 气泡**的定形描边才是 2px 墨色；**列表行之间的分隔线**
+  （`border-bottom` 那一类）仍然是 1px `$kdy-tone-border`，不然一屏全是粗线。
 - **尺寸 / 效果档位**（圆角、描边、阴影、渐变、淡色面）定义在
   `presentation/theme/tokens.scss` 的派生层，色相一律 `rgba($kdy-color-*)` /
   `color.mix()` 取自原子令牌，**没有手写色值**。它们刻意**不进**
@@ -42,6 +49,10 @@ ESLint 会阻止在 presentation 层直接引入 Taro 原始表单控件和其�
   按下用 `scale(0.97)` 或换成奶白面，而不是变淡（变淡会和"禁用"长得一样）。
 - **磨砂（`backdrop-filter`）只保留给 agent 页的 sticky 头部 / 输入区 / 悬浮球**。
   贴纸簿没有玻璃卡片：列表里的十几张白卡一律不加 blur（滚动会掉帧）。
+- **页头固定带一只可达鸭**：模块页的页头由 `KdyHeading` 渲染，标题右侧挂
+  `assets/campus/duck.png`（46px、`rotate(-7deg)`、`aria-hidden`、`pointer-events:none`）。
+  它让每一页看起来都是"贴纸册的一页"；页面不要再自己写一套标题
+  （会没有鸭子、字级也会打架）。
   ⚠️ 小程序端目前**没有 CSS 变量主题层**，所以深色模式还没落地 ——
   `tokens.json` 的 `colorNight` 与 `CampusThemeToggle` 已备好，
   但要先把页面 / 组件 scss 里的 `rgba($kdy-*, x)` / `color.mix()` 迁到 `var(--kdy-*)`
@@ -52,7 +63,7 @@ ESLint 会阻止在 presentation 层直接引入 Taro 原始表单控件和其�
   贴图是黄色鸭子，**不要**垫在品牌黄渐变上（糊成一片），要么直接放白底，要么用 `KdyMascot` 的 `plate`（白色圆盘底）。
   模块图标走 `.kdy-module-icon` + `KdyModuleIcon`：52px、圆角 22px、字形 26px 且
   `line-height: 1`（图标是**字体字形**，不锁行高会被 page 的 1.5 撑高、和旁边的图标对不齐）。
-- **宫格图标是"淡色贴纸 + 墨色字形"**：一块淡色面 + 1px 校园描边 + 墨色字形，
+- **宫格图标是"淡色贴纸 + 墨色字形"**：一块淡色面 + 手绘墨色轮廓 + 墨色字形，
   平的、不渐变（贴纸是平的；一屏宫格挂投影会脏）。字形一律墨色 ——
   淡底上放彩色字形（尤其黄底彩字）在真机阳光下糊成一片。
   一档色相 = 一个使用场景：

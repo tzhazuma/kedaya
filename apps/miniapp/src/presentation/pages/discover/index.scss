@@ -3,7 +3,7 @@
  *
  * 页头由共享的 `KdyHeading` 渲染（输出 `.kdy-page-heading > .kdy-page-title`），
  * 页面不改 tsx，所以在页面作用域内把标题拉到 `.kdy-head__title` 的字号/字重。
- * 模块页仍沿用全局的 `.kdy-page-title`（28px），只有主页面放大一档。
+ * 模块页仍沿用全局的 `.kdy-page-title`（32px），只有主页面放大一档。
  */
 .kdy-discover .kdy-page-heading {
   padding: 28px $kdy-space-5 0;

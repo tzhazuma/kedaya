@@ -66,6 +66,7 @@ function CrisisCard({ line, stale }: { line: WellbeingCrisisLine; stale: boolean
     <KdyCard
       className='kdy-wb-crisis'
       elevated={false}
+      tone='milk'
       title={line.title}
       extra={<KdyTag tone='danger'>紧急</KdyTag>}
     >

@@ -97,7 +97,7 @@ export default function FacilityDetailPage() {
     <View className='kdy-page kdy-facility'>
       <KdyHeading title={booking.kind} subtitle={booking.facilityName ?? '未填写场馆名称'} />
 
-      <KdyCard elevated>
+      <KdyCard tone='milk' elevated>
         <View className='kdy-facility-detail__head'>
           <Text className='kdy-facility-detail__label'>状态</Text>
           <KdyTag tone={tone}>{FACILITY_STATUS_LABELS[booking.status] ?? booking.status}</KdyTag>

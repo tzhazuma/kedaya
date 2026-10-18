@@ -73,7 +73,7 @@
 
 .kdy-nu-dishes__row-item {
   padding: $kdy-space-3;
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-2xl;
   background-color: $kdy-color-campus-white;
 }
@@ -163,4 +163,9 @@
 
 .kdy-nu-dishes__grid > .kdy-nu-dishes__field {
   width: calc(50% - #{$kdy-space-1});
+}
+
+/* 「按食堂看菜品」是这一页的入口卡：淡绿功能面 + 更大一档的手绘圆角 */
+.kdy-nu-dishes .kdy-card--mint {
+  border-radius: $kdy-radius-3xl;
 }

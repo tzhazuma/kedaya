@@ -1,11 +1,12 @@
 /* KdyPrivacyNotice —— 位置模糊化说明（规格 §9）。
    色值全部取自设计令牌，禁止手写色值（契约 §6.2）。
-   贴纸簿语言：奶白实心面 + 墨色文字；等级用二级墨色，不用彩色小字。 */
+   贴纸簿语言：奶白实心面 + 2px 墨色手绘轮廓 + 墨色文字；等级用二级墨色，不用彩色小字。 */
 
 .kdy-privacy {
   padding: $kdy-space-3 $kdy-space-4;
   background-color: $kdy-tone-milk;
-  border-radius: $kdy-radius-xl;
+  border: $kdy-border-sticker;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-privacy__head {

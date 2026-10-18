@@ -154,6 +154,7 @@ export default function GroupBuyDetailPage() {
       />
       <KdyCard
         title={summary.title}
+        tone='pink'
         extra={
           <KdyTag tone={summary.joinable ? 'brand' : 'neutral'}>
             {summary.statusLabel}

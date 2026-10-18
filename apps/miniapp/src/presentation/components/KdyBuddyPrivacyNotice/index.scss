@@ -1,12 +1,14 @@
 /* KdyBuddyPrivacyNotice —— 找搭子的隐私提示（规格 §6，硬要求）。
    色值全部取自设计令牌，禁止手写色值（契约 §6.2）。
-   找搭子属于「一起做点什么」→ 淡粉面 + 墨色文字。 */
+   找搭子属于「一起做点什么」→ 淡粉功能卡 + 墨色文字。 */
 
 .kdy-buddy-privacy {
   margin: $kdy-space-3 $kdy-space-4;
   padding: $kdy-space-3 $kdy-space-4;
   background-color: $kdy-tone-pink;
-  border-radius: $kdy-radius-xl;
+  /* 淡色功能卡也要那条手绘墨色轮廓：没有它，淡面在真白底上只是一团糊色 */
+  border: $kdy-border-sticker;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-buddy-privacy__head {

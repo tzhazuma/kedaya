@@ -3,10 +3,34 @@
   margin: $kdy-space-3 $kdy-space-5;
   padding: $kdy-space-5;
   background-color: $kdy-color-campus-white;
-  border: 1px solid $kdy-tone-border;
+  /* 手绘墨色轮廓（2px，alpha 10%）：贴纸簿的卡靠这条线"贴"在白底上 */
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-2xl;
-  /* 一层很淡的投影：白卡 + 1px 描边已经分层，投影只负责"托一下"，成本远低于 blur */
+  /* 一层"贴纸"投影：看得见但不重，成本远低于 blur */
   box-shadow: $kdy-shadow-card;
+}
+
+/*
+ * 卡面档位：一整块淡色面 = **功能卡**。
+ *
+ * 只用于"一眼看去是什么"的入口 / 主视觉卡（首页凑凑、服务大厅分组、详情汇总），
+ * 不用于承载表单与列表行的常规卡 —— 一屏十张淡色卡会变成调色盘。
+ * 淡面上一律墨色文字（`$kdy-color-campus-ink`）。
+ */
+.kdy-card--pink {
+  background-color: $kdy-tone-pink;
+}
+
+.kdy-card--mint {
+  background-color: $kdy-tone-mint;
+}
+
+.kdy-card--yellow {
+  background-color: $kdy-tone-yellow;
+}
+
+.kdy-card--milk {
+  background-color: $kdy-tone-milk;
 }
 
 /*

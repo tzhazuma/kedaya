@@ -199,7 +199,7 @@ export default function NutritionHomePage() {
 
       {state.status === 'ready' && (
         <View>
-          <KdyCard elevated={false}>
+          <KdyCard elevated={false} tone='yellow'>
             <View className='kdy-nu-home__date'>
               <Text className='kdy-nu-home__date-text'>今天 · {state.date ?? ''}</Text>
               <View className='kdy-nu-home__date-side'>

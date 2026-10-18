@@ -24,6 +24,9 @@ out/
 
 # ---- 微信小程序 / Taro ----
 apps/miniapp/dist/
+# H5 预览产物单独一个目录（`config/index.ts` 的 outputRoot）：
+# 与小程序产物分开，避免 build:h5 冲掉 dist/app.json 让开发者工具报错
+apps/miniapp/dist-h5/
 apps/miniapp/.temp/
 apps/miniapp/.rn_temp/
 project.private.config.json

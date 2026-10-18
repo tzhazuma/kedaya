@@ -208,7 +208,7 @@ export default function LostFoundDetailPage() {
         subtitle={`${kindLabel(item.kind)} · ${item.place}`}
       />
 
-      <KdyCard elevated={false}>
+      <KdyCard tone='milk' elevated={false}>
         <View className='kdy-lost-detail__hero'>
           <Text className='kdy-lost-detail__badge'>{kindBadge(item.kind)}</Text>
           <View className='kdy-lost-detail__status'>

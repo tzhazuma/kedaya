@@ -192,7 +192,7 @@
   width: 26px;
   height: 26px;
   background-color: $kdy-color-campus-white;
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-2xl;
   color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-md;
@@ -224,4 +224,9 @@
 .kdy-nu-log__save-error {
   color: $kdy-color-danger;
   font-size: $kdy-font-size-xs;
+}
+
+/* 「怎么记录这一餐？」是这一页的入口卡：淡黄功能面 + 更大一档的手绘圆角 */
+.kdy-nu-log .kdy-card--yellow {
+  border-radius: $kdy-radius-3xl;
 }

@@ -53,7 +53,7 @@
 }
 
 /*
- * 商品格：贴纸簿的卡是「白卡 + 1px 校园描边 + 极淡投影」，
+ * 商品格：贴纸簿的卡是「白卡 + 手绘墨色轮廓 + 极淡投影」，
  * 半边宽的格子也不例外 —— 靠描边把相邻格的边界分清。
  */
 .kdy-flea-card {
@@ -62,8 +62,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: $kdy-color-campus-white;
-  border: 1px solid $kdy-tone-border;
+  background-color: $kdy-color-campus-white;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-2xl;
   box-shadow: $kdy-shadow-card;
 }

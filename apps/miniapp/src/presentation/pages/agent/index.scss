@@ -98,9 +98,11 @@
   box-sizing: border-box;
   margin: $kdy-space-4 $kdy-space-5 $kdy-space-2;
   padding: $kdy-space-5;
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-3xl;
-  background: $kdy-gradient-soft;
+  /* 空态是这一页的"主视觉卡"：一整块淡黄功能面（可达鸭＝主操作/强调），
+     淡面上只用墨色字。 */
+  background: $kdy-tone-yellow;
   box-shadow: $kdy-shadow-card;
 }
 
@@ -143,7 +145,7 @@
   box-sizing: border-box;
   min-height: 44px;
   padding: $kdy-space-2 $kdy-space-3;
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-2xl;
   background: $kdy-color-campus-white;
   color: $kdy-color-campus-ink;
@@ -218,15 +220,18 @@
   border-radius: $kdy-radius-2xl;
 
   &--user {
-    border-bottom-right-radius: $kdy-radius-2xl;
+    /* 气泡尾巴：右下角收小成"尖角"，其余三角保持贴纸圆角。
+       注意这里必须用**单值**（`$kdy-radius-2xl` 是多值的手绘圆角，
+       塞进单角属性是非法值，整条声明会被编译器丢掉）。 */
+    border-bottom-right-radius: 8px;
     background: $kdy-gradient-brand;
     box-shadow: $kdy-shadow-accent;
   }
 
   &--agent {
-    border-top-left-radius: $kdy-radius-2xl;
+    border-top-left-radius: 8px;
     background: $kdy-color-campus-white;
-    border: 1px solid $kdy-tone-border;
+    border: $kdy-border-sticker;
     box-shadow: $kdy-shadow-card;
   }
 
@@ -466,7 +471,7 @@
 
 .kdy-agent__badge {
   padding: 2px $kdy-space-2;
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-pill;
   background: rgba($kdy-color-campus-white, 0.9);
   color: $kdy-color-campus-muted;
@@ -498,7 +503,7 @@
 
 .kdy-agent__clear-text {
   padding: 6px $kdy-space-4;
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-pill;
   background: $kdy-color-campus-white;
   color: $kdy-color-campus-muted;
@@ -536,7 +541,7 @@
   margin: 0 $kdy-space-5;
   padding: $kdy-space-2 $kdy-space-2 $kdy-space-2 $kdy-space-4;
   padding-bottom: calc(#{$kdy-space-2} + env(safe-area-inset-bottom));
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-3xl;
   background: $kdy-color-campus-white;
   box-shadow: $kdy-shadow-float;

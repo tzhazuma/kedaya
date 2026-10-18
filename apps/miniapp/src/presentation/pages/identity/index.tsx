@@ -113,6 +113,7 @@ export default function IdentityPage() {
       {/* 实名信息：默认脱敏，展开是用户主动动作 */}
       <KdyCard
         title='实名信息'
+        tone='milk'
         extra={
           state.identity === null ? undefined : (
             <KdyTag tone={state.identity.masked ? 'neutral' : 'warning'}>

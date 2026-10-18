@@ -90,3 +90,8 @@
   font-size: 10px;
   line-height: 1.5;
 }
+
+/* 「今日还差」是这一页的汇总卡：淡黄功能面 + 更大一档的手绘圆角 */
+.kdy-nu-recommend .kdy-card--yellow {
+  border-radius: $kdy-radius-3xl;
+}

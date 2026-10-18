@@ -143,6 +143,7 @@ export default function ForumDetailPage() {
     <View className='kdy-page kdy-forum-detail'>
       <KdyCard
         title={summary.title}
+        tone='pink'
         extra={<KdyTag tone={summary.commentable ? 'brand' : 'neutral'}>{summary.statusLabel}</KdyTag>}
       >
         <View className='kdy-forum-detail__meta'>

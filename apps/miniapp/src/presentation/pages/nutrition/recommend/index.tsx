@@ -73,7 +73,7 @@ export default function NutritionRecommendPage() {
 
       {state.status === 'ready' && (
         <View>
-          <KdyCard title='今日还差' elevated={false}>
+          <KdyCard title='今日还差' elevated={false} tone='yellow'>
             {gapRows.length === 0 ? (
               <Text className='kdy-nu-recommend__all-met'>
                 目标型营养都已达标，注意钠别超上限就好。

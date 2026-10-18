@@ -29,9 +29,10 @@
   box-sizing: border-box;
   margin: $kdy-space-4 $kdy-space-5;
   padding: $kdy-space-4;
-  background: $kdy-color-campus-white;
-  border: 1px solid $kdy-tone-border;
-  border-radius: $kdy-radius-2xl;
+  /* 次级入口卡 = 中性功能卡：奶白面 + 手绘墨色轮廓 + 主视觉圆角 */
+  background-color: $kdy-tone-milk;
+  border: $kdy-border-sticker;
+  border-radius: $kdy-radius-3xl;
   box-shadow: $kdy-shadow-card;
   color: $kdy-color-campus-ink;
 }

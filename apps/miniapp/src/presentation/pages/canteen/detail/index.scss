@@ -114,3 +114,8 @@
   color: $kdy-color-danger;
   font-size: $kdy-font-size-xs;
 }
+
+/* 「营养成分表」是这一页的主视觉（大数字热量）：淡黄功能面 + 更大一档的手绘圆角 */
+.kdy-canteen-detail .kdy-card--yellow {
+  border-radius: $kdy-radius-3xl;
+}

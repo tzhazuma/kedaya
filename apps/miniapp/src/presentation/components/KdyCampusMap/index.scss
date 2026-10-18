@@ -24,8 +24,9 @@
   display: flex;
   flex-direction: column;
   margin-bottom: $kdy-space-2;
+  /* 底图上的元素不动几何（宽度/位置/描边粗细），只跟贴纸簿统一圆角档位 */
   border: 1px solid $kdy-tone-border;
-  border-radius: $kdy-radius-xl;
+  border-radius: $kdy-radius-2xl;
   background-color: rgba($kdy-color-campus-white, 0.98);
   box-shadow: $kdy-shadow-card;
   overflow: hidden;
@@ -38,10 +39,11 @@
   line-height: $kdy-line-height-normal;
 }
 
-/* 底图视口：`<scroll-view>` 必须有确定高度，否则渲染为 0（高度由组件内联给出） */
+/* 底图视口：`<scroll-view>` 必须有确定高度，否则渲染为 0（高度由组件内联给出）。
+   这是本页的**主视觉容器**，跟卡片统一走 3xl 档手绘圆角（几何不变）。 */
 .kdy-campus__scroll {
   width: 100%;
-  border-radius: $kdy-radius-xl;
+  border-radius: $kdy-radius-3xl;
   background-color: $kdy-tone-milk;
   overflow: hidden;
 }

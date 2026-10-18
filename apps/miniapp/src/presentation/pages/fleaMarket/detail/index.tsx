@@ -193,7 +193,7 @@ export default function FleaMarketDetailPage() {
         subtitle={`${categoryLabel(item.category)} · ${conditionLabel(item.condition)}`}
       />
 
-      <KdyCard elevated={false}>
+      <KdyCard tone='milk' elevated={false}>
         <View className='kdy-flea-detail__hero'>
           <Text className='kdy-flea-detail__badge'>{categoryBadge(item.category)}</Text>
           <View className='kdy-flea-detail__price-row'>

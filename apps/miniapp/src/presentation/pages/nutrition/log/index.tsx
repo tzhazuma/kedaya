@@ -132,7 +132,7 @@ export default function NutritionLogPage() {
 
   return (
     <View className='kdy-page kdy-nu-log'>
-      <KdyCard title='怎么记录这一餐？' elevated={false}>
+      <KdyCard title='怎么记录这一餐？' elevated={false} tone='yellow'>
         <View className='kdy-nu-log__entries'>
           <View className='kdy-nu-log__entry'>
             <KdyButton block variant='primary' onClick={() => void handleRecognize()}>

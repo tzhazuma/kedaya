@@ -128,6 +128,7 @@ export default function SchedulePage() {
       {/* 今日：页面最重要的一块 */}
       <KdyCard
         title={`今天 · ${today?.weekdayLabel ?? ''}`}
+        tone='yellow'
         extra={
           <KdyTag tone={state.syncing ? 'warning' : state.error === null ? 'brand' : 'neutral'}>
             {state.syncing ? '同步中' : state.fromCache ? '缓存数据' : '已同步'}

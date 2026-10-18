@@ -133,7 +133,7 @@ export default function TakeoutGuardDetailPage() {
         subtitle='只有你自己能看到这条记录'
       />
 
-      <KdyCard elevated={false}>
+      <KdyCard elevated={false} tone='yellow'>
         <View className='kdy-tg-detail__hero'>
           <KdyTag tone={statusTone(item.status as TakeoutGuardStatus)}>{statusLabel(item.status)}</KdyTag>
           <Text className='kdy-tg-detail__hero-time'>

@@ -38,6 +38,8 @@ export default tseslint.config(
   {
     ignores: [
       'dist/**',
+      // H5 产物单独落 dist-h5/（见 config/index.ts 的 outputRoot），同样是构建产物、不参与 lint
+      'dist-h5/**',
       '.temp/**',
       '.swc/**',
       'node_modules/**',

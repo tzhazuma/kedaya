@@ -125,7 +125,7 @@ export default function BuddyDetailPage() {
 
       {post !== null && summary !== null && (
         <View>
-          <KdyCard elevated={false}>
+          <KdyCard tone='pink' elevated={false}>
             <View className='kdy-buddy-detail__head'>
               <Text className='kdy-buddy-detail__title'>{post.title}</Text>
               <KdyTag tone={summary.status === 'OPEN' ? 'brand' : 'neutral'}>

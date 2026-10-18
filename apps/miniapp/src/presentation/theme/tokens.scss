@@ -38,9 +38,27 @@
 // `sass.resource` 只注入**本文件**，组件级 .scss 必须能直接引用这些变量。
 
 /// 大卡片 / 浮层的圆角：贴纸簿的卡是「圆角矩形」，不是玻璃胶囊
-$kdy-radius-2xl: 20px;
-/// 主视觉容器（首页 Hero、身份卡、功能卡）的圆角
-$kdy-radius-3xl: 24px;
+///
+/// ⚠️ 两个要点：
+///   1. 数值比常规设计系统明显更大 —— 卡片的圆角一旦收小，全站观感立刻从
+///      "贴纸簿"掉回"后台管理表"；
+///   2. 它是**四个角不一致**的（TL TR BR BL），因为设计稿要求
+///      "轻微不规则的细描边"：手绘的贴纸边不是几何圆角。
+///      直接用 `border-radius: $kdy-radius-2xl` 拿到手绘感；
+///      要单独改某一个角（气泡尾巴等）时用下面的 `-flat` 标量，
+///      **不要**把这个多值塞进 `border-top-left-radius`（那是非法值，整条声明会被丢掉）。
+$kdy-radius-2xl: 24px 20px 23px 21px;
+/// 主视觉 / 功能卡（首页 Hero、入口横卡、汇总块）的圆角：更大、同样四个角不一致
+$kdy-radius-3xl: 30px 26px 28px 27px;
+/// 上面的标量版本（用于单独设置某一个角）
+$kdy-radius-2xl-flat: 24px;
+$kdy-radius-3xl-flat: 30px;
+
+/// 手绘墨色描边的颜色：贴纸簿的卡不是"1px 灰线"，而是**墨色的一圈手绘轮廓**
+/// （alpha 压到 10%，在白底上是一条很轻的墨线，不会变成黑框）
+$kdy-outline-ink: rgba($kdy-color-campus-ink, 0.1);
+/// 贴纸卡的标准描边：2px 墨色轮廓
+$kdy-border-sticker: 2px solid $kdy-outline-ink;
 
 /// 卡片底色：**真白**（不再用半透明玻璃 —— 白底上的半透明白只会发灰，
 /// 反而看不清边界；定形交给下面那条 1px 校园描边）
@@ -52,8 +70,9 @@ $kdy-border-glass: $kdy-color-campus-border;
 /// 常规划线
 $kdy-border-hairline: $kdy-color-campus-border;
 
-/// 卡片阴影：白卡 + 细描边已经分层，投影只需"托一下"，大而软反而脏
-$kdy-shadow-card: 0 4px 14px rgba($kdy-color-campus-ink, 0.05);
+/// 卡片阴影：贴纸簿的卡是"贴在纸上的一张贴纸"，所以阴影要**看得见但不重**
+/// （0.07 墨色 + 16px 扩散；再重就变成玻璃拟态，再轻就完全分不出层次）
+$kdy-shadow-card: 0 5px 16px rgba($kdy-color-campus-ink, 0.07);
 /// 浮层阴影（悬浮球、底部操作条、手绘导航）
 $kdy-shadow-float: 0 10px 24px rgba($kdy-color-campus-ink, 0.14);
 /// 品牌色光晕：鸭黄按钮下面一层很浅的黄，让它是"贴上去的贴纸"而不是描边方块

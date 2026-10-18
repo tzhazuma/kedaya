@@ -1,13 +1,14 @@
 /* 校园系统登录告知（契约 §11.10-F 的 UI 呈现）。色值全部取自设计令牌（契约 §6.2）。
-   贴纸簿语言：奶白面 + 1px 校园描边 + 左侧信息色条定调，不用彩色小字。 */
+   贴纸簿语言：奶白功能卡 + 2px 墨色手绘轮廓 + 左侧信息色条定调，不用彩色小字。 */
 
 .kdy-campus-notice {
   margin: $kdy-space-3 $kdy-space-4 0;
   padding: $kdy-space-3 $kdy-space-4;
   background-color: $kdy-tone-milk;
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
+  /* 左侧色条是「定调」用的语义边，比手绘轮廓粗一档 */
   border-left: 3px solid $kdy-color-info;
-  border-radius: $kdy-radius-xl;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-campus-notice--compact {

@@ -1,14 +1,15 @@
 /* KdyEthicsNotice —— 投喂规范与不打扰提示（规格 §8）。
    色值全部取自设计令牌，禁止手写色值（契约 §6.2）。
-   贴纸簿语言：白底 + 1px 校园描边；语义靠左侧色条区分（全部取自语义令牌）。 */
+   贴纸簿语言：白底 + 2px 墨色手绘轮廓；语义靠左侧色条区分（全部取自语义令牌）。 */
 
 .kdy-ethics {
   padding: $kdy-space-3 $kdy-space-4;
   background-color: $kdy-color-campus-white;
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
+  /* 左侧色条是「定调」用的语义边，比手绘轮廓粗一档 */
   border-left-width: 4px;
-  border-left-color: $kdy-tone-border;
-  border-radius: $kdy-radius-xl;
+  border-left-color: $kdy-outline-ink;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-ethics--danger {
@@ -91,7 +92,7 @@
   margin-top: $kdy-space-3;
   padding: $kdy-space-2 $kdy-space-3;
   background-color: $kdy-tone-milk;
-  border: 1px solid $kdy-tone-border;
+  border: $kdy-border-sticker;
   border-radius: $kdy-radius-md;
 }
 

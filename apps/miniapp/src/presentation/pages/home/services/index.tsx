@@ -9,6 +9,7 @@ import { HOME_SECTIONS, homeEntryById, searchHomeEntryIds } from '../../../../do
 import type { HomeEntry } from '../../../../domain/models/homeEntries'
 import { navigateTo, toast } from '../../../../platform/navigation'
 import { KdyCard, KdyEmpty, KdySearchBar } from '../../../components'
+import type { KdyCardTone } from '../../../components/KdyCard'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { KdyModuleIcon } from '../../../components/KdyModuleIcon'
 import './index.scss'
@@ -23,6 +24,19 @@ import './index.scss'
  * 没上线的入口（当前只有「场馆预约」）照实列在「尚未上线」一组里，
  * 点开给一句说明。藏起来会让用户以为没这个需求。
  */
+
+/**
+ * 分组卡面档位：分组卡是这一页的"一眼看去是什么"的功能卡，
+ * 所以给一整块淡色面。三档色相（粉/黄/奶白）对应分组语义，
+ * 不是装饰 —— 淡绿留给"校园自然"，这里没有自然类分组。
+ */
+const SECTION_TONES: Readonly<Record<string, KdyCardTone>> = {
+  daily: 'milk',
+  community: 'pink',
+  care: 'yellow',
+  account: 'milk',
+}
+
 export default function HomeServicesPage() {
   const container = getContainer()
   const layout = container.useCases.homeLayout
@@ -97,7 +111,12 @@ export default function HomeServicesPage() {
 
       {!searching &&
         HOME_SECTIONS.map((section) => (
-          <KdyCard key={section.id} title={section.title} elevated={false}>
+          <KdyCard
+            key={section.id}
+            title={section.title}
+            tone={SECTION_TONES[section.id] ?? 'plain'}
+            elevated={false}
+          >
             {renderGrid(toEntries(section.entryIds))}
           </KdyCard>
         ))}

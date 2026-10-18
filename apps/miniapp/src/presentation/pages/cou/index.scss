@@ -4,9 +4,10 @@
   gap: $kdy-space-3;
   margin: 0 $kdy-space-5 $kdy-space-3;
   padding: $kdy-space-4;
-  background: $kdy-color-campus-white;
-  border: 1px solid $kdy-tone-border;
-  border-radius: $kdy-radius-2xl;
+  /* 入口横卡 = 功能卡：一整块淡粉面（社交/一起做事）+ 手绘墨色轮廓 */
+  background-color: $kdy-tone-pink;
+  border: $kdy-border-sticker;
+  border-radius: $kdy-radius-3xl;
   box-shadow: $kdy-shadow-card;
   color: $kdy-color-campus-ink;
 }
