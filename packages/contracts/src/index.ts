@@ -20,4 +20,6 @@ export * from './pages';
 export * from './contact-exchange';
 export * from './campus-map';
 export * from './campus-services';
+export * from './campus-poi';
 export * from './group-bot';
+export * from './deadlines';

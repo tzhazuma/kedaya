@@ -30,12 +30,25 @@ export interface CampusIdentity {
 /**
  * 第一级端口。
  *
- * 注意它**只有**一个方法，且返回类型是 `CampusIdentity` ——
+ * 只有一个**认证方法**，且返回类型是 `CampusIdentity` ——
  * 类型系统层面就不给"顺手把 session 带出来"留口子。
  */
 export interface AuthPort {
   /** 用 CAS ticket 换取身份。实现方必须在返回前丢弃 ticket。 */
   authenticateTicket(ticket: string): Promise<CampusIdentity>;
+
+  /**
+   * 本实现是否在**模拟**身份来源（当前唯一的 `MockCampusAuthProvider` 恒为 true）。
+   *
+   * 为什么放在端口上而不是从环境变量推断：
+   *   `simulated` 描述的是「这个身份是谁产出的」，不是「部署在什么环境」——
+   *   演示部署产出的依然是假身份；将来换成真实 CAS，只要新实现不设这个属性
+   *   （或显式 false），登录响应就会自动变成 `simulated: false`，不用再改一处 if。
+   *
+   * `AuthService.login()` 会把它原样带进 CAS 登录响应（见
+   * `domain/account-session.ts`），客户端据此区分真假身份。
+   */
+  readonly simulated?: boolean;
 }
 
 export const AUTH_PORT = Symbol('KEDAYA_AUTH_PORT');
