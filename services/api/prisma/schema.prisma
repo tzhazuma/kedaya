@@ -1715,3 +1715,28 @@ model ContactAccessAudit {
   @@index([requestId, at])
   @@map("ContactAccessAudit")
 }
+
+/// 群机器人接入 · 待确认草稿
+///
+/// 设计要点：
+///   · **不存发送者身份**：只留 `senderRef`（平台的 member_openid），
+///     用于去重与审计；昵称/QQ 号一律不落库。
+///   · `platformMessageId` 唯一：QQ 会重试投递，唯一约束保证幂等。
+///   · `status` 单向：pending → approved / rejected（应用层 + DB CHECK 双重强制）。
+///   · `candidates` 用 Json：解析结果形状可变（解析器升级后会变），且只供人看、不参与查询。
+model GroupDraft {
+  id                String    @id @default(cuid())
+  platform          String
+  groupId           String
+  platformMessageId String
+  senderRef         String
+  rawText           String
+  candidates        Json      @default("[]")
+  status            String    @default("pending")
+  decisionNote      String?
+  decidedAt         DateTime?
+  receivedAt        DateTime  @default(now())
+
+  @@unique([platform, platformMessageId])
+  @@index([status, receivedAt])
+}

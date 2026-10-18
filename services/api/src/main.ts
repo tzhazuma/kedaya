@@ -32,7 +32,20 @@ async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
 
   // ---- 请求体解析（显式注册，便于控制上限与开关 logger）----
-  app.use(json({ limit: JSON_BODY_LIMIT }));
+  app.use(
+    json({
+      limit: JSON_BODY_LIMIT,
+      // ⚠️ webhook 验签需要**原始字节**：JSON 重新序列化会改空格与键序，
+      // 导致签名必然不匹配。只对 webhook 路径保留 rawBody，
+      // 其他路由不额外占内存（图片走 base64 时体积不小）。
+      verify: (req, _res, buf) => {
+        const url = (req as { url?: string }).url ?? '';
+        if (url.includes('/group-bot/webhook/')) {
+          (req as { rawBody?: Buffer }).rawBody = buf;
+        }
+      },
+    }),
+  );
   app.use(urlencoded({ extended: true, limit: '1mb' }));
 
   // ---- 契约 §6.1：全局前缀 api/v1 ----

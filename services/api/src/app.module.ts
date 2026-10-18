@@ -7,6 +7,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { EnvelopeInterceptor } from './common/interceptors/envelope.interceptor';
 import { MediaModule } from './common/media/media.module';
 import { TraceMiddleware } from './common/middleware/trace.middleware';
+import { GroupBotModule } from './modules/group-bot/group-bot.module';
 import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -56,6 +57,7 @@ import { AgentModule } from './modules/agent/agent.module';
  */
 @Module({
   imports: [
+    GroupBotModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
