@@ -433,8 +433,13 @@ describe('TechPie Phase 0 + 校园卡 · 端到端验收', () => {
    * ================================================================ */
 
   describe('P0-4 · I4：登录但未绑定 → 409 CAMPUS_BINDING_REQUIRED', () => {
-    it('带合法 JWT 但没绑定时访问 schedule → 409（**不是** 401）', async () => {
-      const response = await fetch(`${baseUrl}/schedule/items`, { headers: auth() });
+    // ⚠️ 打的是 `POST /sync`（真的要去上游取数的那一条），不是 `GET /items`。
+    // `GET /items` 读本地表，不该要求校园绑定 —— 否则会话一过期就看不到自己的课表。
+    it('带合法 JWT 但没绑定时同步课表 → 409（**不是** 401）', async () => {
+      const response = await fetch(`${baseUrl}/schedule/sync`, {
+        method: 'POST',
+        headers: { ...auth(), 'idempotency-key': 'sync-409-test' },
+      });
       const body = (await response.json()) as Envelope<never>;
 
       expect(response.status).toBe(409);
@@ -443,7 +448,10 @@ describe('TechPie Phase 0 + 校园卡 · 端到端验收', () => {
     });
 
     it('409 的 details 里机器可见地告诉客户端"去绑定"（不是"重新登录"）', async () => {
-      const response = await fetch(`${baseUrl}/schedule/items`, { headers: auth() });
+      const response = await fetch(`${baseUrl}/schedule/sync`, {
+        method: 'POST',
+        headers: { ...auth(), 'idempotency-key': 'sync-409-details-test' },
+      });
       const body = (await response.json()) as Envelope<never>;
 
       // §11.20-A：字段名是 `provider`（不是 `platform`）
@@ -452,7 +460,7 @@ describe('TechPie Phase 0 + 校园卡 · 端到端验收', () => {
     });
 
     it('完全没有 JWT → 401 UNAUTHENTICATED（两种状态必须区分开）', async () => {
-      const response = await fetch(`${baseUrl}/schedule/items`);
+      const response = await fetch(`${baseUrl}/schedule/sync`, { method: 'POST' });
       const body = (await response.json()) as Envelope<never>;
 
       expect(response.status).toBe(401);

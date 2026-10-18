@@ -49,8 +49,19 @@ export type UpdateSchemaMatchesDomain = AssertAssignable<UpdateScheduleCourseInp
 // 顺序不能反：AuthGuard 必须先解出身份，CampusBindingGuard 才有 userId 可用。
 // 曾用 `OptionalAuthGuard`（未登录也放行）：那会让「未登录」与「未绑定」两种状态
 // **无法区分**，而它们对用户的出路完全不同（去登录 / 去绑定）。
-@UseGuards(AuthGuard, CampusBindingGuard)
-@RequireCampusBinding('cpdaily')
+// ⚠️ 类级**只**要求登录，不要求校园绑定。
+//
+// 这里曾经用 `@UseGuards(AuthGuard, CampusBindingGuard)` +
+// `@RequireCampusBinding('cpdaily')`，而 `PHASE0_BINDABLE_PLATFORMS` 只有 `ecard`
+// —— 于是 `cpdaily` **永远绑不上**，真实后端下**所有** `/schedule/*` 恒 409。
+//
+// 更根本的问题是语义：`GET /items` 读的是**本地** `ScheduleCourse` 表，
+// 不是上游。要求"必须有活的 cpdaily 会话"才能读本地课表，等于
+// **会话一过期就看不到自己的课表** —— 那显然不对。
+//
+// 所以：本地数据端点只要 `AuthGuard`；只有真的要去上游取数的 `POST /sync`
+// 才挂 `CampusBindingGuard` + `@RequireCampusBinding('cpdaily')`。
+@UseGuards(AuthGuard)
 @ApiBearerAuth()
 export class ScheduleController {
   constructor(@Inject(ScheduleCourseService) private readonly service: ScheduleCourseService) {}
@@ -139,7 +150,9 @@ export class ScheduleController {
   }
 
   @Post('sync')
-  @UseGuards(AuthGuard)
+  // 只有这一条需要第二级身份：它要拿校园会话去上游取课表
+  @UseGuards(CampusBindingGuard)
+  @RequireCampusBinding('cpdaily')
   @ApiBearerAuth()
   @ApiOperation({
     summary: '从教务系统（JWC）同步课表',
