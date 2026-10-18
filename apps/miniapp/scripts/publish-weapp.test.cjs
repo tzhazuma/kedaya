@@ -27,19 +27,39 @@ test('publishes a complete package and preserves the previous package', t => {
   publishWeapp({ root, verify: () => {} });
   assert.equal(fs.readFileSync(path.join(root, '.weapp-last-good/app.json'), 'utf8'), 'new package');
 });
+test('never replaces the live directory (devtools watches it in place)', t => {
+  const root = fixture(t);
+  const live = path.join(root, 'dist');
+  // 上一版遗留下来的文件必须被清掉，但 dist 目录本身不能被改名/删除
+  fs.writeFileSync(path.join(live, 'stale-chunk.js'), 'old hash');
+  const renames = [];
+  t.mock.method(fs, 'renameSync', (from, to) => renames.push([from, to]));
+  publishWeapp({ root, verify: () => {} });
+  assert.equal(renames.length, 0, '发布过程不应 rename dist / .weapp-next');
+  assert.ok(fs.existsSync(live) && fs.statSync(live).isDirectory());
+  assert.equal(fs.existsSync(path.join(live, 'stale-chunk.js')), false);
+  assert.equal(fs.readFileSync(path.join(live, 'app.json'), 'utf8'), 'new package');
+});
 test('failed validation leaves the live package intact', t => {
   const root = fixture(t);
   assert.throws(() => publishWeapp({ root, verify() { throw Error('invalid package'); } }), /invalid package/);
   assert.equal(fs.readFileSync(path.join(root, 'dist/app.json'), 'utf8'), 'old package');
 });
-test('failed directory swap rolls back the live package', t => {
-  const root = fixture(t), rename = fs.renameSync;
-  t.mock.method(fs, 'renameSync', (from, to) => {
-    if (from === path.join(root, '.weapp-next') && to === path.join(root, 'dist')) throw Error('swap blocked');
-    return rename(from, to);
+test('failed sync rolls the live package back', t => {
+  const root = fixture(t);
+  const live = path.join(root, 'dist');
+  const copy = fs.copyFileSync;
+  // 发布副本写进 dist 的 app.json 时失败：已经覆盖的其他文件也要回滚
+  t.mock.method(fs, 'copyFileSync', (from, to) => {
+    if (from.includes('.weapp-next') && path.basename(to) === 'app.json') {
+      const error = new Error('copy blocked');
+      error.code = 'EIO';
+      throw error;
+    }
+    return copy(from, to);
   });
-  assert.throws(() => publishWeapp({ root, verify: () => {} }), /swap blocked/);
-  assert.equal(fs.readFileSync(path.join(root, 'dist/app.json'), 'utf8'), 'old package');
+  assert.throws(() => publishWeapp({ root, verify: () => {} }), /copy blocked/);
+  assert.equal(fs.readFileSync(path.join(live, 'app.json'), 'utf8'), 'old package');
 });
 test('never removes an unmanaged backup directory', t => {
   const root = fixture(t), backup = path.join(root, '.weapp-last-good');

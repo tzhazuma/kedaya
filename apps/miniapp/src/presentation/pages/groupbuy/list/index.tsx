@@ -11,6 +11,7 @@ import { navigateTo, toast } from '../../../../platform/navigation'
 import { KdyButton, KdyCard, KdyEmpty, KdyTag } from '../../../components'
 import type { KdyTagTone } from '../../../components'
 import { useStore } from '../../../hooks'
+import { useThemeMode } from '../../../theme/useThemeMode'
 import './index.scss'
 
 /**
@@ -36,6 +37,7 @@ function categoryFilterLabel(filter: GroupBuyCategoryFilter): string {
 function statusTone(status: GroupBuySummary['status']): KdyTagTone {
   if (status === 'open') return 'brand'
   if (status === 'full') return 'success'
+  if (status === 'closed') return 'warning'
   if (status === 'cancelled') return 'danger'
   return 'neutral'
 }
@@ -86,6 +88,7 @@ function GroupBuyCard({ item }: { item: GroupBuySummary }) {
 }
 
 export default function GroupBuyListPage() {
+  const { mode } = useThemeMode()
   const container = getContainer()
   const list = container.useCases.listGroupBuys
   const state = useStore(list)
@@ -145,7 +148,7 @@ export default function GroupBuyListPage() {
   }
 
   return (
-    <View className='kdy-page kdy-gb-list'>
+    <View className={`kdy-page kdy-gb-list kdy-theme--${mode}`}>
       <View className='kdy-gb-list__intro'>
         <Text className='kdy-gb-list__title'>凑凑</Text>
         <Text className='kdy-gb-list__subtitle'>在这里拼单，也可以找搭子。</Text>

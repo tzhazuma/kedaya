@@ -6,11 +6,13 @@ import { getContainer } from '../../../../app/container'
 import { requestId } from '../../../../domain/models/wildlife'
 import { getWildlife, wildlifeNavigate } from '../../../../platform/wildlife'
 import { KdyButton } from '../../../components'
+import { useThemeMode } from '../../../theme/useThemeMode'
 import { useStore } from '../../../hooks'
 import { CategoryFilter, ErrorNotice, PhotoPicker, WildlifeLogin } from '../components'
 import '../wildlife.scss'
 
 export default function IdentityPage() {
+  const { mode } = useThemeMode()
   const params = useRouter().params, id = params.id
   const [name, setName] = useState(''), [category, setCategory] = useState(params.category ?? 'cat'), [photos, setPhotos] = useState<WildlifePhoto[]>([])
   const [appearance, setAppearance] = useState(''), [commonArea, setCommonArea] = useState(''), [description, setDescription] = useState('')
@@ -45,7 +47,7 @@ export default function IdentityPage() {
       await Taro.showToast({ title: id ? '档案已更新' : '身份卡已建立', icon: 'success' }); await Taro.navigateBack()
     } catch (e) { setError(e instanceof Error ? e.message : '档案保存失败') } finally { lock.current = false; setBusy(false) }
   }
-  return <View className='wa-page wa-form'><Text className='wa-eyebrow'>A NAME FOR OUR NEIGHBOUR</Text><Text className='wa-heading'>{id ? '更新居民身份卡' : '建立居民身份卡'}</Text><WildlifeLogin />
+  return <View className={`wa-page wa-form kdy-theme--${mode}`}><Text className='wa-eyebrow'>A NAME FOR OUR NEIGHBOUR</Text><Text className='wa-heading'>{id ? '更新居民身份卡' : '建立居民身份卡'}</Text><WildlifeLogin />
     {loading && <Text>正在读取档案…</Text>}<Text className='wa-label'>昵称（必填，可以重名）</Text><Input className='wa-input' value={name} maxlength={60} onInput={e => setName(e.detail.value)} placeholder='例如：橘子' />
     <Text className='wa-label'>动物类别</Text><CategoryFilter all={false} value={category} onChange={setCategory} />
     {!id && <View className='wa-panel'><Text className='wa-title'>先看看，它已经有名字了吗？</Text><Text className='wa-muted'>按类别和昵称搜索。核对外貌与区域，避免为同一只动物重复建档。</Text>

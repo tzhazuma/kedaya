@@ -73,7 +73,19 @@ for (const page of app.pages) {
   for (const extension of ['.js', '.json', '.wxml'])
     assert.ok(fs.existsSync(path.join(root, `${page}${extension}`)), `Incomplete page: ${page}${extension}`);
 }
-for (const tab of app.tabBar.list) assert.ok(app.pages.includes(tab.pagePath), `Missing tab route: ${tab.pagePath}`);
+// 原生 tabBar 已移除：底部导航改成自绘的 presentation/components/KdyDock
+// （原生 tabBar 做不出参考图里的浮动胶囊样式）。这里校验：
+// 有 tabBar 就校验其路由；没有 tabBar 就必须是「四个 dock 页面都在 pages 里」。
+if (app.tabBar) {
+  for (const tab of app.tabBar.list) assert.ok(app.pages.includes(tab.pagePath), `Missing tab route: ${tab.pagePath}`);
+} else {
+  for (const dockPage of [
+    'presentation/pages/home/index',
+    'presentation/pages/discover/index',
+    'presentation/pages/messages/index',
+    'presentation/pages/profile/index',
+  ]) assert.ok(app.pages.includes(dockPage), `Missing dock route: ${dockPage}`);
+}
 const project = JSON.parse(fs.readFileSync(path.join(root, 'project.config.json'), 'utf8'));
 assert.equal(project.setting.compileHotReLoad, false);
 assert.equal(project.setting.useApiHook, false);

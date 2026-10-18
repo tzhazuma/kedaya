@@ -4,11 +4,11 @@
   justify-content: center;
   box-sizing: border-box;
   margin: 0;
-  padding: 0 $kdy-space-4;
+  padding: 0 32px;
   border: 1px solid transparent;
-  border-radius: $kdy-radius-md;
-  font-size: $kdy-font-size-sm;
-  font-weight: 500;
+  border-radius: $kdy-radius-pill;
+  font-size: 28px;
+  font-weight: 600;
   line-height: 1;
   text-align: center;
 
@@ -19,18 +19,18 @@
 }
 
 .kdy-btn--sm {
-  height: 28px;
-  padding: 0 $kdy-space-3;
-  font-size: $kdy-font-size-xs;
+  height: 64px;
+  padding: 0 26px;
+  font-size: 24px;
 }
 
 .kdy-btn--md {
-  height: 40px;
+  height: 84px;
 }
 
 .kdy-btn--lg {
-  height: 48px;
-  font-size: $kdy-font-size-md;
+  height: 100px;
+  font-size: 32px;
 }
 
 .kdy-btn--block {
@@ -38,25 +38,29 @@
   width: 100%;
 }
 
+/* 主按钮 = 樱花粉渐变（夜间主题里唯一的「强动作」色） */
 .kdy-btn--primary {
-  background-color: $kdy-color-brand;
-  color: $kdy-color-ink;
+  background-color: $kdy-color-night-accent-pink;
+  background-image: linear-gradient(135deg, $kdy-color-night-accent-pink-soft, $kdy-color-night-accent-pink-deep);
+  color: $kdy-color-night-on-accent;
 }
 
+/* 次按钮 = 鸭黄实心 */
 .kdy-btn--secondary {
-  background-color: $kdy-color-brand-soft;
-  color: $kdy-color-brand-strong;
+  background-color: $kdy-color-night-accent-lime;
+  color: $kdy-color-night-on-accent;
 }
 
+/* 幽灵按钮 = 玻璃层 */
 .kdy-btn--ghost {
-  background-color: transparent;
-  border-color: $kdy-color-border;
-  color: $kdy-color-ink-soft;
+  background-color: $kdy-color-night-glass;
+  border-color: $kdy-color-night-glass-border;
+  color: $kdy-color-night-text;
 }
 
 .kdy-btn--danger {
-  background-color: $kdy-color-danger;
-  color: $kdy-color-text-inverse;
+  background-color: $kdy-color-night-danger;
+  color: $kdy-color-night-on-accent;
 }
 
 .kdy-btn--hover {

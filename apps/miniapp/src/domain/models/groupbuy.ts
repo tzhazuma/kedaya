@@ -150,17 +150,29 @@ export function isExpired(groupBuy: GroupBuy, now: Date): boolean {
 
 /**
  * 由「已凑份数 + 截止时间」推导运行时状态。
- * 显式的 `cancelled` 优先级最高，不会被推导覆盖。
+ *
+ * 优先级（高 → 低）：
+ * 1. 显式的 `cancelled`（发起人取消 / 后端判定超时取消）——
+ *    一旦取消就是终态，不会被份数或时间重新推导成别的状态；
+ * 2. `full` —— 已成团就不该显示「已截止」；
+ * 3. `closed` —— 过了截止时间但没成团；
+ * 4. 其余为 `open`。
+ *
+ * ⚠️ 「过了截止时间」必须推导成 `closed` 而不是 `cancelled`：
+ * 两者文案不同（已截止 / 已取消），取消原因也不同（`cancelReason`）。
  */
 export function deriveStatus(groupBuy: GroupBuy, now: Date): GroupBuyStatus {
   if (groupBuy.status === 'cancelled') return 'cancelled'
   if (joinedQuantity(groupBuy) >= groupBuy.targetCount) return 'full'
-  if (isExpired(groupBuy, now)) return 'cancelled'
+  if (isExpired(groupBuy, now)) return 'closed'
   return 'open'
 }
 
 /**
  * 参团资格判定 —— 纯函数，UI 与用例层共用同一份规则，避免规则漂移。
+ *
+ * 判定顺序：份数是否合法 → 状态（取消 / 已满 / 已截止）→ 是否重复参团 → 剩余份数。
+ * 状态优先于「重复参团」：已经成团或已截止时，用户最该看到的是「来晚了」/「已截止」。
  */
 export function canJoin(
   groupBuy: GroupBuy,
@@ -174,7 +186,7 @@ export function canJoin(
 
   const status = deriveStatus(groupBuy, now)
   if (status === 'cancelled') {
-    return { allowed: false, reason: 'not-open', message: '该拼单已取消或超过 24 小时未成团' }
+    return { allowed: false, reason: 'not-open', message: '该拼单已取消，不能再参团' }
   }
   if (status === 'full') {
     return { allowed: false, reason: 'full', message: '已经成团，来晚了一步' }
@@ -182,8 +194,14 @@ export function canJoin(
   if (status === 'closed') {
     return { allowed: false, reason: 'expired', message: '已过截止时间' }
   }
-  const previous = groupBuy.participants.find((p) => p.id === userId)?.quantity ?? 0
-  const remaining = remainingSlots(groupBuy) + previous
+
+  // 未登录（userId === null）无法判定身份，交给后续登录流程拦；
+  // 登录后同一个 id 再次参团一律拒绝，避免「重复份数」被静默覆盖。
+  if (userId !== null && groupBuy.participants.some((p) => p.id === userId)) {
+    return { allowed: false, reason: 'already-joined', message: '你已经参团了，不用重复报名' }
+  }
+
+  const remaining = remainingSlots(groupBuy)
   if (quantity > remaining) {
     return { allowed: false, reason: 'full', message: `只剩 ${remaining} 份了` }
   }

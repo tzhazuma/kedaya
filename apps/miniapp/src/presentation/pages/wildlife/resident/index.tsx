@@ -7,10 +7,12 @@ import { observedTime } from '../../../../domain/models/wildlife'
 import { getWildlife, wildlifeNavigate, wildlifePhotoUrl } from '../../../../platform/wildlife'
 import { useStore } from '../../../hooks'
 import { KdyButton } from '../../../components'
+import { useThemeMode } from '../../../theme/useThemeMode'
 import { ErrorNotice, Postcard, categoryLabel } from '../components'
 import '../wildlife.scss'
 
 export default function ResidentPage() {
+  const { mode } = useThemeMode()
   const id = useRouter().params.id ?? '', [animal, setAnimal] = useState<WildlifeAnimal | null>(null), [items, setItems] = useState<WildlifeSighting[]>([])
   const [cursor, setCursor] = useState<string | null>(null), [selected, setSelected] = useState<WildlifeSighting | null>(null)
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), seq = useRef(0), state = useStore(getContainer().useCases.session)
@@ -21,7 +23,7 @@ export default function ResidentPage() {
     catch (e) { if (current === seq.current) setError(e instanceof Error ? e.message : '居民档案读取失败') } finally { if (current === seq.current) setBusy(false) }
   }
   useDidShow(() => { void load() })
-  return <View className='wa-page'><ErrorNotice message={error} />{error && <KdyButton variant='ghost' onClick={() => { void load() }}>重试</KdyButton>}{busy && <Text className='wa-muted'>正在翻阅居民档案…</Text>}
+  return <View className={`wa-page kdy-theme--${mode}`}><ErrorNotice message={error} />{error && <KdyButton variant='ghost' onClick={() => { void load() }}>重试</KdyButton>}{busy && <Text className='wa-muted'>正在翻阅居民档案…</Text>}
     {animal && <><View className='wa-passport'><Text className='wa-eyebrow'>SHANGHAITECH · WILD RESIDENT</Text>
       {animal.avatar ? <Image className='wa-passport-photo' src={wildlifePhotoUrl(animal.avatar.url)} mode='aspectFill' /> : <View className='wa-passport-photo wa-no-photo'>{categoryLabel(animal.category)}</View>}
       <Text className='wa-heading'>{animal.name}</Text><Text>{categoryLabel(animal.category)} · 被同学们遇见 {animal.sightingCount} 次</Text><Text className='wa-meta'>居民编号 {animal.id}</Text>

@@ -11,6 +11,7 @@ import { shareToFriend } from '../../../../platform/share'
 import { SUBSCRIBE_TEMPLATES, requestSubscribeMessage } from '../../../../platform/subscribeMessage'
 import { KdyButton, KdyCard, KdyEmpty, KdyTag } from '../../../components'
 import { useStore } from '../../../hooks'
+import { useThemeMode } from '../../../theme/useThemeMode'
 import './index.scss'
 
 /**
@@ -31,6 +32,7 @@ const CAMPUS_POINT = {
 } as const
 
 export default function GroupBuyDetailPage() {
+  const { mode } = useThemeMode()
   const router = useRouter()
   const id = readIdParam(router.params as Record<string, string | undefined>)
 
@@ -196,7 +198,7 @@ export default function GroupBuyDetailPage() {
 
   if (state.status === 'loading') {
     return (
-      <View className='kdy-page kdy-gb-detail'>
+      <View className={`kdy-page kdy-gb-detail kdy-theme--${mode}`}>
         <KdyEmpty mode='loading' description='正在加载拼单详情' />
       </View>
     )
@@ -204,7 +206,7 @@ export default function GroupBuyDetailPage() {
 
   if (state.status === 'error' || state.summary === null) {
     return (
-      <View className='kdy-page kdy-gb-detail'>
+      <View className={`kdy-page kdy-gb-detail kdy-theme--${mode}`}>
         <KdyEmpty
           mode='error'
           description={state.error ?? '拼单不存在或已被下架'}
@@ -223,7 +225,7 @@ export default function GroupBuyDetailPage() {
   const isOwner = groupBuy?.initiatorId === profile?.id
 
   return (
-    <View className='kdy-page kdy-gb-detail'>
+    <View className={`kdy-page kdy-gb-detail kdy-theme--${mode}`}>
       <KdyCard
         title={summary.title}
         extra={<KdyTag tone={summary.joinable ? 'brand' : 'neutral'}>{summary.statusLabel}</KdyTag>}

@@ -4,32 +4,33 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  padding: $kdy-space-12 $kdy-space-6;
+  padding: 96px 48px;
   text-align: center;
 }
 
 .kdy-empty__glyph {
-  margin-bottom: $kdy-space-3;
-  font-size: $kdy-font-size-display;
+  margin-bottom: 24px;
+  color: $kdy-color-night-text-faint;
+  font-size: 64px;
 }
 
 .kdy-empty__title {
-  color: $kdy-color-ink;
-  font-size: $kdy-font-size-md;
+  color: $kdy-color-night-text;
+  font-size: 32px;
   font-weight: 600;
 }
 
 .kdy-empty__description {
-  margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
+  margin-top: 16px;
+  color: $kdy-color-night-text-muted;
+  font-size: 24px;
   line-height: 1.6;
 }
 
 .kdy-empty__action {
-  margin-top: $kdy-space-5;
+  margin-top: 40px;
 }
 
 .kdy-empty--error .kdy-empty__title {
-  color: $kdy-color-danger;
+  color: $kdy-color-night-danger;
 }

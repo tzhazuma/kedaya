@@ -17,3 +17,124 @@
 // 一旦上游生成器修好，把下面这行换回包内产物即可：
 //   @import '../../../../../packages/design-tokens/dist/tokens.scss';
 @import './tokens.generated.scss';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 小程序当前主题：夜间玻璃（Night Glass）
+//
+// 视觉参考：炭黑底 + 半透明卡片 + 1px 亮边，强调色只有两种 —— 樱花粉与鸭黄。
+//
+// 下面是**唯一一处**主题重绑定：把基础语义令牌指到 tokens.json 的 `colorNight` 分组。
+// 因为其余页面/组件一律使用语义令牌（$kdy-color-surface / $kdy-color-ink / ...），
+// 所以改这一处即可让全站换色，不需要逐页改样式。
+//
+// 新增的语义色（玻璃层、粉、黄、反色文字）请直接使用 $kdy-color-night-* 变量，
+// 不要在页面里写 `background: rgba(255, 255, 255, 0.08)` 这类字面色值。
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 尺寸标定：tokens 是按 375 逻辑宽度写的（Web / Flutter 直接可用），
+// 而小程序画布是 750rpx（config/index.ts designWidth: 750，1px → 1rpx）。
+// 若不换算，卡片内边距会变成 8pt、按钮文字 7pt —— 明显偏小。
+// 所以这里把尺寸类令牌统一 ×2，使 `$kdy-space-4` 在小程序里 = 32rpx = 16pt。
+// 只有「尺寸」翻倍，颜色/字重/行高/层级不受影响。
+// ─────────────────────────────────────────────────────────────────────────────
+$_kdy-scale: 2;
+
+$kdy-space-1: $kdy-space-1 * $_kdy-scale;
+$kdy-space-2: $kdy-space-2 * $_kdy-scale;
+$kdy-space-3: $kdy-space-3 * $_kdy-scale;
+$kdy-space-4: $kdy-space-4 * $_kdy-scale;
+$kdy-space-5: $kdy-space-5 * $_kdy-scale;
+$kdy-space-6: $kdy-space-6 * $_kdy-scale;
+$kdy-space-8: $kdy-space-8 * $_kdy-scale;
+$kdy-space-10: $kdy-space-10 * $_kdy-scale;
+$kdy-space-12: $kdy-space-12 * $_kdy-scale;
+$kdy-space-16: $kdy-space-16 * $_kdy-scale;
+
+$kdy-radius-sm: $kdy-radius-sm * $_kdy-scale;
+$kdy-radius-md: $kdy-radius-md * $_kdy-scale;
+$kdy-radius-lg: $kdy-radius-lg * $_kdy-scale;
+$kdy-radius-xl: $kdy-radius-xl * $_kdy-scale;
+
+$kdy-font-size-xs: $kdy-font-size-xs * $_kdy-scale;
+$kdy-font-size-sm: $kdy-font-size-sm * $_kdy-scale;
+$kdy-font-size-md: $kdy-font-size-md * $_kdy-scale;
+$kdy-font-size-lg: $kdy-font-size-lg * $_kdy-scale;
+$kdy-font-size-xl: $kdy-font-size-xl * $_kdy-scale;
+$kdy-font-size-xxl: $kdy-font-size-xxl * $_kdy-scale;
+$kdy-font-size-display: $kdy-font-size-display * $_kdy-scale;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 浅色主题的**原始色值**先留一份快照。
+//
+// 下面会把 $kdy-color-* 重绑定成 CSS 变量（var(--kdy-*)），一旦重绑定就拿不到具体色值了；
+// 而 app.scss 需要具体色值来定义 --kdy-* 变量。所以这里先存一份，避免循环引用。
+// 纯变量赋值不是「样式规则」，因此不会破坏各 .scss 文件顶部的 @use。
+// ─────────────────────────────────────────────────────────────────────────────
+$kdy-light-bg: $kdy-color-bg;
+$kdy-light-surface: $kdy-color-surface;
+$kdy-light-surface-alt: $kdy-color-surface-alt;
+$kdy-light-text: $kdy-color-text;
+$kdy-light-text-muted: $kdy-color-text-muted;
+$kdy-light-ink: $kdy-color-ink;
+$kdy-light-ink-soft: $kdy-color-ink-soft;
+$kdy-light-border: $kdy-color-border;
+$kdy-light-brand: $kdy-color-brand;
+$kdy-light-brand-strong: $kdy-color-brand-strong;
+$kdy-light-brand-soft: $kdy-color-brand-soft;
+$kdy-light-success: $kdy-color-success;
+$kdy-light-warning: $kdy-color-warning;
+$kdy-light-danger: $kdy-color-danger;
+$kdy-light-info: $kdy-color-info;
+
+// 底色 / 卡片
+$kdy-color-bg: var(--kdy-bg);$kdy-color-surface: var(--kdy-surface);
+$kdy-color-surface-alt: var(--kdy-surface-alt);
+
+// 文字
+$kdy-color-text: var(--kdy-text);
+$kdy-color-text-muted: var(--kdy-text-muted);
+$kdy-color-text-inverse: var(--kdy-text-inverse);
+$kdy-color-ink: var(--kdy-ink);
+$kdy-color-ink-soft: var(--kdy-ink-soft);
+
+// 描边 / 分隔线：夜间不画实色线，只用半透明白边
+$kdy-color-border: var(--kdy-border);
+
+// 品牌色：可达鸭的黄在夜间降饱和成「鸭黄」，强调动作用粉色
+$kdy-color-brand: var(--kdy-brand);
+$kdy-color-brand-strong: var(--kdy-brand-strong);
+$kdy-color-brand-soft: var(--kdy-brand-soft);
+
+// 语义色按夜间亮度重调，保证在炭黑底上对比度足够
+$kdy-color-success: var(--kdy-success);
+$kdy-color-warning: var(--kdy-warning);
+$kdy-color-danger: var(--kdy-danger);
+$kdy-color-info: var(--kdy-info);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 玻璃层配方（glassmorphism 的 WXSS 版）
+//
+// 参考 reactbits / uiverse 那类「毛玻璃 + 高光内描边 + 柔和投影」的做法，改写成
+// 小程序能跑的形式：不引任何 npm 依赖（framer-motion / DOM API 在微信里不可用），
+// 只用 backdrop-filter + 两层 rgba + inset 高光。
+//
+// 变量在 app.scss 的 .kdy-theme--dark / --light 里按主题定义，所以组件只写 @include，
+// 不出现任何字面色值（契约 §6.2）。
+//
+// ⚠️ Android 低版本 WebView 可能不支持 backdrop-filter：那时退化成半透明底 + 亮边，
+// 观感仍然成立（所以 --kdy-glass 的 alpha 不能太透明）。
+// ─────────────────────────────────────────────────────────────────────────────
+@mixin kdy-glass($blur: 36px, $saturate: 150%) {
+  border: 1px solid var(--kdy-glass-line);
+  background-color: var(--kdy-glass);
+  box-shadow: inset 0 1px 0 var(--kdy-rim), 0 18px 40px var(--kdy-glass-shadow);
+  -webkit-backdrop-filter: blur($blur) saturate($saturate);
+  backdrop-filter: blur($blur) saturate($saturate);
+}
+
+/** 玻璃层里的「内芯」（卡片中更亮的一层，用于统计块、胶囊） */
+@mixin kdy-glass-inner {
+  border: 1px solid var(--kdy-glass-line);
+  background-color: var(--kdy-glass-inner);
+}

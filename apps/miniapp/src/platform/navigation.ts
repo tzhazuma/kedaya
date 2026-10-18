@@ -1,23 +1,26 @@
 import Taro from '@tarojs/taro'
 import { err, ok } from '@kedaya/shared'
 
-import { isTabBarPath } from '../app/routes'
+import { isDockPath } from '../app/routes'
 import type { PlatformResult } from './failure'
 
 /**
  * 路由跳转。
  *
  * 平台差异：
- * - weapp：`wx.navigateTo` 最多 10 层页面栈；`wx.switchTab` 只能跳 tabBar 页。
+ * - weapp：`wx.navigateTo` 最多 10 层页面栈；`wx.redirectTo` 替换当前页。
  * - H5：Taro Router 用 history API，行为基本一致，但**浏览器前进/后退**会让
  *   「页面栈深度」的假设失效 —— 因此这里不暴露 `getCurrentPages` 相关能力。
+ *
+ * 底部导航的四个主页面（isDockPath）**没有**原生 tabBar（样式做不出来，
+ * 改用自绘的 KdyDock），所以它们之间用 `redirectTo` 平级切换，
+ * 不会被层层压进页面栈 —— 效果等价于 tab 切换。
  */
 
 export async function navigateTo(path: string): Promise<PlatformResult<true>> {
   try {
-    // tabBar 页面必须用 switchTab，否则微信会直接报错
-    if (isTabBarPath(path)) {
-      await Taro.switchTab({ url: path.split('?')[0] ?? path })
+    if (isDockPath(path)) {
+      await Taro.redirectTo({ url: path.split('?')[0] ?? path })
     } else {
       await Taro.navigateTo({ url: path })
     }

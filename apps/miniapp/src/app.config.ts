@@ -9,12 +9,17 @@ import tokens from '@kedaya/design-tokens/tokens.json'
  *
  * ⚠️ 本文件由 Taro 在**构建期**读取并生成 `dist/app.json`，
  * 因此不能引用运行时代码（store / 环境变量等）。
+ *
+ * 默认白色背景，页面使用微信原生顶部导航区；底部仍使用自绘悬浮 dock，
+ * 所以这里**不配置原生 tabBar**：
+ * 原生 tabBar 只能是「白底 + 文字/图片图标」，做不出设计里的浮动胶囊导航栏。
  */
 
 const color = tokens.color
 
 export default {
   pages: [
+    'presentation/pages/welcome/index',
     'presentation/pages/home/index',
     'presentation/pages/discover/index',
     'presentation/pages/messages/index',
@@ -30,26 +35,12 @@ export default {
   ],
   window: {
     backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: color.brand,
+    navigationBarBackgroundColor: color.surface,
     navigationBarTitleText: '可达鸭',
     navigationBarTextStyle: 'black',
-    backgroundColor: color.bg,
+    backgroundColor: color.surface,
     enablePullDownRefresh: false,
   },
   permission: { 'scope.userLocation': { desc: '用于显示你在校园地图的位置，并在你确认后记录动物偶遇地点。实时位置不会上传。' } },
   requiredPrivateInfos: ['getLocation', 'chooseLocation', 'startLocationUpdate', 'onLocationChange'],
-  tabBar: {
-    color: color.textMuted,
-    selectedColor: color.brandStrong,
-    backgroundColor: color.surface,
-    borderStyle: 'white',
-    // 暂不配置图标（iconPath 可省略，仅显示文字）。
-    // 品牌图标就位后在这里补 iconPath / selectedIconPath 即可。
-    list: [
-      { pagePath: 'presentation/pages/home/index', text: '首页' },
-      { pagePath: 'presentation/pages/discover/index', text: '发现' },
-      { pagePath: 'presentation/pages/messages/index', text: '消息' },
-      { pagePath: 'presentation/pages/profile/index', text: '我的' },
-    ],
-  },
 }

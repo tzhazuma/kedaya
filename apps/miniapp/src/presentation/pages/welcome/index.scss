@@ -1,0 +1,31 @@
+.kdy-welcome__heading { margin-top: 56px; }
+.kdy-welcome__cta { margin-top: 46px; }
+.kdy-welcome__cta .kdy-btn {
+  height: 112px; min-height: 112px; padding: 0 42px;
+  border: 0; border-radius: $kdy-radius-pill;
+  background: $kdy-color-campus-yellow-soft; color: $kdy-color-campus-ink;
+  box-shadow: none; font-size: 38px; font-weight: 700;
+  justify-content: space-between;
+}
+.kdy-welcome__cta .kdy-btn__text { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.kdy-welcome__section-title { display: block; margin: 76px 0 27px; color: var(--kdy-ink); font-size: 38px; font-weight: 700; line-height: 1.3; }
+.kdy-welcome__card {
+  display: flex; position: relative; align-items: center; box-sizing: border-box;
+  min-height: 198px; margin-bottom: 20px; padding: 28px 24px 28px 32px;
+  overflow: hidden; border: 0; border-radius: 48px; box-shadow: none;
+  background-image: none; color: $kdy-color-campus-ink;
+}
+.kdy-welcome__card--pink { background-color: $kdy-color-campus-pink; }
+.kdy-welcome__card--lime { background-color: $kdy-color-campus-mint; }
+.kdy-welcome__card-copy { position: relative; z-index: 1; flex: 1; min-width: 0; }
+.kdy-welcome__card-title { display: block; font-size: 38px; font-weight: 700; line-height: 1.35; }
+.kdy-welcome__card-summary { display: block; max-width: 360px; margin-top: 12px; color: $kdy-color-campus-muted; font-size: 23px; line-height: 1.5; }
+.kdy-welcome__art { flex: none; width: 208px; height: 186px; margin: -20px -7px -20px -74px; }
+.kdy-welcome__peek { display: flex; align-items: center; gap: 10px; margin-top: 40px; color: var(--kdy-text-muted); font-size: 25px; }
+.kdy-welcome__peek .campus-arrow { width: 30px; height: 30px; opacity: 0.5; }
+.kdy-welcome .kdy-disclaimer { margin-top: 32px; padding: 0 18px; font-size: 20px; }
+@media (max-width: 350px) {
+  .kdy-welcome__art { width: 140px; height: 150px; margin-left: -45px; }
+  .kdy-welcome__card-summary { font-size: 22px; }
+  .kdy-welcome__card-title { font-size: 35px; }
+}

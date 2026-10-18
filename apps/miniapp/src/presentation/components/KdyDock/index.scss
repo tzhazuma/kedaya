@@ -1,0 +1,30 @@
+.kdy-dock {
+  position: fixed;
+  z-index: $kdy-z-index-sticky;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  left: 50%;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: calc(100% - 52px);
+  max-width: 710px;
+  height: 166px;
+  padding: 0 20px;
+  border-radius: $kdy-radius-pill;
+  transform: translateX(-50%);
+  color: $kdy-color-campus-ink;
+}
+.kdy-dock__frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.kdy-dock__item { position: relative; z-index: 1; display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; min-width: 0; height: 144px; padding-bottom: 7px; transition: transform 160ms ease, opacity 160ms ease; }
+.kdy-dock__icon-wrap { position: relative; display: flex; align-items: center; justify-content: center; width: 76px; height: 72px; }
+.kdy-dock__icon { position: relative; z-index: 1; display: block; width: 46px; height: 46px; }
+.kdy-dock__label { display: block; margin-top: 3px; color: $kdy-color-campus-ink; font-size: 20px; font-weight: 600; line-height: 1.3; letter-spacing: 1px; }
+.kdy-dock__item--active .kdy-dock__icon-wrap::before { content: ''; position: absolute; inset: -2px -1px 0; border-radius: 48% 55% 46% 52%; background: $kdy-color-campus-yellow-soft; transform: rotate(-7deg); }
+.kdy-dock__item--active .kdy-dock__label { font-weight: 700; }
+.kdy-dock__selected-dot { position: absolute; bottom: 8px; width: 6px; height: 6px; border-radius: 50%; background: $kdy-color-campus-ink; }
+.kdy-dock__item--create { justify-content: flex-start; padding-top: 11px; }
+.kdy-dock__item--create .kdy-dock__icon-wrap { width: 92px; height: 92px; }
+.kdy-dock__item--create .kdy-dock__icon { width: 92px; height: 92px; }
+.kdy-dock__item--pressed { transform: translateY(2px) scale(0.96); opacity: 0.72; }
+.kdy-dock__badge { position: absolute; top: 28px; right: 20px; width: 10px; height: 10px; border: 2px solid $kdy-color-campus-white; border-radius: 50%; background: $kdy-color-campus-yellow; }
+@media (prefers-reduced-motion: reduce) { .kdy-dock__item { transition: none; } }

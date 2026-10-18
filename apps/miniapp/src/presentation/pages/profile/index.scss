@@ -53,3 +53,11 @@
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
+.kdy-profile__theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $kdy-space-3;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+}

@@ -129,7 +129,7 @@
 }
 
 .kdy-gb-detail__form { display: flex; flex-direction: column; gap: $kdy-space-3; margin-bottom: $kdy-space-4; color: $kdy-color-text; font-size: $kdy-font-size-xl; }
-.kdy-gb-detail__input { box-sizing: border-box; min-height: 60px; padding: $kdy-space-3; border: 1px solid $kdy-color-border; border-radius: $kdy-radius-md; background: $kdy-color-surface; font-size: $kdy-font-size-xl; }
+.kdy-gb-detail__input { box-sizing: border-box; min-height: 60px; padding: $kdy-space-3; border: 1px solid $kdy-color-border; border-radius: $kdy-radius-xl; background: $kdy-color-surface; font-size: $kdy-font-size-xl; }
 
 .kdy-gb-detail__actions-row {
   display: flex;

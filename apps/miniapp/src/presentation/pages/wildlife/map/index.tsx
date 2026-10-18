@@ -8,10 +8,12 @@ import { CAMPUS_BOUNDS, isOnCampus } from '@kedaya/contracts/campus-map'
 import { CampusView } from '../campus-view'
 import { getWildlife, wildlifeLocation, wildlifeNavigate } from '../../../../platform/wildlife'
 import { KdyButton } from '../../../components'
+import { useThemeMode } from '../../../theme/useThemeMode'
 import { CategoryFilter, ErrorNotice, Postcard, categoryLabel } from '../components'
 import '../wildlife.scss'
 
 export default function WildlifeMapPage() {
+  const { mode } = useThemeMode()
   const [center, setCenter] = useState({ latitude: WILDLIFE_CAMPUS.latitude, longitude: WILDLIFE_CAMPUS.longitude })
   const bounds = CAMPUS_BOUNDS
   const [position, setPosition] = useState<{ latitude: number; longitude: number } | null>(null)
@@ -73,7 +75,7 @@ export default function WildlifeMapPage() {
     return () => { Taro.eventCenter.off('wildlife:sighting-saved', onSaved) }
   }, [])
   useEffect(() => () => { mounted.current = false; sequence.current++; stopTracking() }, [])
-  return <View className='wa-page wa-map-page'>
+  return <View className={`wa-page wa-map-page kdy-theme--${mode}`}>
     <View className='wa-header'><Text className='wa-eyebrow'>WILD RESIDENTS ARCHIVE</Text><Text className='wa-heading'>野生居民档案</Text>
       <Text className='wa-muted'>记录每一次偶遇，认识校园里的每一位野生居民。</Text></View>
     <CategoryFilter value={category} onChange={setCategory} />

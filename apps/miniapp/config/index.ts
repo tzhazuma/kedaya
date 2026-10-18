@@ -20,7 +20,20 @@ import { CoherentBuildPlugin } from './coherent-build'
  */
 const TOKENS_SCSS = path.resolve(__dirname, '..', 'src', 'presentation', 'theme', 'tokens.scss')
 const PACKAGES_ROOT = path.resolve(__dirname, '..', '..', '..', 'packages')
-const OUTPUT_ROOT = process.env.KEDAYA_WEAPP_STAGE === '1' ? '.weapp-stage' : 'dist'
+
+/**
+ * 产物目录按平台分开，**绝不能共用**：
+ *
+ * - weapp → `dist/`（`project.config.json` 的 `miniprogramRoot` 指向它，微信开发者工具实时盯着它）
+ * - h5    → `dist-h5/`
+ *
+ * 曾经 H5 和小程序共用 `dist/`：只要跑一次 `build:h5`，`dist/app.json` 就被 H5 产物覆盖掉，
+ * 开发者工具立刻报「在该目录下未找到 app.json」，而且看起来像是工程坏了。
+ * `KEDAYA_WEAPP_STAGE=1` 是小程序构建脚本用的临时目录（校验通过后才发布到 `dist/`）。
+ */
+const PLATFORM = process.env.TARO_ENV ?? 'weapp'
+const OUTPUT_ROOT =
+  process.env.KEDAYA_WEAPP_STAGE === '1' ? '.weapp-stage' : PLATFORM === 'h5' ? 'dist-h5' : 'dist'
 
 const baseConfig: UserConfigExport<'webpack5'> = {
   projectName: 'kedaya-miniapp',
@@ -37,7 +50,7 @@ const baseConfig: UserConfigExport<'webpack5'> = {
     'process.env.TARO_APP_REQUEST_TIMEOUT_MS': JSON.stringify(process.env.TARO_APP_REQUEST_TIMEOUT_MS ?? '15000'),
     'process.env.TARO_APP_MOCK_LATENCY_MS': JSON.stringify(process.env.TARO_APP_MOCK_LATENCY_MS ?? '220'),
   },
-  copy: { patterns: [{ from: path.resolve(__dirname, '..', 'src/assets/wildlife'), to: path.resolve(__dirname, '..', OUTPUT_ROOT, 'assets/wildlife') }], options: {} },
+  copy: { patterns: ['wildlife', 'campus'].map((name) => ({ from: path.resolve(__dirname, '..', `src/assets/${name}`), to: path.resolve(__dirname, '..', OUTPUT_ROOT, `assets/${name}`) })), options: {} },
   framework: 'react',
   /**
    * webpack5 是唯一编译器（契约 §2）。
@@ -90,6 +103,32 @@ const baseConfig: UserConfigExport<'webpack5'> = {
     },
     miniCssExtractPluginOption: {
       ignoreOrder: true,
+    },
+    /**
+     * 与 mini 段同样的原因：workspace 里的 TS 包（@kedaya/contracts 等）通过软链接
+     * 落在 sourceDir 之外，H5 的 script rule 也不会处理它们 —— 不补这条规则，
+     * `taro build --type h5` 会在 packages/contracts/src/*.ts 上抛 ModuleParseError。
+     */
+    webpackChain(chain: WebpackChain) {
+      // The H5 adapter is hoisted, while this runtime lives in the miniapp workspace.
+      chain.resolve.alias.set(
+        '@tarojs/plugin-framework-react/dist/runtime',
+        require.resolve('@tarojs/plugin-framework-react/dist/runtime'),
+      )
+      // Workspaces can install a second router beneath taro-h5. Both the app
+      // shell and navigation APIs must share its configuration singleton.
+      chain.resolve.alias.set(
+        '@tarojs/router',
+        path.dirname(require.resolve('@tarojs/router/package.json')),
+      )
+      chain.module
+        .rule('kedaya-workspace-ts')
+        .test(/\.[cm]?[jt]sx?$/)
+        .include.add(PACKAGES_ROOT)
+        .end()
+        .use('babel-loader')
+        .loader(require.resolve('babel-loader'))
+        .options({ configFile: path.resolve(__dirname, '..', 'babel.config.js') })
     },
     postcss: {
       autoprefixer: { enable: true, config: {} },

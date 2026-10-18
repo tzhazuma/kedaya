@@ -62,12 +62,13 @@ describe('mock 仓储 · 列表与游标分页', () => {
 
   it('按分类过滤', async () => {
     const repo = createRepo()
-    const result = await repo.list({ category: 'drink' })
+    // 种子里的 supplies：gb-1002（山姆代购）、gb-1003（抽纸洗衣液）
+    const result = await repo.list({ category: 'supplies' })
 
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.value.items.length).toBeGreaterThan(0)
-    expect(result.value.items.every((item) => item.category === 'drink')).toBe(true)
+    expect(result.value.items.every((item) => item.category === 'supplies')).toBe(true)
   })
 
   it("category = 'all' 等价于不过滤", async () => {
@@ -80,11 +81,21 @@ describe('mock 仓储 · 列表与游标分页', () => {
 
   it('按关键词过滤标题 / 描述 / 取货地点', async () => {
     const repo = createRepo()
-    const result = await repo.list({ keyword: '瑞幸' })
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    expect(result.value.items).toHaveLength(1)
-    expect(result.value.items[0]?.id).toBe('gb-1002')
+
+    // 标题：gb-1001「一食堂三楼小炒」
+    const byTitle = await repo.list({ keyword: '小炒' })
+    expect(byTitle.ok).toBe(true)
+    if (byTitle.ok) expect(byTitle.value.items.map((item) => item.id)).toEqual(['gb-1001'])
+
+    // 描述：gb-1002「发起人自述持有会员」
+    const byDescription = await repo.list({ keyword: '自述' })
+    expect(byDescription.ok).toBe(true)
+    if (byDescription.ok) expect(byDescription.value.items.map((item) => item.id)).toEqual(['gb-1002'])
+
+    // 取货地点：gb-1002「图书馆北门」
+    const byPickupPlace = await repo.list({ keyword: '图书馆' })
+    expect(byPickupPlace.ok).toBe(true)
+    if (byPickupPlace.ok) expect(byPickupPlace.value.items.map((item) => item.id)).toEqual(['gb-1002'])
   })
 })
 

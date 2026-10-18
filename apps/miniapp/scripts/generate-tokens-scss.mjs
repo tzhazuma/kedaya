@@ -79,6 +79,10 @@ function fontFamilyList(value) {
 /** 需要 `px` 后缀的组（长度类） */
 const GROUPS = [
   { key: 'color', scss: 'color', format: raw, variables: true },
+  { key: 'colorCampus', scss: 'color-campus', format: raw, variables: true },
+  // 夜间玻璃主题（本期小程序主视觉）。只生成变量、不进 $kdy-tokens map：
+  // 页面通过 src/presentation/theme/tokens.scss 的映射表使用它，而不是到处写 $kdy-color-night-*。
+  { key: 'colorNight', scss: 'color-night', format: raw, variables: true },
   { key: 'space', scss: 'space', format: px, variables: true },
   { key: 'radius', scss: 'radius', format: px, variables: true },
   { key: 'fontSize', scss: 'font-size', format: px, variables: true },
@@ -117,7 +121,7 @@ for (const group of GROUPS) {
 lines.push('// 便捷 map，便于 SCSS 侧遍历')
 lines.push('$kdy-tokens: (')
 for (const group of GROUPS) {
-  if (group.key === 'colorDark') continue
+  if (group.key === 'colorDark' || group.key === 'colorNight') continue
   lines.push(`  "${group.scss}": (`)
   for (const [name, value] of Object.entries(tokens[group.key])) {
     const formatted = group.format(value)

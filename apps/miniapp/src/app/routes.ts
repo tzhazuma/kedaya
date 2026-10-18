@@ -7,6 +7,7 @@
  */
 
 export const PAGE_PATHS = {
+  welcome: '/presentation/pages/welcome/index',
   home: '/presentation/pages/home/index',
   discover: '/presentation/pages/discover/index',
   messages: '/presentation/pages/messages/index',
@@ -19,17 +20,32 @@ export const PAGE_PATHS = {
 
 export type PagePath = (typeof PAGE_PATHS)[keyof typeof PAGE_PATHS]
 
-/** tabBar 上的四个主页面（必须与 app.config.ts 的 tabBar.list 完全一致） */
-export const TAB_BAR_PATHS: readonly string[] = [
+/**
+ * 底部悬浮导航（KdyDock）上的四个主页面。
+ *
+ * 顺序即 dock 从左到右的顺序；`DockTab` 是这四个页面在 dock 上的身份。
+ * 原生 tabBar 已移除（做不出浮动胶囊样式），所以这四个页面是**同级普通页面**：
+ * 相互切换走 `redirectTo`，避免页面栈越堆越深（见 platform/navigation.ts）。
+ */
+export const DOCK_PATHS: readonly string[] = [
   PAGE_PATHS.home,
   PAGE_PATHS.discover,
   PAGE_PATHS.messages,
   PAGE_PATHS.profile,
 ]
 
-export function isTabBarPath(path: string): boolean {
+export type DockTab = 'home' | 'discover' | 'messages' | 'profile'
+
+export const DOCK_TAB_PATHS: Readonly<Record<DockTab, string>> = {
+  home: PAGE_PATHS.home,
+  discover: PAGE_PATHS.discover,
+  messages: PAGE_PATHS.messages,
+  profile: PAGE_PATHS.profile,
+}
+
+export function isDockPath(path: string): boolean {
   const [base] = path.split('?')
-  return base !== undefined && TAB_BAR_PATHS.includes(base)
+  return base !== undefined && DOCK_PATHS.includes(base)
 }
 
 export function groupBuyDetailPath(id: string): string {

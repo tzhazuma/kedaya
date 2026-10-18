@@ -6,9 +6,11 @@ import { GROUP_BUY_CATEGORIES, GROUP_BUY_CATEGORY_LABELS } from '../../../../dom
 import type { GroupBuyCategory } from '../../../../domain/models/groupbuy'
 import { navigateTo, toast } from '../../../../platform/navigation'
 import { KdyButton, KdyCard, KdyTag } from '../../../components'
+import { useThemeMode } from '../../../theme/useThemeMode'
 import './index.scss'
 
 export default function GroupBuyCreatePage() {
+  const { mode } = useThemeMode()
   const [kind, setKind] = useState<'ordinary' | 'membership'>('ordinary')
   const [category, setCategory] = useState<GroupBuyCategory>('food')
   const [title, setTitle] = useState('')
@@ -59,7 +61,7 @@ export default function GroupBuyCreatePage() {
   }
 
   return (
-    <View className='kdy-page kdy-gb-create'>
+    <View className={`kdy-page kdy-gb-create kdy-theme--${mode}`}>
       <KdyCard title='发起校园拼单'>
         <Text className='kdy-gb-create__hint'>用于宿舍群等线下拼单统计。创建后 24 小时内未凑满目标总份数，将自动取消。平台不收款。</Text>
         <View className='kdy-gb-create__choices'>

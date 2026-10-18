@@ -1,39 +1,41 @@
 .kdy-card {
+  @include kdy-glass(40px);
   box-sizing: border-box;
-  margin: $kdy-space-2 $kdy-space-4;
-  padding: $kdy-space-4;
-  background-color: $kdy-color-surface;
-  border: 1px solid $kdy-color-border;
-  border-radius: $kdy-radius-lg;
+  margin: 16px 32px;
+  padding: 32px;
+  border-radius: 60px;
+  color: var(--kdy-text);
 }
 
+/* 「浮起」= 更亮的一层玻璃 + 更深的投影，而不是换底色 */
 .kdy-card--elevated {
-  border-color: transparent;
-  box-shadow: $kdy-shadow-sm;
+  background-color: var(--kdy-glass-inner);
+  box-shadow: inset 0 1px 0 var(--kdy-rim), 0 24px 52px var(--kdy-glass-shadow);
 }
 
 .kdy-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: $kdy-space-2;
+  margin-bottom: 16px;
 }
 
 .kdy-card__title {
-  color: $kdy-color-ink;
-  font-size: $kdy-font-size-md;
+  color: var(--kdy-ink);
+  font-size: 34px;
   font-weight: 600;
 }
 
 .kdy-card__extra {
   display: flex;
   align-items: center;
-  gap: $kdy-space-1;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
+  gap: 8px;
+  color: var(--kdy-text-muted);
+  font-size: 24px;
 }
 
 .kdy-card__body {
-  color: $kdy-color-text;
-  font-size: $kdy-font-size-sm;
+  color: var(--kdy-text);
+  font-size: 28px;
+  line-height: 1.6;
 }

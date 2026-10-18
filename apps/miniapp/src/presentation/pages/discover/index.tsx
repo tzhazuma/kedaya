@@ -8,7 +8,8 @@ import { navigateTo, toast } from '../../../platform/navigation'
 import { scanCode } from '../../../platform/scanner'
 import { shareToFriend } from '../../../platform/share'
 import { SUBSCRIBE_TEMPLATES, requestSubscribeMessage } from '../../../platform/subscribeMessage'
-import { KdyButton, KdyCard, KdyTag } from '../../components'
+import { KdyButton, KdyCard, KdyDock, KdyTag } from '../../components'
+import { useThemeMode } from '../../theme/useThemeMode'
 import './index.scss'
 
 /**
@@ -26,6 +27,7 @@ const CAMPUS_POINT = {
 } as const
 
 export default function DiscoverPage() {
+  const { mode } = useThemeMode()
   const [lastResult, setLastResult] = useState('还没有调用过平台能力')
 
   function report(label: string, outcome: { ok: boolean; detail: string }): void {
@@ -73,7 +75,12 @@ export default function DiscoverPage() {
   }
 
   return (
-    <View className='kdy-page kdy-discover'>
+    <View className={`kdy-page kdy-page--dock kdy-discover kdy-theme--${mode}`}>
+      <View className='kdy-head'>
+        <Text className='kdy-head__title'>发现</Text>
+        <Text className='kdy-head__sub'>平台能力试跑台：微信特有 / H5 降级的差异都在这里点得出来</Text>
+      </View>
+
       <KdyCard title='当前运行端' elevated={false}>
         <View className='kdy-discover__platform'>
           <KdyTag tone='brand'>{currentPlatform()}</KdyTag>
@@ -137,6 +144,8 @@ export default function DiscoverPage() {
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
       </Text>
+
+      <KdyDock active='discover' />
     </View>
   )
 }

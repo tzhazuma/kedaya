@@ -27,7 +27,13 @@ npm run build:h5 -w @kedaya/miniapp
 npm run typecheck -w @kedaya/miniapp
 npm run test      -w @kedaya/miniapp
 npm run lint      -w @kedaya/miniapp
+
+# 微信开发者工具真实模拟器冒烟（需先开启服务端口）
+npm run smoke:weapp -w @kedaya/miniapp
 ```
+
+Windows、VS Code、Codex CLI 与微信开发者工具的自动化配置和手动步骤见
+[`docs/development/wechat-agent-automation.md`](../../docs/development/wechat-agent-automation.md)。
 
 > ⚠️ 本仓库有多个工作流并行，`node_modules` 是共享的。
 > 任何会改动 `node_modules` 的命令（`npm install` / `npm ci`）都必须串行化：
@@ -50,7 +56,7 @@ npm run lint      -w @kedaya/miniapp
 2. 打开「微信开发者工具」→ **导入项目**：
    - 目录：`<repo>/apps/miniapp`
    - AppID：**游客模式**即可（`project.config.json` 里是占位值 `touristappid`）
-3. 导入后即可看到 tabBar 四个页面与拼单垂直切片（默认走 **mock 数据**，不需要后端）。
+3. 导入后即可看到启动页与四个主页面（首页 / 发现 / 消息 / 我的），底部是自绘的胶囊导航；拼单垂直切片默认走 **mock 数据**，不需要后端。
 
 ### 关于 appid（必须替换才能真机调试）
 
@@ -77,7 +83,7 @@ apps/miniapp/
 ├── vitest.config.ts           # 纯逻辑测试（node 环境，不需要小程序模拟器）
 ├── eslint.config.mjs          # ESLint 10 flat config
 └── src/
-    ├── app.config.ts          # 页面注册 + tabBar + window（色值取自 design-tokens）
+    ├── app.config.ts          # 页面注册 + window（夜间主题色取自 design-tokens；不用原生 tabBar）
     ├── app.tsx                # 根组件：契约 §8 启动时序
     ├── app.scss               # 全局样式
     ├── app/                   # 装配与启动：DI 容器、启动时序、路由表
@@ -230,7 +236,7 @@ npm run test -w @kedaya/miniapp
 
 - Taro 4.3 + React 18 + TS 5.9 骨架，`weapp` 为主编译目标、`h5` 为次要目标
 - 六边形分层目录（契约 §7）与依赖方向 lint 约束
-- `app.config.ts`（页面注册 + tabBar 四页 + 品牌色导航栏）
+- `app.config.ts`（页面注册 + 夜间 window；底部导航是自绘的 `KdyDock`，不用原生 tabBar）
 - 契约 §8 启动时序（同步 hydrate → 立即渲染 → 后台刷新静默降级）
 - 统一网络层：`/api/v1`、Bearer、`X-KedaYa-Trace`、`Idempotency-Key`、信封解包、401 刷新重试
 - Taro 同步存储 adapter + 内存 adapter + 会话/token 存储
@@ -249,7 +255,7 @@ npm run test -w @kedaya/miniapp
 - **敏感模块二次同意**：契约 §9 的同意流程与审计日志未实现（首页对这类模块只做标注 + 提示）。
 - **站内信列表**（`notifications`）：只有订阅消息链路，站内信列表是空态。
 - **其余 18 个业务模块**：契约 §4 已登记，端上未实现（首页明确显示「开发中」）。
-- **tabBar 图标**：未配置 `iconPath`（品牌图标未就位），当前只显示文字。
+- ~~**tabBar 图标**~~：原生 tabBar 已移除，底部导航改为自绘 `KdyDock`（胶囊 + 圆形按钮），不再需要 tabBar 图标资源。
 - **H5 端未实机验证**：`build:h5` 脚本已就绪，但本轮只验证了 `weapp` 构建。
 - **CI / 真机预览**：未在真机与微信开发者工具中打开验证（无图形环境）。
 - **E2E 测试**：未接入小程序自动化（miniprogram-automator）。
@@ -270,6 +276,21 @@ npm run test -w @kedaya/miniapp
    `node_modules` 缓存目录，而本仓库多个工作流并行安装，因此
    `config/index.ts` 里设 `compiler: { type: 'webpack5', prebundle: { enable: false } }`。
    这仍是 webpack5 编译器，只是关掉预打包。
+
+4. **开发者工具报 `dist/app.json ... 未找到 app.json` 时的恢复步骤**（已从构建侧修掉诱因，
+   但工具自身会把「找不到 app.json」的失败结果缓存住，需要人工清一次）：
+
+   原因有两个，都已在本仓库规避：
+   - `h5` 产物曾经和小程序共用 `dist/`，跑一次 `build:h5` 就会把 `dist/app.json` 覆盖掉
+     → 现在 H5 输出到 `dist-h5/`（见 `config/index.ts` 的 `OUTPUT_ROOT`）；
+   - 发布曾经用「`dist` → `.weapp-last-good` 改名、`.weapp-next` → `dist` 改名」的方式换包
+     → 工具的目录 watcher 会因此失联（日志里只有 `unlinkDir dist`，之后再没有 `add dist/...`），
+     现在改成**原地同步**（`scripts/publish-weapp.cjs`），只产生普通的增删改事件。
+
+   如果你正好在旧版本留下的坏状态里，按顺序试：
+   1. 「关闭当前项目」再重新打开（不是只点编译 —— 失败结果缓存在工具进程内）；
+   2. 仍不行就退出整个微信开发者工具再启动；
+   3. 再不行：「工具 → 清除缓存 → 全部清除」，然后重新打开项目。
 
 ---
 

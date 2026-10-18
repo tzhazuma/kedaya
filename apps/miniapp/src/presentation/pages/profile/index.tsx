@@ -3,8 +3,9 @@ import { Text, View } from '@tarojs/components'
 import { getContainer } from '../../../app/container'
 import { createMockSignIn } from '../../../data/mock/mockAuth'
 import { toast } from '../../../platform/navigation'
-import { KdyButton, KdyCard, KdyTag } from '../../components'
+import { KdyButton, KdyCard, KdyDock, KdyTag } from '../../components'
 import { useStore } from '../../hooks'
+import { useThemeMode } from '../../theme/useThemeMode'
 import './index.scss'
 
 /**
@@ -48,6 +49,7 @@ const PRIVACY_RULES: readonly { title: string; detail: string }[] = [
 ]
 
 export default function ProfilePage() {
+  const { mode, toggleTheme } = useThemeMode()
   const container = getContainer()
   const session = container.useCases.session
   const state = useStore(session)
@@ -78,7 +80,14 @@ export default function ProfilePage() {
   }
 
   return (
-    <View className='kdy-page kdy-profile'>
+    <View className={`kdy-page kdy-page--dock kdy-profile kdy-theme--${mode}`}>
+      <View className='kdy-head'>
+        <Text className='kdy-head__title'>我的</Text>
+        <Text className='kdy-head__sub'>
+          {state.profile === null ? '还未登录 · 浏览不需要登录' : `${state.profile.nickname} · 账号与隐私`}
+        </Text>
+      </View>
+
       <KdyCard title='账号' elevated={false}>
         {state.profile === null ? (
           <View>
@@ -128,6 +137,15 @@ export default function ProfilePage() {
         )}
       </KdyCard>
 
+      <KdyCard title='外观模式' elevated={false}>
+        <View className='kdy-profile__theme-row'>
+          <Text>当前：{mode === 'dark' ? '深色' : '浅色'}</Text>
+          <KdyButton size='sm' variant='ghost' onClick={toggleTheme}>
+            切换为{mode === 'dark' ? '浅色' : '深色'}
+          </KdyButton>
+        </View>
+      </KdyCard>
+
       <KdyCard title='隐私与合规' elevated={false}>
         {PRIVACY_RULES.map((rule) => (
           <View key={rule.title} className='kdy-profile__rule'>
@@ -149,6 +167,8 @@ export default function ProfilePage() {
       <Text className='kdy-disclaimer'>
         可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
       </Text>
+
+      <KdyDock active='profile' />
     </View>
   )
 }

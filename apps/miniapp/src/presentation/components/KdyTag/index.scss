@@ -1,8 +1,8 @@
 .kdy-tag {
   display: inline-block;
-  padding: 2px $kdy-space-2;
+  padding: 4px 18px;
   border-radius: $kdy-radius-pill;
-  font-size: $kdy-font-size-xs;
+  font-size: 22px;
   line-height: 1.5;
   white-space: nowrap;
 }
@@ -10,31 +10,31 @@
 /* 背景色一律由令牌色 + alpha 派生，不引入任何新的字面色值 */
 
 .kdy-tag--brand {
-  background-color: $kdy-color-brand-soft;
-  color: $kdy-color-brand-strong;
+  background-color: rgba($kdy-color-night-accent-lime, 0.22);
+  color: $kdy-color-night-accent-lime;
 }
 
 .kdy-tag--success {
-  background-color: rgba($kdy-color-success, 0.12);
-  color: $kdy-color-success;
+  background-color: rgba($kdy-color-night-success, 0.18);
+  color: $kdy-color-night-success;
 }
 
 .kdy-tag--warning {
-  background-color: rgba($kdy-color-warning, 0.12);
-  color: $kdy-color-warning;
+  background-color: rgba($kdy-color-night-warning, 0.18);
+  color: $kdy-color-night-warning;
 }
 
 .kdy-tag--danger {
-  background-color: rgba($kdy-color-danger, 0.12);
-  color: $kdy-color-danger;
+  background-color: rgba($kdy-color-night-danger, 0.18);
+  color: $kdy-color-night-danger;
 }
 
 .kdy-tag--info {
-  background-color: rgba($kdy-color-info, 0.12);
-  color: $kdy-color-info;
+  background-color: rgba($kdy-color-night-info, 0.18);
+  color: $kdy-color-night-info;
 }
 
 .kdy-tag--neutral {
-  background-color: $kdy-color-surface-alt;
-  color: $kdy-color-text-muted;
+  background-color: $kdy-color-night-glass-strong;
+  color: $kdy-color-night-text-muted;
 }

@@ -24,12 +24,14 @@ out/
 
 # ---- 微信小程序 / Taro ----
 apps/miniapp/dist/
+apps/miniapp/dist-h5/
 apps/miniapp/dist-prev/
 apps/miniapp/.temp/
 apps/miniapp/.weapp-stage/
 apps/miniapp/.weapp-next/
 apps/miniapp/.weapp-last-good/
 apps/miniapp/.weapp-build.lock
+apps/miniapp/artifacts/
 apps/miniapp/.rn_temp/
 project.private.config.json
 
@@ -60,6 +62,7 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+!.vscode/tasks.json
 *.swp
 
 # ---- 日志 ----

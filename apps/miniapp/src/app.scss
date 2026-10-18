@@ -4,21 +4,90 @@
 // 注入入口：src/presentation/theme/tokens.scss
 //          → packages/design-tokens/dist/tokens.scss
 // 因此这里（以及任何组件样式）可以直接使用 $kdy-* 变量，且**不得手写色值**（契约 §6.2）。
+//
+// 主题：玻璃拟态。颜色只在下面的 .kdy-theme--light / --dark 里定义一次，
+// 其余所有样式都读 CSS 变量（var(--kdy-*)），所以两套主题共用同一份布局/材质代码。
+//
+// ⚠️ 本文件不要 `@use 'sass:map'`：sass.resource 会把 theme/tokens.scss（含 @mixin）注入到
+// 本文件最前面，@use 必须出现在所有规则之前，会直接编译失败。需要浅色具体色值时，
+// 用 tokens.scss 里保留的 $kdy-light-* 快照。
 
 page,
-.kdy-root {
-  background-color: $kdy-color-bg;
-  color: $kdy-color-text;
+.kdy-root,
+.kdy-theme--light {
+  --kdy-bg: #{$kdy-light-surface};
+  --kdy-surface: #{$kdy-light-surface};
+  --kdy-surface-alt: #{$kdy-light-surface-alt};
+  --kdy-text: #{$kdy-light-text};
+  --kdy-text-muted: #{$kdy-light-text-muted};
+  --kdy-text-inverse: #{$kdy-light-ink};
+  --kdy-ink: #{$kdy-light-ink};
+  --kdy-ink-soft: #{$kdy-light-ink-soft};
+  --kdy-border: #{$kdy-light-border};
+  --kdy-brand: #{$kdy-light-brand};
+  --kdy-brand-strong: #{$kdy-light-brand-strong};
+  --kdy-brand-soft: #{$kdy-light-brand-soft};
+  --kdy-success: #{$kdy-light-success};
+  --kdy-warning: #{$kdy-light-warning};
+  --kdy-danger: #{$kdy-light-danger};
+  --kdy-info: #{$kdy-light-info};
+  /* 玻璃层：浅色模式是「奶白玻璃」。
+     注意亮底上「白色描边」几乎看不见，所以这里用低透明度墨色描边 + 轻微投影来定形。 */
+  --kdy-glass: #{rgba($kdy-light-surface, 0.72)};
+  --kdy-glass-inner: #{rgba($kdy-light-surface, 0.78)};
+  --kdy-glass-line: #{rgba($kdy-light-ink, 0.1)};
+  --kdy-rim: #{rgba($kdy-light-surface, 0.95)};
+  --kdy-glass-shadow: #{rgba($kdy-light-ink, 0.1)};
+  --kdy-scrim: #{rgba($kdy-light-ink, 0.62)};
+  background-color: var(--kdy-bg);
+  color: var(--kdy-text);
   font-family: $kdy-font-family-sans;
   font-size: $kdy-font-size-sm;
   line-height: 1.5;
+}
+
+.kdy-theme--dark {
+  --kdy-bg: #{$kdy-color-night-bg};
+  --kdy-surface: #{$kdy-color-night-surface};
+  --kdy-surface-alt: #{$kdy-color-night-surface-raised};
+  --kdy-text: #{$kdy-color-night-text};
+  --kdy-text-muted: #{$kdy-color-night-text-muted};
+  --kdy-text-inverse: #{$kdy-color-night-on-accent};
+  --kdy-ink: #{$kdy-color-night-text};
+  --kdy-ink-soft: #{$kdy-color-night-text};
+  --kdy-border: #{$kdy-color-night-glass-border};
+  --kdy-brand: #{$kdy-color-night-accent-lime};
+  --kdy-brand-strong: #{$kdy-color-night-accent-lime-deep};
+  --kdy-brand-soft: #{rgba($kdy-color-night-accent-lime, 0.18)};
+  --kdy-success: #{$kdy-color-night-success};
+  --kdy-warning: #{$kdy-color-night-warning};
+  --kdy-danger: #{$kdy-color-night-danger};
+  --kdy-info: #{$kdy-color-night-info};
+  /* 玻璃层：深色模式是「烟灰玻璃」，靠 1px 亮边 + 顶部高光撑出厚度 */
+  --kdy-glass: #{rgba($kdy-color-night-text, 0.085)};
+  --kdy-glass-inner: #{rgba($kdy-color-night-text, 0.13)};
+  --kdy-glass-line: #{rgba($kdy-color-night-text, 0.2)};
+  --kdy-rim: #{rgba($kdy-color-night-text, 0.28)};
+  --kdy-glass-shadow: #{rgba($kdy-color-night-bg-deep, 0.6)};
+  --kdy-scrim: #{rgba($kdy-color-night-bg-deep, 0.86)};
+  background-color: var(--kdy-bg);
+  color: var(--kdy-text);
+}
+
+/* 顶部微光：两层极淡的粉/黄光晕，让整块「玻璃」有被照亮的体积感 */
+.kdy-theme--dark {
+  background-image:
+    radial-gradient(120% 42% at 84% -8%, rgba($kdy-color-night-accent-pink, 0.18), transparent 62%),
+    radial-gradient(90% 38% at 4% 2%, rgba($kdy-color-night-accent-lime, 0.11), transparent 58%);
+  background-repeat: no-repeat;
+  background-position: 0 0, 0 0;
 }
 
 /* 契约 §9：全站显著标注「第三方非官方平台」 */
 .kdy-disclaimer {
   display: block;
   padding: $kdy-space-4 $kdy-space-4 $kdy-space-6;
-  color: $kdy-color-text-muted;
+  color: var(--kdy-text-muted);
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
   text-align: center;
@@ -30,9 +99,65 @@ page,
   padding-bottom: $kdy-space-6;
 }
 
+/* 带底部悬浮导航的页面：给 dock 让出安全距离。 */
+.kdy-page--dock {
+  padding-bottom: calc(260px + env(safe-area-inset-bottom));
+}
+
 .kdy-section-title {
   padding: $kdy-space-4 $kdy-space-4 $kdy-space-2;
-  color: $kdy-color-ink;
+  color: var(--kdy-ink);
   font-size: $kdy-font-size-md;
   font-weight: 600;
 }
+
+/* 自定义导航栏页面（navigationStyle: custom）的顶部安全区 */
+.kdy-safe-top {
+  padding-top: calc(#{$kdy-space-6} + env(safe-area-inset-top));
+}
+
+/* 主页面（首页/发现/消息/我的）的页头：大标题 + 一行说明 */
+.kdy-head {
+  padding-top: 28px;
+  padding-right: 32px;
+  padding-left: 32px;
+}
+
+.kdy-head__title {
+  display: block;
+  color: var(--kdy-ink);
+  font-size: 64px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -1px;
+}
+
+.kdy-head__sub {
+  display: block;
+  margin-top: 10px;
+  color: var(--kdy-text-muted);
+  font-size: 24px;
+  line-height: 1.5;
+}
+
+/* 浅色模式下少数需要压深的细节（其余全部走 CSS 变量，无需覆盖） */
+.kdy-theme--light .kdy-btn--ghost {
+  border-color: var(--kdy-border);
+  background-color: var(--kdy-surface);
+  color: var(--kdy-ink);
+}
+
+.kdy-theme--light .kdy-tag--neutral {
+  background-color: var(--kdy-surface-alt);
+  color: var(--kdy-text-muted);
+}
+
+.kdy-theme--light .kdy-tag--brand,
+.kdy-theme--light .kdy-tag--warning {
+  background-color: var(--kdy-brand-soft);
+  color: var(--kdy-ink);
+}
+
+.kdy-theme--light .kdy-tag--success { color: var(--kdy-success); }
+.kdy-theme--light .kdy-tag--danger { color: var(--kdy-danger); }
+.kdy-theme--light .kdy-tag--info { color: var(--kdy-info); }

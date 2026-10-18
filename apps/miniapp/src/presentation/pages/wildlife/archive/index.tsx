@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from 'react'
 import type { WildlifeAnimal } from '@kedaya/contracts/wildlife'
 import { getWildlife, wildlifeNavigate, wildlifePhotoUrl } from '../../../../platform/wildlife'
 import { KdyButton } from '../../../components'
+import { useThemeMode } from '../../../theme/useThemeMode'
 import { CategoryFilter, ErrorNotice, categoryLabel } from '../components'
 import '../wildlife.scss'
 
 export default function ArchivePage() {
+  const { mode } = useThemeMode()
   const [category, setCategory] = useState(''), [search, setSearch] = useState(''), [items, setItems] = useState<WildlifeAnimal[]>([])
   const [cursor, setCursor] = useState<string | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState(''), seq = useRef(0)
   async function load(next?: string) {
@@ -19,7 +21,7 @@ export default function ArchivePage() {
   useEffect(() => { const timer = setTimeout(() => { void load() }, 300); return () => { clearTimeout(timer); seq.current++ } }, [category, search])
   useDidShow(() => { void load() })
   useReachBottom(() => { if (cursor && !busy) void load(cursor) })
-  return <View className='wa-page'><View className='wa-header'><Text className='wa-eyebrow'>MEET OUR WILD NEIGHBOURS</Text><Text className='wa-heading'>居民档案馆</Text><Text className='wa-muted'>每一位居民，都有同学们一起记下的故事。</Text></View>
+  return <View className={`wa-page kdy-theme--${mode}`}><View className='wa-header'><Text className='wa-eyebrow'>MEET OUR WILD NEIGHBOURS</Text><Text className='wa-heading'>居民档案馆</Text><Text className='wa-muted'>每一位居民，都有同学们一起记下的故事。</Text></View>
     <Input className='wa-input' value={search} maxlength={120} onInput={e => setSearch(e.detail.value)} placeholder='搜索昵称、外貌或常见区域' /><CategoryFilter value={category} onChange={setCategory} />
     <KdyButton onClick={() => { void wildlifeNavigate('identity', { category: category || 'cat' }) }}>＋ 建立居民身份卡</KdyButton><ErrorNotice message={error} />
     {busy && <Text className='wa-muted'>正在寻找校园居民…</Text>}

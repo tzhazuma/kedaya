@@ -21,6 +21,41 @@ $kdy-color-warning: #E8833A;
 $kdy-color-danger: #D64545;
 $kdy-color-info: #3B82F6;
 
+// colorCampus
+$kdy-color-campus-white: #FFFFFF;
+$kdy-color-campus-ink: #111C2D;
+$kdy-color-campus-muted: #6B7A90;
+$kdy-color-campus-yellow: #FFDC45;
+$kdy-color-campus-yellow-soft: #FFF4BF;
+$kdy-color-campus-pink: #FDE8EF;
+$kdy-color-campus-mint: #F3FCD8;
+$kdy-color-campus-border: #E5E8ED;
+$kdy-color-campus-milk: #F1F3F6;
+$kdy-color-campus-bubble-shade: #CDD4DF;
+
+// colorNight
+$kdy-color-night-bg: #232427;
+$kdy-color-night-bg-deep: #17181A;
+$kdy-color-night-surface: #2C2D31;
+$kdy-color-night-surface-raised: #35363B;
+$kdy-color-night-glass: rgba(255,255,255,0.08);
+$kdy-color-night-glass-strong: rgba(255,255,255,0.16);
+$kdy-color-night-glass-border: rgba(255,255,255,0.18);
+$kdy-color-night-text: #F5F5F7;
+$kdy-color-night-text-muted: #A5A7AE;
+$kdy-color-night-text-faint: #7B7D85;
+$kdy-color-night-on-accent: #1B1B1E;
+$kdy-color-night-accent-pink: #F2A9E4;
+$kdy-color-night-accent-pink-deep: #DE8CCF;
+$kdy-color-night-accent-pink-soft: #F9D4F1;
+$kdy-color-night-accent-lime: #F3EDA0;
+$kdy-color-night-accent-lime-deep: #DFD575;
+$kdy-color-night-accent-lime-soft: #FAF6C9;
+$kdy-color-night-success: #6FD8A8;
+$kdy-color-night-warning: #F2B36B;
+$kdy-color-night-danger: #F08A8A;
+$kdy-color-night-info: #93B7FF;
+
 // space
 $kdy-space-0: 0px;
 $kdy-space-1: 4px;
@@ -99,6 +134,18 @@ $kdy-tokens: (
     "warning": #E8833A,
     "danger": #D64545,
     "info": #3B82F6,
+  ),
+  "color-campus": (
+    "white": #FFFFFF,
+    "ink": #111C2D,
+    "muted": #6B7A90,
+    "yellow": #FFDC45,
+    "yellow-soft": #FFF4BF,
+    "pink": #FDE8EF,
+    "mint": #F3FCD8,
+    "border": #E5E8ED,
+    "milk": #F1F3F6,
+    "bubble-shade": #CDD4DF,
   ),
   "space": (
     "0": 0px,

@@ -7,6 +7,7 @@ import { requestId } from '../../../../domain/models/wildlife'
 import { getContainer } from '../../../../app/container'
 import { getWildlife, wildlifeLocation, wildlifeNavigate } from '../../../../platform/wildlife'
 import { KdyButton } from '../../../components'
+import { useThemeMode } from '../../../theme/useThemeMode'
 import { CategoryFilter, ErrorNotice, PhotoPicker, WildlifeLogin } from '../components'
 import { useStore } from '../../../hooks'
 import { isOnCampus } from '@kedaya/contracts/campus-map'
@@ -15,6 +16,7 @@ import '../wildlife.scss'
 
 function localDate(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` }
 export default function EncounterPage() {
+  const { mode } = useThemeMode()
   const params = useRouter().params, id = params.id
   const [category, setCategory] = useState('cat'), [description, setDescription] = useState(''), [place, setPlace] = useState('')
   const [latitude, setLatitude] = useState(String(WILDLIFE_CAMPUS.latitude)), [longitude, setLongitude] = useState(String(WILDLIFE_CAMPUS.longitude))
@@ -65,7 +67,7 @@ export default function EncounterPage() {
       await Taro.showToast({ title: id ? '偶遇已更新' : '偶遇已发布', icon: 'success' }); await Taro.navigateBack()
     } catch (e) { setError(e instanceof Error ? e.message : '发布失败，请重试') } finally { lock.current = false; setBusy(false) }
   }
-  return <View className='wa-page wa-form'><Text className='wa-eyebrow'>LEAVE A LITTLE CAMPUS STORY</Text><Text className='wa-heading'>{id ? '编辑这次偶遇' : '记录一次偶遇'}</Text><WildlifeLogin />
+  return <View className={`wa-page wa-form kdy-theme--${mode}`}><Text className='wa-eyebrow'>LEAVE A LITTLE CAMPUS STORY</Text><Text className='wa-heading'>{id ? '编辑这次偶遇' : '记录一次偶遇'}</Text><WildlifeLogin />
     {loading && <Text>正在读取原始记录…</Text>}<Text className='wa-label'>你遇见了谁？</Text><CategoryFilter all={false} value={category} onChange={v => { setCategory(v); setAnimalId('') }} />
     <Text className='wa-label'>发现位置 · 点击校园地图或搜索地标选点</Text><View className='wa-actions'><KdyButton variant='ghost' onClick={() => { void locate() }}>使用当前定位</KdyButton></View>
     <CampusView picked={chosen ? { latitude: Number(latitude), longitude: Number(longitude) } : null} onPick={(p, name) => setPoint(p.latitude, p.longitude, name)} />

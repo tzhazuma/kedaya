@@ -1,7 +1,7 @@
 /**
  * 可复用组件（契约 §7 `presentation/components`）。
  *
- * 四个基础组件全部只从设计令牌取值，且都不含业务逻辑 —— 业务组件放各自页面目录下。
+ * 基础组件只从设计令牌取值，且不包含业务逻辑 —— 业务组件放各自页面目录下。
  */
 export { KdyButton } from './KdyButton'
 export type {
@@ -13,6 +13,11 @@ export type {
 
 export { KdyCard } from './KdyCard'
 export type { KdyCardProps } from './KdyCard'
+
+export { KdyDock } from './KdyDock'
+export type { KdyDockProps } from './KdyDock'
+
+export { KdyFeatureArtwork } from './KdyFeatureArtwork'
 
 export { KdyEmpty } from './KdyEmpty'
 export type { KdyEmptyMode, KdyEmptyProps } from './KdyEmpty'
