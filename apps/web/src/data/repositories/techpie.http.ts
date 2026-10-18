@@ -62,7 +62,10 @@ const CAMPUS_CARD = `/${modulePath('campus-card')}`;
 const LINKS_PATH = `${TECHPIE}/links`;
 const CAPABILITIES_PATH = `${TECHPIE}/capabilities`;
 const WEBVIEW_PATH = `${TECHPIE}/webview-session`;
-const CARD_PATH = CAMPUS_CARD;
+// ⚠️ 服务端没有 `GET /campus-card` 这个端点。
+// 契约里校园卡是 `GET /campus-card/account`（返回 `{activated, balanceFen, updatedAt?}`）。
+// 此前这里打 `/campus-card` 本身，真实后端下必然 404。
+const CARD_PATH = `${CAMPUS_CARD}/account`;
 const TRANSACTIONS_PATH = `${CAMPUS_CARD}/transactions`;
 const PAYMENT_CODE_PATH = `${CAMPUS_CARD}/payment-code`;
 
@@ -240,11 +243,10 @@ export function createCampusCardHttpRepository(client: ApiClient): CampusCardRep
     },
 
     async issuePaymentCode(): Promise<Result<PaymentCode, ApiError>> {
-      const result = await client.post<unknown>(
-        PAYMENT_CODE_PATH,
-        {},
-        { idempotencyKey: createTraceId() },
-      );
+      // ⚠️ 服务端是 **GET** `/campus-card/payment-code`，不是 POST。
+      // 它是"取一个新码"，无副作用地生成短时效凭证（响应带 Cache-Control: no-store），
+      // 所以不需要 idempotency-key；此前用 POST 会 405。
+      const result = await client.get<unknown>(PAYMENT_CODE_PATH);
       if (!result.ok) return err(toApiError(result.error));
 
       const parsed = safeParsePaymentCode(result.value);
@@ -253,9 +255,17 @@ export function createCampusCardHttpRepository(client: ApiClient): CampusCardRep
     },
 
     async revokePaymentCode(): Promise<Result<{ revoked: true }, ApiError>> {
-      const result = await client.del<unknown>(`${PAYMENT_CODE_PATH}/current`);
-      if (!result.ok) return err(toApiError(result.error));
-      return ok({ revoked: true });
+      // ⚠️ 服务端**没有** `DELETE /campus-card/payment-code/current`。
+      // 付款码是短时效凭证（服务端返回 expiresAt），**到点自然失效**，无需撤销；
+      // 契约里也没有撤销端点。此前这里打一个不存在的路径（404），
+      // 比返回错误更糟：调用方会以为"撤销失败"而重试。
+      //
+      // 诚实做法：明确告诉上层"这个能力不存在"，而不是假装调用成功。
+      return err(
+        contractMismatch('付款码撤销', [
+          '服务端无撤销端点：付款码为短时效凭证，到期自动失效',
+        ]),
+      );
     },
   };
 }

@@ -64,7 +64,9 @@ function createFakeClient(handler: (call: RecordedCall) => Result<unknown, ApiEr
 const LINKS_PATH = `/${modulePath('techpie', 'links')}`;
 const CAPABILITIES_PATH = `/${modulePath('techpie', 'capabilities')}`;
 const WEBVIEW_PATH = `/${modulePath('techpie', 'webview-session')}`;
-const CARD_PATH = `/${modulePath('campus-card')}`;
+const CARD_BASE = `/${modulePath('campus-card')}`;
+// ⚠️ 服务端没有 `GET /campus-card` 本身；账户是 `/campus-card/account`。
+const CARD_PATH = `${CARD_BASE}/account`;
 
 const SUMMARY = {
   id: 'lk-1',
@@ -221,10 +223,11 @@ describe('techpie HTTP 路由（规格 §8.1 / 契约 §11.2）', () => {
           syncedAt: '2026-10-17T02:00:00.000Z',
         });
       }
-      if (call.path === `${CARD_PATH}/transactions`) {
+      if (call.path === `${CARD_BASE}/transactions`) {
         return ok({ items: [], nextCursor: null });
       }
-      if (call.path === `${CARD_PATH}/payment-code` && call.method === 'POST') {
+      // 付款码是 GET（服务端 `GET /campus-card/payment-code`），不是 POST
+      if (call.path === `${CARD_BASE}/payment-code` && call.method === 'GET') {
         return ok({
           payload: 'KEDAYA-ECARD-000001',
           issuedAt: '2026-10-17T02:00:00.000Z',
@@ -239,13 +242,18 @@ describe('techpie HTTP 路由（规格 §8.1 / 契约 §11.2）', () => {
     expect((await repo.getCard()).ok).toBe(true);
     expect((await repo.listTransactions({ limit: 5 })).ok).toBe(true);
     expect((await repo.issuePaymentCode()).ok).toBe(true);
-    expect((await repo.revokePaymentCode()).ok).toBe(true);
 
+    // 服务端**没有**付款码撤销端点：付款码是短时效凭证，到期自动失效。
+    // 所以这里必须是 err，且**一次网络调用都不该发生**。
+    const revoked = await repo.revokePaymentCode();
+    expect(revoked.ok).toBe(false);
+
+    // 真实路由（契约 §11.21-B）：账户读 /account，流水 /transactions，
+    // 付款码是 **GET** /payment-code（不是 POST）。
     expect(calls.map((call) => `${call.method} ${call.path}`)).toEqual([
       `GET ${CARD_PATH}`,
-      `GET ${CARD_PATH}/transactions`,
-      `POST ${CARD_PATH}/payment-code`,
-      `DELETE ${CARD_PATH}/payment-code/current`,
+      `GET ${CARD_BASE}/transactions`,
+      `GET ${CARD_BASE}/payment-code`,
     ]);
   });
 });

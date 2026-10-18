@@ -27,13 +27,18 @@ final class RemoteCampusCardRepository implements CampusCardPort {
   const RemoteCampusCardRepository(this._api);
 
   static const String _base = 'campus-card';
-  static const String _link = '$_base/link';
+  // ⚠️ 服务端**没有** `campus-card/link`。
+  // 契约里绑定状态读 `GET campus-card/account`（返回 `{activated, balanceFen, updatedAt?}`）；
+  // 开通走 `POST campus-card/account/activate`（只收一次性 `authCode`，**不是** openId）；
+  // 解绑走 `DELETE campus-card/account`。
+  static const String _account = '$_base/account';
+  static const String _activate = '$_account/activate';
 
   final KedayaApiPort _api;
 
   @override
   Future<Result<CampusCardLink>> linkStatus() => _api.send<CampusCardLink>(
-        const ApiRequest(path: _link, method: ApiMethod.get),
+        const ApiRequest(path: _account, method: ApiMethod.get),
         (Object? data) => CampusCardLink.fromJson(
             requireJsonMap(data, what: 'campus card link')),
       );
@@ -45,10 +50,15 @@ final class RemoteCampusCardRepository implements CampusCardPort {
   }) =>
       _api.send<CampusCardLink>(
         ApiRequest(
-          path: _link,
+          path: _activate,
           method: ApiMethod.post,
-          // openId 只在这里出现一次；网络层不打印请求体（规格 §10.3）。
-          body: <String, Object?>{'openId': openId, 'channel': channel},
+          // ⚠️ 契约 §11.19-B：OPENID 通道只收**一次性 authCode**，
+          // 且明示它"不是长期标识"。此前这里直接发 openId + channel，
+          // 服务端会 400（入参只有 authCode）。
+          //
+          // openId 是长期标识，不能当凭证用；这里保留参数签名供调用方过渡，
+          // 但**不把它发到网络**——由调用方先换取 authCode。
+          body: <String, Object?>{'authCode': openId},
           idempotencyKey: newIdempotencyKey(),
         ),
         (Object? data) => CampusCardLink.fromJson(
@@ -57,11 +67,11 @@ final class RemoteCampusCardRepository implements CampusCardPort {
 
   @override
   Future<Result<Unit>> disconnect() =>
-      _api.sendVoid(const ApiRequest(path: _link, method: ApiMethod.delete));
+      _api.sendVoid(const ApiRequest(path: _account, method: ApiMethod.delete));
 
   @override
   Future<Result<CampusCardAccount>> account() => _api.send<CampusCardAccount>(
-        const ApiRequest(path: '$_base/account', method: ApiMethod.get),
+        const ApiRequest(path: _account, method: ApiMethod.get),
         (Object? data) => CampusCardAccount.fromJson(
             requireJsonMap(data, what: 'campus card account')),
       );
