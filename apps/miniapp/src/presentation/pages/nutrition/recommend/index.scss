@@ -7,7 +7,7 @@
 .kdy-nu-recommend__all-met,
 .kdy-nu-recommend__hint {
   display: block;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
   line-height: 1.6;
 }
@@ -20,8 +20,8 @@
 
 .kdy-nu-recommend__item {
   padding: $kdy-space-3;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
+  background-color: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-nu-recommend__item-head {
@@ -32,21 +32,21 @@
 }
 
 .kdy-nu-recommend__item-name {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 600;
 }
 
 .kdy-nu-recommend__item-kcal {
   margin-left: auto;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-nu-recommend__item-reason {
   display: block;
   margin-bottom: $kdy-space-2;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
@@ -66,7 +66,7 @@
 }
 
 .kdy-nu-recommend__fill-label {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: 10px;
 }
 
@@ -86,7 +86,7 @@
 .kdy-nu-recommend__item-source {
   display: block;
   margin-bottom: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: 10px;
   line-height: 1.5;
 }

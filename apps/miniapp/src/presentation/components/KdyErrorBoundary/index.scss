@@ -12,7 +12,7 @@
   box-sizing: border-box;
   min-height: 70vh;
   padding: $kdy-space-12 $kdy-space-6;
-  background: $kdy-color-bg;
+  background: $kdy-color-campus-white;
   text-align: center;
 }
 
@@ -22,14 +22,14 @@
 
 .kdy-error-boundary__title {
   display: block;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-lg;
   font-weight: $kdy-font-weight-semibold;
 }
 
 .kdy-error-boundary__desc {
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
   line-height: 1.7;
 }

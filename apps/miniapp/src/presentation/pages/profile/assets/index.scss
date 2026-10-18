@@ -1,7 +1,7 @@
 .kdy-assets__hint {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -41,13 +41,13 @@
   min-width: 0;
   font-size: $kdy-font-size-md;
   font-weight: $kdy-font-weight-medium;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
 }
 
 .kdy-assets__card-meta {
   display: block;
   font-size: $kdy-font-size-sm;
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-ink;
 }
 
 /* 「已拼 6 / 10 份」+ 「还差 4 份」—— 进度是这一页的主角 */
@@ -61,13 +61,13 @@
 .kdy-assets__card-progress {
   font-size: $kdy-font-size-sm;
   font-weight: 600;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
 }
 
 .kdy-assets__card-short {
   font-size: $kdy-font-size-sm;
   font-weight: 700;
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-campus-ink;
 }
 
 .kdy-assets__card-short.is-full {
@@ -91,25 +91,25 @@
 
 .kdy-assets__card-deadline {
   font-size: $kdy-font-size-xs;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
 }
 
 .kdy-assets__card-deadline.is-urgent {
   padding: 2px $kdy-space-2;
   border-radius: $kdy-radius-pill;
-  background: $kdy-color-brand-soft;
-  color: $kdy-color-brand-strong;
+  background: $kdy-tone-yellow;
+  color: $kdy-color-campus-ink;
   font-weight: $kdy-font-weight-medium;
 }
 
 .kdy-assets__card-deadline.is-passed {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   text-decoration: line-through;
 }
 
 .kdy-assets__card-place {
   font-size: $kdy-font-size-xs;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
 }
 
 .kdy-assets__nav {
@@ -118,7 +118,7 @@
   justify-content: space-between;
   gap: $kdy-space-3;
   padding: $kdy-space-3 0;
-  border-bottom: 1px solid $kdy-color-border;
+  border-bottom: 1px solid $kdy-tone-border;
 }
 
 .kdy-assets__nav-body {
@@ -129,17 +129,17 @@
 .kdy-assets__nav-title {
   display: block;
   font-size: $kdy-font-size-md;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
 }
 
 .kdy-assets__nav-detail {
   display: block;
   margin-top: $kdy-space-1;
   font-size: $kdy-font-size-xs;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
 }
 
 .kdy-assets__nav-arrow {
   font-size: $kdy-font-size-lg;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
 }

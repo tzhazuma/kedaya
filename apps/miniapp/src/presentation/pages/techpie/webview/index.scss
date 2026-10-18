@@ -6,14 +6,14 @@
 
 .kdy-techpie-webview__summary {
   display: block;
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-techpie-webview__url {
   display: block;
   margin-top: $kdy-space-1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   word-break: break-all;
 }
@@ -22,9 +22,9 @@
   display: block;
   margin-top: $kdy-space-2;
   padding: $kdy-space-2;
-  background-color: $kdy-color-brand-soft;
-  border-radius: $kdy-radius-sm;
-  color: $kdy-color-ink-soft;
+  background-color: $kdy-tone-yellow;
+  border-radius: $kdy-radius-2xl;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
@@ -32,7 +32,7 @@
 .kdy-techpie-webview__step {
   display: block;
   padding: $kdy-space-1 0;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -47,7 +47,7 @@
 .kdy-techpie-webview__all {
   display: block;
   padding: $kdy-space-4 $kdy-space-4 $kdy-space-2;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: $kdy-font-weight-medium;
 }

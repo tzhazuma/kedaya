@@ -19,7 +19,7 @@
 .kdy-canteen__inline-error {
   display: block;
   margin: $kdy-space-2 0;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -56,7 +56,7 @@
   &__name {
     flex: 1;
     overflow: hidden;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-md;
     font-weight: $kdy-font-weight-semibold;
     text-overflow: ellipsis;
@@ -71,12 +71,12 @@
   }
 
   &__canteen {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
   &__price {
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     font-weight: $kdy-font-weight-medium;
   }
@@ -90,14 +90,14 @@
   }
 
   &__calories-value {
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xl;
     font-weight: $kdy-font-weight-bold;
     line-height: $kdy-line-height-tight;
   }
 
   &__calories-unit {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
@@ -118,7 +118,7 @@
   &__macro-key {
     flex: none;
     width: 28px;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
@@ -130,7 +130,7 @@
   &__macro-value {
     flex: none;
     width: 44px;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     text-align: right;
   }
@@ -138,7 +138,7 @@
   &__foot {
     display: block;
     margin-top: $kdy-space-2;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 }

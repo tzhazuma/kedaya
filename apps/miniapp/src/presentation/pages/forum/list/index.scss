@@ -5,37 +5,38 @@
   padding: $kdy-space-3 $kdy-space-5 $kdy-space-1;
 }
 
+/* 板块卡：白底 + 校园描边；选中是一整块淡黄贴纸 + 墨字 */
 .kdy-forum-list__board {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
   padding: $kdy-space-1 $kdy-space-3;
-  border: 1px solid $kdy-color-border;
-  border-radius: $kdy-radius-md;
-  background: $kdy-color-surface;
+  border: 1px solid $kdy-tone-border;
+  border-radius: $kdy-radius-2xl;
+  background: $kdy-color-campus-white;
 }
 
 .kdy-forum-list__board.is-active {
-  border-color: $kdy-color-brand;
-  background: $kdy-color-brand-soft;
+  border-color: $kdy-tone-border;
+  background: $kdy-tone-yellow;
 }
 
 .kdy-forum-list__board-name {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: $kdy-font-weight-medium;
 }
 
 .kdy-forum-list__board-count {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-forum-list__board-hint {
   display: block;
   padding: $kdy-space-1 $kdy-space-5 0;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -54,7 +55,7 @@
 .kdy-forum-list__more {
   display: block;
   padding: $kdy-space-3;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   text-align: center;
 }
@@ -69,7 +70,7 @@
 .kdy-forum-list__notice {
   display: block;
   padding: $kdy-space-3 $kdy-space-4 0;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
@@ -88,14 +89,14 @@
 
 .kdy-forum-card__title {
   flex: 1;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-md;
   font-weight: 500;
   line-height: 1.4;
 }
 
 .kdy-forum-card__excerpt {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
   line-height: 1.5;
   /* 摘要固定两行 —— 列表要能扫，不是把正文搬过来 */
@@ -122,7 +123,7 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -137,11 +138,11 @@
 }
 
 .kdy-forum-card__stat {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-forum-card__meta {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }

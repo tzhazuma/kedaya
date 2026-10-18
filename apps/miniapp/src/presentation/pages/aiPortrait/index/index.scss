@@ -13,7 +13,7 @@
   &__positioning {
     display: block;
     margin: $kdy-space-2 0 $kdy-space-3;
-    color: $kdy-color-ink-soft;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     line-height: $kdy-line-height-loose;
   }
@@ -21,7 +21,7 @@
   &__p,
   &__li {
     display: block;
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     line-height: $kdy-line-height-loose;
   }
@@ -32,13 +32,13 @@
 
   &__li {
     padding: $kdy-space-1 0;
-    color: $kdy-color-ink-soft;
+    color: $kdy-color-campus-ink;
   }
 
   &__muted {
     display: block;
     margin-top: $kdy-space-2;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-normal;
   }
@@ -56,10 +56,10 @@
     display: block;
     margin-top: $kdy-space-2;
     padding: $kdy-space-3;
-    background: $kdy-color-surface-alt;
+    background: $kdy-tone-milk;
     border-left: 3px solid $kdy-color-danger;
-    border-radius: $kdy-radius-md;
-    color: $kdy-color-ink;
+    border-radius: $kdy-radius-2xl;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-loose;
   }
@@ -80,13 +80,13 @@
 
   &__trait {
     padding: $kdy-space-3;
-    background: $kdy-color-surface-alt;
-    border-radius: $kdy-radius-lg;
+    background: $kdy-tone-milk;
+    border-radius: $kdy-radius-2xl;
   }
 
   &__trait-label {
     display: block;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-md;
     font-weight: $kdy-font-weight-semibold;
     line-height: $kdy-line-height-normal;
@@ -95,7 +95,7 @@
   &__trait-detail {
     display: block;
     margin-top: $kdy-space-1;
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-loose;
     word-break: break-all;
@@ -122,13 +122,13 @@
     padding: $kdy-space-2 0;
 
     & + & {
-      border-top: 1px solid $kdy-color-border;
+      border-top: 1px solid $kdy-tone-border;
     }
   }
 
   &__excluded-name {
     display: block;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     font-weight: $kdy-font-weight-medium;
   }
@@ -136,7 +136,7 @@
   &__excluded-reason {
     display: block;
     margin-top: $kdy-space-1;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-loose;
   }

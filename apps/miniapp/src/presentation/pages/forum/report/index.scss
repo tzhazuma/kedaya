@@ -1,7 +1,7 @@
 .kdy-forum-report__target {
   display: block;
   padding-bottom: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   word-break: break-all;
 }
@@ -20,14 +20,14 @@
 .kdy-forum-report__selected {
   display: block;
   padding-top: $kdy-space-2;
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-forum-report__privacy {
   display: block;
   padding-top: $kdy-space-1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }

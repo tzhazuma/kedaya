@@ -7,7 +7,7 @@
 }
 
 .kdy-forum-detail__time {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -20,7 +20,7 @@
 
 .kdy-forum-detail__body {
   display: block;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: 1.7;
   white-space: pre-wrap;
@@ -29,13 +29,13 @@
 .kdy-forum-detail__stats {
   display: block;
   margin-top: $kdy-space-3;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   word-break: break-all;
 }
 
 .kdy-forum-detail__thread {
-  border-bottom: 1px solid $kdy-color-border;
+  border-bottom: 1px solid $kdy-tone-border;
   padding: $kdy-space-2 0;
 }
 
@@ -49,11 +49,12 @@
   gap: $kdy-space-1;
 }
 
+/* 子回复：左侧一条淡黄"引线"，把层级画出来 */
 .kdy-forum-detail__reply--child {
   margin-top: $kdy-space-2;
   margin-left: $kdy-space-4;
   padding-left: $kdy-space-3;
-  border-left: 2px solid $kdy-color-brand-soft;
+  border-left: 2px solid $kdy-tone-yellow;
 }
 
 .kdy-forum-detail__reply-head {
@@ -63,18 +64,18 @@
 }
 
 .kdy-forum-detail__reply-author {
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   font-weight: 500;
 }
 
 .kdy-forum-detail__reply-time {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-forum-detail__reply-body {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: 1.6;
 }
@@ -84,9 +85,11 @@
   gap: $kdy-space-3;
 }
 
+/* 行内动作不是"彩色小字"：墨色 + 字重 */
 .kdy-forum-detail__link {
-  color: $kdy-color-info;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
+  font-weight: 600;
 }
 
 .kdy-forum-detail__empty,
@@ -96,7 +99,7 @@
 .kdy-forum-detail__notice {
   display: block;
   padding: $kdy-space-2 0;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
@@ -113,14 +116,14 @@
 }
 
 .kdy-forum-detail__quoting-text {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-forum-detail__textarea {
   width: 100%;
   height: 160px;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 

@@ -24,15 +24,16 @@
   display: flex;
   flex-direction: column;
   margin-bottom: $kdy-space-2;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-xl;
-  background-color: rgba($kdy-color-surface, 0.98);
+  background-color: rgba($kdy-color-campus-white, 0.98);
   box-shadow: $kdy-shadow-card;
   overflow: hidden;
 }
 
 .kdy-campus__result {
   padding: $kdy-space-3 $kdy-space-4;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: $kdy-line-height-normal;
 }
@@ -41,7 +42,7 @@
 .kdy-campus__scroll {
   width: 100%;
   border-radius: $kdy-radius-xl;
-  background-color: $kdy-color-surface-alt;
+  background-color: $kdy-tone-milk;
   overflow: hidden;
 }
 
@@ -61,7 +62,7 @@
 .kdy-campus__circle {
   position: absolute;
   box-sizing: border-box;
-  border: 2px solid $kdy-color-border;
+  border: 2px solid $kdy-tone-border;
   border-radius: 50%;
   pointer-events: none;
 }
@@ -75,7 +76,7 @@
   transform: translate(-50%, -100%);
   padding: 1px 6px;
   border-radius: $kdy-radius-sm;
-  background-color: rgba(255, 255, 255, 0.88);
+  background-color: rgba($kdy-color-campus-white, 0.88);
   font-size: $kdy-font-size-xs;
   font-weight: 600;
   line-height: 1.4;
@@ -109,10 +110,10 @@
   transform: translate(-50%, -50%);
   max-width: 220px;
   padding: 1px $kdy-space-1;
-  border: 1px solid $kdy-border-hairline;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-md;
-  background-color: $kdy-surface-glass-strong;
-  color: $kdy-color-text;
+  background-color: $kdy-color-campus-white;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
   white-space: nowrap;
@@ -120,8 +121,8 @@
 }
 
 .kdy-campus__label--landmark {
-  background-color: $kdy-color-ink;
-  border-color: $kdy-color-ink;
+  background-color: $kdy-color-campus-ink;
+  border-color: $kdy-color-campus-ink;
   color: $kdy-color-text-inverse;
   font-weight: $kdy-font-weight-semibold;
 }
@@ -145,7 +146,7 @@
 
 .kdy-campus__marker--focused {
   border: 2px solid $kdy-color-brand-strong;
-  background-color: rgba($kdy-color-surface, 0.72);
+  background-color: rgba($kdy-color-campus-white, 0.72);
 }
 
 .kdy-campus__marker-icon {
@@ -160,11 +161,11 @@
   bottom: 46px;
   transform: translateX(-50%);
   padding: 2px $kdy-space-2;
-  border: 1px solid $kdy-border-hairline;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-md;
-  background-color: $kdy-surface-glass-strong;
+  background-color: $kdy-color-campus-white;
   box-shadow: $kdy-shadow-card;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
   white-space: nowrap;
@@ -176,7 +177,7 @@
   width: 14px;
   height: 14px;
   margin: -7px 0 0 -7px;
-  border: 3px solid $kdy-color-surface;
+  border: 3px solid $kdy-color-campus-white;
   border-radius: 50%;
   background-color: $kdy-color-info;
   box-shadow: 0 0 0 4px rgba($kdy-color-info, 0.25);
@@ -189,7 +190,7 @@
   width: 18px;
   height: 18px;
   margin: -9px 0 0 -9px;
-  border: 3px solid $kdy-color-surface;
+  border: 3px solid $kdy-color-campus-white;
   border-radius: 50%;
   background-color: $kdy-color-brand;
   box-shadow: 0 0 0 5px rgba($kdy-color-brand, 0.3);
@@ -199,7 +200,7 @@
 .kdy-campus__caption {
   display: block;
   padding-top: $kdy-space-1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }

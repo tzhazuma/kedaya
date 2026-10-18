@@ -10,12 +10,12 @@
   &__notice {
     margin: $kdy-space-3 $kdy-space-5 0;
     padding: $kdy-space-3;
-    border-radius: $kdy-radius-lg;
-    background: $kdy-color-brand-soft;
+    border-radius: $kdy-radius-2xl;
+    background: $kdy-tone-yellow;
   }
 
   &__notice-text {
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-loose;
   }
@@ -23,7 +23,7 @@
   &__p {
     display: block;
     margin-bottom: $kdy-space-2;
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     line-height: $kdy-line-height-loose;
   }
@@ -31,7 +31,7 @@
   &__muted {
     display: block;
     margin-top: $kdy-space-1;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-normal;
   }
@@ -54,7 +54,7 @@
     flex-direction: row;
     align-items: flex-start;
     padding: $kdy-space-2 0;
-    border-bottom: 1px solid $kdy-color-border;
+    border-bottom: 1px solid $kdy-tone-border;
 
     &:last-child {
       border-bottom: none;
@@ -63,13 +63,13 @@
 
   &__fact-k {
     flex: 0 0 80px;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-sm;
   }
 
   &__fact-v {
     flex: 1;
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     font-weight: 500;
     word-break: break-all;
@@ -77,7 +77,7 @@
 
   &__platform {
     padding: $kdy-space-3 0;
-    border-bottom: 1px solid $kdy-color-border;
+    border-bottom: 1px solid $kdy-tone-border;
 
     &:last-child {
       border-bottom: none;
@@ -92,7 +92,7 @@
   }
 
   &__platform-name {
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-md;
     font-weight: 600;
   }
@@ -100,7 +100,7 @@
   &__platform-purpose {
     display: block;
     margin-top: $kdy-space-1;
-    color: $kdy-color-ink-soft;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     line-height: $kdy-line-height-normal;
   }

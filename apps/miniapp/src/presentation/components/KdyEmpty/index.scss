@@ -8,6 +8,10 @@
   text-align: center;
 }
 
+/*
+ * 空态字形底：一块淡黄「贴纸」+ 1px 校园描边 + 墨色字形。
+ * 贴纸簿里没有渐变光晕那块黄雾 —— 淡色功能面只有四档，字形一律墨色。
+ */
 .kdy-empty__glyph {
   display: flex;
   align-items: center;
@@ -15,24 +19,24 @@
   width: 76px;
   height: 76px;
   margin: 0 auto $kdy-space-3;
-  border: 1px solid rgba($kdy-color-brand, 0.26);
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-3xl;
-  background: linear-gradient(150deg, rgba($kdy-color-brand, 0.24) 0%, rgba($kdy-color-brand, 0.06) 100%);
-  color: $kdy-color-ink;
+  background: $kdy-tone-yellow;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-display;
   line-height: 1;
 }
 
 .kdy-empty__title {
   display: block;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-md;
   font-weight: 700;
 }
 
 .kdy-empty__description {
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }

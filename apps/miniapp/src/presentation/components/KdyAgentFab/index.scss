@@ -2,8 +2,8 @@
  * 可达鸭悬浮入口样式。
  *
  * 定位要点（三个真机上会踩的坑）：
- *   1. tabBar 高度是 50px + 安全区，所以默认位置要抬到它上面，
- *      否则球会被压住一半、点不到；
+ *   1. 底部有**手绘 dock**（`KdyDock`，高 83px + 距底 12px + 安全区），
+ *      所以默认位置要抬到它**上面**，否则球会被 dock 压住一半、点不到；
  *   2. 用 `fixed` + 高 `z-index` 时不要用 `transform` 做动画 —— 小程序里
  *      fixed 与 transform 组合在部分机型上会导致点击热区偏移；
  *   3. `--raised` 变体给详情页的底部操作栏让位。
@@ -12,14 +12,14 @@
 .kdy-agent-fab {
   position: fixed;
   right: $kdy-space-4;
-  bottom: calc(56px + #{$kdy-space-4} + env(safe-area-inset-bottom));
+  bottom: calc(112px + env(safe-area-inset-bottom));
   z-index: $kdy-z-index-overlay;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
 
   &--raised {
-    bottom: calc(56px + 64px + #{$kdy-space-4} + env(safe-area-inset-bottom));
+    bottom: calc(112px + 64px + env(safe-area-inset-bottom));
   }
 
   &__ball {
@@ -27,7 +27,7 @@
     flex-direction: row;
     align-items: center;
     padding: $kdy-space-2 $kdy-space-4 $kdy-space-2 $kdy-space-3;
-    border: 1px solid rgba($kdy-color-surface, 0.6);
+    border: 1px solid rgba($kdy-color-campus-white, 0.6);
     border-radius: $kdy-radius-pill;
     background: $kdy-gradient-brand;
     /* 光晕来自品牌色本身：黄色浮在暖白背景上时，只用灰影会显得"脏" */
@@ -43,7 +43,7 @@
   }
 
   &__label {
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     font-weight: 700;
     line-height: 1;

@@ -5,23 +5,24 @@
   margin-bottom: $kdy-space-3;
 }
 
+/* 赏金块：一整块淡黄贴纸 + 墨色字 */
 .kdy-errand-detail__reward-box {
   display: flex;
   flex-direction: column;
   gap: $kdy-space-1;
   min-width: 180px;
   padding: $kdy-space-3 $kdy-space-4;
-  background: $kdy-color-brand-soft;
-  border-radius: $kdy-radius-lg;
+  background: $kdy-tone-yellow;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-errand-detail__reward-label {
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-errand-detail__reward {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xxl;
   font-weight: $kdy-font-weight-bold;
 }
@@ -39,14 +40,14 @@
 
 .kdy-errand-detail__k {
   width: 140px;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-errand-detail__v {
   flex: 1;
   min-width: 0;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: 1.7;
   word-break: break-all;
@@ -62,7 +63,7 @@
 .kdy-errand-detail__hint {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }

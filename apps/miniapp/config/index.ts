@@ -74,6 +74,15 @@ const baseConfig: UserConfigExport<'webpack5'> = {
      * 吉祥物（可达鸭贴图）走同一条路：`theme/mascot.ts` 以
      * `/assets/mascot/duck.png` 引用，避免被 webpack 内联成 base64 塞进主包 JS。
      *
+     * 贴纸簿素材（`src/assets/campus`，共约 200 KB）同理：`KdyDock` /
+     * `CampusChrome` / `KdyFeatureArtwork` / 首页的校园地图卡都以
+     * `/assets/campus/*` 的**字符串路径**引用（`<Image src>` 与 `<map>` 一样
+     * 只认「包内路径 / 临时路径 / 网络图」，webpack 的 `import` 内联对它们无效），
+     * 所以必须原样拷进主包目录。它们给**每个 tab 页**的手绘 dock 用，必须在主包。
+     * ⚠️ 这类资源漏拷时**构建、单测、`verify:weapp` 全都不报错**，
+     * 只有真机 / 开发者工具里图片是空白的 —— 所以
+     * `scripts/verify-weapp-build.cjs` 里有对 `dist/assets/campus/` 的显式断言。
+     *
      * ⚠️ **校园底图（`campus.jpg`，约 1 MB）刻意放在 wildlife 分包目录里**：
      * 微信**主包上限 2 MiB**，主包当前已用到 1.4 MiB，一份 1 MB 的底图
      * 会把主包顶穿、直接传不上去；放进分包则由**分包**体积（上限 2 MiB）承担。
@@ -85,6 +94,7 @@ const baseConfig: UserConfigExport<'webpack5'> = {
     patterns: [
       { from: 'src/assets/wildlife', to: 'dist/assets/wildlife' },
       { from: 'src/assets/mascot', to: 'dist/assets/mascot' },
+      { from: 'src/assets/campus', to: 'dist/assets/campus' },
       {
         from: 'src/presentation/pages/wildlife/assets',
         to: 'dist/presentation/pages/wildlife/assets',

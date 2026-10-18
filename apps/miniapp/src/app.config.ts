@@ -88,6 +88,7 @@ const subPackages = [
 
 export default {
   pages: [
+    'presentation/pages/welcome/index',
     'presentation/pages/home/index',
     'presentation/pages/home/services/index',
     'presentation/pages/discover/index',
@@ -131,7 +132,7 @@ export default {
     navigationBarBackgroundColor: color.surface,
     navigationBarTitleText: '可达鸭',
     navigationBarTextStyle: 'black',
-    backgroundColor: color.bg,
+    backgroundColor: color.surface,
     enablePullDownRefresh: false,
   },
   /**
@@ -165,6 +166,19 @@ export default {
   },
   requiredPrivateInfos: ['getLocation', 'chooseLocation'],
   tabBar: {
+    /**
+     * 自定义 tabBar（贴纸簿的手绘胶囊导航）。
+     *
+     * `custom: true` 之后微信**不再画**原生 tabBar，改为渲染
+     * `src/custom-tab-bar/` 里的组件（`KdyDock`）。`list` 仍然必须完整声明：
+     * 它决定"哪些页面是 tab 页"（`wx.switchTab` 只认这些页面），
+     * 也是 `src/platform/tabBar.ts` 里消息红点的下标来源。
+     *
+     * ⚠️ dock 只画了五个格子（首页 / 地图 / ＋ / 发现 / 我的），
+     * 「消息」不在其中 —— 它是 tab 页，入口留在「我的」页里，
+     * `navigateTo(PAGE_PATHS.messages)` 仍然走 `switchTab`。
+     */
+    custom: true,
     color: color.textMuted,
     selectedColor: color.ink,
     backgroundColor: color.surface,

@@ -3,6 +3,9 @@
  *
  * 放在 `pages/auth/` 下由各页 `@import '../auth.scss'` 引入 ——
  * 页面样式仍然按页面分包，不污染全局。
+ *
+ * 视觉语言：**校园贴纸簿**。真白底 + 墨蓝黑字 + 1px 校园描边 + 极淡投影；
+ * 淡色面只从 `$kdy-tone-*` 四档取，且淡面上只用墨色文字。
  */
 
 .kdy-auth__form {
@@ -16,12 +19,15 @@
  * 页面样式与 `common.wxss` 里 `.kdy-card` 的优先级相同，谁生效取决于打包顺序，
  * 只写一个类就会变成"哪天打包顺序变了，这张卡悄悄变回白的"。
  * 连写把优先级抬到 (0,2,0)，与顺序无关。
+ *
+ * 贴纸簿里"更重的主视觉"是**更大更圆 + 一整块淡色面**，不是更透：
+ * 淡黄面一铺，登录页第一眼就知道"先点这里"，且面上只用墨色字（对比度最高）。
  */
 .kdy-card.kdy-auth__quick-card {
   padding: $kdy-space-5;
-  border-color: rgba($kdy-color-brand, 0.28);
+  border-color: $kdy-tone-border;
   border-radius: $kdy-radius-3xl;
-  background: $kdy-gradient-soft;
+  background: $kdy-tone-yellow;
   box-shadow: $kdy-shadow-card;
 }
 
@@ -33,7 +39,7 @@
 }
 
 /*
- * 吉祥物方块：与宫格图标同一套语言（浅色底 + 同色相描边 + 居中图案）。
+ * 吉祥物方块：与宫格图标同一套语言（淡底 + 校园描边 + 居中图案）。
  *
  * 底色是**白色**而不是品牌黄：里面是黄色的可达鸭贴图，
  * 黄底 + 黄图案会糊成一团，白色方块反而让它像一枚贴纸，更抓眼。
@@ -45,10 +51,9 @@
   justify-content: center;
   width: 52px;
   height: 52px;
-  border: 1px solid rgba($kdy-color-brand, 0.28);
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-2xl;
-  background-color: $kdy-color-surface;
-  box-shadow: $kdy-shadow-accent;
+  background-color: $kdy-color-campus-white;
   line-height: 1;
 }
 
@@ -59,7 +64,7 @@
 
 .kdy-auth__quick-title {
   display: block;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-lg;
   font-weight: 700;
   line-height: 1.3;
@@ -68,7 +73,7 @@
 .kdy-auth__quick-note {
   display: block;
   margin-top: 2px;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
@@ -85,12 +90,12 @@
 .kdy-auth__divider-line {
   flex: 1;
   height: 1px;
-  background: $kdy-border-hairline;
+  background: $kdy-tone-border;
 }
 
 .kdy-auth__divider-text {
   flex-shrink: 0;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -133,7 +138,7 @@
 .kdy-auth__tip {
   display: block;
   margin-top: $kdy-space-3;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -143,19 +148,20 @@
   margin-top: $kdy-space-3;
   padding: $kdy-space-2 $kdy-space-3;
   color: $kdy-color-danger;
-  background: rgba(211, 63, 63, 0.08);
-  border-radius: $kdy-radius-sm;
+  background: rgba($kdy-color-danger, 0.08);
+  border-radius: $kdy-radius-2xl;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
 
+/* 开发提示：一整块淡黄面 + 墨色字（淡面上不出现灰字） */
 .kdy-auth__dev {
   display: block;
   margin-top: $kdy-space-3;
-  padding: $kdy-space-2 $kdy-space-3;
-  color: $kdy-color-ink-soft;
-  background: $kdy-color-brand-soft;
-  border-radius: $kdy-radius-sm;
+  padding: $kdy-space-3;
+  color: $kdy-color-campus-ink;
+  background: $kdy-tone-yellow;
+  border-radius: $kdy-radius-2xl;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -167,9 +173,11 @@
   margin-top: $kdy-space-4;
 }
 
+/* 次级动作不是"彩色小字"：用墨色 + 字重把它和正文分开 */
 .kdy-auth__link {
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
+  font-weight: 600;
 }
 
 /* ---- 邮箱登录：密码 / 验证码 二选一 ---- */
@@ -202,10 +210,10 @@
   margin-top: $kdy-space-3;
   font-size: $kdy-font-size-xs;
   line-height: 1.5;
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-muted;
 }
 
 .kdy-auth__hint-strong {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-weight: 600;
 }

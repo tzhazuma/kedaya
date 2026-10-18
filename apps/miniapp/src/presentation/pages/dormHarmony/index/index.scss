@@ -13,7 +13,7 @@
   &__p,
   &__li {
     display: block;
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     line-height: $kdy-line-height-loose;
   }
@@ -24,13 +24,13 @@
 
   &__li {
     padding: $kdy-space-1 0;
-    color: $kdy-color-ink-soft;
+    color: $kdy-color-campus-ink;
   }
 
   &__muted {
     display: block;
     margin-top: $kdy-space-2;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-normal;
   }
@@ -48,10 +48,10 @@
     display: block;
     margin-top: $kdy-space-3;
     padding: $kdy-space-3;
-    background: $kdy-color-surface-alt;
+    background: $kdy-tone-milk;
     border-left: 3px solid $kdy-color-danger;
-    border-radius: $kdy-radius-md;
-    color: $kdy-color-ink;
+    border-radius: $kdy-radius-2xl;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-loose;
   }
@@ -59,7 +59,7 @@
   &__label {
     display: block;
     margin: $kdy-space-4 0 $kdy-space-2;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
@@ -88,7 +88,7 @@
   &__code {
     display: block;
     margin: $kdy-space-2 0;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-family: $kdy-font-family-mono;
     font-size: $kdy-font-size-xxl;
     font-weight: $kdy-font-weight-bold;
@@ -98,8 +98,8 @@
   &__record {
     margin-top: $kdy-space-3;
     padding: $kdy-space-3;
-    background: $kdy-color-surface-alt;
-    border-radius: $kdy-radius-lg;
+    background: $kdy-tone-milk;
+    border-radius: $kdy-radius-2xl;
   }
 
   &__record-head {
@@ -111,7 +111,7 @@
   }
 
   &__record-title {
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     font-weight: $kdy-font-weight-semibold;
   }
@@ -131,14 +131,14 @@
 
   &__fact-k {
     flex: 0 0 88px;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
   &__fact-v {
     flex: 1;
     min-width: 0;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     line-height: $kdy-line-height-normal;
     word-break: break-all;
@@ -152,12 +152,12 @@
 
   &__message {
     padding: $kdy-space-3;
-    background: $kdy-color-surface-alt;
-    border-radius: $kdy-radius-lg;
+    background: $kdy-tone-milk;
+    border-radius: $kdy-radius-2xl;
 
     // 自己（学生）的留言用品牌浅黄锚定，一眼能区分调解员
     &--mine {
-      background: $kdy-color-brand-soft;
+      background: $kdy-tone-yellow;
     }
   }
 
@@ -170,19 +170,19 @@
   }
 
   &__message-author {
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     font-weight: $kdy-font-weight-medium;
   }
 
   &__message-time {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
   &__message-body {
     display: block;
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     line-height: $kdy-line-height-loose;
     word-break: break-all;

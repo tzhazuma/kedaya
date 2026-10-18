@@ -12,7 +12,7 @@
 .kdy-flea__filter-label {
   display: block;
   margin: $kdy-space-3 0 $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -25,12 +25,8 @@
 .kdy-flea__inline-error {
   display: block;
   margin: $kdy-space-2 0;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-}
-
-.kdy-flea__inline-error {
   color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
 }
 
 .kdy-flea__more {
@@ -56,26 +52,31 @@
   padding: 0 $kdy-space-4;
 }
 
+/*
+ * 商品格：贴纸簿的卡是「白卡 + 1px 校园描边 + 极淡投影」，
+ * 半边宽的格子也不例外 —— 靠描边把相邻格的边界分清。
+ */
 .kdy-flea-card {
   /* 两列：`calc((100% - gap) / 2)`，不减 gap 会溢出到第二行只剩一个 */
   width: calc((100% - #{$kdy-space-3}) / 2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: $kdy-color-surface;
-  border: 1px solid $kdy-color-border;
-  border-radius: $kdy-radius-md;
+  background: $kdy-color-campus-white;
+  border: 1px solid $kdy-tone-border;
+  border-radius: $kdy-radius-2xl;
+  box-shadow: $kdy-shadow-card;
 }
 
 .kdy-flea-card--pressed {
-  background: $kdy-color-surface-alt;
+  background: $kdy-tone-milk;
 }
 
 .kdy-flea-card__cover {
   position: relative;
   width: 100%;
   height: 160px;
-  background: $kdy-color-brand-soft;
+  background: $kdy-tone-yellow;
 }
 
 .kdy-flea-card__image {
@@ -91,39 +92,41 @@
   justify-content: center;
   width: 100%;
   height: 160px;
-  background: $kdy-color-brand-soft;
+  background: $kdy-tone-yellow;
 }
 
 .kdy-flea-card__badge-text {
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: $kdy-font-weight-medium;
 }
 
+/* 图上的小胶囊：白底 + 墨字，压在图上也读得清 */
 .kdy-flea-card__category {
   position: absolute;
   left: $kdy-space-2;
   top: $kdy-space-2;
   padding: 2px $kdy-space-2;
-  border-radius: $kdy-radius-sm;
-  background: rgba($kdy-color-surface, 0.92);
-  color: $kdy-color-ink-soft;
+  border-radius: $kdy-radius-pill;
+  background: rgba($kdy-color-campus-white, 0.92);
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
 }
 
+/* 状态用深色胶囊（全站唯一的重色块，只放状态不放操作） */
 .kdy-flea-card__status {
   position: absolute;
   right: $kdy-space-2;
   top: $kdy-space-2;
   padding: 2px $kdy-space-2;
-  border-radius: $kdy-radius-sm;
-  background: $kdy-color-ink-soft;
-  color: $kdy-color-text-inverse;
+  border-radius: $kdy-radius-pill;
+  background: $kdy-color-campus-ink;
+  color: $kdy-color-campus-white;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-flea-card__status.is-sold {
-  background: $kdy-color-ink;
+  background: $kdy-color-campus-ink;
 }
 
 .kdy-flea-card__count {
@@ -132,8 +135,8 @@
   bottom: $kdy-space-2;
   padding: 2px $kdy-space-2;
   border-radius: $kdy-radius-pill;
-  background: rgba($kdy-color-ink, 0.56);
-  color: $kdy-color-text-inverse;
+  background: rgba($kdy-color-campus-ink, 0.6);
+  color: $kdy-color-campus-white;
   font-size: $kdy-font-size-xs;
 }
 
@@ -145,7 +148,7 @@
 }
 
 .kdy-flea-card__title {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: $kdy-font-weight-semibold;
   line-height: $kdy-line-height-normal;
@@ -158,7 +161,7 @@
 
 .kdy-flea-card__meta {
   overflow: hidden;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -172,27 +175,28 @@
   margin-top: $kdy-space-1;
 }
 
+/* 价格是格子里的最大字，用墨色（彩色小字在这套体系里读不清） */
 .kdy-flea-card__price {
-  color: $kdy-color-danger;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-lg;
   font-weight: $kdy-font-weight-bold;
   line-height: $kdy-line-height-tight;
 }
 
 .kdy-flea-card__price.is-sold {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   text-decoration: line-through;
 }
 
 .kdy-flea-card__flag {
-  padding: 0 $kdy-space-1;
-  border: 1px solid $kdy-color-border;
-  border-radius: $kdy-radius-sm;
-  color: $kdy-color-text-muted;
+  padding: 0 $kdy-space-2;
+  border: 1px solid $kdy-tone-border;
+  border-radius: $kdy-radius-pill;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-flea-card__time {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }

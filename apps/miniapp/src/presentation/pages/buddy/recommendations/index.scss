@@ -7,8 +7,8 @@
 .kdy-buddy-reco__tabs {
   display: flex;
   padding: $kdy-space-3 $kdy-space-5 $kdy-space-2;
-  background-color: $kdy-color-surface;
-  border-bottom: 1px solid $kdy-color-border;
+  background-color: $kdy-color-campus-white;
+  border-bottom: 1px solid $kdy-tone-border;
 }
 
 .kdy-buddy-reco__tab {
@@ -18,17 +18,18 @@
   border-radius: $kdy-radius-pill;
 }
 
+/* 选中是一整块淡黄贴纸 + 墨字（不是"浅黄底 + 黄字"） */
 .kdy-buddy-reco__tab--active {
-  background-color: $kdy-color-brand-soft;
+  background-color: $kdy-tone-yellow;
 }
 
 .kdy-buddy-reco__tab-text {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-buddy-reco__tab--active .kdy-buddy-reco__tab-text {
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-campus-ink;
   font-weight: $kdy-font-weight-semibold;
 }
 
@@ -41,7 +42,7 @@
 
 .kdy-buddy-reco__mode-note {
   flex: 1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -64,13 +65,17 @@
 
 .kdy-buddy-reco__title {
   flex: 1;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-md;
   font-weight: $kdy-font-weight-semibold;
 }
 
+/* 匹配分：淡黄胶囊 + 墨字（不引入新的彩色小字） */
 .kdy-buddy-reco__score {
-  color: $kdy-color-brand-strong;
+  padding: 2px $kdy-space-2;
+  border-radius: $kdy-radius-pill;
+  background: $kdy-tone-yellow;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: $kdy-font-weight-semibold;
 }
@@ -88,13 +93,13 @@
 .kdy-buddy-reco__reason-note,
 .kdy-buddy-reco__meta-text {
   display: block;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
 
 .kdy-buddy-reco__reason-note {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 

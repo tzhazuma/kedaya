@@ -39,34 +39,32 @@
 }
 
 /*
- * 主按钮：品牌渐变 + 同色光晕。
+ * 主按钮：鸭黄实心 + 墨字。
  *
- * 渐变两端都是**已有的黄**（brand → brand-strong），所以它不是"加了一个颜色"，
- * 而是把主色拉出一条方向感；光晕用 brand-strong 的低透明度投影，
- * 让按钮看起来是"发光的"，而不是贴了一层灰影。
+ * 贴纸簿的主按钮是"一块贴纸"：**实心鸭黄**、全圆角、无描边、无光晕。
+ * 之前的品牌渐变 + 同色光晕在暖白页面上会糊成一团黄雾，反而看不出按钮边界。
  * 文字保持墨色（深色）—— 黄底白字在真机阳光下几乎看不清。
  */
 .kdy-btn--primary {
   background: $kdy-gradient-brand;
-  box-shadow: $kdy-shadow-accent;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
 }
 
+/* 次级按钮：淡黄面（比主按钮轻一档，用于"发起拼单"这类并排动作） */
 .kdy-btn--secondary {
-  background: rgba($kdy-color-brand-soft, 0.9);
-  color: $kdy-color-ink;
+  background: $kdy-tone-yellow;
+  color: $kdy-color-campus-ink;
 }
 
-/* 次级按钮（描边档）：半透明白底 + 细描边，落在任何底色上都不脏 */
+/* 幽灵按钮（描边档）：白底 + 校园描边，落在白底上靠描边定形 */
 .kdy-btn--ghost {
-  background: $kdy-surface-glass-strong;
-  border-color: $kdy-border-hairline;
-  color: $kdy-color-ink-soft;
+  background: $kdy-color-campus-white;
+  border-color: $kdy-tone-border;
+  color: $kdy-color-campus-ink;
 }
 
 .kdy-btn--danger {
   background: $kdy-color-danger;
-  box-shadow: 0 8px 20px rgba($kdy-color-danger, 0.3);
   color: $kdy-color-text-inverse;
 }
 

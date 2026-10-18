@@ -7,7 +7,7 @@
 }
 
 .kdy-faq-tickets__hint {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
 }
 
 .kdy-faq-tickets__soft-error {
@@ -17,14 +17,14 @@
 .kdy-faq-tickets__input {
   width: 100%;
   height: 64px;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-faq-tickets__textarea {
   width: 100%;
   height: 200px;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
@@ -33,7 +33,7 @@
   flex-direction: column;
   gap: $kdy-space-1;
   padding: $kdy-space-3 0;
-  border-bottom: 1px solid $kdy-color-border;
+  border-bottom: 1px solid $kdy-tone-border;
 }
 
 .kdy-faq-tickets__item:last-child {
@@ -49,18 +49,18 @@
 
 .kdy-faq-tickets__time {
   margin-left: auto;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-faq-tickets__question {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: 1.6;
 }
 
 .kdy-faq-tickets__contact {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   word-break: break-all;
 }
@@ -68,27 +68,27 @@
 /* 回复块：左侧一道品牌色，让「已回复」在滚列表时一眼可辨 */
 .kdy-faq-tickets__reply {
   padding: $kdy-space-2 $kdy-space-3;
-  background-color: $kdy-color-surface-alt;
+  background-color: $kdy-tone-milk;
   border-left: 3px solid $kdy-color-brand;
-  border-radius: $kdy-radius-sm;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-faq-tickets__reply-label {
   display: block;
   margin-bottom: $kdy-space-1;
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   font-weight: $kdy-font-weight-medium;
 }
 
 .kdy-faq-tickets__reply-body {
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
 
 .kdy-faq-tickets__waiting {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }

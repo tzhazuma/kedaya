@@ -13,24 +13,25 @@
 
 .kdy-flea-create__hint {
   display: block;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
   line-height: 1.7;
 }
 
+/* 校验提示 / 提交失败：一整块淡色面，不用"白底 + 灰细线" */
 .kdy-flea-create__problems,
 .kdy-flea-create__error {
   display: block;
   margin-top: $kdy-space-3;
-  padding: $kdy-space-2 $kdy-space-3;
-  color: $kdy-color-text-muted;
-  background: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-sm;
+  padding: $kdy-space-3;
+  color: $kdy-color-campus-ink;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
 
 .kdy-flea-create__error {
   color: $kdy-color-danger;
-  background: rgba(211, 63, 63, 0.08);
+  background: rgba($kdy-color-danger, 0.08);
 }

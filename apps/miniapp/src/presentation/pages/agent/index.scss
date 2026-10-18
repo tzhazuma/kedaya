@@ -31,8 +31,8 @@
   gap: $kdy-space-3;
   padding: $kdy-space-3 $kdy-space-5;
   /* sticky 头部是毛玻璃的正当用法：内容从它下面滚过去，用户仍要知道"我在和谁说话" */
-  background: $kdy-surface-glass;
-  border-bottom: 1px solid $kdy-border-hairline;
+  background: $kdy-color-campus-white;
+  border-bottom: 1px solid $kdy-tone-border;
   backdrop-filter: $kdy-glass-blur;
   -webkit-backdrop-filter: $kdy-glass-blur;
 }
@@ -44,7 +44,7 @@
 
 .kdy-agent__title {
   display: block;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-lg;
   font-weight: 700;
   line-height: 1.25;
@@ -53,7 +53,7 @@
 .kdy-agent__subtitle {
   display: block;
   margin-top: 2px;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
@@ -67,7 +67,7 @@
   gap: $kdy-space-1;
   padding: 6px $kdy-space-3;
   border-radius: $kdy-radius-pill;
-  background: $kdy-color-ink;
+  background: $kdy-color-campus-ink;
 }
 
 .kdy-agent__status-dot {
@@ -86,7 +86,7 @@
 
 .kdy-agent__muted {
   display: block;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -98,7 +98,7 @@
   box-sizing: border-box;
   margin: $kdy-space-4 $kdy-space-5 $kdy-space-2;
   padding: $kdy-space-5;
-  border: 1px solid $kdy-border-glass;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-3xl;
   background: $kdy-gradient-soft;
   box-shadow: $kdy-shadow-card;
@@ -113,7 +113,7 @@
 
 .kdy-agent__welcome-title {
   display: block;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: 26px;
   font-weight: 700;
   line-height: 1.25;
@@ -122,7 +122,7 @@
 .kdy-agent__welcome-sub {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -143,22 +143,22 @@
   box-sizing: border-box;
   min-height: 44px;
   padding: $kdy-space-2 $kdy-space-3;
-  border: 1px solid $kdy-border-hairline;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-2xl;
-  background: $kdy-surface-glass-strong;
-  color: $kdy-color-ink-soft;
+  background: $kdy-color-campus-white;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-agent__chip--pressed {
-  background: rgba($kdy-color-brand-soft, 0.7);
+  background: rgba($kdy-tone-yellow, 0.7);
   border-color: rgba($kdy-color-brand, 0.5);
 }
 
 .kdy-agent__chip-text {
   flex: 1;
   min-width: 0;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: 1.4;
 }
@@ -167,12 +167,12 @@
 .kdy-agent__promise {
   margin-top: $kdy-space-4;
   padding-top: $kdy-space-3;
-  border-top: 1px solid $kdy-border-hairline;
+  border-top: 1px solid $kdy-tone-border;
 }
 
 .kdy-agent__promise-text {
   display: block;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -218,15 +218,15 @@
   border-radius: $kdy-radius-2xl;
 
   &--user {
-    border-bottom-right-radius: $kdy-radius-md;
+    border-bottom-right-radius: $kdy-radius-2xl;
     background: $kdy-gradient-brand;
-    box-shadow: 0 6px 16px rgba($kdy-color-brand-strong, 0.28);
+    box-shadow: $kdy-shadow-accent;
   }
 
   &--agent {
-    border-top-left-radius: $kdy-radius-md;
-    background: $kdy-surface-glass-strong;
-    border: 1px solid $kdy-border-hairline;
+    border-top-left-radius: $kdy-radius-2xl;
+    background: $kdy-color-campus-white;
+    border: 1px solid $kdy-tone-border;
     box-shadow: $kdy-shadow-card;
   }
 
@@ -239,7 +239,7 @@
 }
 
 .kdy-agent__bubble-text {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: $kdy-line-height-loose;
   word-break: break-word;
@@ -251,7 +251,7 @@
 }
 
 .kdy-agent__answer-line {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: $kdy-line-height-loose;
   word-break: break-word;
@@ -297,7 +297,7 @@
 }
 
 .kdy-agent__pending-text {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -307,7 +307,7 @@
 
 .kdy-agent__thinking {
   margin-top: $kdy-space-3;
-  border-top: 1px solid $kdy-border-hairline;
+  border-top: 1px solid $kdy-tone-border;
 }
 
 .kdy-agent__thinking-head {
@@ -320,7 +320,7 @@
 
 .kdy-agent__thinking-title {
   flex-shrink: 0;
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   font-weight: $kdy-font-weight-semibold;
 }
@@ -328,13 +328,13 @@
 .kdy-agent__thinking-summary {
   flex: 1;
   min-width: 0;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-agent__thinking-caret {
   flex-shrink: 0;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1;
   transition: transform 0.15s ease;
@@ -367,12 +367,12 @@
   margin-top: 1px;
   border-radius: 50%;
   background: rgba($kdy-color-warning, 0.16);
-  color: color.mix($kdy-color-warning, $kdy-color-ink, 70%);
+  color: color.mix($kdy-color-warning, $kdy-color-campus-ink, 70%);
   font-size: 10px;
 
   &--ok {
     background: rgba($kdy-color-success, 0.16);
-    color: color.mix($kdy-color-success, $kdy-color-ink, 70%);
+    color: color.mix($kdy-color-success, $kdy-color-campus-ink, 70%);
   }
 }
 
@@ -383,7 +383,7 @@
 
 .kdy-agent__step-title {
   display: block;
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   font-weight: $kdy-font-weight-medium;
 }
@@ -407,20 +407,20 @@
   margin-top: $kdy-space-2;
   padding: $kdy-space-2 $kdy-space-3;
   border-left: 3px solid rgba($kdy-color-brand, 0.75);
-  border-radius: $kdy-radius-sm;
-  background: rgba($kdy-color-brand-soft, 0.34);
+  border-radius: $kdy-radius-2xl;
+  background: rgba($kdy-tone-yellow, 0.34);
 }
 
 .kdy-agent__fact-label {
   display: block;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-agent__fact-value {
   display: block;
   margin-top: 2px;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
   word-break: break-word;
@@ -438,8 +438,8 @@
   flex-shrink: 0;
   padding: 1px $kdy-space-2;
   border-radius: $kdy-radius-pill;
-  background: $kdy-color-surface-alt;
-  color: $kdy-color-text-muted;
+  background: $kdy-tone-milk;
+  color: $kdy-color-campus-muted;
   font-size: 10px;
   line-height: 1.6;
 }
@@ -447,7 +447,7 @@
 .kdy-agent__source-title {
   flex: 1;
   min-width: 0;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   word-break: break-word;
 }
@@ -466,10 +466,10 @@
 
 .kdy-agent__badge {
   padding: 2px $kdy-space-2;
-  border: 1px solid $kdy-border-hairline;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-pill;
-  background: rgba($kdy-color-surface, 0.9);
-  color: $kdy-color-text-muted;
+  background: rgba($kdy-color-campus-white, 0.9);
+  color: $kdy-color-campus-muted;
   font-size: 10px;
   line-height: 1.6;
 }
@@ -498,10 +498,10 @@
 
 .kdy-agent__clear-text {
   padding: 6px $kdy-space-4;
-  border: 1px solid $kdy-border-hairline;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-pill;
-  background: $kdy-surface-glass-strong;
-  color: $kdy-color-text-muted;
+  background: $kdy-color-campus-white;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -536,9 +536,9 @@
   margin: 0 $kdy-space-5;
   padding: $kdy-space-2 $kdy-space-2 $kdy-space-2 $kdy-space-4;
   padding-bottom: calc(#{$kdy-space-2} + env(safe-area-inset-bottom));
-  border: 1px solid $kdy-border-glass;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-3xl;
-  background: $kdy-surface-glass;
+  background: $kdy-color-campus-white;
   box-shadow: $kdy-shadow-float;
   backdrop-filter: $kdy-glass-blur;
   -webkit-backdrop-filter: $kdy-glass-blur;
@@ -548,7 +548,7 @@
   flex: 1;
   min-width: 0;
   height: 40px;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
@@ -563,14 +563,14 @@
   border-radius: 50%;
   background: $kdy-gradient-brand;
   box-shadow: $kdy-shadow-accent;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-md;
   line-height: 1;
 
   &--disabled {
-    background: $kdy-color-surface-alt;
+    background: $kdy-tone-milk;
     box-shadow: none;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     opacity: 0.75;
   }
 
@@ -590,7 +590,7 @@
 .kdy-agent__footnote {
   display: block;
   padding: $kdy-space-3 $kdy-space-5 $kdy-space-6;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: 10px;
   line-height: 1.6;
   text-align: center;

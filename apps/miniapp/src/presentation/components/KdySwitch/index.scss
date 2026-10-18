@@ -18,17 +18,18 @@
 }
 
 .kdy-switch-row__label {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 500;
 }
 
 .kdy-switch-row__desc {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.5;
 }
 
+/* 关闭态是奶白实心面 + 校园描边；打开态与 `KdyChip` 选中同材质：鸭黄实心 */
 .kdy-switch {
   position: relative;
   box-sizing: border-box;
@@ -36,21 +37,21 @@
   width: 88px;
   height: 48px;
   padding: 4px;
-  background-color: $kdy-color-surface-alt;
-  border: 1px solid $kdy-color-border;
+  background-color: $kdy-tone-milk;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-pill;
   transition: background-color 0.2s ease;
 }
 
 .kdy-switch--on {
-  background-color: $kdy-color-brand;
-  border-color: $kdy-color-brand-strong;
+  background: $kdy-gradient-brand;
+  border-color: $kdy-color-campus-yellow;
 }
 
 .kdy-switch__knob {
   width: 38px;
   height: 38px;
-  background-color: $kdy-color-surface;
+  background-color: $kdy-color-campus-white;
   border-radius: $kdy-radius-pill;
   box-shadow: $kdy-shadow-sm;
   transition: transform 0.2s ease;

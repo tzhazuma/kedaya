@@ -7,6 +7,13 @@
  */
 
 export const PAGE_PATHS = {
+  /**
+   * 入口页（welcome）—— 应用的**第一屏**（`app.config.ts` 的 `pages[0]`）。
+   *
+   * 它只回答"这是哪儿、能干什么"，然后给一个「进入主页」；
+   * 首页左上角保留「返回入口」，两边可以互跳（不是一个只闪一次的启动图）。
+   */
+  welcome: '/presentation/pages/welcome/index',
   home: '/presentation/pages/home/index',
   /** 服务大厅：首页「全部服务」格的落地页（分组 + 搜索） */
   homeServices: '/presentation/pages/home/services/index',

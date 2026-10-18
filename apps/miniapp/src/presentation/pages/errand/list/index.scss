@@ -13,7 +13,7 @@
 .kdy-errand__filter-label {
   display: block;
   margin: $kdy-space-3 0 $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -33,12 +33,8 @@
 .kdy-errand__inline-error {
   display: block;
   margin: $kdy-space-2 $kdy-space-5;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-}
-
-.kdy-errand__inline-error {
   color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
 }
 
 .kdy-errand__more {
@@ -71,7 +67,7 @@
     flex: 1;
     min-width: 0;
     overflow: hidden;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-md;
     font-weight: $kdy-font-weight-semibold;
     text-overflow: ellipsis;
@@ -91,33 +87,34 @@
     gap: $kdy-space-2;
   }
 
+  /* 站点标记：淡黄 / 奶白两档，墨色字（淡面上不放彩色小字） */
   &__stop-key {
     flex: none;
     width: 32px;
     padding: 2px 0;
-    border-radius: $kdy-radius-sm;
-    background: $kdy-color-brand-soft;
-    color: $kdy-color-brand-strong;
+    border-radius: $kdy-radius-pill;
+    background: $kdy-tone-yellow;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     text-align: center;
   }
 
   &__stop-key--to {
-    background: $kdy-color-surface-alt;
-    color: $kdy-color-ink-soft;
+    background: $kdy-tone-milk;
+    color: $kdy-color-campus-muted;
   }
 
   &__stop-place {
     flex: 1;
     min-width: 0;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     line-height: $kdy-line-height-normal;
     word-break: break-all;
   }
 
   &__preview {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-normal;
     /* 明细预览最多两行 —— 列表要能扫，不是把详情搬过来 */
@@ -142,37 +139,39 @@
   }
 
   &__reward-label {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
+  /* 赏金是卡片里最大的字，用墨色 */
   &__reward-value {
-    color: $kdy-color-danger;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xl;
     font-weight: $kdy-font-weight-bold;
     line-height: $kdy-line-height-tight;
   }
 
   &__deadline {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
+  /* 临期：淡黄胶囊 + 墨字（比"彩色小字"更抓眼，也不引入新色相） */
   &__deadline.is-urgent {
     padding: 2px $kdy-space-2;
     border-radius: $kdy-radius-pill;
-    background: $kdy-color-brand-soft;
-    color: $kdy-color-brand-strong;
+    background: $kdy-tone-yellow;
+    color: $kdy-color-campus-ink;
     font-weight: $kdy-font-weight-medium;
   }
 
   &__deadline.is-passed {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     text-decoration: line-through;
   }
 
   &__meta {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 }
@@ -189,4 +188,3 @@
 .kdy-errand__sorts {
   margin-bottom: $kdy-space-3;
 }
-

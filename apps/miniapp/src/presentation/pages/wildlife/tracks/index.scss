@@ -19,9 +19,9 @@
 .kdy-wildlife-tracks__banner {
   margin: 0 $kdy-space-4 $kdy-space-3;
   padding: $kdy-space-3;
-  background-color: $kdy-color-surface-alt;
+  background-color: $kdy-tone-milk;
   border-left: 6px solid $kdy-color-warning;
-  border-radius: $kdy-radius-md;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-wildlife-tracks__banner-title {
@@ -34,7 +34,7 @@
 .kdy-wildlife-tracks__banner-body {
   display: block;
   margin-top: $kdy-space-1;
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
@@ -48,7 +48,7 @@
 .kdy-wildlife-tracks__hint {
   display: block;
   padding: $kdy-space-2 $kdy-space-4;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   text-align: center;
 }
@@ -60,7 +60,7 @@
 }
 
 .kdy-wildlife-tracks__card-meta {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -74,7 +74,7 @@
 
 .kdy-wildlife-tracks__confidence-key {
   flex: none;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -86,14 +86,14 @@
 .kdy-wildlife-tracks__confidence-value {
   flex: none;
   width: 40px;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   text-align: right;
 }
 
 .kdy-wildlife-tracks__card-disclaimer {
   margin-top: $kdy-space-1;
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
@@ -110,21 +110,21 @@
 }
 
 .kdy-wildlife-tracks__label {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-wildlife-tracks__value {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-wildlife-tracks__disclaimer {
   margin: $kdy-space-2 0;
   padding: $kdy-space-2;
-  background-color: $kdy-color-surface-alt;
+  background-color: $kdy-tone-milk;
   border-left: 4px solid $kdy-color-warning;
-  border-radius: $kdy-radius-sm;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-wildlife-tracks__disclaimer-title {
@@ -137,7 +137,7 @@
 .kdy-wildlife-tracks__disclaimer-body {
   display: block;
   margin-top: $kdy-space-1;
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }

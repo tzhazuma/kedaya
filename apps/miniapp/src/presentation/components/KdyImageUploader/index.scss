@@ -4,6 +4,8 @@
  * ⚠️ WXSS 约束（见 apps/miniapp/AGENTS.md）：不使用 `>` 组合选择器、`> :first-child`
  * 或裸 `*` —— 它们会让 common.wxss 编译失败、全部页面白屏。
  * 因此所有选择器都是**单类名**或后代选择器。
+ *
+ * 贴纸簿语言：图块是奶白面 + 校园描边；「添加」是淡黄贴纸块；说明条是奶白面。
  */
 
 .kdy-uploader {
@@ -27,9 +29,9 @@
   margin-right: $kdy-space-2;
   margin-bottom: $kdy-space-2;
   overflow: hidden;
-  background: $kdy-color-surface-alt;
-  border: 1px solid $kdy-color-border;
-  border-radius: $kdy-radius-md;
+  background: $kdy-tone-milk;
+  border: 1px solid $kdy-tone-border;
+  border-radius: $kdy-radius-xl;
 }
 
 .kdy-uploader__image {
@@ -58,12 +60,12 @@
 }
 
 .kdy-uploader__spinner {
-  color: $kdy-color-surface;
+  color: $kdy-color-campus-white;
   font-size: $kdy-font-size-lg;
 }
 
 .kdy-uploader__fail-icon {
-  color: $kdy-color-surface;
+  color: $kdy-color-campus-white;
   font-size: $kdy-font-size-lg;
 }
 
@@ -92,6 +94,7 @@
   font-size: $kdy-font-size-xs;
 }
 
+/* 「添加图片」是一块淡黄贴纸：虚线描边 + 墨色字形 */
 .kdy-uploader__add {
   display: flex;
   flex-direction: column;
@@ -102,25 +105,25 @@
   height: 96px;
   margin-right: $kdy-space-2;
   margin-bottom: $kdy-space-2;
-  background: $kdy-color-brand-soft;
+  background: $kdy-tone-yellow;
   border: 1px dashed $kdy-color-brand;
-  border-radius: $kdy-radius-md;
+  border-radius: $kdy-radius-xl;
 }
 
 .kdy-uploader__add--disabled {
-  background: $kdy-color-surface-alt;
-  border-color: $kdy-color-border;
+  background: $kdy-tone-milk;
+  border-color: $kdy-tone-border;
   opacity: 0.6;
 }
 
 .kdy-uploader__add-icon {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xl;
 }
 
 .kdy-uploader__add-text {
   margin-top: $kdy-space-1;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
 }
 
@@ -132,7 +135,7 @@
 }
 
 .kdy-uploader__count {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -146,27 +149,27 @@
   align-items: flex-start;
   margin-top: $kdy-space-2;
   padding: $kdy-space-2 $kdy-space-3;
-  background: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-xl;
 }
 
 .kdy-uploader__note-text {
   flex: 1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
 
 .kdy-uploader__note-action {
   margin-left: $kdy-space-3;
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   font-weight: $kdy-font-weight-medium;
 }
 
 .kdy-uploader__hint {
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }

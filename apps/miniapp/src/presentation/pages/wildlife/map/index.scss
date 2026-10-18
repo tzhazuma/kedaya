@@ -25,7 +25,7 @@
 .kdy-wildlife-map__hint {
   display: block;
   padding: $kdy-space-2 $kdy-space-4;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
@@ -40,7 +40,7 @@
 
 .kdy-wildlife-map__overlay-hint {
   flex: 1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
@@ -69,12 +69,12 @@
 
 .kdy-wildlife-map__zone-meta,
 .kdy-wildlife-map__zone-species {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-wildlife-map__zone-policy {
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
@@ -93,19 +93,19 @@
 }
 
 .kdy-wildlife-map__detail-label {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-wildlife-map__detail-value {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-wildlife-map__detail-meta {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
@@ -123,14 +123,14 @@
   color: $kdy-color-danger;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-sm;
+  background-color: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-wildlife-map__note {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }

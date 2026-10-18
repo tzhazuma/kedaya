@@ -1,8 +1,8 @@
 /**
  * KdyListSkeleton 样式。
  *
- * 卡片的外框（圆角、留白、边距）与 `KdyCard` 保持一致 ——
- * 骨架和数据到位后的卡片必须**同尺寸**，否则会出现高度跳变。
+ * 卡片的外框（圆角、留白、边距、描边、投影）与 `KdyCard` 保持一致 ——
+ * 骨架和数据到位后的卡片必须**同尺寸同观感**，否则会出现跳变。
  * 骨架条本身的颜色由 Taroify 的 skeleton 变量控制，这里不覆盖。
  */
 
@@ -14,7 +14,8 @@
   box-sizing: border-box;
   margin: $kdy-space-3 $kdy-space-5;
   padding: $kdy-space-5;
-  background-color: rgba($kdy-color-surface, 0.92);
-  border: 1px solid $kdy-border-hairline;
+  background-color: $kdy-color-campus-white;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-2xl;
+  box-shadow: $kdy-shadow-card;
 }

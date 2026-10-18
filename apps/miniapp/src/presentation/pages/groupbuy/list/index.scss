@@ -39,9 +39,8 @@
   text-align: center;
 }
 
-
 .kdy-gb-list__more {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
 }
 
 .kdy-gb-list__soft-error {
@@ -59,7 +58,7 @@
 
 .kdy-gb-card__title {
   flex: 1;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-md;
   font-weight: 600;
   line-height: 1.4;
@@ -73,7 +72,7 @@
 }
 
 .kdy-gb-card__place {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -85,25 +84,29 @@
   margin-top: $kdy-space-3;
 }
 
-/* 催单信息：还差 N 份（品牌色加粗）；满员时降级为安静的「已拼满」 */
+/* 催单信息：淡黄胶囊 + 墨字（满员时降级为安静的奶白胶囊） */
 .kdy-gb-card__short {
-  color: $kdy-color-brand-strong;
+  padding: 2px $kdy-space-2;
+  border-radius: $kdy-radius-pill;
+  background: $kdy-tone-yellow;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 700;
 }
 
 .kdy-gb-card__short.is-full {
-  color: $kdy-color-success;
+  background: $kdy-tone-milk;
+  color: $kdy-color-campus-muted;
   font-weight: 500;
 }
 
 .kdy-gb-card__price {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-gb-card__progress {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 600;
 }
@@ -124,26 +127,26 @@
 }
 
 .kdy-gb-card__deadline {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-gb-card__deadline.is-urgent {
   padding: 2px $kdy-space-2;
   border-radius: $kdy-radius-pill;
-  background: $kdy-color-brand-soft;
-  color: $kdy-color-brand-strong;
+  background: $kdy-tone-yellow;
+  color: $kdy-color-campus-ink;
   font-weight: $kdy-font-weight-medium;
 }
 
 .kdy-gb-card__deadline.is-passed {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   text-decoration: line-through;
 }
 
 .kdy-gb-card__initiator {
   display: block;
   margin-top: $kdy-space-1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }

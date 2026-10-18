@@ -12,7 +12,7 @@
 .kdy-nu-log__hint {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
@@ -30,14 +30,14 @@
   gap: $kdy-space-2;
   margin-bottom: $kdy-space-2;
   padding: $kdy-space-2 $kdy-space-3;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
+  background-color: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-nu-log__candidate {
   padding: $kdy-space-3;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
+  background-color: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-nu-log__candidate-head {
@@ -48,14 +48,14 @@
 }
 
 .kdy-nu-log__candidate-name {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 600;
 }
 
 .kdy-nu-log__candidate-confidence {
   margin-left: auto;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -74,7 +74,7 @@
 }
 
 .kdy-nu-log__candidate-nutrition {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -99,7 +99,7 @@
 .kdy-nu-log__canteens-hint {
   display: block;
   margin-top: $kdy-space-1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
@@ -126,8 +126,8 @@
 
 .kdy-nu-log__result {
   padding: $kdy-space-3;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
+  background-color: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-nu-log__result-main {
@@ -138,13 +138,13 @@
 }
 
 .kdy-nu-log__result-name {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 600;
 }
 
 .kdy-nu-log__result-meta {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -169,13 +169,13 @@
 }
 
 .kdy-nu-log__cart-name {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 600;
 }
 
 .kdy-nu-log__cart-meta {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -191,16 +191,16 @@
   justify-content: center;
   width: 26px;
   height: 26px;
-  background-color: $kdy-color-surface;
-  border: 1px solid $kdy-color-border;
-  border-radius: $kdy-radius-sm;
-  color: $kdy-color-ink;
+  background-color: $kdy-color-campus-white;
+  border: 1px solid $kdy-tone-border;
+  border-radius: $kdy-radius-2xl;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-md;
 }
 
 .kdy-nu-log__stepper-value {
   min-width: 20px;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   text-align: center;
 }

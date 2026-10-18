@@ -7,7 +7,7 @@
 }
 
 .kdy-tg-detail__hero-time {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -29,14 +29,14 @@
 .kdy-tg-detail__k {
   width: 140px;
   flex: none;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-tg-detail__v {
   flex: 1;
   min-width: 0;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: 1.7;
   word-break: break-all;
@@ -53,7 +53,7 @@
   flex-direction: column;
   gap: $kdy-space-1;
   padding-left: $kdy-space-3;
-  border-left: 3px solid $kdy-color-border;
+  border-left: 3px solid $kdy-tone-border;
 }
 
 .kdy-tg-detail__step--current {
@@ -65,18 +65,18 @@
 }
 
 .kdy-tg-detail__step-label {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: $kdy-font-weight-semibold;
 }
 
 .kdy-tg-detail__step--todo .kdy-tg-detail__step-label {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-weight: $kdy-font-weight-regular;
 }
 
 .kdy-tg-detail__step-desc {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -91,7 +91,7 @@
 .kdy-tg-detail__hint {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -100,9 +100,9 @@
   display: block;
   margin: $kdy-space-3 0;
   padding: $kdy-space-2 $kdy-space-3;
-  color: $kdy-color-text-muted;
-  background: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-sm;
+  color: $kdy-color-campus-muted;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }

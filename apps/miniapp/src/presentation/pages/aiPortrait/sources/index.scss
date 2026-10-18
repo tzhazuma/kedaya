@@ -11,7 +11,7 @@
 .kdy-portrait-sources {
   &__p {
     display: block;
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     line-height: $kdy-line-height-loose;
   }
@@ -24,9 +24,9 @@
     display: block;
     margin-bottom: $kdy-space-2;
     padding: $kdy-space-2 $kdy-space-3;
-    color: $kdy-color-text-muted;
-    background: $kdy-color-surface-alt;
-    border-radius: $kdy-radius-sm;
+    color: $kdy-color-campus-muted;
+    background: $kdy-tone-milk;
+    border-radius: $kdy-radius-2xl;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-loose;
   }
@@ -39,12 +39,12 @@
 
   &__row {
     padding: $kdy-space-3;
-    background: $kdy-color-surface-alt;
-    border-radius: $kdy-radius-lg;
+    background: $kdy-tone-milk;
+    border-radius: $kdy-radius-2xl;
 
     // 从首页某条标签点「来源」进来时，被点到的行要一眼可辨
     &--on {
-      background: $kdy-color-brand-soft;
+      background: $kdy-tone-yellow;
       border: 1px solid $kdy-color-brand;
     }
   }
@@ -59,7 +59,7 @@
   &__name {
     flex: 1;
     min-width: 0;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     font-weight: $kdy-font-weight-semibold;
   }
@@ -73,7 +73,7 @@
   &__usage {
     display: block;
     margin-top: $kdy-space-1;
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-loose;
   }
@@ -83,10 +83,10 @@
     display: block;
     margin-top: $kdy-space-2;
     padding: $kdy-space-2 $kdy-space-3;
-    background: $kdy-color-surface-alt;
+    background: $kdy-tone-milk;
     border-left: 3px solid $kdy-color-danger;
-    border-radius: $kdy-radius-sm;
-    color: $kdy-color-ink;
+    border-radius: $kdy-radius-2xl;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-loose;
   }
@@ -94,7 +94,7 @@
   &__rule {
     display: block;
     margin-top: $kdy-space-3;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-loose;
   }
