@@ -1,0 +1,24 @@
+.campus-page {
+  padding: 40px 36px calc(245px + env(safe-area-inset-bottom));
+  background-image: none;
+}
+.campus-top { position: relative; display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 16px; }
+.campus-brand { display: flex; align-items: center; gap: 18px; color: var(--kdy-ink); font-size: 36px; font-weight: 700; white-space: nowrap; }
+.campus-brand__mark { display: flex; align-items: center; justify-content: center; width: 68px; height: 68px; border-radius: 21px; background: $kdy-color-campus-yellow; color: $kdy-color-campus-ink; font-size: 44px; }
+.campus-theme { flex: none; display: flex; align-items: center; justify-content: center; width: 70px; height: 70px; border-radius: 50%; background: $kdy-color-campus-yellow-soft; }
+.campus-theme__icon { width: 43px; height: 43px; }
+.campus-heading-art { position: relative; min-height: 204px; }
+.campus-title { position: relative; z-index: 1; display: block; padding-top: 14px; color: var(--kdy-ink); font-size: 80px; font-weight: 800; line-height: 1.22; letter-spacing: -3px; white-space: pre-line; }
+.campus-duck { position: absolute; right: -22px; bottom: -54px; width: 290px; height: 290px; pointer-events: none; }
+.campus-subtitle { position: relative; display: block; margin-top: 22px; color: var(--kdy-text-muted); font-size: 28px; line-height: 1.5; }
+.campus-arrow { flex: none; display: block; width: 48px; height: 48px; }
+.campus-arrow--back { width: 30px; height: 30px; transform: rotate(180deg); }
+.campus-circle-arrow { display: flex; align-items: center; justify-content: center; width: 70px; height: 70px; flex: none; border-radius: 50%; background: rgba($kdy-color-campus-ink, 0.035); }
+.campus-circle-arrow .campus-arrow { width: 40px; height: 40px; }
+.kdy-theme--dark .campus-title { color: $kdy-color-night-text; }
+.kdy-theme--dark .campus-arrow--back,
+.kdy-theme--dark .kdy-welcome__peek .campus-arrow { filter: brightness(0) invert(1); }
+@media (max-width: 350px) {
+  .campus-title { font-size: 72px; }
+  .campus-duck { width: 210px; height: 210px; right: -16px; }
+}
