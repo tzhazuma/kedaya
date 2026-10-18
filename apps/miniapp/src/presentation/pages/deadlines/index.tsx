@@ -5,7 +5,7 @@ import {
   DEADLINE_SOURCES,
   type DeadlineSource,
 } from '@kedaya/contracts'
-import { parseDueText } from '@kedaya/shared'
+import { parseDueText, parsePastedDeadlines } from '@kedaya/shared'
 import { useEffect, useState } from 'react'
 
 import {
@@ -78,6 +78,15 @@ export default function DeadlinesPage() {
   const [source, setSource] = useState<DeadlineSource>('manual')
   const [formError, setFormError] = useState<string | null>(null)
 
+  // ---- 粘贴导入 ----
+  // ⚠️ 这是 DDL 的**主要入口**：用户在浏览器里复制自己看到的作业列表粘进来。
+  // 不做服务端抓取 —— 那要存学生各平台密码，违反 ToS，也让我们成为高价值攻击目标。
+  const [showPaste, setShowPaste] = useState(false)
+  const [pasteText, setPasteText] = useState('')
+  const [pasteSource, setPasteSource] = useState<DeadlineSource>('blackboard')
+  const [pasteNote, setPasteNote] = useState<string | null>(null)
+  const [unparsed, setUnparsed] = useState<ReadonlyArray<{ line: string; reason: string }>>([])
+
   // 从粘贴页 / 手动添加返回时立刻反映 storage 的最新内容
   useDidShow(() => {
     board.hydrate()
@@ -102,6 +111,55 @@ export default function DeadlinesPage() {
     { id: 'today', label: `今天 ${summary.dueToday}` },
     { id: 'thisWeek', label: `本周 ${summary.dueThisWeek}` },
   ]
+
+  /**
+   * 解析粘贴内容并逐条写入本机。
+   *
+   * ⚠️ **解析不了的行必须回显给用户** —— 否则他以为全导进去了，
+   * 到截止日才发现少了一条。这是这个功能最容易做错的地方。
+   */
+  function handlePaste(): void {
+    const result = parsePastedDeadlines(pasteText, {
+      source: pasteSource,
+      timeZone: SCHOOL_TIME_ZONE,
+      now: new Date(),
+    })
+
+    let imported = 0
+    for (const item of result.items) {
+      // 复用 use case 的写入路径：它负责 id 去重与 storage 落盘，
+      // 页面不自己再拼一套，避免两处 id 规则漂移。
+      const added = board.add({
+        title: item.title,
+        courseName: item.courseName ?? '未分类',
+        dueAt: item.dueAt,
+        dueAtRaw: item.dueAtRaw,
+        source: item.source,
+        kind: item.kind,
+      })
+      if (added !== null) imported += 1
+    }
+
+    setUnparsed(result.unparsed)
+
+    if (imported === 0 && result.unparsed.length === 0) {
+      setPasteNote('没有识别到内容 —— 先确认粘贴的是作业列表，而不是空白。')
+      return
+    }
+    if (imported === 0) {
+      setPasteNote('一行都没能解析出来。下面列出了原因，可以改一下再试。')
+      return
+    }
+
+    const skipped = result.unparsed.length
+    setPasteNote(
+      skipped === 0
+        ? `导入 ${imported} 条。`
+        : `导入 ${imported} 条，另有 ${skipped} 行没看懂（见下方）。`,
+    )
+    if (skipped === 0) setPasteText('')
+    toast(`已导入 ${imported} 条`)
+  }
 
   function handleSubmit(): void {
     const trimmedTitle = title.trim()
@@ -240,13 +298,71 @@ export default function DeadlinesPage() {
         </View>
       ) : (
         <>
+          {/* ---- 粘贴导入（主要入口）---- */}
+          {showPaste && (
+            <KdyCard title='粘贴导入' className='kdy-ddl__form'>
+              <Text className='kdy-ddl__form-hint'>
+                在浏览器里打开 Blackboard / Gradescope / Piazza / e云平台，
+                选中作业列表复制，粘到下面。可达鸭只在**你这台手机**上解析，
+                不联网、不碰你的平台账号。
+              </Text>
+              <KdyField
+                label='粘贴内容'
+                multiline
+                value={pasteText}
+                onChange={setPasteText}
+                placeholder={'每行一条，例如：\nHomework 1  Due Oct 20, 2026 11:59 PM\n作业二  截止时间：2026年11月3日 23:59'}
+                hint='认不出的行会在下面列出来，不会悄悄丢掉'
+              />
+
+              <Text className='kdy-ddl__form-label'>来源</Text>
+              <View className='kdy-ddl__form-sources'>
+                {DEADLINE_SOURCES.map((item) => (
+                  <KdyChip
+                    key={item}
+                    active={pasteSource === item}
+                    onClick={() => setPasteSource(item)}
+                  >
+                    {DEADLINE_SOURCE_LABELS[item]}
+                  </KdyChip>
+                ))}
+              </View>
+
+              {pasteNote !== null && <Text className='kdy-ddl__form-hint'>{pasteNote}</Text>}
+
+              {/* ⚠️ 解析不了的行必须回显 —— 否则用户以为全导进去了 */}
+              {unparsed.length > 0 && (
+                <View className='kdy-ddl__unparsed'>
+                  <Text className='kdy-ddl__form-label'>
+                    没看懂的行（{unparsed.length}）
+                  </Text>
+                  {unparsed.map((row, index) => (
+                    <View key={`unparsed-${index}`} className='kdy-ddl__unparsed-row'>
+                      <Text className='kdy-ddl__unparsed-line'>{row.line}</Text>
+                      <Text className='kdy-ddl__unparsed-reason'>{row.reason}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <View className='kdy-ddl__form-actions'>
+                <KdyButton size='sm' variant='ghost' onClick={() => setShowPaste(false)}>
+                  收起
+                </KdyButton>
+                <KdyButton size='sm' variant='primary' onClick={handlePaste}>
+                  解析并导入
+                </KdyButton>
+              </View>
+            </KdyCard>
+          )}
+
           {items.length === 0 && !showForm && (
             <KdyEmpty
               mode='empty'
               title='还没有 DDL'
               description='粘贴一份作业列表试试；也可以先手动加一条。'
-              actionText='手动添加一条'
-              onAction={() => setShowForm(true)}
+              actionText='粘贴一份作业列表'
+              onAction={() => setShowPaste(true)}
             />
           )}
 
@@ -308,9 +424,9 @@ export default function DeadlinesPage() {
             <>
               <KdyCard elevated className='kdy-ddl__summary'>
                 <View className='kdy-ddl__summary-head'>
-                  <Text className='kdy-ddl__summary-title'>共 {summary.total} 条 DDL</Text>
-                  <KdyTag tone={summary.overdue > 0 ? 'warning' : 'neutral'}>
-                    {summary.overdue > 0 ? `已逾期 ${summary.overdue}` : '暂无逾期'}
+                  <Text className='kdy-ddl__summary-title'>DDL 总览</Text>
+                  <KdyTag tone={isDemo ? 'warning' : 'neutral'}>
+                    {isDemo ? '演示数据' : '本机数据'}
                   </KdyTag>
                 </View>
 

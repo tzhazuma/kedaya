@@ -274,3 +274,37 @@
     line-height: 1.5;
   }
 }
+
+/* ---- 粘贴导入 ---- */
+.kdy-ddl__form-hint {
+  display: block;
+  margin-bottom: 12rpx;
+  color: $kdy-color-campus-muted;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.kdy-ddl__unparsed {
+  margin-top: 16rpx;
+  padding: 16rpx 18rpx;
+  border-radius: $kdy-radius-md;
+  background: rgba(255, 214, 102, 0.18);
+}
+
+.kdy-ddl__unparsed-row {
+  margin-top: 10rpx;
+}
+
+.kdy-ddl__unparsed-line {
+  display: block;
+  color: $kdy-color-campus-ink;
+  font-size: 24rpx;
+  word-break: break-all;
+}
+
+.kdy-ddl__unparsed-reason {
+  display: block;
+  margin-top: 4rpx;
+  color: $kdy-color-campus-muted;
+  font-size: 22rpx;
+}
