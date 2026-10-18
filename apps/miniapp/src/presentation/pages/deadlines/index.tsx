@@ -186,7 +186,7 @@ export default function DeadlinesPage() {
           <KdyTag tone='brand'>{row.kindLabel}</KdyTag>
           {row.submitted && <KdyTag tone='success'>已交</KdyTag>}
           {!row.submitted && row.urgency === 'overdue' && <KdyTag tone='warning'>已逾期</KdyTag>}
-          {row.stale && <KdyTag tone='warning'>上次采集</KdyTag>}
+          {row.stale && <KdyTag tone='warning'>数据未更新</KdyTag>}
         </View>
 
         <Text className='kdy-ddl__item-title'>{row.title}</Text>
@@ -229,7 +229,7 @@ export default function DeadlinesPage() {
         <View className='kdy-ddl__demo-note'>
           <KdyTag tone='warning'>演示数据</KdyTag>
           <Text className='kdy-ddl__demo-note-text'>
-            下面的是演示数据，不是你的作业；关掉演示就不会再出现。
+            下面的条目是演示数据，不是你的作业。
           </Text>
         </View>
       )}
@@ -308,7 +308,7 @@ export default function DeadlinesPage() {
             <>
               <KdyCard elevated className='kdy-ddl__summary'>
                 <View className='kdy-ddl__summary-head'>
-                  <Text className='kdy-ddl__summary-title'>这学期还剩 {summary.total} 条</Text>
+                  <Text className='kdy-ddl__summary-title'>共 {summary.total} 条 DDL</Text>
                   <KdyTag tone={summary.overdue > 0 ? 'warning' : 'neutral'}>
                     {summary.overdue > 0 ? `已逾期 ${summary.overdue}` : '暂无逾期'}
                   </KdyTag>
@@ -359,7 +359,8 @@ export default function DeadlinesPage() {
           {items.length > 0 && view.rows.length === 0 && (
             <KdyEmpty
               mode='empty'
-              description='这个筛选下没有 DDL。'
+              title='这个筛选下没有 DDL'
+              description='换成「全部」看看，或者调一条别的。'
               actionText='看全部'
               onAction={() => setFilter('all')}
             />

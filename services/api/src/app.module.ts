@@ -7,6 +7,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { EnvelopeInterceptor } from './common/interceptors/envelope.interceptor';
 import { MediaModule } from './common/media/media.module';
 import { TraceMiddleware } from './common/middleware/trace.middleware';
+import { HealthModule } from './modules/health/health.module';
 import { GroupBotModule } from './modules/group-bot/group-bot.module';
 import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
 import { PrismaModule } from './prisma/prisma.module';
@@ -57,6 +58,8 @@ import { AgentModule } from './modules/agent/agent.module';
  */
 @Module({
   imports: [
+    // 健康检查放最前：它不依赖任何业务模块，探活不该被其他模块的初始化拖慢
+    HealthModule,
     GroupBotModule,
     ConfigModule.forRoot({
       isGlobal: true,
