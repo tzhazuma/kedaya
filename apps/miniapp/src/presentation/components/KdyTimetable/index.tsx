@@ -97,16 +97,19 @@ export function KdyTimetable({
           inline: 'start',
         })
       }
-      // 第一次平滑滚动可能在数据到位后的重渲染中被取消；700ms 后若还停在起点再补一次
+      // 首屏可能还在等数据到位：150ms 平滑滚一次，700ms / 1600ms 若仍停在起点再补
+      // （数据刷新会让 scrollLeft 归零；用户已经滚走了就不再打扰）
       const first = setTimeout(() => scrollToTarget('smooth'), 150)
-      const retry = setTimeout(() => {
-        const container = document.querySelector('.kdy-timetable__scroll')
-        if (container !== null && container.scrollLeft !== 0) return
-        scrollToTarget('auto')
-      }, 700)
+      const retries = [700, 1600].map((delay) =>
+        setTimeout(() => {
+          const container = document.querySelector('.kdy-timetable__scroll')
+          if (container !== null && container.scrollLeft !== 0) return
+          scrollToTarget('auto')
+        }, delay),
+      )
       return () => {
         clearTimeout(first)
-        clearTimeout(retry)
+        for (const timer of retries) clearTimeout(timer)
       }
     }
 

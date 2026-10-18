@@ -19,3 +19,4 @@ export * from './buddy';
 export * from './nutrition';
 export * from './group-import';
 export * from './deadline-normalize';
+export * from './deadline-paste';

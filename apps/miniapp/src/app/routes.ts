@@ -110,6 +110,14 @@ export const PAGE_PATHS = {
   identity: '/presentation/pages/identity/index',
   schedule: '/presentation/pages/schedule/index',
   campusCard: '/presentation/pages/campusCard/index',
+  /**
+   * 课程 DDL 聚合（Blackboard / Gradescope / Piazza / e云平台）。
+   *
+   * 与 `app.config.ts` 的 `pages` 必须同时登记：路由表与构建配置由
+   * `app/__tests__/routes.test.ts` 双向锁死（少一边就是「点得到但白屏」/「配了但点不到」）。
+   * 这一轮还没有 DDL 后端模块，条目只存在本机（见 `data/repositories/deadlineLocalRepository.ts`）。
+   */
+  deadlines: '/presentation/pages/deadlines/index',
   // 内置全局助手「可达鸭」
   agent: '/presentation/pages/agent/index',
   // 法务页（微信审核必备；内容与 PRIVACY_RULES 同源，避免两处漂移）

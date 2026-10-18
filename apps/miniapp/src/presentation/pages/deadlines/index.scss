@@ -1,0 +1,276 @@
+/**
+ * 「DDL 聚合」页样式。
+ *
+ * 版式要点：
+ *   · 汇总卡是首屏唯一的"主视觉"（`KdyCard elevated`）：四个数字里只有
+ *     已逾期用 warning 色面，其余是奶白中性档 —— 一屏只有一个红色的地方；
+ *   · 列表卡是**白卡 + 1px 校园描边**（与全站一致），已交的靠**划线 + 灰字**
+ *     表达，不换底色（白底是贴纸簿的硬约束）；
+ *   · 时间列左对齐成一条线：先看"哪天几点"，再看"还有多久"。
+ *
+ * ⚠️ 不写 `> :first-child` / `> *` / 裸 `*`：WXSS 编不过会让全部页面白屏
+ * （由 `presentation/theme/__tests__/wxss-safety.test.ts` 守着）。
+ */
+
+.kdy-ddl {
+  &__loading {
+    padding-top: $kdy-space-2;
+  }
+
+  /* ---------------- 演示数据横幅（只在演示模式出现） ---------------- */
+
+  &__demo-note {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: $kdy-space-2;
+    margin: 0 $kdy-space-5 $kdy-space-2;
+    padding: $kdy-space-3;
+    border: 1px solid $kdy-tone-border;
+    border-radius: $kdy-radius-2xl;
+    background: $kdy-tone-yellow;
+  }
+
+  &__demo-note-text {
+    flex: 1;
+    min-width: 0;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+  }
+
+  /* ---------------- 汇总 ---------------- */
+
+  &__summary-head {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: $kdy-space-2;
+  }
+
+  &__summary-title {
+    flex: 1;
+    min-width: 0;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-md;
+    font-weight: $kdy-font-weight-semibold;
+    line-height: 1.3;
+  }
+
+  &__stats {
+    display: flex;
+    flex-direction: row;
+    gap: $kdy-space-2;
+    margin-top: $kdy-space-3;
+  }
+
+  &__stat {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: $kdy-space-2 $kdy-space-1;
+    border-radius: $kdy-radius-xl;
+    background: $kdy-tone-milk;
+  }
+
+  /*
+   * 已逾期的色面：与 `KdyTag--warning` 同一档（warning 14% 面 + 压深字），
+   * 不新造色值；数字用同一档语义色而不是纯红，避免在白底上刺眼。
+   */
+  &__stat--overdue {
+    background: rgba($kdy-color-warning, 0.14);
+  }
+
+  &__stat-value {
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-xl;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  &__stat--overdue &__stat-value {
+    color: color.mix($kdy-color-warning, $kdy-color-campus-ink, 78%);
+  }
+
+  &__stat-label {
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.3;
+  }
+
+  &__hint {
+    display: block;
+    margin-top: $kdy-space-3;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+  }
+
+  /* ---------------- 筛选 ---------------- */
+
+  &__filters {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    padding: $kdy-space-1 $kdy-space-5 $kdy-space-2;
+  }
+
+  /* ---------------- 手动添加表单 ---------------- */
+
+  &__form-label {
+    display: block;
+    margin-top: $kdy-space-2;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    font-weight: $kdy-font-weight-medium;
+  }
+
+  &__form-sources {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    margin-top: $kdy-space-2;
+  }
+
+  &__form-error {
+    display: block;
+    margin-top: $kdy-space-2;
+    color: $kdy-color-danger;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+  }
+
+  &__form-actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: $kdy-space-2;
+    margin-top: $kdy-space-3;
+  }
+
+  /* ---------------- 列表 ---------------- */
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-2;
+    padding: 0 $kdy-space-5;
+  }
+
+  &__item {
+    box-sizing: border-box;
+    padding: $kdy-space-4;
+    background: $kdy-color-campus-white;
+    border: 1px solid $kdy-tone-border;
+    border-radius: $kdy-radius-2xl;
+    box-shadow: $kdy-shadow-card;
+  }
+
+  &__item-tags {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $kdy-space-1;
+  }
+
+  &__item-title {
+    display: -webkit-box;
+    margin-top: $kdy-space-2;
+    overflow: hidden;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-md;
+    font-weight: $kdy-font-weight-semibold;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  /* 已交：划线 + 灰字。不换底色 —— 贴纸簿的卡一律是白的 */
+  &__item--done &__item-title {
+    color: $kdy-color-campus-muted;
+    text-decoration: line-through;
+  }
+
+  &__item-course {
+    display: block;
+    margin-top: $kdy-space-1;
+    overflow: hidden;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.4;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__item-foot {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-2;
+    margin-top: $kdy-space-3;
+  }
+
+  &__item-time {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: $kdy-space-2;
+  }
+
+  &__item-due {
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    font-weight: $kdy-font-weight-medium;
+    line-height: 1.4;
+  }
+
+  &__relative {
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.4;
+  }
+
+  &__relative--today {
+    color: $kdy-color-campus-ink;
+    font-weight: $kdy-font-weight-semibold;
+  }
+
+  &__relative--overdue {
+    color: color.mix($kdy-color-warning, $kdy-color-campus-ink, 78%);
+    font-weight: $kdy-font-weight-semibold;
+  }
+
+  &__item-actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: $kdy-space-2;
+  }
+
+  /* ---------------- 底部「手动添加」 ---------------- */
+
+  &__add {
+    padding: $kdy-space-2 $kdy-space-5 0;
+  }
+
+  /* ---------------- 演示工具 ---------------- */
+
+  &__demo-body {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-2;
+  }
+
+  &__demo-text {
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+  }
+}
