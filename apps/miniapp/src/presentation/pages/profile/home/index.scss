@@ -3,7 +3,7 @@
   align-items: center;
   gap: $kdy-space-3;
   padding: $kdy-space-3 0;
-  border-bottom: 1px solid $kdy-color-border;
+  border-bottom: 1px solid $kdy-tone-border;
 }
 .kdy-manage__row-copy {
   flex: 1;
@@ -11,14 +11,14 @@
 }
 .kdy-manage__row-name {
   display: block;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: $kdy-font-weight-semibold;
 }
 .kdy-manage__row-order {
   display: block;
   margin-top: $kdy-space-1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 .kdy-manage__actions {
@@ -33,9 +33,9 @@
   width: 44px;
   height: 44px;
   border-radius: $kdy-radius-pill;
-  background: $kdy-color-surface;
-  border: 1px solid $kdy-color-border;
-  color: $kdy-color-ink-soft;
+  background: $kdy-color-campus-white;
+  border: 1px solid $kdy-tone-border;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-lg;
 }
 .kdy-manage__action--remove {
@@ -44,7 +44,7 @@
 .kdy-manage__note {
   display: block;
   margin-top: $kdy-space-3;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-loose;
 }

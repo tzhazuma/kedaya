@@ -2,9 +2,9 @@
   display: block;
   margin: $kdy-space-3 0;
   padding: $kdy-space-2 $kdy-space-3;
-  color: $kdy-color-text-muted;
-  background: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-sm;
+  color: $kdy-color-campus-muted;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -12,7 +12,7 @@
 .kdy-wb-create__li {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: 1.7;
 }
@@ -27,7 +27,7 @@
 .kdy-wb-create__label {
   display: block;
   margin-top: $kdy-space-3;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
 }
 
@@ -43,9 +43,9 @@
   display: block;
   margin-top: $kdy-space-3;
   padding: $kdy-space-2 $kdy-space-3;
-  color: $kdy-color-text-muted;
-  background: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-sm;
+  color: $kdy-color-campus-muted;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -64,7 +64,7 @@
 
 .kdy-wb-crisis__message {
   display: block;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: 1.7;
 }
@@ -82,8 +82,8 @@
   justify-content: space-between;
   gap: $kdy-space-3;
   padding: $kdy-space-2 $kdy-space-3;
-  background: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-sm;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-wb-crisis__hotline-text {
@@ -94,14 +94,14 @@
 }
 
 .kdy-wb-crisis__name {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: $kdy-font-weight-semibold;
 }
 
 .kdy-wb-crisis__number {
   margin-top: 2px;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -119,7 +119,7 @@
 
 .kdy-wb-crisis__instruction {
   margin-top: 2px;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -127,7 +127,7 @@
 .kdy-wb-crisis__stale {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }

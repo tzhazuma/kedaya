@@ -37,57 +37,72 @@
 // 为什么放在 tokens.scss 而不是 appearance.scss：`config/index.ts` 的
 // `sass.resource` 只注入**本文件**，组件级 .scss 必须能直接引用这些变量。
 
-/// 大卡片 / 浮层的圆角（比 `xl` 更"当代"，用于卡片、宫格、弹层）
-$kdy-radius-2xl: 22px;
-/// 主视觉容器（首页 Hero、身份卡）的圆角
-$kdy-radius-3xl: 28px;
+/// 大卡片 / 浮层的圆角：贴纸簿的卡是「圆角矩形」，不是玻璃胶囊
+$kdy-radius-2xl: 20px;
+/// 主视觉容器（首页 Hero、身份卡、功能卡）的圆角
+$kdy-radius-3xl: 24px;
 
-/// 半透明表面：毛玻璃卡片的底色（不透明度够高，保证其上文字对比度）
-$kdy-surface-glass: rgba($kdy-color-surface, 0.88);
-/// 更实的半透明表面：需要承载密集文字时用（列表卡片、气泡）
-$kdy-surface-glass-strong: rgba($kdy-color-surface, 0.95);
-/// 玻璃卡片顶部的 1px 高光边（模拟真实的玻璃切边）
-$kdy-border-glass: rgba($kdy-color-surface, 0.7);
-/// 常规划线（比 `$kdy-color-border` 略淡，用在玻璃面上）
-$kdy-border-hairline: rgba($kdy-color-border, 0.7);
+/// 卡片底色：**真白**（不再用半透明玻璃 —— 白底上的半透明白只会发灰，
+/// 反而看不清边界；定形交给下面那条 1px 校园描边）
+$kdy-surface-glass: $kdy-color-campus-white;
+/// 需要承载密集文字的面：同白，保留变量名是为了不破坏既有引用
+$kdy-surface-glass-strong: $kdy-color-campus-white;
+/// 卡片描边：贴纸簿用**细描边**定形（这是它和"白底白卡"的唯一区别）
+$kdy-border-glass: $kdy-color-campus-border;
+/// 常规划线
+$kdy-border-hairline: $kdy-color-campus-border;
 
-/// 卡片阴影：大而软 + 一层贴边的 1px，比单层阴影更"立得住"
-$kdy-shadow-card: 0 10px 26px rgba($kdy-color-ink, 0.07), 0 1px 2px rgba($kdy-color-ink, 0.05);
-/// 浮层阴影（悬浮球、底部操作条）
-$kdy-shadow-float: 0 14px 32px rgba($kdy-color-ink, 0.16);
-/// 品牌色光晕：用在主按钮 / 悬浮球上，让黄色"发亮"而不是平铺
-$kdy-shadow-accent: 0 8px 20px rgba($kdy-color-brand-strong, 0.34);
+/// 卡片阴影：白卡 + 细描边已经分层，投影只需"托一下"，大而软反而脏
+$kdy-shadow-card: 0 4px 14px rgba($kdy-color-campus-ink, 0.05);
+/// 浮层阴影（悬浮球、底部操作条、手绘导航）
+$kdy-shadow-float: 0 10px 24px rgba($kdy-color-campus-ink, 0.14);
+/// 品牌色光晕：鸭黄按钮下面一层很浅的黄，让它是"贴上去的贴纸"而不是描边方块
+$kdy-shadow-accent: 0 6px 16px rgba($kdy-color-campus-yellow, 0.38);
 
-/// 品牌渐变（两端色相均来自令牌：brand → brand-strong）
-$kdy-gradient-brand: linear-gradient(135deg, $kdy-color-brand 0%, $kdy-color-brand-strong 100%);
-/// 主视觉渐变：品牌渐变再压一层白，用在需要"更亮、更轻"的大面积色块上
+/// 品牌渐变：两端都是**同族黄**（校园鸭黄 → 品牌鸭黄），视觉上是一条实心鸭黄，
+/// 主按钮 / 选中胶囊 / 宫格图标底 / 校园卡余额块都用它，上面的字一律墨色。
+$kdy-gradient-brand: linear-gradient(135deg, $kdy-color-campus-yellow 0%, $kdy-color-brand 100%);
+/// 更软的主色块：用于"发起拼单"这类次级强调面（淡黄 → 鸭黄）
 $kdy-gradient-brand-soft: linear-gradient(
-  140deg,
-  $kdy-color-brand 0%,
-  $kdy-color-brand-soft 100%
+  135deg,
+  $kdy-color-campus-yellow-soft 0%,
+  $kdy-color-campus-yellow 100%
 );
-/// 暖白渐变：浅色表面上的"有一点点黄"的过渡（卡片头、标签底）
+/// 暖白渐变：卡头 / 标签底那种"有一点点黄"的过渡
 $kdy-gradient-soft: linear-gradient(
   150deg,
-  rgba($kdy-color-surface, 0.98) 0%,
-  rgba($kdy-color-brand-soft, 0.55) 100%
+  $kdy-color-campus-white 0%,
+  $kdy-color-campus-milk 100%
 );
 
-/// 页面环境光（ambient）：自上而下的暖黄 + 三个极淡的斜向色相，
-/// 让纯色页面底部有层次。**全部是 linear-gradient**（WXSS 对 radial 支持不稳）。
-///
-/// 色相都是"一个场景一种颜色"的同一套语言（暖黄＝主色、蓝＝校园事务、
-/// 橙＝代办、玫红＝需要照顾的模块），只是压到 6%–10% 的不透明度：
-/// 它们是**环境**，不是内容 —— 一旦超过 10%，卡片上的正文对比度就开始掉。
+/// 页面环境光：贴纸簿是**真白底**，只在顶部留一层极淡的鸭黄（≤55% × 淡黄），
+/// 让首屏不像一张 A4 纸；往下 200px 内衰减到 0，长列表滚动时是纯白。
 $kdy-gradient-aurora: linear-gradient(
-    180deg,
-    rgba($kdy-color-brand-soft, 0.86) 0px,
-    rgba($kdy-color-brand-soft, 0.14) 200px,
-    rgba($kdy-color-brand-soft, 0) 360px
-  ),
-  linear-gradient(205deg, rgba($kdy-color-info, 0.12) 0%, rgba($kdy-color-info, 0) 46%),
-  linear-gradient(335deg, rgba($kdy-color-success, 0.1) 0%, rgba($kdy-color-success, 0) 42%),
-  linear-gradient(20deg, rgba($kdy-color-brand-strong, 0.08) 0%, rgba($kdy-color-brand-strong, 0) 38%);
+  180deg,
+  rgba($kdy-color-campus-yellow-soft, 0.55) 0px,
+  rgba($kdy-color-campus-yellow-soft, 0) 200px
+);
 
-/// 毛玻璃模糊半径（组件里统一引用，避免各处 8px / 12px / 20px 乱飘）
+/// 毛玻璃模糊半径（只保留给 agent 页的 sticky 头部 / 输入区 / 悬浮球）
 $kdy-glass-blur: blur(16px);
+
+// ==================================================================== //
+// 贴纸簿的功能卡色（淡粉 / 淡绿 / 淡黄 / 奶白）
+//
+// 首页「凑凑」「野生居民档案」这类功能卡是**一整个淡色面**，不是白卡 + 彩标：
+// 色相直接取 `colorCampus`，所以它们和品牌黄是同一套语言（粉=一起凑、绿=自然/校园、
+// 黄=主操作、奶白=中性信息）。
+//
+// ⚠️ 淡面上**只用墨色文字**（`$kdy-color-campus-ink`）：淡粉/淡绿底上放灰字或
+// 彩色字在真机上都会"糊"掉，对比度不够。
+// ==================================================================== //
+/// 淡粉：社交 / 一起做点什么（凑凑、找搭子、组队）
+$kdy-tone-pink: $kdy-color-campus-pink;
+/// 淡绿：校园自然 / 观察（野生居民、地图）
+$kdy-tone-mint: $kdy-color-campus-mint;
+/// 淡黄：主操作 / 强调
+$kdy-tone-yellow: $kdy-color-campus-yellow-soft;
+/// 奶白：中性信息（统计、说明、次级入口）
+$kdy-tone-milk: $kdy-color-campus-milk;
+/// 校园描边（与卡片同一根）
+$kdy-tone-border: $kdy-color-campus-border;

@@ -1,5 +1,5 @@
 /**
- * KdyReportSheet 样式 —— 与其它 Kdy 组件同一套视觉语言（暖白底 + 品牌色 + 扁平）。
+ * KdyReportSheet 样式 —— 贴纸簿语言：白底 + 1px 校园描边，淡色面只取四档。
  *
  * ⚠️ 只使用单类名 / 后代选择器（WXSS 不支持 `>` 组合与裸 `*`，见 apps/miniapp/AGENTS.md）。
  */
@@ -9,7 +9,7 @@
   max-height: 82vh;
   padding: $kdy-space-4 $kdy-space-5 $kdy-space-6;
   overflow-y: auto;
-  background: $kdy-color-surface;
+  background: $kdy-color-campus-white;
 }
 
 .kdy-report__header {
@@ -20,14 +20,14 @@
 }
 
 .kdy-report__title {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-lg;
   font-weight: $kdy-font-weight-semibold;
 }
 
 .kdy-report__close {
   padding: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
 }
 
@@ -39,16 +39,16 @@
 .kdy-report__target {
   margin-bottom: $kdy-space-3;
   padding: $kdy-space-3;
-  background: $kdy-color-bg;
-  border-radius: $kdy-radius-md;
-  color: $kdy-color-text-muted;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-xl;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-report__section {
   display: block;
   margin: $kdy-space-3 0 $kdy-space-2;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: $kdy-font-weight-medium;
 }
@@ -62,13 +62,13 @@
 .kdy-report__detail {
   box-sizing: border-box;
   padding: $kdy-space-2 $kdy-space-3;
-  background: $kdy-color-bg;
-  border-radius: $kdy-radius-md;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-xl;
 }
 
 .kdy-report__hint {
   margin-top: $kdy-space-3;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
   line-height: 1.6;
 }
@@ -81,6 +81,7 @@
   text-align: center;
 }
 
+/* 完成字形：一块淡黄贴纸 + 墨色字形 */
 .kdy-report__done-glyph {
   display: flex;
   align-items: center;
@@ -88,22 +89,23 @@
   width: 64px;
   height: 64px;
   margin-bottom: $kdy-space-4;
-  background: $kdy-color-brand-soft;
+  background: $kdy-tone-yellow;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-xl;
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-display;
 }
 
 .kdy-report__done-title {
   display: block;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-lg;
   font-weight: $kdy-font-weight-semibold;
 }
 
 .kdy-report__done-desc {
   margin: $kdy-space-2 0 $kdy-space-6;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
   line-height: 1.7;
 }

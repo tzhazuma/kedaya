@@ -2,6 +2,7 @@
  * KdyImageGallery / KdyImageThumb 样式。
  *
  * ⚠️ 只用单类名与后代选择器（WXSS 不支持 `>` 组合与裸 `*`，见 apps/miniapp/AGENTS.md）。
+ * 色相一律取自令牌：图块是奶白占位面，圆角与 `KdyImageUploader` 对齐。
  */
 
 .kdy-gallery {
@@ -17,8 +18,8 @@
   margin-right: $kdy-space-2;
   margin-bottom: $kdy-space-2;
   overflow: hidden;
-  background: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-xl;
 }
 
 .kdy-gallery__image {
@@ -33,8 +34,8 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  background: $kdy-color-surface-alt;
-  color: $kdy-color-text-muted;
+  background: $kdy-tone-milk;
+  color: $kdy-color-campus-muted;
 }
 
 .kdy-gallery__fallback-icon {
@@ -48,8 +49,8 @@
   width: 64px;
   height: 64px;
   overflow: hidden;
-  background: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-xl;
 }
 
 .kdy-gallery__thumb-image {

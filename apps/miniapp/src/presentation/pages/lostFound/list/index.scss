@@ -12,7 +12,7 @@
 .kdy-lost__filter-label {
   display: block;
   margin: $kdy-space-3 0 $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -25,12 +25,8 @@
 .kdy-lost__inline-error {
   display: block;
   margin: $kdy-space-2 0;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-}
-
-.kdy-lost__inline-error {
   color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
 }
 
 .kdy-lost__more {
@@ -58,7 +54,7 @@
 .kdy-lost__kind-hint {
   display: block;
   margin: $kdy-space-2 0 $kdy-space-3;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -67,16 +63,16 @@
   align-items: stretch;
   gap: $kdy-space-3;
 
-  /* 类型色带：寻物 = 品牌黄，招领 = 中性灰。一眼分辨"丢了"还是"捡到"。 */
+  /* 类型色带：寻物 = 鸭黄，招领 = 校园描边灰。一眼分辨"丢了"还是"捡到"。 */
   &__rail {
     flex: none;
     width: 6px;
     border-radius: $kdy-radius-pill;
-    background: $kdy-color-brand;
+    background: $kdy-color-campus-yellow;
   }
 
   &.is-found &__rail {
-    background: $kdy-color-border;
+    background: $kdy-tone-border;
   }
 
   &__body {
@@ -87,20 +83,20 @@
     gap: $kdy-space-1;
   }
 
-  /* 文字徽标（不是 emoji/图片）：寻物 / 招领 的视觉锚点 */
+  /* 文字徽标（不是 emoji/图片）：寻物 / 招领 的视觉锚点，淡黄 / 奶白两档 */
   &__badge {
     flex: none;
     padding: 2px $kdy-space-2;
-    border-radius: $kdy-radius-sm;
-    background: $kdy-color-brand-soft;
-    color: $kdy-color-brand-strong;
+    border-radius: $kdy-radius-pill;
+    background: $kdy-tone-yellow;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     font-weight: $kdy-font-weight-medium;
   }
 
   &.is-found &__badge {
-    background: $kdy-color-surface-alt;
-    color: $kdy-color-ink-soft;
+    background: $kdy-tone-milk;
+    color: $kdy-color-campus-muted;
   }
 
   /* 有图时右侧给一张方图（图片是失物最有用的线索） */
@@ -120,7 +116,7 @@
     flex: 1;
     min-width: 0;
     overflow: hidden;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-md;
     font-weight: $kdy-font-weight-semibold;
     text-overflow: ellipsis;
@@ -143,7 +139,7 @@
   &__fact-key {
     flex: none;
     width: 32px;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-normal;
   }
@@ -151,7 +147,7 @@
   &__fact-value {
     flex: 1;
     min-width: 0;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     line-height: $kdy-line-height-normal;
     word-break: break-all;
@@ -160,7 +156,7 @@
   &__preview {
     display: block;
     overflow: hidden;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -169,7 +165,7 @@
   &__foot {
     display: block;
     margin-top: $kdy-space-1;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 }

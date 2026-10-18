@@ -2,9 +2,9 @@
   display: block;
   margin: $kdy-space-3 0;
   padding: $kdy-space-2 $kdy-space-3;
-  color: $kdy-color-text-muted;
-  background: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-sm;
+  color: $kdy-color-campus-muted;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -25,7 +25,7 @@
 .kdy-tg-create__hint {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
   line-height: 1.7;
 }
@@ -35,14 +35,14 @@
   display: block;
   margin-top: $kdy-space-3;
   padding: $kdy-space-2 $kdy-space-3;
-  color: $kdy-color-text-muted;
-  background: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-sm;
+  color: $kdy-color-campus-muted;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
 
 .kdy-tg-create__error {
   color: $kdy-color-danger;
-  background: rgba(211, 63, 63, 0.08);
+  background: rgba($kdy-color-danger, 0.08);
 }

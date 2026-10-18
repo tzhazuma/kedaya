@@ -11,34 +11,38 @@
   margin-top: $kdy-space-2;
 }
 
+/* 自绘胶囊：与 KdyChip 同一套语言（白底描边 → 选中是淡黄实心 + 墨字） */
 .kdy-buddy-create__chip {
   padding: $kdy-space-1 $kdy-space-3;
-  background-color: $kdy-color-surface-alt;
+  border: 1px solid $kdy-tone-border;
+  background-color: $kdy-color-campus-white;
   border-radius: $kdy-radius-pill;
 }
 
 .kdy-buddy-create__chip--active {
-  background-color: $kdy-color-brand-soft;
+  border-color: $kdy-tone-border;
+  background-color: $kdy-tone-yellow;
 }
 
 .kdy-buddy-create__chip-text {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-buddy-create__chip--active .kdy-buddy-create__chip-text {
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-campus-ink;
   font-weight: $kdy-font-weight-semibold;
 }
 
+/* 自绘输入面：与 KdyField 的控件框同款（奶白实心面 + 大圆角） */
 .kdy-buddy-create__input,
 .kdy-buddy-create__picker {
   box-sizing: border-box;
   width: 100%;
-  padding: $kdy-space-2 $kdy-space-3;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
-  color: $kdy-color-text;
+  padding: $kdy-space-3 $kdy-space-4;
+  background-color: $kdy-tone-milk;
+  border-radius: $kdy-radius-xl;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
@@ -46,10 +50,10 @@
   box-sizing: border-box;
   width: 100%;
   min-height: 160px;
-  padding: $kdy-space-3;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
-  color: $kdy-color-text;
+  padding: $kdy-space-3 $kdy-space-4;
+  background-color: $kdy-tone-milk;
+  border-radius: $kdy-radius-xl;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
@@ -58,7 +62,7 @@
 }
 
 .kdy-buddy-create__group-title {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -66,7 +70,7 @@
 .kdy-buddy-create__warn {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }

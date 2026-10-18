@@ -30,16 +30,15 @@ export interface ModuleDelivery {
 /**
  * key = 冻结模块 id。未登记的模块一律 `api-only`。
  *
- * 现状（2026-10-17）：
+ * 现状（2026-10-18）：
  *   · Web 门户：拼单切片 + 管理后台；
- *   · 微信小程序（主端）：**19 / 20** 个模块端上可用 ——
+ *   · 微信小程序（主端）：**20 / 20** 个模块端上可用 ——
  *     五个核心模块（账号 `auth`、课表 `schedule`、校园卡 `campus-card`、
  *     我的 `profile`、站内信 `notifications`）+ 六个生活模块（拼单、跳蚤、跑腿、
  *     找搭子、失物招领、论坛）+ 宿舍矛盾 + 四个共建型模块（食堂 `canteen`、
  *     常见问题 `faq`、动物观察 `wildlife`、偷外卖 `takeout-guard`）+
- *     技术服务目录 `techpie` + 心理支持 `wellbeing` + AI 画像 `ai-portrait`。
- *   · `facility`（场馆预约）本轮补齐小程序三页（列表 / 发起 / 详情），
- *     小程序端页面待做，因此**如实标为 `api-only`**，不提前点亮。
+ *     技术服务目录 `techpie` + 心理支持 `wellbeing` + AI 画像 `ai-portrait` +
+ *     场馆预约 `facility`（列表 / 发起 / 详情）。
  *
  * ⚠️ 校园数据默认走 `CAMPUS_DATA_MODE=mock`（确定性模拟数据，响应标 `simulated: true`）。
  * 「小程序已上线」指的是**端上能用**，不代表已经对接学校真实系统。

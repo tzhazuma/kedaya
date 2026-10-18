@@ -17,6 +17,7 @@
 | [0004](./0004-auth-two-tier.md) | 两级身份模型必须解耦 | **已接受** | `AuthPort`（身份层）与 `CampusSessionPort`（能力层）分离；CASTGC 永不离开服务端 | `services/api`、三端登录、`@kedaya/contracts` | 2026-10-16 |
 | [0005](./0005-brand-and-ip.md) | 品牌与 IP：「可达鸭」名称的风险与规避 | **已接受，但风险未消解** | 吉祥物原创；不使用宝可梦素材；不冒充官方；不商业化；英文名优先；**品牌名可配置**；备降级预案 | 产品命名、美术、域名、商店上架、全部对外文案 | 2026-10-16 |
 | [0006](./0006-nutrition-butler.md) | 营养管家：数据可信度、识别边界与需求归属 | **已接受** | 营养唯一来源=菜品库快照；请求不带营养值；识别用 mock + Port seam（`mode` 诚实标注）；需求用户自提（估算器只预填）；六项口径去糖；计算收敛 shared 一份；精确匹配不模糊；本地时区切天 | `packages/shared`、`services/api` canteen 模块、小程序营养页、Web 菜品后台 | 2026-10-18 |
+| [0007](./0007-campus-sticker-ui.md) | 小程序全线 UI 统一到「校园贴纸簿」 | **已接受**（深色模式待续） | 视觉语言全站统一为贴纸簿；不做整体 merge，逐层移植；取色进 `colorCampus` / `colorNight` 新分组；基准仍 375pt（设计稿数字 ÷2）；圆角三档 + 白卡细描边（不用灰底/玻璃）；淡色面只用于功能卡；底部导航换自绘 `KdyDock`（`tabBar.custom`）；新增入口页 `welcome`；深色模式第二阶段 | `apps/miniapp` 样式与外壳、`packages/design-tokens`、`docs/miniapp-ui.md` | 2026-10-18 |
 
 **状态取值**：`提议 (Proposed)` / `已接受 (Accepted)` / `已接受但风险未消解 (Accepted with UNRESOLVED risk)` / `已废弃 (Deprecated)` / `被取代 (Superseded by NNNN)`
 
@@ -33,6 +34,7 @@ flowchart TB
     a4["0004 两级身份模型<br/>身份层 / 能力层"]
     a5["0005 品牌与 IP<br/>可达鸭名称风险"]
     a6["0006 营养管家<br/>快照 / mock 识别 / 需求自提"]
+    a7["0007 校园贴纸簿 UI<br/>全站统一 / 手绘 dock"]
 
     contract --> a1
     contract --> a2
@@ -40,6 +42,8 @@ flowchart TB
     contract --> a4
     contract --> a5
     contract --> a6
+    contract --> a7
+    a5 --> a7
 
     a1 -->|"契约包如何共享<br/>影响消费方式"| a2
     a1 -->|"同上"| a3

@@ -13,7 +13,7 @@
 
 .kdy-buddy-detail__title {
   flex: 1;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-lg;
   font-weight: $kdy-font-weight-semibold;
 }
@@ -48,7 +48,7 @@
 
 .kdy-buddy-detail__row {
   display: block;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: $kdy-line-height-normal;
 }
@@ -57,28 +57,29 @@
   display: block;
   margin-top: $kdy-space-3;
   padding-top: $kdy-space-3;
-  border-top: 1px solid $kdy-color-border;
-  color: $kdy-color-ink-soft;
+  border-top: 1px solid $kdy-tone-border;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: $kdy-line-height-loose;
 }
 
+/* 自绘输入面：与 KdyField 的控件框同款（奶白实心面 + 大圆角） */
 .kdy-buddy-detail__textarea {
   box-sizing: border-box;
   width: 100%;
   min-height: 140px;
   margin-top: $kdy-space-2;
-  padding: $kdy-space-3;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
-  color: $kdy-color-text;
+  padding: $kdy-space-3 $kdy-space-4;
+  background-color: $kdy-tone-milk;
+  border-radius: $kdy-radius-xl;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-buddy-detail__note {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
@@ -100,5 +101,5 @@
 .kdy-buddy-detail__mine,
 .kdy-buddy-detail__application {
   padding: $kdy-space-2 0;
-  border-bottom: 1px solid $kdy-color-border;
+  border-bottom: 1px solid $kdy-tone-border;
 }

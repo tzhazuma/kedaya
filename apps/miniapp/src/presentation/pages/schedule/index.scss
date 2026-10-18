@@ -9,12 +9,12 @@
   &__notice {
     margin: $kdy-space-3 $kdy-space-5 0;
     padding: $kdy-space-3;
-    border-radius: $kdy-radius-lg;
-    background: $kdy-color-brand-soft;
+    border-radius: $kdy-radius-2xl;
+    background: $kdy-tone-yellow;
   }
 
   &__notice-text {
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-loose;
   }
@@ -22,7 +22,7 @@
   &__status {
     display: block;
     margin-bottom: $kdy-space-2;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-lg;
     font-weight: 600;
   }
@@ -37,7 +37,7 @@
     flex-direction: row;
     align-items: stretch;
     padding: $kdy-space-3 0;
-    border-bottom: 1px solid $kdy-color-border;
+    border-bottom: 1px solid $kdy-tone-border;
 
     &:last-child {
       border-bottom: none;
@@ -51,14 +51,14 @@
   }
 
   &__course-time-main {
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     font-weight: 600;
   }
 
   &__course-time-sub {
     margin-top: 2px;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
@@ -69,22 +69,22 @@
   }
 
   &__course-name {
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-md;
     font-weight: 500;
   }
 
   &__course-meta {
     margin-top: $kdy-space-1;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
   &__conflict {
     margin-top: $kdy-space-3;
     padding: $kdy-space-3;
-    border-radius: $kdy-radius-md;
-    background: $kdy-color-surface-alt;
+    border-radius: $kdy-radius-2xl;
+    background: $kdy-tone-milk;
   }
 
   &__conflict-title {
@@ -97,7 +97,7 @@
 
   &__conflict-text {
     display: block;
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-normal;
   }
@@ -114,7 +114,7 @@
     display: block;
     margin-top: $kdy-space-3;
     margin-bottom: $kdy-space-1;
-    color: $kdy-color-ink-soft;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     font-weight: 500;
   }
@@ -122,7 +122,7 @@
   &__muted {
     display: block;
     margin-top: $kdy-space-1;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-normal;
   }

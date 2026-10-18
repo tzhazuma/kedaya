@@ -1,24 +1,152 @@
+/**
+ * 贴纸簿的「页头三件套」：品牌（鸭 可达鸭）、返回箭头、大标题 + 立绘。
+ *
+ * 这一组类是**跨页面**的：入口页（welcome）、首页、以及将来任何需要
+ * 「贴纸簿大标题」的页面都引用它 —— 所以放在组件目录而不是某个页面的 scss 里。
+ *
+ * ⚠️ 尺寸基准是 **375pt**（`apps/miniapp/AGENTS.md`：设计稿基准宽度 375 CSS px），
+ * 不是 pingdan 分支的 750rpx。从设计稿搬运数字时**一律除以 2**，
+ * 否则标题会变成两倍大（这条踩过一次：80rpx 直接写成 80px 是真机上的两倍）。
+ *
+ * ⚠️ 颜色一律取 `$kdy-color-campus-*` 令牌，不写 `var(--kdy-*)`：
+ * 小程序端目前**没有** CSS 变量主题层（深色模式是后续阶段，
+ * 需要先把页面 scss 全部变量化），写 var() 会拿不到值、静默继承成别的颜色。
+ */
+
+/* 入口页 / 首页的页面容器：白底 + 给底部悬浮导航让位 */
 .campus-page {
-  padding: 40px 36px calc(245px + env(safe-area-inset-bottom));
+  padding: 20px 18px calc(140px + env(safe-area-inset-bottom));
   background-image: none;
 }
-.campus-top { position: relative; display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 16px; }
-.campus-brand { display: flex; align-items: center; gap: 18px; color: var(--kdy-ink); font-size: 36px; font-weight: 700; white-space: nowrap; }
-.campus-brand__mark { display: flex; align-items: center; justify-content: center; width: 68px; height: 68px; border-radius: 21px; background: $kdy-color-campus-yellow; color: $kdy-color-campus-ink; font-size: 44px; }
-.campus-theme { flex: none; display: flex; align-items: center; justify-content: center; width: 70px; height: 70px; border-radius: 50%; background: $kdy-color-campus-yellow-soft; }
-.campus-theme__icon { width: 43px; height: 43px; }
-.campus-heading-art { position: relative; min-height: 204px; }
-.campus-title { position: relative; z-index: 1; display: block; padding-top: 14px; color: var(--kdy-ink); font-size: 80px; font-weight: 800; line-height: 1.22; letter-spacing: -3px; white-space: pre-line; }
-.campus-duck { position: absolute; right: -22px; bottom: -54px; width: 290px; height: 290px; pointer-events: none; }
-.campus-subtitle { position: relative; display: block; margin-top: 22px; color: var(--kdy-text-muted); font-size: 28px; line-height: 1.5; }
-.campus-arrow { flex: none; display: block; width: 48px; height: 48px; }
-.campus-arrow--back { width: 30px; height: 30px; transform: rotate(180deg); }
-.campus-circle-arrow { display: flex; align-items: center; justify-content: center; width: 70px; height: 70px; flex: none; border-radius: 50%; background: rgba($kdy-color-campus-ink, 0.035); }
-.campus-circle-arrow .campus-arrow { width: 40px; height: 40px; }
-.kdy-theme--dark .campus-title { color: $kdy-color-night-text; }
-.kdy-theme--dark .campus-arrow--back,
-.kdy-theme--dark .kdy-welcome__peek .campus-arrow { filter: brightness(0) invert(1); }
+
+/* 顶部一行：返回入口 ←→ 品牌 ←→ 主题开关 */
+.campus-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  gap: 8px;
+}
+
+.campus-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: $kdy-color-campus-ink;
+  font-size: 18px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 品牌方块：贴纸簿里唯一一块**实心鸭黄**，是整套语言的"印章" */
+.campus-brand__mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: $kdy-color-campus-yellow;
+  color: $kdy-color-campus-ink;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+/* 主题开关（浅色 / 深色）。深色主题未实现前不要接到页面上 —— 见文件头第 3 条 */
+.campus-theme {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: $kdy-color-campus-yellow-soft;
+}
+
+.campus-theme__icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* 大标题 + 立绘：标题是 40px 的"大喊一句"，可达鸭从右下角探出来 */
+.campus-heading-art {
+  position: relative;
+  min-height: 102px;
+}
+
+.campus-title {
+  position: relative;
+  z-index: 1;
+  display: block;
+  padding-top: 7px;
+  color: $kdy-color-campus-ink;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.22;
+  letter-spacing: -1.5px;
+  white-space: pre-line;
+}
+
+.campus-duck {
+  position: absolute;
+  right: -11px;
+  bottom: -27px;
+  width: 145px;
+  height: 145px;
+  pointer-events: none;
+}
+
+.campus-subtitle {
+  position: relative;
+  display: block;
+  margin-top: 11px;
+  color: $kdy-color-campus-muted;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.campus-arrow {
+  flex: none;
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+.campus-arrow--back {
+  width: 15px;
+  height: 15px;
+  transform: rotate(180deg);
+}
+
+/* 圆形箭头底：淡墨色圆面，压在淡粉/淡绿功能卡上也不抢戏 */
+.campus-circle-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: rgba($kdy-color-campus-ink, 0.035);
+}
+
+.campus-circle-arrow .campus-arrow {
+  width: 20px;
+  height: 20px;
+}
+
+/* 窄屏回收一点空间：标题与立绘同时缩，不改变行数与断行位置 */
 @media (max-width: 350px) {
-  .campus-title { font-size: 72px; }
-  .campus-duck { width: 210px; height: 210px; right: -16px; }
+  .campus-title {
+    font-size: 36px;
+  }
+
+  .campus-duck {
+    right: -8px;
+    width: 105px;
+    height: 105px;
+  }
 }

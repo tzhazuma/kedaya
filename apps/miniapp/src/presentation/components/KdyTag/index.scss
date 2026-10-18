@@ -8,34 +8,38 @@
   white-space: nowrap;
 }
 
-/* 背景色一律由令牌色 + alpha 派生，不引入任何新的字面色值 */
+/*
+ * 色面一律由令牌色派生（贴纸簿的淡黄 / 淡奶白，或语义色的低透明度），
+ * 不引入任何新的字面色值；文字一律"语义色压深到墨色附近"或直接用墨色，
+ * **不出现浅色小字**（真机上糊）。
+ */
 
 .kdy-tag--brand {
-  background-color: rgba($kdy-color-brand, 0.28);
-  color: $kdy-color-ink;
+  background-color: $kdy-tone-yellow;
+  color: $kdy-color-campus-ink;
 }
 
 .kdy-tag--success {
   background-color: rgba($kdy-color-success, 0.14);
-  color: color.mix($kdy-color-success, $kdy-color-ink, 78%);
+  color: color.mix($kdy-color-success, $kdy-color-campus-ink, 78%);
 }
 
 .kdy-tag--warning {
   background-color: rgba($kdy-color-warning, 0.14);
-  color: color.mix($kdy-color-warning, $kdy-color-ink, 78%);
+  color: color.mix($kdy-color-warning, $kdy-color-campus-ink, 78%);
 }
 
 .kdy-tag--danger {
   background-color: rgba($kdy-color-danger, 0.14);
-  color: color.mix($kdy-color-danger, $kdy-color-ink, 78%);
+  color: color.mix($kdy-color-danger, $kdy-color-campus-ink, 78%);
 }
 
 .kdy-tag--info {
   background-color: rgba($kdy-color-info, 0.14);
-  color: color.mix($kdy-color-info, $kdy-color-ink, 78%);
+  color: color.mix($kdy-color-info, $kdy-color-campus-ink, 78%);
 }
 
 .kdy-tag--neutral {
-  background-color: $kdy-color-surface-alt;
-  color: $kdy-color-text-muted;
+  background-color: $kdy-tone-milk;
+  color: $kdy-color-campus-muted;
 }

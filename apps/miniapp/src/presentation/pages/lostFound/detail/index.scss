@@ -5,15 +5,16 @@
   margin-bottom: $kdy-space-3;
 }
 
+/* 物品徽标：一整块淡黄贴纸 + 墨色字（淡面上只用墨色） */
 .kdy-lost-detail__badge {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 140px;
   height: 120px;
-  background: $kdy-color-brand-soft;
-  border-radius: $kdy-radius-lg;
-  color: $kdy-color-ink;
+  background: $kdy-tone-yellow;
+  border-radius: $kdy-radius-2xl;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-lg;
   font-weight: $kdy-font-weight-semibold;
 }
@@ -38,13 +39,13 @@
 
 .kdy-lost-detail__k {
   width: 140px;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-lost-detail__v {
   flex: 1;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: 1.7;
 }
@@ -59,7 +60,7 @@
 .kdy-lost-detail__hint {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }

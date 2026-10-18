@@ -1,13 +1,12 @@
 /**
- * KdyChip 样式 —— 可达鸭黄主色 + 暖白底。
+ * KdyChip 样式 —— 贴纸簿的筛选胶囊。
  *
- * 未选中是"玻璃胶囊"（半透明白 + 细描边），选中是"**品牌渐变实心** + 墨色字 +
- * 同色光晕"：两者差的不是颜色深浅，而是**材质**（半透明 vs 实心、无光 vs 发光），
- * 所以在任何底色上都能一眼看出选中项 —— 一屏十几个筛选胶囊时这一点尤其要紧。
+ * 未选中是"白底 + 校园描边"（不抢视线），选中是"**鸭黄实心** + 墨色字"：
+ * 两者差的不是颜色深浅，而是**材质**（白面 vs 实心黄面），所以在任何底色上
+ * 都能一眼看出选中项 —— 一屏十几个筛选胶囊时这一点尤其要紧。
  *
- * 选中用"实心黄"而不是"浅黄底 + 黄描边"：后者在暖白页面上只有一点点差别，
- * 用户得凑近看才分得清哪个在看。黄色在这套体系里本来就代表"选中 / 主操作"，
- * 这里正是它的用途。
+ * 选中用"实心黄"而不是"浅黄底 + 黄描边"：后者在白底上只有一点点差别，
+ * 用户得凑近看才分得清哪个在看。黄色在这套体系里本来就代表"选中 / 主操作"。
  */
 
 .kdy-chip {
@@ -15,23 +14,22 @@
   align-items: center;
   min-height: 34px;
   padding: 0 $kdy-space-4;
-  background: $kdy-surface-glass-strong;
-  border: 1px solid $kdy-border-hairline;
+  background: $kdy-color-campus-white;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-pill;
   transition: all 0.15s ease;
 
   &__text {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-sm;
   }
 
   &--active {
     background: $kdy-gradient-brand;
-    border-color: rgba($kdy-color-brand-strong, 0.5);
-    box-shadow: $kdy-shadow-accent;
+    border-color: $kdy-color-campus-yellow;
 
     .kdy-chip__text {
-      color: $kdy-color-ink;
+      color: $kdy-color-campus-ink;
       font-weight: $kdy-font-weight-semibold;
     }
   }

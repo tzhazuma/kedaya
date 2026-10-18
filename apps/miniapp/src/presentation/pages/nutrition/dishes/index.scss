@@ -1,7 +1,7 @@
 .kdy-nu-dishes__hint {
   display: block;
   margin-bottom: $kdy-space-3;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
@@ -12,7 +12,7 @@
 }
 
 .kdy-nu-dishes__label {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
 }
 
@@ -43,14 +43,14 @@
   gap: $kdy-space-2;
   margin-top: $kdy-space-2;
   padding: $kdy-space-2;
-  border-radius: $kdy-radius-md;
-  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-2xl;
+  background-color: $kdy-tone-milk;
 }
 
 .kdy-nu-dishes__filters-text {
   flex: 1;
   min-width: 200px;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
@@ -73,9 +73,9 @@
 
 .kdy-nu-dishes__row-item {
   padding: $kdy-space-3;
-  border: 1px solid $kdy-border-hairline;
-  border-radius: $kdy-radius-lg;
-  background-color: $kdy-color-surface;
+  border: 1px solid $kdy-tone-border;
+  border-radius: $kdy-radius-2xl;
+  background-color: $kdy-color-campus-white;
 }
 
 .kdy-nu-dishes__row-head {
@@ -86,7 +86,7 @@
 }
 
 .kdy-nu-dishes__row-name {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 600;
 }
@@ -94,7 +94,7 @@
 .kdy-nu-dishes__row-meta {
   display: block;
   margin-top: $kdy-space-1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
@@ -102,7 +102,7 @@
 .kdy-nu-dishes__row-source {
   display: block;
   margin-top: 2px;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   opacity: 0.85;
 }
@@ -127,7 +127,7 @@
 
 .kdy-nu-dishes__tools-title {
   display: block;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 600;
 }
@@ -135,7 +135,7 @@
 .kdy-nu-dishes__tools-hint {
   display: block;
   margin-top: $kdy-space-1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
@@ -143,13 +143,13 @@
 .kdy-nu-dishes__form {
   margin-top: $kdy-space-3;
   padding-top: $kdy-space-3;
-  border-top: 1px solid $kdy-border-hairline;
+  border-top: 1px solid $kdy-tone-border;
 }
 
 .kdy-nu-dishes__section-title {
   display: block;
   margin: $kdy-space-2 0 $kdy-space-3;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 600;
 }

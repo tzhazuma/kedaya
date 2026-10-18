@@ -1,10 +1,11 @@
 /* KdyPrivacyNotice —— 位置模糊化说明（规格 §9）。
-   色值全部取自设计令牌，禁止手写色值（契约 §6.2）。 */
+   色值全部取自设计令牌，禁止手写色值（契约 §6.2）。
+   贴纸簿语言：奶白实心面 + 墨色文字；等级用二级墨色，不用彩色小字。 */
 
 .kdy-privacy {
   padding: $kdy-space-3 $kdy-space-4;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
+  background-color: $kdy-tone-milk;
+  border-radius: $kdy-radius-xl;
 }
 
 .kdy-privacy__head {
@@ -18,7 +19,7 @@
 }
 
 .kdy-privacy__title {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: $kdy-font-weight-semibold;
 }
@@ -26,7 +27,7 @@
 .kdy-privacy__body {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
@@ -34,7 +35,7 @@
 .kdy-privacy__level {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-info;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -49,7 +50,7 @@
 .kdy-privacy__aggregation {
   display: block;
   margin-top: $kdy-space-1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }

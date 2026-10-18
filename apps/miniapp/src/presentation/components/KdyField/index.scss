@@ -22,31 +22,31 @@
 
 .kdy-field__label {
   flex: none;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 500;
 }
 
 .kdy-field__hint {
   flex: 1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.5;
   text-align: right;
 }
 
 /*
- * 控件框：**浅底实心 + 大圆角**，而不是"白底 + 灰描边"。
+ * 控件框：**奶白实心面 + 大圆角**，而不是"白底 + 灰描边"。
  *
  * 卡片本身已经是白的，输入框再画一层白底 + 边框，整页就是"白里透白 + 一堆细线"，
- * 这是表单看起来像脚手架的主要原因。改成浅灰底（`surface-alt`）+ 16px 圆角之后，
+ * 这是表单看起来像脚手架的主要原因。改成奶白底（`$kdy-tone-milk`）+ 16px 圆角之后，
  * 输入框在卡片上是一个**可点的面**，不再是一条需要辨认的线。
  * 描边只在出错时出现（透明 → 危险色），所以它对布局没有任何影响。
  */
 .kdy-field__control {
   box-sizing: border-box;
   padding: $kdy-space-3 $kdy-space-4;
-  background-color: $kdy-color-surface-alt;
+  background-color: $kdy-tone-milk;
   border: 1px solid transparent;
   border-radius: $kdy-radius-xl;
 }
@@ -63,7 +63,7 @@
 .kdy-field__input {
   box-sizing: border-box;
   width: 100%;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 

@@ -9,8 +9,8 @@
   &__stale {
     margin: $kdy-space-3 $kdy-space-5 0;
     padding: $kdy-space-3;
-    border-radius: $kdy-radius-lg;
-    background: $kdy-color-surface-alt;
+    border-radius: $kdy-radius-2xl;
+    background: $kdy-tone-milk;
   }
 
   &__stale-title {
@@ -23,7 +23,7 @@
   &__stale-text {
     display: block;
     margin-top: $kdy-space-1;
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-normal;
   }
@@ -61,7 +61,7 @@
 
   &__hero-label {
     display: block;
-    color: rgba($kdy-color-ink, 0.68);
+    color: rgba($kdy-color-campus-ink, 0.68);
     font-size: $kdy-font-size-xs;
     font-weight: $kdy-font-weight-medium;
     letter-spacing: 0.4px;
@@ -70,7 +70,7 @@
   &__hero-value {
     display: block;
     margin-top: $kdy-space-1;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-display;
     font-weight: 700;
     line-height: $kdy-line-height-tight;
@@ -93,12 +93,12 @@
   }
 
   &__balance-label {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-sm;
   }
 
   &__balance-value {
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-display;
     font-weight: 700;
     line-height: $kdy-line-height-tight;
@@ -114,7 +114,7 @@
     align-items: center;
     justify-content: space-between;
     padding: $kdy-space-2 0;
-    border-bottom: 1px solid $kdy-color-border;
+    border-bottom: 1px solid $kdy-tone-border;
 
     &:last-child {
       border-bottom: none;
@@ -122,12 +122,12 @@
   }
 
   &__fact-k {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-sm;
   }
 
   &__fact-v {
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     font-weight: 500;
   }
@@ -135,7 +135,7 @@
   &__muted {
     display: block;
     margin-top: $kdy-space-2;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
     line-height: $kdy-line-height-loose;
   }
@@ -157,7 +157,7 @@
 
   &__anomaly {
     padding: $kdy-space-2 0;
-    border-bottom: 1px solid $kdy-color-border;
+    border-bottom: 1px solid $kdy-tone-border;
 
     &:last-of-type {
       border-bottom: none;
@@ -174,14 +174,14 @@
   &__anomaly-text {
     display: block;
     margin-top: 2px;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
   &__lost-note {
     display: block;
     margin-bottom: $kdy-space-2;
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     line-height: $kdy-line-height-loose;
   }
@@ -199,7 +199,7 @@
     margin-right: $kdy-space-2;
     border-radius: $kdy-radius-pill;
     background: $kdy-color-brand;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     font-weight: 600;
     line-height: 20px;
@@ -208,7 +208,7 @@
 
   &__lost-step-text {
     flex: 1;
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     line-height: $kdy-line-height-normal;
   }
@@ -216,13 +216,13 @@
   &__lost-channel {
     margin-top: $kdy-space-2;
     padding: $kdy-space-2 $kdy-space-3;
-    border-radius: $kdy-radius-md;
-    background: $kdy-color-surface-alt;
+    border-radius: $kdy-radius-2xl;
+    background: $kdy-tone-milk;
   }
 
   &__lost-channel-name {
     display: block;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     font-weight: 600;
   }
@@ -230,7 +230,7 @@
   &__lost-channel-detail {
     display: block;
     margin-top: 2px;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
@@ -240,7 +240,7 @@
     align-items: center;
     justify-content: space-between;
     padding: $kdy-space-3 0;
-    border-bottom: 1px solid $kdy-color-border;
+    border-bottom: 1px solid $kdy-tone-border;
 
     &:last-child {
       border-bottom: none;
@@ -254,14 +254,14 @@
   }
 
   &__tx-merchant {
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-sm;
     font-weight: 500;
   }
 
   &__tx-meta {
     margin-top: 2px;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
@@ -272,7 +272,7 @@
   }
 
   &__tx-out {
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-md;
     font-weight: 600;
   }
@@ -285,7 +285,7 @@
 
   &__tx-balance {
     margin-top: 2px;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 }

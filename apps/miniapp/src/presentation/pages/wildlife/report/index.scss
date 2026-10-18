@@ -19,12 +19,12 @@
 .kdy-wildlife-report__thumb {
   width: 200px;
   height: 200px;
-  border-radius: $kdy-radius-md;
-  background-color: $kdy-color-surface-alt;
+  border-radius: $kdy-radius-2xl;
+  background-color: $kdy-tone-milk;
 }
 
 .kdy-wildlife-report__photo-state {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -33,7 +33,7 @@
 .kdy-wildlife-report__coord {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
@@ -41,8 +41,8 @@
 .kdy-wildlife-report__degrade {
   padding: $kdy-space-2;
   color: $kdy-color-warning;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-sm;
+  background-color: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-wildlife-report__suggestions,
@@ -68,7 +68,7 @@
 }
 
 .kdy-wildlife-report__time-value {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-md;
   font-weight: $kdy-font-weight-semibold;
 }
@@ -92,7 +92,7 @@
 }
 
 .kdy-wildlife-report__switch-label {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
@@ -102,9 +102,9 @@
   padding: $kdy-space-2;
   color: $kdy-color-danger;
   font-size: $kdy-font-size-xs;
-  background-color: $kdy-color-surface-alt;
+  background-color: $kdy-tone-milk;
   border-left: 4px solid $kdy-color-danger;
-  border-radius: $kdy-radius-sm;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-wildlife-report__ethics,

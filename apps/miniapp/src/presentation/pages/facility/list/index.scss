@@ -14,7 +14,7 @@
     padding: $kdy-space-4 0;
     text-align: center;
     font-size: $kdy-font-size-xs;
-    color: $kdy-color-ink-soft;
+    color: $kdy-color-campus-muted;
   }
 }
 
@@ -35,12 +35,12 @@
     min-width: 0;
     font-size: $kdy-font-size-md;
     font-weight: 600;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
   }
 
   &__kind {
     font-size: $kdy-font-size-xs;
-    color: $kdy-color-ink-soft;
+    color: $kdy-color-campus-muted;
   }
 
   &__meta {
@@ -52,12 +52,12 @@
 
   &__time {
     font-size: $kdy-font-size-sm;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
   }
 
   &__duration {
     font-size: $kdy-font-size-xs;
-    color: $kdy-color-ink-soft;
+    color: $kdy-color-campus-muted;
   }
 
   &__foot {
@@ -67,14 +67,15 @@
     justify-content: space-between;
   }
 
+  /* 费用是卡片里唯一的数字重音，用墨色 */
   &__fee {
     font-size: $kdy-font-size-sm;
     font-weight: 600;
-    color: $kdy-color-brand-strong;
+    color: $kdy-color-campus-ink;
   }
 
   &__mine {
     font-size: $kdy-font-size-xs;
-    color: $kdy-color-ink-soft;
+    color: $kdy-color-campus-muted;
   }
 }

@@ -27,8 +27,8 @@
   gap: $kdy-space-3;
   padding: $kdy-space-2 $kdy-space-3;
   margin-bottom: $kdy-space-2;
-  background: linear-gradient(135deg, $kdy-color-brand-soft, $kdy-color-surface);
-  border-radius: $kdy-radius-lg;
+  background: $kdy-tone-yellow;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-nu-history__persona-emoji {
@@ -44,13 +44,13 @@
 }
 
 .kdy-nu-history__persona-title {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-lg;
   font-weight: 700;
 }
 
 .kdy-nu-history__persona-subtitle {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.5;
 }
@@ -63,7 +63,7 @@
 }
 
 .kdy-nu-history__persona-evidence-item {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: 10px;
   line-height: 1.6;
 }
@@ -72,11 +72,11 @@
   display: block;
   padding: $kdy-space-2;
   margin-bottom: $kdy-space-2;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
+  background-color: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
 }
 
 /* 一个人可以有多个形象：主形象高亮，其余并列 */
@@ -89,18 +89,18 @@
 
 .kdy-nu-history__persona-tag {
   padding: 4px 10px;
-  background-color: $kdy-color-surface-alt;
-  border: 1px solid $kdy-color-border;
+  background-color: $kdy-tone-milk;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-pill;
 }
 
 .kdy-nu-history__persona-tag--main {
-  background-color: $kdy-color-brand-soft;
+  background-color: $kdy-tone-yellow;
   border-color: $kdy-color-brand;
 }
 
 .kdy-nu-history__persona-tag-text {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
 }
 
@@ -117,12 +117,12 @@
   align-items: center;
   gap: 2px;
   padding: $kdy-space-2 0;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
+  background-color: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-nu-history__report-value {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-lg;
   font-weight: 700;
 }
@@ -132,7 +132,7 @@
 }
 
 .kdy-nu-history__report-label {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -144,7 +144,7 @@
 
 .kdy-nu-history__bar-date {
   width: 72px;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -154,7 +154,7 @@
 
 .kdy-nu-history__bar-value {
   width: 72px;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
   text-align: right;
 }
@@ -162,7 +162,7 @@
 .kdy-nu-history__hint {
   display: block;
   padding: $kdy-space-2 0;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
@@ -173,12 +173,12 @@
 }
 
 .kdy-nu-history__nav-btn {
-  color: $kdy-color-brand;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-nu-history__nav-btn--disabled {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
 }
 
 .kdy-nu-history__meals {
@@ -189,8 +189,8 @@
 
 .kdy-nu-history__meal {
   padding: $kdy-space-2 $kdy-space-3;
-  background-color: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-md;
+  background-color: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
 }
 
 .kdy-nu-history__meal-head {
@@ -202,7 +202,7 @@
 
 .kdy-nu-history__meal-time,
 .kdy-nu-history__meal-kcal {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -216,7 +216,7 @@
 }
 
 .kdy-nu-history__meal-items {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: 1.5;
 }

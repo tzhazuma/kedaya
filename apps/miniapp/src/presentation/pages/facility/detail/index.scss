@@ -13,16 +13,17 @@
     align-items: center;
     justify-content: space-between;
     padding: $kdy-space-2 0;
+    border-bottom: 1px solid $kdy-tone-border;
   }
 
   &__label {
     font-size: $kdy-font-size-sm;
-    color: $kdy-color-ink-soft;
+    color: $kdy-color-campus-muted;
   }
 
   &__value {
     font-size: $kdy-font-size-sm;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
   }
 
   &__error {

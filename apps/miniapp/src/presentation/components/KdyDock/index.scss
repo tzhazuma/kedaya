@@ -1,0 +1,140 @@
+/**
+ * KdyDock 样式 —— 贴纸簿的手绘胶囊导航。
+ *
+ * 底图（`dock-sketch-frame.svg`）自带奶白纸面与手绘轮廓，所以这里**不画**背景、
+ * 描边与投影：再叠一层就会在纸面边缘露出两圈线。
+ *
+ * 尺寸基准 375pt（AGENTS.md），设计稿的 750rpx 已除以 2：
+ * 高 83pt、左右各留 13pt、格子高 72pt、图标 23pt、文字 10pt、中间「＋」46pt。
+ */
+.kdy-dock {
+  position: fixed;
+  z-index: $kdy-z-index-sticky;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  left: 50%;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: calc(100% - 26px);
+  max-width: 355px;
+  height: 83px;
+  padding: 0 10px;
+  border-radius: $kdy-radius-pill;
+  transform: translateX(-50%);
+  color: $kdy-color-campus-ink;
+}
+
+.kdy-dock__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.kdy-dock__item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 0;
+  height: 72px;
+  padding-bottom: 3px;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.kdy-dock__icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 36px;
+}
+
+.kdy-dock__icon {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 23px;
+  height: 23px;
+}
+
+.kdy-dock__label {
+  display: block;
+  margin-top: 2px;
+  color: $kdy-color-campus-ink;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.5px;
+}
+
+/*
+ * 选中的格子：图标后面垫一块**歪着的手绘黄斑**（`border-radius` 四角不同 +
+ * 旋转 -7°），而不是给整格加背景色 —— 贴纸簿里"当前在哪"是贴纸的错位感，
+ * 不是高亮条。
+ */
+.kdy-dock__item--active .kdy-dock__icon-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -1px -1px 0;
+  border-radius: 48% 55% 46% 52%;
+  background: $kdy-color-campus-yellow-soft;
+  transform: rotate(-7deg);
+}
+
+.kdy-dock__item--active .kdy-dock__label {
+  font-weight: 700;
+}
+
+.kdy-dock__selected-dot {
+  position: absolute;
+  bottom: 4px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: $kdy-color-campus-ink;
+}
+
+/* 中间凸起的主操作：图标更大、上移，标签不显示（图标本身已画了「＋」） */
+.kdy-dock__item--create {
+  justify-content: flex-start;
+  padding-top: 6px;
+}
+
+.kdy-dock__item--create .kdy-dock__icon-wrap {
+  width: 46px;
+  height: 46px;
+}
+
+.kdy-dock__item--create .kdy-dock__icon {
+  width: 46px;
+  height: 46px;
+}
+
+.kdy-dock__item--pressed {
+  transform: translateY(1px) scale(0.96);
+  opacity: 0.72;
+}
+
+.kdy-dock__badge {
+  position: absolute;
+  top: 14px;
+  right: 10px;
+  width: 5px;
+  height: 5px;
+  border: 1px solid $kdy-color-campus-white;
+  border-radius: 50%;
+  background: $kdy-color-campus-yellow;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kdy-dock__item {
+    transition: none;
+  }
+}

@@ -11,23 +11,26 @@
   margin-top: $kdy-space-2;
 }
 
+/* 自绘胶囊：与 KdyChip 同一套语言（白底描边 → 选中是淡黄实心 + 墨字） */
 .kdy-buddy-profile__chip {
   padding: $kdy-space-1 $kdy-space-3;
-  background-color: $kdy-color-surface-alt;
+  border: 1px solid $kdy-tone-border;
+  background-color: $kdy-color-campus-white;
   border-radius: $kdy-radius-pill;
 }
 
 .kdy-buddy-profile__chip--active {
-  background-color: $kdy-color-brand-soft;
+  border-color: $kdy-tone-border;
+  background-color: $kdy-tone-yellow;
 }
 
 .kdy-buddy-profile__chip-text {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-buddy-profile__chip--active .kdy-buddy-profile__chip-text {
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-campus-ink;
   font-weight: $kdy-font-weight-semibold;
 }
 
@@ -41,7 +44,7 @@
 }
 
 .kdy-buddy-profile__group-title {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -49,7 +52,7 @@
 .kdy-buddy-profile__empty {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
@@ -59,11 +62,11 @@
   align-items: center;
   justify-content: space-between;
   padding: $kdy-space-2 0;
-  border-bottom: 1px solid $kdy-color-border;
+  border-bottom: 1px solid $kdy-tone-border;
 }
 
 .kdy-buddy-profile__slot-text {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
@@ -80,7 +83,7 @@
 }
 
 .kdy-buddy-profile__to {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 

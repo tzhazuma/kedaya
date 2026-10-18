@@ -3,8 +3,8 @@
  *
  * 举报入口是**低强调**的：它必须存在且好点（触摸区 ≥ 44px），
  * 但不该抢走页面主操作的注意力 —— 所以只有一行小字，不用按钮样式。
- * 用警示色系中的 muted 文本而不是红色：红色会让普通用户紧张
- * （\"我是不是做了什么\"），而需要举报的人一定能看到它。
+ * 用二级墨色（campus-muted）而不是红色：红色会让普通用户紧张
+ * （"我是不是做了什么"），而需要举报的人一定能看到它。
  */
 
 .kdy-report-entry {
@@ -23,12 +23,12 @@
 
 .kdy-report-entry__glyph {
   margin-right: $kdy-space-1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-report-entry__text {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
 }
 

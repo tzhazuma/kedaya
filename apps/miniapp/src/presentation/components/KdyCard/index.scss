@@ -2,31 +2,27 @@
   box-sizing: border-box;
   margin: $kdy-space-3 $kdy-space-5;
   padding: $kdy-space-5;
-  background-color: rgba($kdy-color-surface, 0.92);
-  border: 1px solid $kdy-border-hairline;
+  background-color: $kdy-color-campus-white;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-2xl;
-  /* 一层很淡的投影：列表里十几张卡片靠它和页面底色分层，成本远低于 blur */
-  box-shadow: 0 2px 10px rgba($kdy-color-ink, 0.045);
+  /* 一层很淡的投影：白卡 + 1px 描边已经分层，投影只负责"托一下"，成本远低于 blur */
+  box-shadow: $kdy-shadow-card;
 }
 
 /*
  * 阴影分两档。
  *
- * 默认档（列表里同时出现十几张的那种）只留一层很淡的投影，且**不加 blur**：
- * 给十几张卡片同时挂 `backdrop-filter` 会让滚动帧率掉到肉眼可见
- * （AGENTS：磨砂只用于少量重点区域）。
+ * 默认档是列表里同时出现十几张的白卡：靠 1px 校园描边 + 极淡投影分层，
+ * **不加 blur**（AGENTS：磨砂只用于少量重点区域；给十几张卡同时挂
+ * `backdrop-filter` 会让滚动帧率掉到肉眼可见）。
  *
- * `--elevated` 是每页只有一两块的"主视觉卡"（首页宫格、身份卡、汇总卡），
- * 它才允许上磨砂 —— 底下的环境光会透进来一点，卡片看起来是"浮在页面上的玻璃"
- * 而不是"贴上去的白纸"。88% 的白底是它的降级方案：不支持 `backdrop-filter`
- * 的机型只是少一点透明感，正文对比度不受影响。
+ * `--elevated` 是每页只有一两块的"主视觉卡"（首页功能卡、身份卡、汇总卡）：
+ * 圆角放大一档、描边不变、投影稍深。贴纸簿里"更重的卡"是**更大更圆**，
+ * 不是"更透明"——白底上的半透明白只会发灰。
  */
 .kdy-card--elevated {
-  border-color: $kdy-border-glass;
-  background-color: $kdy-surface-glass;
-  box-shadow: $kdy-shadow-card;
-  backdrop-filter: $kdy-glass-blur;
-  -webkit-backdrop-filter: $kdy-glass-blur;
+  border-radius: $kdy-radius-3xl;
+  box-shadow: $kdy-shadow-float;
 }
 
 .kdy-card__header {
@@ -38,8 +34,8 @@
 }
 
 .kdy-card__title {
-  color: $kdy-color-ink;
-  font-size: $kdy-font-size-md;
+  color: $kdy-color-campus-ink;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.2px;
 }
@@ -48,12 +44,12 @@
   display: flex;
   align-items: center;
   gap: $kdy-space-1;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-card__body {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
@@ -62,8 +58,10 @@
  *
  * 必须写在 `.kdy-card` **之后**：WeChat 的 `hoverClass` 是往元素的 class 列表里
  * 追加一个类，两条规则同优先级，靠**出现顺序**决定谁生效。
+ *
+ * 贴纸簿的按下反馈是"色面压深"：白色卡按下变成奶白（`campus-milk`），
+ * 因为是**一整面色**变化，比只改描边更明显。
  */
 .kdy-card--pressed {
-  background-color: $kdy-color-surface-alt;
-  border-color: $kdy-color-border;
+  background-color: $kdy-tone-milk;
 }

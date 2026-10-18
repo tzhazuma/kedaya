@@ -100,6 +100,29 @@ assert.ok(
   fs.existsSync(path.join(root, 'presentation/pages/wildlife/assets/campus.jpg')),
   'Missing campus basemap: presentation/pages/wildlife/assets/campus.jpg',
 );
+// 贴纸簿素材（`src/assets/campus`，主包）：`KdyDock` / `CampusChrome` /
+// `KdyFeatureArtwork` / 首页地图卡都用**字符串路径**（`/assets/campus/*`）引用，
+// 而不是 `import` —— 所以 webpack 不会为它们产出任何 chunk，**只能靠 copy 规则**。
+// 这类资源漏拷时构建、单测、verify 全都不报错，真机上只是图片空白（最坏的一种 bug），
+// 所以在这里点名列断言；清单变了要一起改。
+const CAMPUS_ASSETS = [
+  'dock-sketch-frame.svg',
+  'sketch-home.svg',
+  'sketch-map.svg',
+  'sketch-create.svg',
+  'sketch-discover.svg',
+  'sketch-profile.svg',
+  'duck.png',
+  'arrow.svg',
+  'bag.png',
+  'paw.png',
+  'map-preview.webp',
+];
+for (const asset of CAMPUS_ASSETS)
+  assert.ok(
+    fs.existsSync(path.join(root, `assets/campus/${asset}`)),
+    `Missing campus sticker asset: assets/campus/${asset}（检查 config/index.ts 的 copy 规则）`,
+  );
 // 微信**主包**上限 2 MiB：只统计主包（排除分包根目录下的文件）。
 // 早先的实现把整份 dist 当主包统计，分包一多必然误报（分包天然属于"总包 20 MiB"那一档）。
 const bytes = fs

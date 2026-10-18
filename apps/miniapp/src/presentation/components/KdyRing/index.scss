@@ -12,7 +12,7 @@
   top: 0;
   box-sizing: border-box;
   border-style: solid;
-  border-color: $kdy-color-surface-alt;
+  border-color: $kdy-tone-milk;
   border-radius: 50%;
 }
 
@@ -56,11 +56,11 @@
   background-color: $kdy-color-danger;
 }
 
-/* 中心镂空：与卡片（surface）背景一致 —— 环请置于卡片内使用 */
+/* 中心镂空：与卡片（campus-white）背景一致 —— 环请置于卡片内使用 */
 .kdy-ring__hole {
   position: absolute;
   border-radius: 50%;
-  background-color: $kdy-color-surface;
+  background-color: $kdy-color-campus-white;
 }
 
 .kdy-ring__center {
@@ -76,21 +76,21 @@
 }
 
 .kdy-ring__value-text {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-xl;
   font-weight: 700;
   line-height: 1.2;
 }
 
 .kdy-ring__label-text {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-bar {
   overflow: hidden;
   width: 100%;
-  background-color: $kdy-color-surface-alt;
+  background-color: $kdy-tone-milk;
   border-radius: $kdy-radius-pill;
 }
 

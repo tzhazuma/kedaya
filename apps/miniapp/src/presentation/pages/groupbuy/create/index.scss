@@ -1,7 +1,7 @@
 .kdy-groupbuy-create__hint {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -12,17 +12,21 @@
   gap: $kdy-space-2;
 }
 
+/* 还差什么：一整块奶白面 + 墨色字 */
 .kdy-groupbuy-create__problems {
   display: block;
-  margin-top: $kdy-space-3;
-  color: $kdy-color-warning;
+  margin: $kdy-space-3 $kdy-space-5 0;
+  padding: $kdy-space-3;
+  color: $kdy-color-campus-ink;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
 
 .kdy-groupbuy-create__error {
   display: block;
-  margin-top: $kdy-space-2;
+  margin: $kdy-space-2 $kdy-space-5 0;
   color: $kdy-color-danger;
   font-size: $kdy-font-size-sm;
   line-height: 1.7;

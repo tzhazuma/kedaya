@@ -12,19 +12,19 @@
 }
 
 .kdy-gb-detail__price {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-display;
   font-weight: 700;
 }
 
 .kdy-gb-detail__price-unit {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-gb-detail__total {
   margin-left: auto;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -32,20 +32,20 @@
   height: 8px;
   margin-top: $kdy-space-3;
   overflow: hidden;
-  background-color: $kdy-color-surface-alt;
+  background-color: $kdy-tone-milk;
   border-radius: $kdy-radius-pill;
 }
 
 .kdy-gb-detail__bar-inner {
   height: 8px;
-  background-color: $kdy-color-brand;
+  background-color: $kdy-color-campus-yellow;
   border-radius: $kdy-radius-pill;
 }
 
 .kdy-gb-detail__progress-text {
   display: block;
   margin-top: $kdy-space-2;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -54,17 +54,17 @@
   justify-content: space-between;
   gap: $kdy-space-3;
   padding: $kdy-space-2 0;
-  border-bottom: 1px solid $kdy-color-border;
+  border-bottom: 1px solid $kdy-tone-border;
 }
 
 .kdy-gb-detail__k {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
 .kdy-gb-detail__v {
   flex: 1;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   text-align: right;
 }
@@ -72,13 +72,13 @@
 .kdy-gb-detail__description {
   display: block;
   margin-top: $kdy-space-3;
-  color: $kdy-color-ink-soft;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: 1.7;
 }
 
 .kdy-gb-detail__empty-participants {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -87,25 +87,27 @@
   align-items: center;
   justify-content: space-between;
   padding: $kdy-space-2 0;
-  border-bottom: 1px solid $kdy-color-border;
+  border-bottom: 1px solid $kdy-tone-border;
 }
 
 .kdy-gb-detail__participant-name {
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-gb-detail__participant-qty {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
+/* 底部操作块：白卡 + 1px 校园描边 + 极淡投影（贴纸簿不叠玻璃） */
 .kdy-gb-detail__actions {
   margin: $kdy-space-4 $kdy-space-5;
   padding: $kdy-space-4;
-  background: rgba($kdy-color-surface, 0.92);
-  border: 1px solid $kdy-border-hairline;
+  background: $kdy-color-campus-white;
+  border: 1px solid $kdy-tone-border;
   border-radius: $kdy-radius-2xl;
+  box-shadow: $kdy-shadow-card;
 }
 
 .kdy-gb-detail__actions-row {

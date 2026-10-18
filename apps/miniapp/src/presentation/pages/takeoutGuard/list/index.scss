@@ -2,9 +2,9 @@
   display: block;
   margin: $kdy-space-3 $kdy-space-5;
   padding: $kdy-space-2 $kdy-space-3;
-  color: $kdy-color-text-muted;
-  background: $kdy-color-surface-alt;
-  border-radius: $kdy-radius-sm;
+  color: $kdy-color-campus-muted;
+  background: $kdy-tone-milk;
+  border-radius: $kdy-radius-2xl;
   font-size: $kdy-font-size-xs;
   line-height: 1.7;
 }
@@ -19,7 +19,7 @@
 .kdy-tg__inline-error {
   display: block;
   margin: $kdy-space-2 0;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -54,7 +54,7 @@
     flex: 1;
     min-width: 0;
     overflow: hidden;
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-md;
     font-weight: $kdy-font-weight-semibold;
     text-overflow: ellipsis;
@@ -81,11 +81,11 @@
   &__seg-bar {
     height: 4px;
     border-radius: $kdy-radius-pill;
-    background: $kdy-color-border;
+    background: $kdy-tone-border;
   }
 
   &__seg.is-done &__seg-bar {
-    background: $kdy-color-ink-soft;
+    background: $kdy-color-campus-ink;
   }
 
   &__seg.is-current &__seg-bar {
@@ -93,12 +93,12 @@
   }
 
   &__seg-label {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
   &__seg.is-current &__seg-label {
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-weight: $kdy-font-weight-medium;
   }
 
@@ -117,12 +117,12 @@
   }
 
   &__fact-key {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
   &__fact-value {
-    color: $kdy-color-ink;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
   }
 
@@ -130,7 +130,7 @@
     display: block;
     margin: $kdy-space-1 0;
     overflow: hidden;
-    color: $kdy-color-text;
+    color: $kdy-color-campus-ink;
     font-size: $kdy-font-size-xs;
     line-height: 1.6;
     text-overflow: ellipsis;
@@ -146,21 +146,21 @@
   }
 
   &__meta-item {
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
   &__badge {
     display: block;
     margin-top: $kdy-space-1;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 
   &__foot {
     display: block;
     margin-top: $kdy-space-1;
-    color: $kdy-color-text-muted;
+    color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;
   }
 }

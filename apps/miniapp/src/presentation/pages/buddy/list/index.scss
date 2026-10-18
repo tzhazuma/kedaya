@@ -7,8 +7,8 @@
 .kdy-buddy-list__tabs {
   display: flex;
   padding: $kdy-space-3 $kdy-space-5 $kdy-space-2;
-  background-color: $kdy-color-surface;
-  border-bottom: 1px solid $kdy-color-border;
+  background-color: $kdy-color-campus-white;
+  border-bottom: 1px solid $kdy-tone-border;
 }
 
 .kdy-buddy-list__tab {
@@ -18,17 +18,18 @@
   border-radius: $kdy-radius-pill;
 }
 
+/* 选中是一整块淡黄贴纸 + 墨字（不是"浅黄底 + 黄字"） */
 .kdy-buddy-list__tab--active {
-  background-color: $kdy-color-brand-soft;
+  background-color: $kdy-tone-yellow;
 }
 
 .kdy-buddy-list__tab-text {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-buddy-list__tab--active .kdy-buddy-list__tab-text {
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-campus-ink;
   font-weight: $kdy-font-weight-semibold;
 }
 
@@ -44,7 +45,7 @@
 .kdy-buddy-list__soft-error {
   display: block;
   padding: $kdy-space-2 $kdy-space-4;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -69,7 +70,7 @@
 
 .kdy-buddy-card__title {
   flex: 1;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-md;
   font-weight: $kdy-font-weight-semibold;
 }
@@ -90,7 +91,7 @@
 .kdy-buddy-card__fact-key {
   flex: none;
   width: 32px;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
 }
@@ -98,7 +99,7 @@
 .kdy-buddy-card__fact-value {
   flex: 1;
   min-width: 0;
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   line-height: $kdy-line-height-normal;
   word-break: break-all;
@@ -120,19 +121,24 @@
 }
 
 .kdy-buddy-card__slots-text {
-  color: $kdy-color-ink;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: $kdy-font-weight-medium;
 }
 
+/* 还差几位：淡黄胶囊 + 墨字；满员降级为安静的奶白胶囊 */
 .kdy-buddy-card__slots-left {
-  color: $kdy-color-brand-strong;
+  padding: 2px $kdy-space-2;
+  border-radius: $kdy-radius-pill;
+  background: $kdy-tone-yellow;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 700;
 }
 
 .kdy-buddy-card__slots-left.is-full {
-  color: $kdy-color-success;
+  background: $kdy-tone-milk;
+  color: $kdy-color-campus-muted;
   font-weight: 500;
 }
 
@@ -144,7 +150,7 @@
 
 .kdy-buddy-card__requirements {
   display: block;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -170,7 +176,7 @@
 .kdy-buddy-card__count,
 .kdy-buddy-card__creator,
 .kdy-buddy-card__created {
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }
 
@@ -179,12 +185,12 @@
 }
 
 .kdy-buddy-card__count {
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-campus-muted;
 }
 
 .kdy-buddy-list__section-hint {
   display: block;
   padding: $kdy-space-1 $kdy-space-5 0;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-xs;
 }

@@ -1,151 +1,312 @@
-/* ==================================================================== *
- * Hero（问候 + 日期 + 编辑入口）
- * ==================================================================== */
-
-/*
- * 首页唯一的"重色块"：品牌渐变 + 同色光晕。
+/**
+ * 首页（贴纸簿工作台）样式。
  *
- * 为什么值得用一整块渐变：首页原来第一眼是"你好，名字"四号字 + 一张白卡片，
- * 用户看不出自己到了哪。Hero 用最深的一块色把"这是你的首页"说清楚，
- * 下面的宫格才有对比参照 —— 全都是浅色等于全都没有重点。
+ * 骨架来自 `feature/pingdan` 的设计稿，数字全部换算到 **375pt** 基准
+ * （设计稿是 750rpx，搬运时除以 2）。
  *
- * 两个装饰圆用 `::before` / `::after` 而不是额外元素：
- * 它们纯装饰、不参与布局，多两个 `<View>` 只会让宫格与 Hero 的文字基线更难对齐。
+ * 三条与旧版首页不同的规矩：
+ *   1. 功能卡是**一整块淡色面**（淡粉 / 淡绿），不是白卡 + 彩色图标；
+ *   2. 宫格是"贴纸方块"（`KdyModuleIcon` 的淡色面 + 墨色字形），
+ *      外面**不再套**彩色圆底 —— 两层色面叠起来会糊；
+ *   3. 阴影只出现在地图卡那种"要浮起来"的地方，功能卡靠色面本身分层。
  */
-.kdy-home__hero {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: $kdy-space-3;
-  box-sizing: border-box;
-  margin: $kdy-space-4 $kdy-space-5 $kdy-space-3;
-  padding: $kdy-space-5;
-  overflow: hidden;
-  border-radius: $kdy-radius-3xl;
-  background: $kdy-gradient-brand;
-  box-shadow: $kdy-shadow-accent;
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: -44px;
-    right: -30px;
-    width: 148px;
-    height: 148px;
-    border-radius: 50%;
-    background: rgba($kdy-color-surface, 0.26);
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -34px;
-    right: 56px;
-    width: 84px;
-    height: 84px;
-    border-radius: 50%;
-    background: rgba($kdy-color-surface, 0.18);
-  }
+/* 品牌居中：左边是「← 返回入口」，右边留白给它对称 */
+.kdy-home .campus-brand {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-/* 文字与胶囊要压在装饰圆之上 —— 装饰圆没有 z-index，所以这里给 1 就够 */
-.kdy-home__hero-body {
+.kdy-home__back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: $kdy-color-campus-muted;
+  font-size: 13px;
+}
+
+.kdy-home__heading {
+  margin-top: 14px;
+}
+
+.kdy-home .campus-heading-art {
+  min-height: 96px;
+}
+
+.kdy-home .campus-title {
+  font-size: 36px;
+}
+
+.kdy-home .campus-duck {
+  right: -8px;
+  bottom: -58px;
+  width: 145px;
+  height: 145px;
+}
+
+.kdy-home .campus-subtitle {
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+/* 主操作：淡黄胶囊 + 右端圆形箭头（本屏唯一的"重量级"按钮） */
+.kdy-home__create {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  width: 183px;
+  height: 45px;
+  margin-top: 14px;
+  padding: 0 18px;
+  border-radius: $kdy-radius-pill;
+  background: $kdy-color-campus-yellow-soft;
+  color: $kdy-color-campus-ink;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.kdy-home__create--pressed {
+  transform: translateY(1px) scale(0.98);
+  opacity: 0.85;
+}
+
+/* 两张功能卡：等宽两列，淡粉色面 + 立绘 */
+.kdy-home__features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.kdy-home__hero-card {
+  position: relative;
+  box-sizing: border-box;
+  height: 169px;
+  padding: 14px;
+  overflow: hidden;
+  border: 0;
+  border-radius: $kdy-radius-3xl;
+  background-image: none;
+  box-shadow: none;
+  color: $kdy-color-campus-ink;
+}
+
+.kdy-home__hero-card--pink {
+  background-color: $kdy-color-campus-pink;
+}
+
+.kdy-home__hero-card--lime {
+  background-color: $kdy-color-campus-mint;
+}
+
+.kdy-home__hero-card .campus-circle-arrow {
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  z-index: 2;
+  width: 29px;
+  height: 29px;
+  background: rgba($kdy-color-campus-white, 0.72);
+}
+
+.kdy-home__hero-card .campus-arrow {
+  width: 17px;
+  height: 17px;
+}
+
+.kdy-home__hero-title {
+  display: block;
   position: relative;
   z-index: 1;
+  max-width: 105px;
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.kdy-home__hero-summary {
+  display: block;
+  position: relative;
+  z-index: 1;
+  max-width: 110px;
+  margin-top: 6px;
+  color: $kdy-color-campus-muted;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.kdy-home__art {
+  position: absolute;
+  right: 5px;
+  bottom: -2px;
+  width: 120px;
+  height: 102px;
+}
+
+/* 校园地图卡：横向一张真底图 + 文案 + 圆形箭头 */
+.kdy-home__map {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  box-sizing: border-box;
+  margin-top: 11px;
+  padding: 8px;
+  border: 1px solid $kdy-tone-border;
+  border-radius: $kdy-radius-3xl;
+  background-color: $kdy-color-campus-white;
+  box-shadow: $kdy-shadow-card;
+}
+
+.kdy-home__map-image {
+  flex: none;
+  width: 130px;
+  height: 62px;
+  border-radius: 11px;
+}
+
+.kdy-home__map-copy {
   flex: 1;
   min-width: 0;
 }
 
-.kdy-home__hero-date {
+.kdy-home__map-title {
   display: block;
-  color: rgba($kdy-color-ink, 0.7);
-  font-size: $kdy-font-size-xs;
-  font-weight: $kdy-font-weight-medium;
-  letter-spacing: 0.4px;
-}
-
-.kdy-home__hero-greet {
-  display: block;
-  margin-top: $kdy-space-1;
-  color: $kdy-color-ink;
-  font-size: 26px;
+  color: $kdy-color-campus-ink;
+  font-size: 15px;
   font-weight: 700;
-  line-height: 1.2;
 }
 
-.kdy-home__hero-edit {
-  position: relative;
-  z-index: 1;
-  color: $kdy-color-ink;
+.kdy-home__map-sub {
+  display: block;
+  margin-top: 4px;
+  color: $kdy-color-campus-muted;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
-.kdy-home__hero-edit--pressed {
-  opacity: 0.85;
-}
-
-/* ==================================================================== *
- * 「我的常用」宫格
- * ==================================================================== */
-
-/* 4 列；行距比图标本身略大，避免相邻两行的图标"连成一片" */
-.kdy-home__grid {
+.kdy-home__section {
   display: flex;
-  flex-wrap: wrap;
-  row-gap: $kdy-space-4;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0 10px;
 }
 
+.kdy-home__section-title {
+  color: $kdy-color-campus-ink;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.kdy-home__section-count {
+  color: $kdy-color-campus-muted;
+  font-size: 12px;
+}
+
+.kdy-home__manage {
+  margin-left: auto;
+  padding: 3px 10px;
+  border: 1px solid $kdy-tone-border;
+  border-radius: $kdy-radius-pill;
+  color: $kdy-color-campus-muted;
+  font-size: 12px;
+}
+
+.kdy-home__manage--pressed {
+  background-color: $kdy-tone-milk;
+}
+
+/* 宫格：三列"贴纸方块"，每格图标在上、名字在下（12 个入口也只有四行） */
+.kdy-home__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+/*
+ * 格子本身**不画边框**：色面已经在 `KdyModuleIcon` 上（淡色贴纸 + 1px 描边），
+ * 外面再套一圈就是"框里框"，一屏九个格子会全是线。
+ * 格子只负责点击热区与按下反馈（按下时垫一层奶白面）。
+ */
 .kdy-home__grid-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 6px;
   box-sizing: border-box;
-  width: 25%;
-  gap: $kdy-space-2;
-  min-width: 0;
+  padding: 10px 4px;
+  border: 0;
+  border-radius: $kdy-radius-2xl;
+  background-color: transparent;
+  transition: transform 140ms ease, background-color 140ms ease;
+}
+
+.kdy-home__grid-item--pressed {
+  transform: scale(0.97);
+  background-color: $kdy-tone-milk;
+}
+
+.kdy-home__grid-item .kdy-module-icon {
+  width: 46px;
+  height: 46px;
+  font-size: 23px;
 }
 
 .kdy-home__grid-name {
-  font-size: $kdy-font-size-xs;
-  line-height: 1.35;
-  color: $kdy-color-text;
+  overflow: hidden;
+  max-width: 100%;
+  color: $kdy-color-campus-ink;
+  font-size: 12px;
+  line-height: 1.3;
   text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* ==================================================================== *
- * 安全出口（常驻一行，不属于可自定义的内容）
- * ==================================================================== */
+.kdy-home__more {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 12px;
+  color: $kdy-color-campus-muted;
+  font-size: 12px;
+}
 
+.kdy-home__more .campus-arrow {
+  width: 15px;
+  height: 15px;
+  opacity: 0.65;
+}
+
+/* 安全出口：淡绿面 + 墨字，位置固定在内容末尾（不参与自定义排序） */
 .kdy-home__safety {
   display: flex;
   align-items: center;
-  gap: $kdy-space-3;
-  margin: $kdy-space-2 $kdy-space-5 0;
-  padding: $kdy-space-3 $kdy-space-4;
-  border: 1px solid rgba($kdy-color-success, 0.2);
-  border-radius: $kdy-radius-2xl;
-  background: rgba($kdy-color-success, 0.08);
-  color: $kdy-color-success;
-  font-size: $kdy-font-size-md;
+  gap: 10px;
+  box-sizing: border-box;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: $kdy-radius-3xl;
+  background-color: $kdy-tone-mint;
+  color: $kdy-color-campus-ink;
 }
 
 .kdy-home__safety--pressed {
-  background: rgba($kdy-color-success, 0.14);
+  opacity: 0.8;
 }
 
-/* 与宫格同一套"图标块"语言：40px 同色相方块，一行里也能一眼认出这是心理支持 */
 .kdy-home__safety-icon {
   display: flex;
-  flex-shrink: 0;
+  flex: none;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: $kdy-radius-lg;
-  background: rgba($kdy-color-success, 0.14);
-  color: color.mix($kdy-color-success, $kdy-color-ink, 62%);
-  font-size: $kdy-font-size-md;
-  line-height: 1;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba($kdy-color-campus-white, 0.72);
+  font-size: 18px;
 }
 
 .kdy-home__safety-body {
@@ -155,14 +316,45 @@
 
 .kdy-home__safety-title {
   display: block;
-  color: $kdy-color-ink;
-  font-size: $kdy-font-size-sm;
-  font-weight: $kdy-font-weight-semibold;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .kdy-home__safety-description {
   display: block;
-  margin-top: $kdy-space-1;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
+  margin-top: 2px;
+  color: $kdy-color-campus-muted;
+  font-size: 11px;
+}
+
+.kdy-home__safety .taroify-icon {
+  flex: none;
+  color: $kdy-color-campus-muted;
+}
+
+/* 窄屏：立绘与地图预览收一点，标题保持两行断行位置不变 */
+@media (max-width: 350px) {
+  .kdy-home .campus-title {
+    font-size: 32px;
+  }
+
+  .kdy-home .campus-duck {
+    width: 118px;
+    height: 118px;
+  }
+
+  .kdy-home__hero-card {
+    height: 160px;
+    padding: 12px;
+  }
+
+  .kdy-home__art {
+    width: 96px;
+    height: 86px;
+  }
+
+  .kdy-home__map-image {
+    width: 108px;
+    height: 56px;
+  }
 }

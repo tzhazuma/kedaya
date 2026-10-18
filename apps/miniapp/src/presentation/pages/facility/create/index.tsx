@@ -2,7 +2,6 @@ import { Text, View } from '@tarojs/components'
 import { useState } from 'react'
 
 import { getContainer } from '../../../../app/container'
-import { PAGE_PATHS } from '../../../../app/routes'
 import {
   FACILITY_KINDS,
   FACILITY_NAME_SUGGESTIONS,

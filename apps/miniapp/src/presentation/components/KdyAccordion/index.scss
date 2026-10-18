@@ -1,5 +1,5 @@
 .kdy-accordion {
-  border-bottom: 1px solid $kdy-color-border;
+  border-bottom: 1px solid $kdy-tone-border;
 }
 
 .kdy-accordion:last-child {
@@ -13,15 +13,16 @@
   padding: $kdy-space-3 0;
 }
 
+/* 展开箭头是「指示」不是「强调」：用二级墨色，不用彩色小字 */
 .kdy-accordion__arrow {
   flex: none;
-  color: $kdy-color-brand-strong;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
 }
 
 .kdy-accordion__title {
   flex: 1;
-  color: $kdy-color-text;
+  color: $kdy-color-campus-ink;
   font-size: $kdy-font-size-sm;
   font-weight: 500;
   line-height: 1.5;
@@ -36,7 +37,7 @@
 
 .kdy-accordion__body {
   padding: 0 $kdy-space-1 $kdy-space-3;
-  color: $kdy-color-text-muted;
+  color: $kdy-color-campus-muted;
   font-size: $kdy-font-size-sm;
   line-height: 1.6;
 }

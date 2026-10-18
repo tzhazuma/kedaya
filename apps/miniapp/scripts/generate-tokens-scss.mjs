@@ -46,6 +46,14 @@ function kebab(input) {
     .toLowerCase()
 }
 
+/**
+ * 分组里可以写 `$comment` 之类的说明键（JSON 没有注释）。
+ * 生成 SCSS 时必须跳过它们，否则会产出 `$kdy-color-campus-$comment: ...`。
+ */
+function entries(group) {
+  return Object.entries(group).filter(([name]) => !name.startsWith('$'))
+}
+
 const px = (value) => `${value}px`
 const bare = (value) => String(value)
 const raw = (value) => String(value)
@@ -79,6 +87,11 @@ function fontFamilyList(value) {
 /** 需要 `px` 后缀的组（长度类） */
 const GROUPS = [
   { key: 'color', scss: 'color', format: raw, variables: true },
+  // 校园贴纸簿（主视觉）：白底 + 墨蓝黑 + 鸭黄 + 淡粉/淡绿。
+  { key: 'colorCampus', scss: 'color-campus', format: raw, variables: true },
+  // 夜间玻璃（深色主题）：只生成变量、不进 $kdy-tokens map —— 主题映射表在
+  // src/presentation/theme/tokens.scss，页面不该到处写 $kdy-color-night-*。
+  { key: 'colorNight', scss: 'color-night', format: raw, variables: true },
   { key: 'space', scss: 'space', format: px, variables: true },
   { key: 'radius', scss: 'radius', format: px, variables: true },
   { key: 'fontSize', scss: 'font-size', format: px, variables: true },
@@ -106,7 +119,7 @@ for (const group of GROUPS) {
 
   lines.push(`// ${group.key}`)
   if (group.variables) {
-    for (const [name, value] of Object.entries(values)) {
+    for (const [name, value] of entries(values)) {
       lines.push(`$kdy-${group.scss}-${kebab(name)}: ${group.format(value)};`)
     }
   }
@@ -117,9 +130,9 @@ for (const group of GROUPS) {
 lines.push('// 便捷 map，便于 SCSS 侧遍历')
 lines.push('$kdy-tokens: (')
 for (const group of GROUPS) {
-  if (group.key === 'colorDark') continue
+  if (group.key === 'colorDark' || group.key === 'colorNight') continue
   lines.push(`  "${group.scss}": (`)
-  for (const [name, value] of Object.entries(tokens[group.key])) {
+  for (const [name, value] of entries(tokens[group.key])) {
     const formatted = group.format(value)
     const needsParens = group.key === 'fontFamily'
     lines.push(`    "${kebab(name)}": ${needsParens ? `(${formatted})` : formatted},`)
@@ -132,7 +145,16 @@ lines.push('')
 /* ---- $kdy-color-dark ---- */
 lines.push('// colorDark —— color 的暗色覆盖值')
 lines.push('$kdy-color-dark: (')
-for (const [name, value] of Object.entries(tokens.colorDark)) {
+for (const [name, value] of entries(tokens.colorDark)) {
+  lines.push(`  "${kebab(name)}": ${value},`)
+}
+lines.push(');')
+lines.push('')
+
+/* ---- $kdy-color-night ---- */
+lines.push('// colorNight —— 深色主题（夜间玻璃）的完整取值');
+lines.push('$kdy-color-night: (')
+for (const [name, value] of entries(tokens.colorNight)) {
   lines.push(`  "${kebab(name)}": ${value},`)
 }
 lines.push(');')

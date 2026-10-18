@@ -24,6 +24,12 @@ export type { KdyAvatarProps } from './KdyAvatar'
 export { KdyCard } from './KdyCard'
 export type { KdyCardProps } from './KdyCard'
 
+export { KdyDock } from './KdyDock'
+export type { DockTab, KdyDockProps } from './KdyDock'
+
+/** 功能卡里的立绘（凑凑 = 布袋、野生居民 = 爪印），由 `assets/campus/*.png` 提供 */
+export { KdyFeatureArtwork } from './KdyFeatureArtwork'
+
 export {
   CAMPUS_CREDENTIAL_NOTICE_DEFAULT,
   KdyCampusCredentialNotice,
