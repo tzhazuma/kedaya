@@ -567,7 +567,15 @@ describe('TechPie Phase 0 + 校园卡 · 端到端验收', () => {
         activated: true,
         balanceFen: 8766,
         updatedAt: '2026-10-15T02:00:00.000Z',
+        // 上游同步未接线（fetchCard 无调用点）⇒ 余额是本地推导的，必须标 simulated。
+        // 这两条字段存在的意义就是"用户不该把 0 当成真实余额"。
+        simulated: true,
+        dataSource: 'local',
       });
+      // ⚠️ 这条断言是**诚实的护栏**：真实上游接通前，simulated 必须是 true。
+      // 如果哪天有人为了"看起来更真"把它改成 false，这里会红。
+      expect(body.data).toHaveProperty('simulated', true);
+      expect(body.data).toHaveProperty('dataSource', 'local');
       // 旧 scaffold 形状的 `summary` 必须**不存在**（"汇总"与"余额"是两个概念）
       expect(body.data).not.toHaveProperty('summary');
       expect(body.data).not.toHaveProperty('totalOutFen');

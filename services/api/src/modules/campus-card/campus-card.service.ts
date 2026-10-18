@@ -76,6 +76,10 @@ export class CampusCardService {
     const account: CampusCardAccount = {
       activated: true,
       balanceFen: latest?.balanceAfterFen ?? 0,
+      // 上游同步未接线（fetchCard 无调用点）⇒ 这份余额是本地推导的，
+      // 必须标 simulated，否则用户会把 0 当成真实余额。
+      simulated: true,
+      dataSource: 'local',
     };
     // §11.22-D：为空则**省略键**，不下发 `null`
     if (latest) account.updatedAt = latest.occurredAt.toISOString();

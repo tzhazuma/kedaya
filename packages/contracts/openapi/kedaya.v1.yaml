@@ -1981,6 +1981,16 @@ components:
           type: integer
           description: 余额，**整数分**（不是"汇总"，也不允许浮点）
         updatedAt: { type: string, format: date-time }
+        simulated:
+          type: boolean
+          description: |
+            这份余额/流水是否为模拟或本地推导数据。**当前恒为 true** ——
+            上游同步（`fetchCard`）尚未接线，`balanceFen` 是从本地流水推导的。
+            客户端必须据此显示「演示数据」标记，不能把 0 当成真实余额。
+        dataSource:
+          type: string
+          enum: [local, upstream]
+          description: 数据来源。`local` = 本地推导（当前唯一形态）；`upstream` = 真实上游同步。
 
     CampusCardTxn:
       type: object

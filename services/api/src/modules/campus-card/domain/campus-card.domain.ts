@@ -71,6 +71,20 @@ export interface CampusCardAccount {
   balanceFen: number;
   /** 余额对应的观测时刻；无流水时省略该键 */
   updatedAt?: string;
+  /**
+   * 这份数据是不是**模拟/非上游**的。
+   *
+   * ⚠️ 当前恒为 `true`：`HttpCampusDataAdapter.fetchCard` **没有任何调用点**，
+   * 也就是说上游余额/流水从来没有被同步进本地表。`balanceFen` 是从
+   * 本地 `CampusCardTransaction` 推导的（契约没有独立余额表），
+   * 而那张表在 mock 模式下没有真实数据来源 —— 所以余额显示 0 时，
+   * 用户必须能看出"这不是真实余额"。
+   *
+   * 接入真实上游后改为按数据来源标记，不要直接改成 `false`。
+   */
+  simulated: boolean;
+  /** 数据来源：`local` = 本地推导（当前唯一形态）；`upstream` = 真实上游同步 */
+  dataSource: 'local' | 'upstream';
 }
 
 /** 一条流水（`GET /campus-card/transactions` 的元素） */
