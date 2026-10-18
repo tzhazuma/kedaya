@@ -1,0 +1,40 @@
+.kdy-facility-detail {
+  &__head {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $kdy-space-3;
+  }
+
+  &__row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: $kdy-space-2 0;
+  }
+
+  &__label {
+    font-size: $kdy-font-size-sm;
+    color: $kdy-color-ink-soft;
+  }
+
+  &__value {
+    font-size: $kdy-font-size-sm;
+    color: $kdy-color-ink;
+  }
+
+  &__error {
+    display: block;
+    margin: $kdy-space-3 0;
+    font-size: $kdy-font-size-sm;
+    color: $kdy-color-danger;
+  }
+
+  &__actions {
+    margin-top: $kdy-space-5;
+    // 底部操作区叠安全区（AGENTS.md 硬约束）
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

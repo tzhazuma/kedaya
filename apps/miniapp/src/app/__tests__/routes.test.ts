@@ -147,7 +147,9 @@ describe('页面路由表', () => {
    */
   it('入口目录的每一个入口都能解析到真实页面（未上线的模块才允许为空）', () => {
     const pagePaths = new Set<string>(Object.values(PAGE_PATHS))
-    const notImplemented = new Set(['facility']) // 契约已登记、页面未实现
+    // 20 个契约模块**全部**已有页面（facility 本轮补齐）。这个集合留空是为了
+    // 以后新增模块时有个明确的地方登记「已登记但还没做」，而不是把断言删掉。
+    const notImplemented = new Set<string>()
 
     for (const entry of HOME_ENTRIES) {
       const path = homeEntryPath(entry.id)

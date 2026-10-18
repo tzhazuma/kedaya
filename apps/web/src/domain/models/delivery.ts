@@ -38,8 +38,7 @@ export interface ModuleDelivery {
  *     找搭子、失物招领、论坛）+ 宿舍矛盾 + 四个共建型模块（食堂 `canteen`、
  *     常见问题 `faq`、动物观察 `wildlife`、偷外卖 `takeout-guard`）+
  *     技术服务目录 `techpie` + 心理支持 `wellbeing` + AI 画像 `ai-portrait`。
- *   · 唯一还没端上页面的：`facility`（场馆预约）—— 后端已挂
- *     `/api/v1/facility/items`（脚手架级 CRUD + 时段冲突检测 + 发起人取消），
+ *   · `facility`（场馆预约）本轮补齐小程序三页（列表 / 发起 / 详情），
  *     小程序端页面待做，因此**如实标为 `api-only`**，不提前点亮。
  *
  * ⚠️ 校园数据默认走 `CAMPUS_DATA_MODE=mock`（确定性模拟数据，响应标 `simulated: true`）。
@@ -124,6 +123,11 @@ const DELIVERY: Readonly<Record<string, ModuleDelivery>> = {
   'ai-portrait': {
     stage: 'miniapp',
     note: '只读画像：每条标签都能查到来源，明确标注心理支持与宿舍矛盾**不参与**画像；后端暂无画像时给空态，不在客户端编造标签。',
+  },
+
+  facility: {
+    stage: 'miniapp',
+    note: '场馆预约：列表 / 发起 / 详情三页，取消走领域动作 POST /items/:id/cancel；时段冲突由服务端判定。',
   },
 
   // ---- Web + 小程序都已上线 ----

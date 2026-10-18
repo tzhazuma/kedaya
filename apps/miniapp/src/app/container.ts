@@ -58,6 +58,8 @@ import { createFleaMarketUseCases } from '../application/fleaMarket/fleaMarketUs
 import type { FleaMarketUseCases } from '../application/fleaMarket/fleaMarketUseCases'
 import { createErrandUseCases } from '../application/errand/errandUseCases'
 import type { ErrandUseCases } from '../application/errand/errandUseCases'
+import { createFacilityUseCases } from '../application/facility/facilityUseCases'
+import type { FacilityUseCases } from '../application/facility/facilityUseCases'
 import { createLostFoundUseCases } from '../application/lostFound/lostFoundUseCases'
 import type { LostFoundUseCases } from '../application/lostFound/lostFoundUseCases'
 import { createCanteenUseCases } from '../application/canteen/canteenUseCases'
@@ -123,7 +125,9 @@ import { createHttpFleaMarketRepository } from '../data/repositories/httpFleaMar
 import { createMockFleaMarketRepository } from '../data/repositories/mockFleaMarketRepository'
 import { createHttpErrandRepository } from '../data/repositories/httpErrandRepository'
 import { createMockErrandRepository } from '../data/repositories/mockErrandRepository'
+import { createHttpFacilityRepository } from '../data/repositories/httpFacilityRepository'
 import { createHttpLostFoundRepository } from '../data/repositories/httpLostFoundRepository'
+import { createMockFacilityRepository, seedFacilityBookings } from '../data/repositories/mockFacilityRepository'
 import { createMockLostFoundRepository } from '../data/repositories/mockLostFoundRepository'
 import { createHttpDormHarmonyRepository } from '../data/repositories/httpDormHarmonyRepository'
 import { createMockDormHarmonyRepository } from '../data/repositories/mockDormHarmonyRepository'
@@ -183,6 +187,7 @@ import type { FleaItemRepository } from '../domain/ports/fleaMarketRepository'
 import type { ForumRepository } from '../domain/ports/forumRepository'
 import type { GroupBuyRepository } from '../domain/ports/groupbuyRepository'
 import type { IdentityRepository } from '../domain/ports/identityRepository'
+import type { FacilityRepository } from '../domain/ports/facilityRepository'
 import type { LostFoundRepository } from '../domain/ports/lostFoundRepository'
 import type { MediaRepository } from '../domain/ports/mediaRepository'
 import type { NotificationRepository } from '../domain/ports/notificationRepository'
@@ -305,6 +310,7 @@ export interface AppContainer {
     // 六个业务模块（跳蚤 / 跑腿 / 找搭子 / 失物招领 / 论坛 / 拼单已在上面）
     fleaMarket: FleaMarketUseCases
     errand: ErrandUseCases
+    facility: FacilityUseCases
     lostFound: LostFoundUseCases
     // 共建型模块（食堂 / FAQ / 动物观察点 / 偷外卖）
     canteen: CanteenUseCases
@@ -606,6 +612,18 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     cache,
     clock,
     cacheKey: StorageKeys.lostFoundListCache,
+    viewerId,
+  })
+
+  // 场馆预约：mock 下带一份演示种子（覆盖已预约/已取消两种状态），
+  // 这样状态徽章与「取消」闸门在没有后端时也能看到
+  const facilityRepository: FacilityRepository = env.useMock
+    ? createMockFacilityRepository({ now: clock.now, seed: seedFacilityBookings(clock.now()) })
+    : createHttpFacilityRepository(apiClient)
+  const facility = createFacilityUseCases({
+    repository: facilityRepository,
+    cache,
+    clock,
     viewerId,
   })
 
@@ -1026,7 +1044,8 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       notifications,
       fleaMarket,
       errand,
-      lostFound,
+      facility,
+    lostFound,
       canteen,
       takeoutGuard,
       todayNutrition,

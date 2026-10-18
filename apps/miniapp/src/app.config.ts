@@ -49,6 +49,7 @@ const subPackages = [
     pages: ['list/index', 'create/index', 'detail/index', 'profile/index', 'recommendations/index'],
   },
   { root: 'presentation/pages/lostFound', pages: ['list/index', 'create/index', 'detail/index'] },
+  { root: 'presentation/pages/facility', pages: ['list/index', 'create/index', 'detail/index'] },
   {
     root: 'presentation/pages/forum',
     pages: ['list/index', 'create/index', 'detail/index', 'report/index'],

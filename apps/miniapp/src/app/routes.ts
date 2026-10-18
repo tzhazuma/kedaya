@@ -55,6 +55,9 @@ export const PAGE_PATHS = {
   lostFoundList: '/presentation/pages/lostFound/list/index',
   lostFoundCreate: '/presentation/pages/lostFound/create/index',
   lostFoundDetail: '/presentation/pages/lostFound/detail/index',
+  facilityList: '/presentation/pages/facility/list/index',
+  facilityCreate: '/presentation/pages/facility/create/index',
+  facilityDetail: '/presentation/pages/facility/detail/index',
   // 论坛
   forumList: '/presentation/pages/forum/list/index',
   forumCreate: '/presentation/pages/forum/create/index',
@@ -147,6 +150,7 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   canteen: PAGE_PATHS.nutritionHome,
   faq: PAGE_PATHS.faq,
   'takeout-guard': PAGE_PATHS.takeoutGuardList,
+  facility: PAGE_PATHS.facilityList,
   techpie: PAGE_PATHS.techpieLinks,
   wellbeing: PAGE_PATHS.wellbeingList,
   'ai-portrait': PAGE_PATHS.aiPortraitHome,
@@ -158,6 +162,11 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   schedule: PAGE_PATHS.schedule,
   'campus-card': PAGE_PATHS.campusCard,
   profile: PAGE_PATHS.profile,
+}
+
+/** 场馆预约详情路径 */
+export function facilityDetailPath(id: string): string {
+  return `${PAGE_PATHS.facilityDetail}?id=${encodeURIComponent(id)}`
 }
 
 export function moduleEntryPath(moduleId: string): string | null {

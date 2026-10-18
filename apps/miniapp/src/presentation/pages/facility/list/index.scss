@@ -1,0 +1,80 @@
+.kdy-facility {
+  &__actions {
+    margin: $kdy-space-4 0;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-3;
+  }
+
+  &__more {
+    display: block;
+    padding: $kdy-space-4 0;
+    text-align: center;
+    font-size: $kdy-font-size-xs;
+    color: $kdy-color-ink-soft;
+  }
+}
+
+.kdy-facility-card {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+
+  &__head {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: $kdy-space-2;
+  }
+
+  &__title {
+    flex: 1;
+    min-width: 0;
+    font-size: $kdy-font-size-md;
+    font-weight: 600;
+    color: $kdy-color-ink;
+  }
+
+  &__kind {
+    font-size: $kdy-font-size-xs;
+    color: $kdy-color-ink-soft;
+  }
+
+  &__meta {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: $kdy-space-3;
+  }
+
+  &__time {
+    font-size: $kdy-font-size-sm;
+    color: $kdy-color-ink;
+  }
+
+  &__duration {
+    font-size: $kdy-font-size-xs;
+    color: $kdy-color-ink-soft;
+  }
+
+  &__foot {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__fee {
+    font-size: $kdy-font-size-sm;
+    font-weight: 600;
+    color: $kdy-color-brand-strong;
+  }
+
+  &__mine {
+    font-size: $kdy-font-size-xs;
+    color: $kdy-color-ink-soft;
+  }
+}

@@ -1,0 +1,38 @@
+.kdy-facility-form {
+  &__label {
+    display: block;
+    margin-bottom: $kdy-space-2;
+    font-size: $kdy-font-size-sm;
+    color: $kdy-color-ink;
+  }
+
+  &__chips {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    margin-bottom: $kdy-space-4;
+  }
+
+  &__field {
+    margin-bottom: $kdy-space-3;
+  }
+
+  &__row {
+    display: flex;
+    flex-direction: row;
+    gap: $kdy-space-3;
+    margin-bottom: $kdy-space-3;
+  }
+
+  &__error {
+    display: block;
+    margin: $kdy-space-2 0;
+    font-size: $kdy-font-size-sm;
+    color: $kdy-color-danger;
+  }
+
+  &__actions {
+    margin-top: $kdy-space-4;
+  }
+}

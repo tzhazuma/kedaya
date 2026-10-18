@@ -111,7 +111,7 @@ export const HOME_SECTIONS: readonly HomeSection[] = [
   {
     id: 'daily',
     title: '校园日常',
-    entryIds: ['cou', 'flea-market', 'errand', 'lost-found', 'canteen', 'wildlife', 'schedule', 'campus-card'],
+    entryIds: ['cou', 'flea-market', 'errand', 'lost-found', 'canteen', 'wildlife', 'facility', 'schedule', 'campus-card'],
   },
   {
     id: 'community',
@@ -127,11 +127,6 @@ export const HOME_SECTIONS: readonly HomeSection[] = [
     id: 'account',
     title: '账号与身份',
     entryIds: ['auth', 'profile', 'notifications'],
-  },
-  {
-    id: 'soon',
-    title: '尚未上线',
-    entryIds: ['facility'],
   },
 ]
 
