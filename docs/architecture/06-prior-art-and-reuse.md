@@ -6,8 +6,8 @@
 > `https://map.niyiwei.com`「上科大一图通」（下称 **一图通**）。
 >
 > 调研日期：**2026-10-19**（Asia/Shanghai）。
-> 调研基线：任务下发时 `main @ 54dc95a`；写作时工作区 HEAD 为 `6bf7316`
-> （并行工作只多了一个 DDL 契约提交，未改本文结论）。
+> 调研基线：任务下发时 `main @ 54dc95a`；写作期间并行工作已提交 `6bf7316` 及后续提交。
+> 本文引用**符号与路径**而非行号；若文件在并行工作中移动，以 `git ls-files` 为准。
 > 性质：**只读调研 + 文档产出**。未改 `apps/`、`services/`、`packages/`；
 > 未从 `/tmp/kdy-ref` 复制任何代码、数据文件或素材；未 commit / push。
 > 结论文件：本文。配套的轮流计划见
@@ -103,7 +103,7 @@
 | 形态 | 个人校园工作台：邮件、课程资料、作业/日程、检索、AI 助手；Web + Android（Capacitor） |
 | 技术栈 | TypeScript、Fastify、`node:sqlite`（`DatabaseSync`）、React 19 + Vite、Capacitor 8、Playwright、`imapflow`、`mailparser`、`pdfjs-dist`、`tesseract.js`、`chrono-node` |
 | 数据来源 | 学校 IMAP（`imap.shanghaitech.edu.cn:993`）、Blackboard（`elearning.shanghaitech.edu.cn:8443`）、Gradescope、Piazza、学校 Coremail 官网 |
-| 采集路径 | **三条**：① 浏览器扩展桥（本地/桌面）；② 服务端隔离 Chromium + 远程画面（生产默认）；③ 外部浏览器手动导入 |
+| 采集路径 | **四类**：① 浏览器扩展桥（本地/桌面）；② 服务端隔离 Chromium + 远程画面（生产默认）；③ 服务端密码代登录（显式配置）；④ 外部浏览器手动导入 |
 | 存储 | SQLite 元数据 + 文件存储（邮件原件 `.eml`、附件、哈希）；加密凭据/会话表 |
 | 外部依赖 | 见 §2.2 与 §4.3；关键依赖的许可见 §4.3 |
 | 明确边界 | 不绕过验证码/MFA/TLS；不提交作业、不发邮件、不发帖；覆盖率受平台权限、页面结构、附件类型影响 |
@@ -182,14 +182,14 @@
 
 #### 2.4.1 先纠正一个流行误解：它不是“只有一个浏览器扩展”
 
-AC 有三种采集模式（A：`implementations/external-browser.ts`、
+AC 有四类采集模式（A：`implementations/external-browser.ts`、
 `implementations/server-browser.ts`、`implementations/real/routes.ts`）：
 
 | 模式 | 触发 | 登录态在哪 | 服务端见到密码？ | 服务端存 Cookie/会话？ | 说明 |
 | --- | --- | --- | --- | --- | --- |
 | **浏览器扩展桥** | `PLATFORM_SYNC_MODE=extension`（且没有服务端采集器） | 用户自己的浏览器 | **否** | **否**（只收页面提取物/附件字节） | 适合本机/桌面；生产默认不是它 |
 | **服务端远程浏览器** | `SOURCE_LOGIN_MODE=remote-browser`（**生产默认**） | 服务端隔离 Chromium | **是**（用户把密码输入到服务端页面；进程内存可见） | **是**，AES-GCM 加密的 `storageState` | 官网页面流式传给用户；不保存日常密码 ≠ 不经过服务端 |
-| **服务端密码代登录** | `SOURCE_LOGIN_MODE=server-password` + 配置允许的平台 | 服务端 Chromium | **是**（API 收密码，代填） | **是**，加密 | 只对显式允许的平台；风险最高 |
+| **服务端密码代登录** | 显式配置 `SOURCE_LOGIN_MODE=server-password` | 服务端 Chromium | **是**（API 收密码，代填） | **是**，加密 | 只应在明确允许时启用；风险最高 |
 | **外部浏览器手动导入** | `SOURCE_LOGIN_MODE=external` | 用户自己的浏览器 | 否 | 否 | 最低风险，但 UX 最差 |
 
 > 因此，回答“它读的是用户的 Cookie 还是服务端重放密码？”——
@@ -626,7 +626,7 @@ CM 的“接入本人本机的微信与 QQ 消息”是真的**本机读取**，
 | 数据 | 许可 | 我们能做什么 | 必须做什么 |
 | --- | --- | --- | --- |
 | OSM 衍生路网（CM `walking-network.json`） | 文件自述 **ODbL-1.0** | 可以自己从 OSM 重新抽取；理论上也可复用该库并遵守 ODbL | 署名 © OpenStreetMap contributors；衍生数据库以 ODbL 相同方式共享；保留来源/日期 |
-| CM `places.json` 的校方建筑轮廓 | **未确认**（校方地图公开数据，不等于开放许可） | 先按我们已有的校方 GIS 授权路径使用；不要复制 CM 的文件 | 取得校方书面授权/明确范围后再用 |
+| CM `places.json` 的校方建筑轮廓 | **未确认**（校方地图公开数据，不等于开放许可） | 走我们既有的校方 GIS 数据链路（授权状态见 `docs/features/miniapp-campus-map.md`，仍**未确认**）；不要复制 CM 的文件 | 取得校方书面授权/明确范围后再用 |
 | CM `doctoral-footprints-source.json`（浦东 gov PDF 配准） | **未确认**（政府公示图的使用范围） | 只学“保留原始顶点 + 配准点 + 残差”的方法 | 不要复制坐标/配准结果；要自己从公示图重做并记录来源 |
 | 一图通底图/照片/菜单 | 无开放许可；照片归拍摄者 | 只学功能与交互 | 不抓取、不镜像、不二次分发 |
 
@@ -636,10 +636,33 @@ CM 的“接入本人本机的微信与 QQ 消息”是真的**本机读取**，
 
 ### 4.5 结论表（要求的那张表）
 
+#### 4.5.1 可以学（抽象层面）
+
+- **架构**：端口/适配器、采集与展示分离、每源快照 + 聚合层、失败隔离、来源状态机。
+- **思路**：先核对身份再导入、采集前后各核对一次、只读路由白名单、配对码换令牌、
+  凭据与会话分离加密、缓存/过期显式标记、冲突不静默选边。
+- **数据模型**：Item（来源证据）与 Task（可执行事项）分离、稳定 ID + alias、
+  `dueAt` 与 `dueAtRaw` 并存、三态提交 + 七态细分、`dueConflicts`/`submissionConflicts`、
+  来源回执、手动覆盖独立存储。
+- **交互设计**：同步前展示将发送什么、来源徽章、`stale/cached` 提示、
+  “时间待定”而不是假日期、冲突提示、逐条确认。
+- **测试思路**：时区表驱动、冲突/缺失/陈旧/幂等/账号切换的边界用例。
+
+#### 4.5.2 不可以做（表达与资产层面）
+
+- **复制代码**：任何 `.ts`/`.js`/`.py` 片段，包括“只抄一个 parser/一个 hook”。
+- **翻译/转写**：Dart→TS、Python→TS、React→Vue，换语言不改变衍生作品性质。
+- **逐行改写**：换变量名、调换函数顺序、保留同样的分支/常量/注释结构，仍是衍生。
+- **复制数据文件**：`places.json`、`walking-network.json`、菜单、照片、测试夹具。
+- **复制 UI/素材**：文案、图标、配色、布局、立绘、主题、截图。
+- **把依赖许可当仓库许可**：`PLAYWRIGHT-LICENSE`、`ocr/LICENSE`、`pdfjs/LICENSE`、
+  `WCDB_LICENSE.txt` 都只覆盖对应第三方组件。
+- **把“公开可访问”当“可自由使用”**：一图通照片、校方地图、平台课程资料都不行。
+
 | 来源 | 能学什么（想法/架构/交互） | 不能做什么 | 理由 |
 | --- | --- | --- | --- |
 | **AC 代码**（无 LICENSE） | ① 配对码换 Bearer token 的引导流程；② 采集前/后双次身份核对；③ 只读 URL allowlist；④ 每用户 AAD 的 AES-GCM 凭据/会话库；⑤ `needs_auth/syncing/error` 状态机；⑥ Item/Task 分离、`dueConflicts`、来源回执；⑦ 原件先落盘再解析 | 复制/翻译/逐行改写任何 `.ts`/`.js`；复制注释、常量、目录结构；把它的扩展或服务端采集器 vendor 进我们仓库；复用它的立绘/横幅 | 无 LICENSE = 保留所有权利；翻译与改写是衍生作品；素材另有 CC BY-NC-SA |
-| **CM 代码**（无 LICENSE） | ① 每源统一快照 + 聚合层只读；② 三态提交 + 七态细分 + 证据字段；③ `availability` 与 `due_at` 分离；④ 历史学期优先 `ended`；⑤ 缺失截止用 estimated 明确标注；⑥ 手动覆盖不改来源；⑦ 浏览器内路网 + 80 m/min + 不画直线；⑧ DPAPI 本机保管的思路 | 复制/翻译/逐行改写任何 `.py`/`.js`；复制 `native/` 微信解密代码；复制 `places.json`/`walking-network.json`；复用 Font Awesome 之外的 UI 素材；把 QJQ/WYT 的代码当可再许可 | 仓库无 LICENSE；native 代码来源本身也不清晰；ODbL 只覆盖 OSM 数据；校方地图授权未确认 |
+| **CM 代码**（无 LICENSE） | ① 每源统一快照 + 聚合层只读；② 三态提交 + 七态细分 + 证据字段；③ `availability` 与 `due_at` 分离；④ 历史学期优先 `ended`；⑤ 缺失截止用 estimated 明确标注；⑥ 手动覆盖不改来源；⑦ 浏览器内路网 + 80 m/min + 不画直线；⑧ DPAPI 本机保管的思路 | 复制/翻译/逐行改写任何 `.py`/`.js`；复制 `native/` 微信解密代码；复制 `places.json`/`walking-network.json`；复用它的 UI 素材（Font Awesome 可从上游按许可使用）；把 QJQ/WYT 的代码当可再许可 | 仓库无 LICENSE；native 代码来源本身也不清晰；ODbL 只覆盖 OSM 数据；校方地图授权未确认 |
 | **AC 的第三方依赖** | 直接从**上游**用 Playwright/Tesseract/pdfjs/imapflow/mailparser，按各自许可 | 把 `deploy/PLAYWRIGHT-LICENSE` 当成 AC 代码许可；复制 AC 的 Chromium 打包/配置 | Apache-2.0/MIT 只覆盖对应组件；NOTICE 义务要遵守 |
 | **CM 的第三方依赖** | 从上游用 markdown-it/Font Awesome/ids-passkey；OSM 按 ODbL | 假定 NapCat 可自由再分发（NOASSERTION）；把 Font Awesome 图标当 CM 原创 | 各组件许可独立；NapCat 条款未确认 |
 | **一图通** | 功能清单、交互组织（地图 + 日程 + 菜单 + 快递站）、POI 分类 | 抓取/镜像/转存照片与菜单数据；抓底图瓦片；复制前端 bundle/设计资产 | 闭源、无许可；照片著作权归拍摄者；底图属于校方 GIS |
@@ -673,7 +696,7 @@ CM 的“接入本人本机的微信与 QQ 消息”是真的**本机读取**，
 | 课表 | `services/api/src/modules/schedule/`：本地 `ScheduleCourse`；`POST /sync` 才要求 campus binding | DDL 不要挂在这个绑定门下 |
 | 已有 DDL 契约 | `packages/contracts/src/deadlines.ts`（`DeadlineItem` / `DeadlineSummary` / 时区/去重常量） | 已起步，本文在其上给形状 |
 | 已有 DDL 纯函数 | `packages/contracts/src/deadline-normalize.ts`（并行工作刚从 `packages/shared` 迁来；以 `git ls-files` 为准） | 解析/排序/汇总可复用 |
-| 群消息 | `packages/shared/src/group-import.ts`（粘贴解析）+ `services/api/src/modules/group-bot/`（官方 QQ 机器人 webhook + 管理员草稿） | 群消息的合法路径已有骨架 |
+| 群消息 | `packages/shared/src/group-import.ts`（粘贴解析器）+ `services/api/src/modules/group-bot/`（官方 QQ 机器人 webhook + 管理员草稿） | 解析器已在，但三端未见“粘贴”入口；群消息的合法路径已有骨架 |
 | 地图 | `packages/contracts/src/campus-map.ts`（校方 GIS 底图/投影）+ `campus-poi.ts`（空 POI + 照片闸门） | 不复制 CM 的 map 数据 |
 | 通知 | `services/api/src/modules/notifications/` + `common/notifications/notification.port.ts` | DDL 的提醒应走这个端口，不在 DDL 里造推送 |
 | 扩展 / IMAP | **没有** | 本文给“条件性做”的边界 |
@@ -977,8 +1000,10 @@ Web: POST /api/v1/deadline-bridge/revoke
 
 #### 5.5.2 我们已经有什么
 
-- `packages/shared/src/group-import.ts`：**粘贴解析**，纯函数、无网络、带 evidence；
+- `packages/shared/src/group-import.ts`：**粘贴解析器**，纯函数、无网络、带 evidence；
   目前面向跳蚤/拼单/跑腿（sell/buy/groupbuy/errand），不是课程通知。
+  **注意**：本轮只确认了这个解析器和它的测试；在 `apps/` 里没有找到用户可见的“粘贴”页面，
+  所以“粘贴”目前是**能力**，不是**已交付入口**；要做 P0 需要补一个小程序/Web 入口。
 - `services/api/src/modules/group-bot/`：**官方 QQ 机器人 webhook**（Ed25519 验签）+
   管理员草稿；已经调用 `parseGroupImport`，但只落草稿，不自动发布。
 - 这条路径的合法性来自：**群管理员显式把机器人拉进群**，平台按官方 API 推送；
@@ -994,7 +1019,8 @@ Web: POST /api/v1/deadline-bridge/revoke
 
 #### 5.5.4 建议的演进
 
-1. **P0**：保留粘贴解析；给课程通知加一个 `parseGroupNotice`（或 AI + 引用），
+1. **P0**：保留解析器；若要“粘贴”体验，先补一个端上入口（小程序/Web），
+   再给课程通知加一个 `parseGroupNotice`（或 AI + 引用），
    输出 `Finding` 候选（类型/标题/时间/地点/引用），**必须用户确认**才进 DDL。
 2. **P1**：把 `group-bot` 从“商品草稿”扩到“课程通知草稿”：
    官方机器人 + 管理员确认 + 只创建本地 DDL，不改学校提交状态。

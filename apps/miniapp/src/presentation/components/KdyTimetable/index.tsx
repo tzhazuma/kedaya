@@ -1,4 +1,5 @@
 import { ScrollView, Text, View } from '@tarojs/components'
+import { useEffect, useState } from 'react'
 
 import { layoutDayLanes } from '../../../application/schedule/timetable'
 import { MAX_SLOT } from '../../../domain/models/schedule'
@@ -60,6 +61,17 @@ export function KdyTimetable({
 }: KdyTimetableProps) {
   const classes = ['kdy-timetable', className ?? ''].filter((item) => item !== '').join(' ')
 
+  /**
+   * 挂载后再设 `scrollIntoView`，而不是首帧就传：
+   * H5 的 web-component 版 scroll-view 只在**属性变化**时执行滚动，
+   * 首帧传入的值会被忽略（表现是"打开永远停在周一"）。
+   * 先给空串、effect 里再赋值，小程序与 H5 都能滚到"今天"。
+   */
+  const [scrollTarget, setScrollTarget] = useState('')
+  useEffect(() => {
+    setScrollTarget(`kdy-timetable-day-${selectedWeekday}`)
+  }, [selectedWeekday])
+
   return (
     <View className={classes}>
       <View className='kdy-timetable__axis'>
@@ -77,7 +89,7 @@ export function KdyTimetable({
         className='kdy-timetable__scroll'
         scrollX
         scrollWithAnimation
-        scrollIntoView={`kdy-timetable-day-${selectedWeekday}`}
+        scrollIntoView={scrollTarget}
       >
         <View className='kdy-timetable__canvas'>
           <View className='kdy-timetable__head'>

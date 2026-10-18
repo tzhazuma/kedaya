@@ -197,7 +197,7 @@ export const CAMPUS_SERVICES = [
       '仓库里没有任何校方书面授权；Mock 适配器的错误文案写的是「仍在向校方申请对接中」。',
     dataSources: ['local-simulator'],
     wiring: 'not-wired',
-    simulatedDisclosure: 'none',
+    simulatedDisclosure: 'response-field',
     provides: ['第一级身份：学号 / 姓名 / 院系 / 邮箱（真实实现应由 CAS 返回）'],
     integration: {
       adapterFile: 'services/api/src/modules/auth/data/mock-campus-auth.provider.ts',
@@ -225,7 +225,7 @@ export const CAMPUS_SERVICES = [
       'Mock 直接采信 `mock-<8 位学号>` 形式的票据：`NODE_ENV` 未设/拼错时，任何人都能冒充任意学号。',
       '`.env.example` 与 `test/setup.ts` 里有一个 `https://cas.shanghaitech.edu.cn/cas`；它是仓库既有值，**未经校方确认**，不能当作真实地址使用。',
     ],
-    userFacingNote: '演示期：登录为模拟身份，不是真实学号；真实 CAS 尚在申请。',
+    userFacingNote: '演示期：CAS 登录为模拟身份（响应带 simulated: true），不是真实学号',
   },
 
   /* ------------------------------------------------------------------ *
