@@ -38,11 +38,14 @@ nvm use
   （报错形如 `[ WXSS 文件编译错误] ./common.wxss(1:xxxxx): error at token ':'`）。
   单测 `src/presentation/theme/__tests__/wxss-safety.test.ts` 会扫描全部 scss 拦截。
 
-小程序默认 Mock，**账号也是 Mock**：登录页会提示演示账号
+小程序默认 Mock，**账号也是 Mock**。凭据**不显示在登录页**（那是给真实用户看的门面）：
 
 | 账号 | 密码 |
 | --- | --- |
 | `demo@kedaya.dev` | `Kedaya2026` |
+
+Mock 凭据只出现在两处：本文档，以及小程序「发现 → 演示与调试工具」的**折叠面板**里
+（点开才看得到，且写明了它是本地 Mock 后端）。
 
 Mock 账号复刻了真实后端的规则（验证码一次性、密码错误文案统一、改密后旧令牌失效），
 因此「Mock 下点得通、接后端就崩」这类问题不会出现。
@@ -76,11 +79,19 @@ npm run dev:serve -w @kedaya/api           # 终端 B：node --watch 跑编译�
 ```
 
 `prisma:seed` 覆盖 6 个演示账号与十余类业务数据（课表 / 校园卡流水 / 拼单 /
-跳蚤 / 跑腿 / 搭子 / 失物招领 / 论坛帖与回复 / 食堂菜品 / 野生动植物 / TechPie /
+跳蚤 / 跑腿 / 搭子 / 失物招领 / 论坛帖与回复 / 野生动植物 / TechPie /
 FAQ / 外卖被拿报备 / 站内信），让每个列表页打开就有中文数据可看。
 密码统一为 `Kedaya2026`，账号：`demo@kedaya.dev`、`zhang.yf@kedaya.dev`、
 `chen.mx@kedaya.dev`、`liu.zy@kedaya.dev`、`wang.h@kedaya.dev`、`zhou.qr@kedaya.dev`。
 生产环境**默认拒绝执行**（需要 `SEED_FORCE=1` 才会跑）。
+
+营养管家（`canteen`）的种子分两部分，且**都是演示量级、不是食堂公示值**：
+
+- **菜品库**：72 道菜 / 覆盖 4 个食堂（`services/api/prisma/seed-data.ts` 的 `DISHES_SEED`）。
+  这是推荐与汇总的**数据地基**，通过 Web 后台 `/admin/dishes` 或 API 维护（写操作需管理员）。
+- **个人演示记录**：给 `demo@kedaya.dev`（可用 `SEED_NUTRITION_EMAIL` 改）灌一份每日需求 + 今日早/午餐，
+  好让「营养管家」首页一打开就有进度环与推荐。脚本**刻意不新建账号**（凭空造一个能登录的账号是安全债）；
+  目标邮箱没注册时会打印一行说明并跳过，不会静默成功。当天已有记录时不重复写。
 
 服务地址 <http://localhost:3000/api/v1>（统一前缀 `/api/v1`，响应统一信封）。
 存活探针在 `GET /health`（**不带** `/api/v1` 前缀、**不走**信封）。
@@ -107,6 +118,9 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 | --- | --- |
 | `DATABASE_URL` | 数据库连接串 |
 | `JWT_SECRET` | 签发/校验 JWT（缺失会直接报错，不会静默降级） |
+| `CAMPUS_SESSION_ENC_KEY` | 校园系统绑定会话的 AES-256-GCM 密钥（32 字节 hex/base64）。缺失**启动失败** |
+| `CONTACT_EXCHANGE_ENC_KEY` | 联系方式交换的加密密钥（同上）。缺失**启动失败**（fail closed：联系方式绝不能明文落库） |
+| `WILDLIFE_FUZZ_SECRET` | 野生动物位置加噪密钥（≥32 字节）。缺失**启动失败** —— 加噪是隐私防线，静默降级等于静默泄漏（规格 §9.7） |
 | `AUTH_DEV_EXPOSE_CODES` | `"true"` 时**仅开发环境**在发送验证码的响应里回显 `devCode` |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | 邮件发信。本机**不用配**：开发环境默认走日志实现（验证码打控制台）；生产环境不配会让服务起不来（详见 `docs/deploy.md` §5.7） |
 | `MAIL_TRANSPORT` | 不配即可。`console` 强制日志实现（生产环境设了会拒绝启动）；`smtp` 强制真发信 |
@@ -115,11 +129,19 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 | `CAMPUS_CAS_MOCK_ALLOWED` | 本机不用配：开发环境下 Mock 校园登录本来就可用（`ticket` 传 `mock-<8 位学号>`）。它在**生产环境**是关闭的，要演示整条链路才临时打开 —— 理由见 `docs/deploy.md` §5.2 |
 | `CAMPUS_EGATE_DATA_URL` / `CAMPUS_JWC_DATA_URL` / `CAMPUS_CARD_DATA_URL` | 各校园系统上游地址，仅 `live` 模式使用；未配置则明确报错 |
 | `CAMPUS_UPSTREAM_TIMEOUT_MS` | 校园上游请求超时（毫秒，默认 6000） |
-| `AGENT_LLM_BASE_URL` / `AGENT_LLM_API_KEY` / `AGENT_LLM_MODEL` | 可达鸭的 OpenAI 兼容模型；**全部留空即走规则回答**，功能完整 |
+| `AGENT_LLM_BASE_URL` / `AGENT_LLM_API_KEY` / `AGENT_LLM_MODEL` | 可达鸭的 OpenAI 兼容模型；**全部留空即走规则回答**，功能完整。例：`https://api.modelverse.cn/v1` + `deepseek-v4.1-flash`（优云智算）或 `https://api.deepseek.com/v1` + `deepseek-chat` |
 | `AGENT_LLM_TIMEOUT_MS` | 模型调用超时（毫秒，默认 8000），超时即降级为规则回答 |
+| `ADMIN_API_KEY` / `ADMIN_USER_IDS` | 营养管家**菜品营养数据**的写权限（`POST/PATCH/DELETE /canteen/items`，`AdminGuard`）。前者是请求头 `x-admin-key` 的值，后者是允许的登录用户 id（逗号分隔）。**两者都不配时写操作一律 403**（fail-closed）；读接口匿名可用。Web 后台 `/admin/dishes` 用 `NEXT_PUBLIC_ADMIN_API_KEY` 传同一个值 |
+| `APP_TZ_OFFSET_MINUTES` | 营养管家按哪个时区切「今天」（分钟，默认 `480` = UTC+8）。开发机 TZ 与容器 TZ 不一致时靠它，别依赖进程 TZ |
+| `SEED_NUTRITION_EMAIL` | `prisma:seed` 把营养管家演示数据（每日需求 + 今日早/午餐）灌给哪个**已注册**邮箱（默认 `demo@kedaya.dev`）。账号不存在时如实跳过，不新建账号 |
 
 `AUTH_DEV_EXPOSE_CODES` 只是为了真机联调方便；生产必须关闭，
 否则任何人都能拿到别人的注册验证码。关闭时验证码会打印到 API 控制台（`ConsoleMailAdapter`）。
+
+上面三条「缺失即启动失败」的密钥是**故意** fail closed 的：宁可服务起不来，
+也不能在没有密钥时把隐私数据以明文/弱密钥落库。本地直接用样例里的开发值即可 ——
+`cp services/api/.env.example services/api/.env` 一句话就能起服务；密钥可以用
+`openssl rand -hex 32` 换成自己的（换掉之后数据库里已加密的旧数据要重新产生）。
 
 想在本机验证**真实发信链路**（邮件组装、SMTP 对话、错误分支），不用去注册邮箱服务商：
 `SMTP_HOST=127.0.0.1 SMTP_PORT=2525 SMTP_ALLOW_INSECURE=true SMTP_FROM=... node <一个假 SMTP 服务器>`，
@@ -219,9 +241,16 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 | 本周课表（含冲突与可切换学期） | `GET /schedule/week` |
 | 从教务系统整体同步 | `POST /schedule/sync` |
 | 手动加课（临时调课兜底） | `POST /schedule/items` |
-| 校园卡总览（余额 / 流水 / 低于阈值 / 异常扣款 / 还能撑几天） | `GET /campus-card/overview` |
-| 挂失指引（写审计；不谎称已挂失） | `GET /campus-card/lost-report` |
+| 校园卡绑定状态 / 开通 / 解绑（§11.21-B 形状） | `GET`/`POST /campus-card/account`（开通走 `account/activate`）、`DELETE /campus-card/account` |
+| 校园卡流水（游标分页） | `GET /campus-card/transactions` |
+| 付款码（上游未就绪时明确告知） | `GET /campus-card/payment-code` |
 | 隐私开关 / 同意管理 / 数据导出 | `GET`/`PATCH /profile/me`、`/profile/consents`、`/profile/export` |
+
+⚠️ 校园卡目前的余额是**从本地账单推导**的（最新一条流水的 `balanceAfterFen`，契约没有独立余额表），
+而 `CAMPUS_DATA_PORT.fetchCard`（mock / live 的校园卡快照）**还没有被接进任何写入路径** ——
+也就是说本机跑起来 `account` 会是没有流水的状态。接入（同步上游快照 → 落流水）是校园卡模块
+剩下的最后一块；在此之前**不要**用 `balanceFen: 0` 当成"卡里没钱"展示（客户端与 agent 都区分
+"没有账单记录"和"余额为 0"）。
 
 **可达鸭（内置助手）** 的端点是 `POST /agent/chat`、`GET /agent/suggestions`、
 `GET /agent/capabilities`。它**不配置模型也能用**：
@@ -291,13 +320,19 @@ Web 是独立的 Next.js 客户端，跟小程序共用后端 API，但界面与
 npm run dev:web           # Next.js dev server → http://localhost:3001
 ```
 
-- 首页宫格 19 个模块都可达，角标**如实**标注可用性：
+- 首页宫格 20 个模块都可达，角标**如实**标注可用性：
   「Web 已上线 / 小程序已上线 / 接口就绪」。判定逻辑只在
   `apps/web/src/domain/models/delivery.ts` 一处，改交付范围就改它。
-- 目前浏览器里真正能点开使用的是拼单垂直切片（`/groupbuy`），
-  以及管理后台占位（`/admin`）；其余模块点进 `/m/<id>` 会看到该模块的交付说明。
-- 默认走 mock 数据，不需要后端；要连真实后端时设 `NEXT_PUBLIC_API_BASE_URL`
-  （默认 `http://localhost:3000`，本机换端口时对应改成 `http://localhost:3999`）。
+  （当前只有 `facility`（场馆预约）还是「接口就绪」：后端已挂脚手架接口，
+  小程序页面待做。）
+- 目前浏览器里真正能点开使用的是拼单（`/groupbuy`）、论坛（`/forum`）、常见问题（`/faq`）、
+  TechPie（`/techpie`）、野生动物（`/wildlife`）、找搭子（`/buddy`）、校园卡（`/campus-card`）
+  这几个切片，以及管理后台（`/admin`，含 `/admin/dishes` 菜品营养数据、`/admin/wildlife`）；
+  其余模块点进 `/m/<id>` 会看到该模块的交付说明。
+- 默认走 mock 数据，不需要后端；要连真实后端时设 `NEXT_PUBLIC_KEDAYA_USE_MOCK=false`
+  与 `NEXT_PUBLIC_KEDAYA_API_BASE`（默认 `/api/v1`，本机跨端口时填
+  `http://localhost:3999/api/v1`）。后台菜品管理的写权限另需 `NEXT_PUBLIC_ADMIN_API_KEY`
+  （与 API 端 `ADMIN_API_KEY` 同值，仅本地/演示用；完整环境变量见 `apps/web/.env.example`）。
 
 ## 5. 测试与校验
 
@@ -305,9 +340,13 @@ npm run dev:web           # Next.js dev server → http://localhost:3001
 nvm use
 npm run typecheck -w @kedaya/api && npm run test -w @kedaya/api && npm run lint -w @kedaya/api
 npm run typecheck -w @kedaya/miniapp && npm run test -w @kedaya/miniapp && npm run lint -w @kedaya/miniapp
-npm run build:weapp
+npm run build:weapp && npm run verify:weapp -w @kedaya/miniapp
 npm run typecheck -w @kedaya/web && npm run test -w @kedaya/web && npm run lint -w @kedaya/web
 ```
+
+（`npm run verify:weapp -w @kedaya/miniapp` 校验主包体积、分包页面齐全与构建指纹；
+`npm run check:nutrition-imports` 是营养管家移植期加的静态冒烟检查，无 node_modules 也能跑，
+用来确认这批文件的相对导入都能解析到真实导出。）
 
 约定与注意事项：
 
@@ -326,11 +365,18 @@ npm run typecheck -w @kedaya/web && npm run test -w @kedaya/web && npm run lint 
 
 ## 6. 两个容易踩的坑（已修，别改回去）
 
-**共享包的相对导入必须带 `.ts` 扩展名。** `@kedaya/contracts` 与 `@kedaya/shared` 的
-`main` 指向 TS 源码，后端 `tsc` 产物在运行时直接 `require` 它们，由 Node 的类型剥离执行源码；
-Node 的 ESM 解析器不做扩展名补全，少写扩展名会在**启动时**报 `ERR_MODULE_NOT_FOUND`
-（单测发现不了，因为 vitest 会补全）。`tsconfig.base.json` 里用
-`rewriteRelativeImportExtensions` 保证编译产物中重写回 `.js`。
+**打包产物要靠预加载补丁去 `dist/packages/**` 取共享包。** `@kedaya/contracts` 与
+`@kedaya/shared` 的 `main` 指向 **TS 源码**（`./src/index.ts`，内部是 extensionless
+相对导入）—— 小程序 / Web 的打包器直接吃 TS，没问题；但服务端是 `tsc` 产物 + Node
+直接跑 CJS，Node 顺着 `node_modules` 软链找到 `src/index.ts` 后无法解析 `./envelope`，
+启动时报 `ERR_MODULE_NOT_FOUND`（单测发现不了，vitest 会补全扩展名）。
+
+我们的 `tsconfig.json` 把 `rootDir` 指到仓库根，`tsc` 已经把这几个包一起编译成了
+CJS 放在 `dist/packages/**`，缺的只是"让 Node 去那里找"。`npm run start` /
+`dev:serve` 用 `node -r ./register-workspace-modules.cjs` 预加载一个小补丁
+（`services/api/register-workspace-modules.cjs`）完成这件事 —— 不引入任何依赖，
+也不影响 `tsc` / vitest / 小程序构建。**直接 `node dist/services/api/src/main.js`
+会绕过它，看到的就是上面那个 `ERR_MODULE_NOT_FOUND`。**
 
 **全局提供者必须能被容器无参实例化。** `APP_PIPE` / `APP_INTERCEPTOR` / `APP_FILTER`
 以及 `main.ts` 里 `app.get()` 取用的 `TraceMiddleware`，都要么 `@Optional()`，

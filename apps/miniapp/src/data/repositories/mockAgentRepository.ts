@@ -1,4 +1,4 @@
-import { MINIAPP_PAGES } from '@kedaya/contracts'
+import { MINIAPP_PAGES, MODULES, getModule } from '@kedaya/contracts'
 import { ok, type Result } from '@kedaya/shared'
 
 import type { AgentAction, AgentCapabilities, AgentChatInput, AgentFact, AgentReply } from '../../domain/models/agent'
@@ -38,6 +38,42 @@ interface Rule {
 
 function navigate(label: string, path: string): AgentAction {
   return { type: 'navigate', label, path }
+}
+
+/**
+ * "这个页面是干什么的？" —— 上下文感知的回答。
+ *
+ * 这个问句曾经是页面上最尴尬的一处：建议问题里摆着它，用户点了却得到
+ * "这个问题我还不太会答"。**建议里的问题必须都能答**，否则建议本身就是欺骗。
+ *
+ * 回答内容来自契约的 `nameZh / summary`（不另写一份模块清单）：
+ * 从某个模块页点进来时答"这里是哪个模块"，在可达鸭页自己问时答"我是谁"。
+ */
+function pageIntroKnowledge(moduleId: string | undefined): {
+  answer: string
+  source: string
+  path?: string
+} {
+  const module = moduleId === undefined ? undefined : getModule(moduleId)
+  if (module !== undefined) {
+    return {
+      answer: `这里是「${module.nameZh}」：${module.summary}。\n这个模块的事可以直接问我，比如"我授权了哪些模块"。`,
+      source: `${module.nameZh} · 模块说明`,
+    }
+  }
+  return {
+    answer:
+      '我是可达鸭，小程序的全局助手：任何页面右下角都有我。我只用两类信息回答 —— 你自己授权的实时数据（课表、校园卡余额、隐私设置…），以及公开的模块说明与常见问题；查不到就直说查不到，不编数字。',
+    source: '可达鸭能做什么',
+  }
+}
+
+/** 建议问题里唯一一个"问能力"的句子，答案直接从契约模块表拼出来 */
+const AGENT_FEATURE_LIST = `小程序一共 ${MODULES.length} 个模块：${MODULES.map((module) => module.nameZh).join('、')}。首页的「服务大厅」能看到全部入口，也能直接搜模块名。`
+
+/** 是否在问"当前这个页面 / 这个模块是干什么的" */
+function asksAboutCurrentPage(question: string): boolean {
+  return ['这个页面', '这页', '干什么', '做什么'].some((keyword) => question.includes(keyword))
 }
 
 export function createMockAgentRepository(options: MockAgentOptions): AgentRepository {
@@ -226,6 +262,19 @@ export function createMockAgentRepository(options: MockAgentOptions): AgentRepos
       answer: '本地开发环境（以及尚未拿到校方授权时）课表、校园卡、实名信息来自模拟数据源，界面与响应都会标注「演示数据」。同一个账号每次看到的一样，便于排查问题。',
       source: '什么时候看到的是演示数据',
     },
+    {
+      keywords: ['哪些功能', '还能用', '有什么功能', '都能做'],
+      answer: AGENT_FEATURE_LIST,
+      source: '可达鸭能做什么',
+      path: MINIAPP_PAGES.home,
+    },
+    {
+      keywords: ['数据安全', '安全吗', '泄露', '会不会被看到', '别人能看到'],
+      answer:
+        '我只在你的授权范围内取数：涉及个人数据的工具都要求登录，而且只查你自己的；心理支持与宿舍矛盾记录不参与任何公共检索，AI 画像的每个标签都能点开看来源。上面这些在「我的 → 隐私与数据」里可以随时关闭或撤回。',
+      source: '哪些数据不会进检索、怎么撤回',
+      path: MINIAPP_PAGES.profileSettings,
+    },
   ]
 
   return {
@@ -255,7 +304,10 @@ export function createMockAgentRepository(options: MockAgentOptions): AgentRepos
         }
       }
 
-      const knowledge = LOCAL_ANSWERS.find((entry) => entry.keywords.some((keyword) => question.includes(keyword)))
+      const matchedKnowledge = LOCAL_ANSWERS.find((entry) => entry.keywords.some((keyword) => question.includes(keyword)))
+      // 「这个页面是干什么的？」优先走上下文回答：用户在哪个模块页，就答哪个模块
+      const intro = asksAboutCurrentPage(question) ? pageIntroKnowledge(input.module) : undefined
+      const knowledge = intro ?? matchedKnowledge
       const sources = knowledge === undefined ? [] : [{ id: `guide:${knowledge.source}`, title: knowledge.source, kind: 'guide' as const, updatedAt: null }]
       if (knowledge?.path !== undefined && !actions.some((action) => action.path === knowledge.path)) {
         actions.push(navigate('打开相关页面', knowledge.path))

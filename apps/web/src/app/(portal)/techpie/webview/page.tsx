@@ -21,7 +21,6 @@ export default function TechpieWebviewPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={`校园服务 · ${TECHPIE_MODULE.id}`}
         title="校园系统直连"
         description="Phase 0 的 WebView 直连（规格 §8.4 的 W4 方案）：可达鸭换取一张一次性票据，用它打开学校系统；登录在学校页面完成，我们不注入 cookie、不接触你的登录凭证。可打开的目标只能来自服务端白名单，页面不提供自定义 URL。"
         actions={

@@ -76,6 +76,10 @@ model User {
   contactAuditsAsActor    ContactAccessAudit[] @relation("ContactAuditActor")
   contactAuditsAsSubject  ContactAccessAudit[] @relation("ContactAuditSubject")
 
+  /// 营养管家：当餐记录与每日需求（ADR 0006）
+  mealRecords MealRecord[]
+  target      NutritionTarget?
+
   @@index([createdAt])
 }
 
@@ -678,22 +682,121 @@ model LostFoundItem {
   @@index([reporterId, status])
 }
 
-/// 食堂营养 · canteen（低敏感）
+/// 营养管家 · canteen（2026-10-17 由「食堂营养」升级，敏感级 low → medium）
+///
+/// 菜品库是**营养管家全部结论的地基**（ADR 0006 D1）：每餐的营养值在记录时
+/// 从本表**快照**进 `MealItem`，因此本表只增不改历史。
 model CanteenDish {
   id           String   @id @default(cuid())
   canteen      String
   name         String
+  /// 菜的种类：staple 主食 / meat 荤菜 / vegetable 素菜 / soup 汤 /
+  /// dessert 甜品 / drink 饮品 / fruit 水果 / other 其他
+  category     String   @default("other")
+  /// 每份克数（营养字段的计量口径）
+  servingG     Int      @default(100)
   caloriesKcal Int
   proteinG     Int
   fatG         Int
   carbG        Int
+  /// 膳食纤维，克
+  fiberG       Int      @default(0)
+  /// 钠，毫克
+  sodiumMg     Int      @default(0)
   /// 价格，**分**
   priceFen     Int
+  /// 营养数据**来源**（食堂公示 / 人工录入 / 供应商提供）。
+  /// 为什么必须有：营养值全是录入的，用户与评委有权知道「这个数字凭什么可信」（ADR 0006 C2）。
+  source        String?
+  /// 营养数据最后一次核对时间（对用户展示「来源 · 更新于 2026-10-12」）
+  lastVerifiedAt DateTime?
+  /// 过敏原 / 忌口标签（机器值：peanut / seafood / egg / milk / soy / gluten / beef / pork /
+  /// chili / cilantro / sesame / tree-nut）。空数组 = **未标注**（不等于「无过敏原」），界面须如实提示。
+  allergens     String[] @default([])
+  /// 软删除（下架）时间。菜品是营养记录的**历史依据**，
+  /// 硬删会让 MealItem.dishId 变成 NULL、历史无法回溯（ADR 0006 §3.1）。
+  deletedAt    DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  mealItems MealItem[]
+
   @@index([canteen])
   @@index([caloriesKcal])
+  @@index([category])
+  @@index([deletedAt])
+}
+
+/// 营养管家 · 当餐记录（ADR 0006）
+///
+/// `MealItem` 里的营养值在记录那一刻从 `CanteenDish` **快照**下来：
+/// 菜品日后改了营养，历史餐记录不跟着变（否则「上周吃了多少」会被悄悄改写）。
+model MealRecord {
+  id     String @id @default(cuid())
+  userId String
+  /// breakfast 早餐 / lunch 午餐 / dinner 晚餐 / snack 加餐
+  mealType String   @default("lunch")
+  /// manual 菜名选择 / photo 拍照识别
+  source   String   @default("manual")
+  eatenAt  DateTime @default(now())
+  note     String?
+  /// 客户端生成的幂等键（弱网重试 / 双击提交只落一次库）
+  clientRequestId String?
+  createdAt DateTime @default(now())
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items MealItem[]
+
+  @@unique([userId, clientRequestId])
+  @@index([userId, eatenAt])
+}
+
+/// 营养管家 · 当餐明细（营养快照，六项口径见 shared/nutrition.ts）
+model MealItem {
+  id            String @id @default(cuid())
+  mealId        String
+  dishId        String?
+  dishName      String
+  category      String @default("other")
+  /// 份数，支持 0.5（半份 / 一勺饭）；食堂场景整数不够用
+  servings      Float  @default(1)
+  caloriesKcal  Int
+  proteinG      Int
+  fatG          Int
+  carbG         Int
+  fiberG        Int    @default(0)
+  sodiumMg      Int    @default(0)
+
+  meal MealRecord   @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  dish CanteenDish? @relation(fields: [dishId], references: [id], onDelete: SetNull)
+
+  @@index([mealId])
+  @@index([dishId])
+}
+
+/// 营养管家 · 个人每日营养需求（一人一份；估算器只负责预填，最终值由用户保存）
+model NutritionTarget {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  caloriesKcal Int
+  proteinG     Int
+  fatG         Int
+  carbG        Int
+  fiberG       Int      @default(25)
+  sodiumMg     Int      @default(2000)
+  /// 身体档案（估算器输入，可空 = 用户没填过）
+  sex          String?
+  age          Int?
+  heightCm     Int?
+  weightKg     Int?
+  activity     String?
+  goal         String?
+  /// 忌口 / 过敏原（机器值，与 CanteenDish.allergens 同一套）。
+  /// 推荐阶段**硬过滤**：命中即整道菜不出现（过敏是安全问题，不能靠扣分）。
+  avoidAllergens String[] @default([])
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 /// 论坛版块 · forum

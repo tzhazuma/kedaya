@@ -139,8 +139,7 @@ export default function CanteenListPage() {
     <View className='kdy-page kdy-canteen'>
       <KdyHeading
         title='食堂营养'
-        subtitle='看菜品的估算热量与营养，帮助你决定今天吃什么。'
-        eyebrow='KEDAYA · 食堂营养'
+        subtitle='热量由同学估算，仅供参考。'
       />
 
       <View className='kdy-canteen__toolbar'>
@@ -179,10 +178,6 @@ export default function CanteenListPage() {
           </KdyChip>
         ))}
       </View>
-
-      {state.fromCache && state.status === 'ready' && (
-        <Text className='kdy-canteen__cache-hint'>正在后台刷新…</Text>
-      )}
 
       {state.status === 'loading' && <KdyListSkeleton />}
 
@@ -242,7 +237,7 @@ export default function CanteenListPage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        {CANTEEN_DISCLAIMER}。可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        {CANTEEN_DISCLAIMER}。第三方非官方平台 · 与上海科技大学官方系统无关。
       </Text>
     </View>
   )

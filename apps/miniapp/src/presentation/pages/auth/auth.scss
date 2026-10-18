@@ -9,12 +9,89 @@
   padding: $kdy-space-2 0;
 }
 
-/* 登录页「密码登录 / 验证码登录」二选一（KdyChip 单选） */
-.kdy-auth__modes {
+/*
+ * 一键登录卡：账号页的"主视觉"。
+ *
+ * 两个选择器连写（`.kdy-card.kdy-auth__quick-card`）是**故意的**：
+ * 页面样式与 `common.wxss` 里 `.kdy-card` 的优先级相同，谁生效取决于打包顺序，
+ * 只写一个类就会变成"哪天打包顺序变了，这张卡悄悄变回白的"。
+ * 连写把优先级抬到 (0,2,0)，与顺序无关。
+ */
+.kdy-card.kdy-auth__quick-card {
+  padding: $kdy-space-5;
+  border-color: rgba($kdy-color-brand, 0.28);
+  border-radius: $kdy-radius-3xl;
+  background: $kdy-gradient-soft;
+  box-shadow: $kdy-shadow-card;
+}
+
+.kdy-auth__quick {
   display: flex;
-  flex-wrap: wrap;
-  gap: $kdy-space-2;
-  margin-bottom: $kdy-space-3;
+  flex-direction: row;
+  align-items: center;
+  gap: $kdy-space-3;
+}
+
+/*
+ * 吉祥物方块：与宫格图标同一套语言（浅色底 + 同色相描边 + 居中图案）。
+ *
+ * 底色是**白色**而不是品牌黄：里面是黄色的可达鸭贴图，
+ * 黄底 + 黄图案会糊成一团，白色方块反而让它像一枚贴纸，更抓眼。
+ */
+.kdy-auth__quick-mark {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba($kdy-color-brand, 0.28);
+  border-radius: $kdy-radius-2xl;
+  background-color: $kdy-color-surface;
+  box-shadow: $kdy-shadow-accent;
+  line-height: 1;
+}
+
+.kdy-auth__quick-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.kdy-auth__quick-title {
+  display: block;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-lg;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.kdy-auth__quick-note {
+  display: block;
+  margin-top: 2px;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+/* 分隔线：「或使用邮箱密码」——两条细线夹一句话，比一句灰字更像"另一条路" */
+.kdy-auth__divider {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: $kdy-space-3;
+  margin: $kdy-space-4 $kdy-space-5 0;
+}
+
+.kdy-auth__divider-line {
+  flex: 1;
+  height: 1px;
+  background: $kdy-border-hairline;
+}
+
+.kdy-auth__divider-text {
+  flex-shrink: 0;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
 }
 
 .kdy-auth__actions {
@@ -22,6 +99,19 @@
   flex-direction: column;
   gap: $kdy-space-3;
   margin-top: $kdy-space-5;
+}
+
+/*
+ * 页面级变体：`__actions` / `__tip` / `__error` 默认是给**卡片内部**用的
+ * （登录 / 注册 / 找回密码都把表单和按钮放在同一张卡里，由卡片给左右留白）。
+ * 但编辑资料这类页面把它们直接挂在 `.kdy-page` 下 —— 这时必须自己带 20px，
+ * 否则按钮会左右贴边、与上方卡片的左边缘对不齐（真机上一眼就能看出歪）。
+ */
+.kdy-auth__actions--page,
+.kdy-auth__tip--page,
+.kdy-auth__error--page {
+  margin-left: $kdy-space-5;
+  margin-right: $kdy-space-5;
 }
 
 .kdy-auth__inline {
@@ -80,4 +170,42 @@
 .kdy-auth__link {
   color: $kdy-color-brand-strong;
   font-size: $kdy-font-size-sm;
+}
+
+/* ---- 邮箱登录：密码 / 验证码 二选一 ---- */
+
+.kdy-auth__modes {
+  display: flex;
+  flex-direction: row;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-4;
+}
+
+/* 验证码行：输入框占满，按钮固定宽度 —— 窄屏也不能把按钮挤出去 */
+.kdy-auth__code-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: $kdy-space-2;
+
+  // ⚠️ 不能用 `> :first-child` —— WXSS 不支持「组合器 + 隐式通用选择器」，
+  // 会让 common.wxss 编译失败、全部页面白屏（AGENTS.md 有硬约束，
+  // wxss-safety 测试会守住）。改用显式命名类。
+  .kdy-auth__code-field {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.kdy-auth__hint {
+  display: block;
+  margin-top: $kdy-space-3;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.5;
+  color: $kdy-color-ink-soft;
+}
+
+.kdy-auth__hint-strong {
+  color: $kdy-color-ink;
+  font-weight: 600;
 }

@@ -2,7 +2,14 @@ import { MINIAPP_PAGES, MODULES } from '@kedaya/contracts'
 import { describe, expect, it } from 'vitest'
 
 import appConfig from '../../app.config'
-import { MODULE_ENTRY_PATHS, PAGE_PATHS, TAB_BAR_PATHS, isTabBarPath } from '../routes'
+import { HOME_ENTRIES } from '../../domain/models/homeEntries'
+import {
+  MODULE_ENTRY_PATHS,
+  PAGE_PATHS,
+  TAB_BAR_PATHS,
+  homeEntryPath,
+  isTabBarPath,
+} from '../routes'
 
 /**
  * 路由表的一致性闸门（这一类 bug 的共同点是「不报错，只是没反应」）。
@@ -127,5 +134,39 @@ describe('页面路由表', () => {
       )
       expect(pagePaths.has(path), `${moduleId} → ${path} 不在 PAGE_PATHS 里`).toBe(true)
     }
+  })
+
+  /**
+   * 首页 / 服务大厅的入口目录（`domain/models/homeEntries`）到页面的最后一跳。
+   *
+   * 这一跳**没有报错**：入口目录里的 id 与路由表是两份数据，写错只会让某个
+   * 服务在首页上点不动（或静默跳到别的页面）。因此在这里锁死：
+   *   · 聚合入口（凑凑）必须解析到聚合页；
+   *   · 除「尚未上线」的模块外，每个入口都必须有页面；
+   *   · 解析出来的路径必须真的存在于 PAGE_PATHS（不是手写字符串）。
+   */
+  it('入口目录的每一个入口都能解析到真实页面（未上线的模块才允许为空）', () => {
+    const pagePaths = new Set<string>(Object.values(PAGE_PATHS))
+    const notImplemented = new Set(['facility']) // 契约已登记、页面未实现
+
+    for (const entry of HOME_ENTRIES) {
+      const path = homeEntryPath(entry.id)
+      if (notImplemented.has(entry.id)) {
+        expect(path, `${entry.id} 还没有页面，一旦做了就要登记路径`).toBeNull()
+        continue
+      }
+      expect(path, `${entry.id} 没有解析到页面（点进去会没反应）`).not.toBeNull()
+      expect(pagePaths.has(path as string), `${entry.id} → ${path} 不在 PAGE_PATHS 里`).toBe(true)
+    }
+
+    expect(homeEntryPath('cou')).toBe(PAGE_PATHS.cou)
+    expect(homeEntryPath('not-a-module')).toBeNull()
+  })
+
+  it('新增的首页相关路径都已登记（服务大厅 / 首页管理 / 凑凑 / 野生动物档案）', () => {
+    expect(PAGE_PATHS.homeServices).toBe('/presentation/pages/home/services/index')
+    expect(PAGE_PATHS.profileHome).toBe('/presentation/pages/profile/home/index')
+    expect(PAGE_PATHS.cou).toBe('/presentation/pages/cou/index')
+    expect(PAGE_PATHS.wildlifeArchive).toBe('/presentation/pages/wildlife/archive/index')
   })
 })

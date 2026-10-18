@@ -23,29 +23,37 @@ page,
 /* 契约 §9：全站显著标注「第三方非官方平台」 */
 .kdy-disclaimer {
   display: block;
-  padding: $kdy-space-4 $kdy-space-4 $kdy-space-6;
+  padding: $kdy-space-4 $kdy-space-5 $kdy-space-6;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
   text-align: center;
 }
 
+/*
+ * 页面容器。
+ *
+ * 背景是**环境光**（ambient）：顶部一层暖黄铺下来，另外两个极淡的斜向色相
+ * 只负责让页面中段和底部不"平"（这是纯色背景在真机上最容易显廉价的地方）。
+ * 三层都是 `linear-gradient` —— WXSS 对 `radial-gradient` 的支持不稳，
+ * 用它会变成"部分机型上白一块"。
+ *
+ * 它是 `.kdy-page` 的背景，不是子元素：这样不会新增一层需要合成/模糊的图层，
+ * 长列表滚动时依旧是纯 CPU 绘制。
+ */
 .kdy-page {
   box-sizing: border-box;
   min-height: 100vh;
   padding-bottom: calc(#{$kdy-space-6} + env(safe-area-inset-bottom));
-  background: linear-gradient(
-    180deg,
-    rgba($kdy-color-brand-soft, 0.6),
-    transparent 240px
-  );
+  background: $kdy-gradient-aurora;
 }
 
 .kdy-section-title {
-  padding: $kdy-space-4 $kdy-space-4 $kdy-space-2;
+  padding: $kdy-space-4 $kdy-space-5 $kdy-space-2;
   color: $kdy-color-ink;
   font-size: $kdy-font-size-md;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.2px;
 }
 
 .kdy-demo-tools {

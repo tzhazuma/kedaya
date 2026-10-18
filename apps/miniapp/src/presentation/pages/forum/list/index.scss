@@ -2,7 +2,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: $kdy-space-2;
-  padding: $kdy-space-3 $kdy-space-4 $kdy-space-1;
+  padding: $kdy-space-3 $kdy-space-5 $kdy-space-1;
 }
 
 .kdy-forum-list__board {
@@ -34,7 +34,7 @@
 
 .kdy-forum-list__board-hint {
   display: block;
-  padding: $kdy-space-1 $kdy-space-4 0;
+  padding: $kdy-space-1 $kdy-space-5 0;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
 }
@@ -48,14 +48,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: $kdy-space-2;
-  padding: $kdy-space-2 $kdy-space-4;
-}
-
-.kdy-forum-list__hint {
-  display: block;
-  padding: $kdy-space-1 $kdy-space-4;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
+  padding: $kdy-space-2 $kdy-space-5;
 }
 
 .kdy-forum-list__more {

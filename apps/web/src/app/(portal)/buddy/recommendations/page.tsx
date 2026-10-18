@@ -13,7 +13,6 @@ export default function BuddyRecommendationsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="校园服务 · buddy"
         title="搭子推荐"
         description="推荐是可解释的：每条都列出为什么推荐给你。没有开启匹配资料时会降级为「按时间排序」，页面会明确标出来，不会假装是个性化推荐。"
       />

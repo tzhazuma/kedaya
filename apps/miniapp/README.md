@@ -181,6 +181,33 @@ apps/miniapp/
 首页宫格**完全由 `@kedaya/contracts` 的 `MODULES` 驱动**，端上没有任何写死的模块数组。
 新增模块时首页自动出现。API 路径也用 `modulePath('groupbuy', 'items')` 生成。
 
+### 4.5 首页 / 服务大厅 / 首页管理（首页不再是模块目录）
+
+模块长到 20 个之后，「全部平铺」本身就变成了问题：首页退化成一张要**找**东西的目录。
+现在的分工：
+
+| 页面 | 职责 | 关键文件 |
+| --- | --- | --- |
+| 首页 `pages/home` | 用户自己挑的常用（默认 9 个 / 上限 12 个）+ 聚合入口「凑凑」+ 常驻安全出口 | `presentation/pages/home/index.tsx` |
+| 服务大厅 `pages/home/services` | 全部服务，按**使用场景**分组 + 搜索；未上线的如实标「开发中」 | `presentation/pages/home/services/index.tsx` |
+| 首页管理 `pages/profile/home` | 增删与排序（上移 / 下移）、恢复默认 | `presentation/pages/profile/home/index.tsx` |
+| 凑凑 `pages/cou` | 一级入口，下设拼单与找搭子 | `presentation/pages/cou/index.tsx` |
+
+- **入口目录**是 `domain/models/homeEntries.ts`：由契约 `MODULES` 派生，
+  只补「图标 / 分组 / 聚合关系 / 固定入口」。契约新增模块却忘了登记分组，
+  `__tests__/homeEntries.test.ts` 会红 —— 而不是让新模块在服务大厅里静默消失。
+- **聚合入口不吃掉契约模块**：`groupbuy` / `buddy` 仍是两个独立模块（各自的 API、
+  页面与测试都在），只是首页对外只给一个「凑凑」入口，避免两个格子进同一个页面。
+- **偏好存在本机并按账号分片**（`StorageKeys.homeLayout` + `userId`）：
+  同一台手机换号登录，看到的是那个账号自己的首页。它是界面状态，
+  因此**允许乐观更新**（与「隐私与数据」的开关相反，那条规矩是"绝不乐观更新"）。
+- **两个 `locked` 入口**：`cou`（凑凑，产品要求的一级入口）与
+  `wellbeing`（安全出口）。都可排序、**不可移除**——不能被一次误触藏掉；
+  首页宫格下方还有一条常驻的心理支持热线行作为第二重兜底，
+  管理页会**明说**这条规则，而不是让按钮静默失灵。
+- **格子上不挂角标**：没做出来的模块点开时给一句说明（服务大厅里列在
+  「尚未上线」一组），不做成小字提前挂在首页上。
+
 ---
 
 ## 5. 平台能力：微信特有 vs H5 降级
@@ -272,14 +299,23 @@ npm run build:weapp -w @kedaya/miniapp
   （domain-model §2.8「不存明文手机号」），校验在 domain 层，页面只展示错误。
 - **未登录也能提交工单**（`userId: null`），列表此时只显示匿名工单。
 
-## 6.3 垂直切片：猫 / 鸟 / 黑天鹅（`wildlife`）
+## 6.3 垂直切片：野生动物（`wildlife`）
 
 对应 `docs/features/wildlife-map.md`，敏感级 **low**（**无同意门**，契约 §9）。
 
 - **动物地图页** `presentation/pages/wildlife/map`：`<map>` 底图 +
   **活动区域圈**（`circles`）+ **聚合热点 / 历史观测标记**（`markers`）+ **推断轨迹折线**（`polyline`，
   虚线）；物种筛选、区域列表、点标记看观测详情（物种 / 发现时间 / 照片 / 区域 / 投喂规范）、
-  「在腾讯地图中打开」（`wx.openLocation`）。
+  「在腾讯地图中打开」（`wx.openLocation`）。带 `?speciesId=` 进来会直接落在该物种的筛选上。
+- **居民档案页** `presentation/pages/wildlife/archive`（**模块主界面**）：
+  物种卡（头像 + 学名 + 受保护 / 繁殖期敏感 / 投喂规范 + 观测条数）、
+  常住居民（被起名的个体 —— 只显示「谁」，**不显示它在哪**）、最近观测、伦理与隐私提示，
+  以及通往地图 / 上报 / 轨迹的三个入口。
+  - 物种头像在 `presentation/theme/speciesIcons.ts`：三张图覆盖七个物种
+    （猫与黑天鹅各有专属图，其余五种鸟共用一张）。没有插画的物种显示**首字占位**，
+    而不是硬塞一张不准的图；`theme/__tests__/speciesIcons.test.ts` 守住内置物种一个不漏。
+  - 本页的物种筛选是**本页本地状态**，与地图共用的 `activeSpeciesId` 分开：
+    换筛选不重新发请求，也不会顺手改掉地图的筛选（数据始终按全量加载）。
 - **上报观测页** `presentation/pages/wildlife/report`（**核心流程**）：
   `Taro.chooseMedia` 选图 → 按需压缩 → `POST /media`（**multipart**，走 `data/api/mediaUpload.ts`）→
   `POST /classify` 自动分类建议（**无 key 时静默降级为纯手动**）→ 手动选物种 →
@@ -371,6 +407,40 @@ npm run build:weapp -w @kedaya/miniapp
 > - 规格 §6.2 的「匹配成功后可见的联系方式」字段属 `profile` 模块（跨模块需求，U8），
 >   本端只做到「撮合」，站内信交换由 `notifications` 模块负责。
 
+## 6.5 垂直切片：营养管家（`canteen`）
+
+> 模块 id 仍是 `canteen`（契约里的名字已改为「营养管家」）。设计取舍见
+> [`docs/adr/0006-nutrition-butler.md`](../../docs/adr/0006-nutrition-butler.md)，
+> 端点到 [`docs/architecture/03-api-contract.md`](../../docs/architecture/03-api-contract.md) §12。
+
+`nutrition` 子包共 6 页，是**一条完整闭环**，不是「菜品列表」的单页：
+
+| 页面 | 路由 | 做什么 |
+| --- | --- | --- |
+| 今日 | `nutritionHome` | 进度环（六项营养对每日需求）+ 按**餐型**的热量占比 + 今日记录列表 + 自绘编辑面板（改餐型 / 备注 / 份数） |
+| 记录当餐 | `nutritionLog` | **两条路径**：拍照识别候选（mock，明示「演示期识别」）或菜名点选；选定后从菜品库取营养值 |
+| 历史 | `nutritionHistory` | 近 7 日热量折线（canvas）+ 目标虚线 + 未记录标记；覆盖率（记录过的菜 / 菜品库总量） |
+| 每日需求 | `nutritionTargets` | 六项需求值**由用户自提**；估算器（Mifflin-St Jeor + 活动量 + 目标）只负责**预填**；忌口 / 过敏原勾选 |
+| 缺口推荐 | `nutritionRecommend` | 按六项缺口给下一顿的建议；`sodiumMg` 是**上限**，已超标就不再推「高钠」的菜 |
+| 菜品库（演示/补录） | `nutritionDishes` | 轻量录入表单；**连上后端后写入会 403**（后端 `AdminGuard`），文案已写明「需要管理员权限」 |
+
+三条硬约束（本模块最容易做错的地方）：
+
+1. **营养值只从菜品库来**：`POST /canteen/meals` 请求体只带 `dishId × servings`，
+   服务端把那一刻的六项营养**快照**进记录。端上**没有**手填热量的入口 ——
+   允许客户端上报营养值等于让「缺口 → 推荐」整条链路不可信（ADR 0006 D1/D2）。
+2. **识别必须自曝身份**：响应 `mode: 'mock'` 时页面明示「演示期识别」，
+   绝不把 mock 候选伪装成真实识别结果（D3）。换成真实服务只需在 HTTP 仓储里实现 `recognize`。
+3. **推荐不做医疗声明**：文案走白名单模板，不出现「减肥 / 治疗 / 诊断」等词；
+   过敏原是**硬过滤**（命中即整道排除，不是扣分）—— 但要注意下方的已知缺口。
+
+> ⚠️ **已知缺口（诚实标注）**：
+> - **新录入菜品的 `allergens` 没有服务端推断**（ADR 0006 C8）：只有种子脚本按菜名推断，
+>   Web 后台新建的菜 `allergens` 为空 → 「忌口」硬过滤**对它们不生效**。端上不编造过敏原值。
+> - **菜品库是演示量级**（72 道 / 4 个食堂），不是食堂公示值（C2：初始数据来源待决策）。
+> - **拍照识别是 mock**（C1）：接真实视觉服务前，识别页只用于演示流程。
+> - **演示控制面**（清空今日记录 / 补历史演示数据）只在 mock 模式可见，生产构建必须移除（C7）。
+
 ---
 
 ## 7. 测试
@@ -453,17 +523,31 @@ npm run test -w @kedaya/miniapp
   匹配反馈 like/dislike/skip；隐私提示在五页常驻；`dating` **不做**（契约 §11.10-G）
 - 11 个复用组件（新增 `KdyBuddyPrivacyNotice`，buddy 的隐私提示与 wildlife 的
   `KdyPrivacyNotice` 分开 —— 两者的「哪些信息会公开」语义完全不同）
-- 33 个 Vitest 测试文件 / 592 个测试（domain / 网络层 / mock 仓储 / http 仓储 / 用例 / 存储）
+- **营养管家（`canteen`）垂直切片**：今日（进度环 + 各餐型占比 + 记录列表 + 自绘编辑面板）/
+  记录当餐（拍照识别 or 菜名点选，**两条路径都从菜品库取营养值**）/
+  历史（近 7 日热量折线 + 覆盖度）/ 每日需求（估算器只预填，全部可改）/ 缺口推荐
+  （`sodiumMg` 是**上限**，超标不推加钠的菜）；计算核心在 `packages/shared/src/nutrition.ts`
+  一份三端共用。演示控制面（清空今日记录等）藏在折叠区，仅 mock 模式可见
+- 新增 `KdyRing` / `KdyBar` 两个可视化组件（进度环 / 条），与 Taroify 的进度条并存：
+  环与条的气泡、缺口标记是营养页特有诉求，通用组件不承担
+- **核心模块与内置助手**：身份（`auth`，三条并列登录入口）/ 课表（`schedule`）/ 校园卡
+  （`campus-card`）/ 我的（`profile`，含首页管理与隐私数据页）/ 内置全局助手「可达鸭」
+  （`agent`，含 `KdyAgentFab` 悬浮球）都已实现；各模块的诚实边界见仓库根 `AGENTS.md`
+- **77 个 Vitest 测试文件 / 1240 个测试**（domain / 网络层 / mock 仓储 / http 仓储 / 用例 / 存储）
 
 ### ❌ 未实现（诚实清单）
 
-- **统一身份认证**：契约 §5 第一级身份层（CAS / Egate OAuth → KedaYa JWT）未接入。
-  「我的」页的登录是**明确标注的骨架占位**（`data/mock/mockAuth.ts` 伪造形状合法的 token）。
-- **校园系统绑定**：契约 §5 第二级能力层（`CampusSessionPort`）未实现。
-  `profile.campusBound` 目前是手工切换的占位开关。
-- **敏感模块二次同意**：契约 §9 的同意流程与审计日志未实现（首页对这类模块只做标注 + 提示）。
-- **站内信列表**（`notifications`）：只有订阅消息链路，站内信列表是空态。
-- **其余 15 个业务模块**：契约 §4 已登记，端上未实现（首页明确显示「开发中」）。
+- **模块覆盖**：契约 §4 的 **20 个模块里 19 个**在小程序端已有真实页面与端点
+  （身份 `auth` 三条并列登录入口 / 课表 / 校园卡 / 我的 / 六个业务模块 / 四个共建型 /
+  TechPie / 心理支持 / AI 画像 / 通知），唯一例外是 **`facility`（场馆预约）**：
+  后端已挂 `/api/v1/facility/items` 脚手架接口，端上**没有页面**，首页如实标「开发中」。
+  真伪口径与各模块的诚实边界以仓库根 `AGENTS.md` 为准，本 README 不另立一份。
+- **身份与校园数据是「已接线但默认 mock」**：CAS 登录走开发用 Mock 适配器
+  （真实对接点见 `services/api/src/modules/auth/data/mock-campus-auth.provider.ts` 顶部注释），
+  校园数据默认 `CAMPUS_DATA_MODE=mock`（响应标 `simulated: true`）—— 拿到校方授权后切 `live`，
+  权限逻辑（`CampusSessionPort` / 加密落库 / 审计）在两种模式下完全相同。
+- **敏感模块二次同意门已实现**（同意门在**加载数据之前**），且这类模块不接分享与举报；
+  `wellbeing` 的危机热线 `GET /wellbeing/crisis-line` 公开、首屏必渲染，接口失败有本地兜底。
 - **`wildlife` 未实现的部分（诚实清单）**：
   - **修正 / 撤回自己的上报**（`PATCH` / `DELETE /wildlife/items/:id`）—— 契约端点已定义，端上未做入口；
   - **审核队列**（`POST /wildlife/items/:id/moderate`）—— 属管理端，端上不做；
@@ -496,10 +580,23 @@ npm run test -w @kedaya/miniapp
     （规格 U11 未决），端上**未**提供 buddy 的举报入口；
   - **向量匹配（`vector` / `hash` 模式）**：mock 诚实返回 `matchMode: 'rule'`
     （无 embedding）；端上不实现向量推理，只消费服务端的 `matchMode` 与 `score`。
+- **`canteen`（营养管家）未实现的部分（诚实清单）**：
+  - **真实拍照识别**：走 **mock 适配器 + Port seam**，响应 `mode: 'mock'`，
+    页面**明示「演示期识别」**并按置信度排序；接真实视觉服务只需实现
+    `NutritionRepository.recognize` 的 HTTP 分支（ADR 0006 D3），端上无需改页面；
+  - **新录入菜品的过敏原**：`allergens` 目前只有后端种子脚本按菜名推断，
+    Web 后台新建的菜 `allergens` 为空 → 「忌口」硬过滤对它们不生效（ADR 0006 C8）；
+    端上不编造过敏原；
+  - **`/nutrition/dishes`（演示 / 补录）**：连上后端后**写入会 403**（后端 `AdminGuard`），
+    页面文案已写明「写入需要管理员权限」；正式维护在 Web 后台 `/admin/dishes`；
+  - **旧的「共建菜品库」三页**（`canteen/list|create|detail`）仍在仓库里（浏览与详情匿名可读），
+    但首页宫格已指向营养管家主界面，这是**保留的旧实现**而非新入口。
 - **tabBar 图标**：未配置 `iconPath`（品牌图标未就位），当前只显示文字。
-- **分包（subPackages）**：**已做**。当前主包 **1172 KB**（上限 2048 KB），余量约 870 KB。
-  14 个子包共 57 个页面（六个生活模块 + 宿舍矛盾 + 猫鸟黑天鹅 / 食堂 / FAQ / 偷外卖 /
-  TechPie / 心理支持各三页，AI 画像两页）移出主包。
+- **分包（subPackages）**：**已做**。当前主包 **1.40 MiB / 2048 KB**（`npm run verify:weapp` 实测）。
+  15 个子包（groupbuy / fleaMarket / errand / buddy 五页 / lostFound / forum 四页 /
+  wildlife 四页 / canteen / **nutrition 营养管家六页** / faq / takeoutGuard / techpie /
+  wellbeing 各三页 / aiPortrait 两页 / dormHarmony）移出主包；主包内另有「服务大厅」`home/services`、
+  「凑凑」`cou` 与「首页管理」`profile/home`（野生动物档案在分包里）。
   分法与理由见 `src/app.config.ts` 的注释；`src/app/__tests__/routes.test.ts` 守住
   「tabBar 页必须在主包」「root 不嵌套」「preloadRule 只指向真实子包」这三条。
   特别地，`auth/*`、`agent`、`profile/*` **刻意留在主包** ——

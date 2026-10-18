@@ -145,7 +145,6 @@ export default function CanteenDetailPage() {
       <KdyHeading
         title={dish.name}
         subtitle={`${dish.canteen} · ${caloriesLabel(dish.caloriesKcal)}`}
-        eyebrow='KEDAYA · 食堂营养'
       />
 
       <KdyCard title='营养成分表' elevated={false}>
@@ -259,7 +258,7 @@ export default function CanteenDetailPage() {
       />
 
       <Text className='kdy-disclaimer'>
-        {CANTEEN_DISCLAIMER}。营养值为同学估算，实际以食堂标注为准；可达鸭是第三方非官方校园服务平台。
+        {CANTEEN_DISCLAIMER}。营养值为同学估算，实际以食堂标注为准；第三方非官方平台。
       </Text>
     </View>
   )

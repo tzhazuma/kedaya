@@ -133,7 +133,7 @@ function sourcesPayload(): AiPortraitSourcesPayload {
       { id: 'schedule', nameZh: '课表', allowed: true, usage: '有课 / 空闲的时间分布', connected: false },
       { id: 'lost-found', nameZh: '失物招领', allowed: true, usage: '常出现的活动区域', connected: false },
       { id: 'buddy', nameZh: '找搭子', allowed: true, usage: '常找的活动类型', connected: false },
-      { id: 'wildlife', nameZh: '猫鸟黑天鹅', allowed: true, usage: '常去观察的校园点位', connected: false },
+      { id: 'wildlife', nameZh: '野生动物', allowed: true, usage: '常去观察的校园点位', connected: false },
       { id: 'faq', nameZh: '常见问题', allowed: true, usage: '常查询的主题', connected: false },
       {
         id: 'wellbeing',

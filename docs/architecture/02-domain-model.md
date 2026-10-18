@@ -614,7 +614,18 @@ stateDiagram-v2
 **关键用例**：`CreatePost` / `Reply` / `Report` / `Moderate`（版主）/ `Lock` / `Hide`。
 **依赖**：`auth`、`notifications`（被回复/被举报）、`profile`。
 
-### 2.5 `canteen` 食堂营养（敏感级：低）
+### 2.5 `canteen` 营养管家（原食堂营养；敏感级：中）
+
+> **实现现状（2026-10-18）**：下面是契约初版的领域草图；已交付的营养管家有几处与它不同，
+> 以 `docs/architecture/03-api-contract.md` §12 与 [ADR 0006](../adr/0006-nutrition-butler.md) 为准：
+>
+> - 营养是**每份**口径的六项（`caloriesKcal` / `proteinG` / `fatG` / `carbG` / `fiberG` / `sodiumMg`），
+>   且**去掉了糖**（糖是碳水的子项，避免重复计量）；
+> - 餐记录是 `MealRecord` + `MealItem`：**快照**记录那一刻的菜品营养值（菜品之后改营养不改写历史），
+>   `servings` 支持 **0.5 步进**（不是 `portion` 枚举）；
+> - `Dish.status`（`ACTIVE`/`STALE`/`REMOVED`）未实现：下架用软删除 `deletedAt`，
+>   过敏原 `allergens` 保留；
+> - 每日需求 `NutritionTarget` **由用户自提**（`GET` 未设置时返回 `null`，估算器只预填），不存在"默认 2000"。
 
 **核心实体**
 
@@ -852,7 +863,7 @@ stateDiagram-v2
 **依赖**：`auth`。
 **边界**：TechPie 的 `CASTGC` 之类的校园会话**绝不进入 KedaYa 的身份层**；如需其能力，走 `CampusSessionPort` 的 `techpie` 实现，见 [../adr/0004-auth-two-tier.md](../adr/0004-auth-two-tier.md)。
 
-### 2.10 `wildlife` 猫鸟黑天鹅（敏感级：低）
+### 2.10 `wildlife` 野生动物（敏感级：低）
 
 **核心实体**
 

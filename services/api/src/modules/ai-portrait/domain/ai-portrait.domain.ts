@@ -125,7 +125,7 @@ export const PORTRAIT_SOURCE_CATALOG: readonly PortraitSourceDescriptor[] = [
   },
   {
     id: 'wildlife',
-    nameZh: '猫鸟黑天鹅',
+    nameZh: '野生动物',
     allowed: true,
     usage: '常去观察的校园点位',
     connected: false,

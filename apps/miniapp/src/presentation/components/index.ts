@@ -84,8 +84,39 @@ export type { KdyReportEntryProps } from './KdyReportEntry'
 export { KdyListSkeleton } from './KdyListSkeleton'
 export type { KdyListSkeletonProps } from './KdyListSkeleton'
 
+export { KdyModuleIcon } from './KdyModuleIcon'
+export type { KdyModuleIconTone } from './KdyModuleIcon'
+
+export { KdyMascot } from './KdyMascot'
+export type { KdyMascotProps } from './KdyMascot'
+
 export { KdyProgress } from './KdyProgress'
 export type { KdyProgressProps } from './KdyProgress'
 
+/**
+ * 圆环 / 条形进度（营养管家）。
+ *
+ * 与上面的 `KdyProgress` 并存而不是替换：`KdyProgress` 是 Taroify 的线性进度条，
+ * 用于通用加载/进度场景；`KdyRing` 是营养管家的热量主视觉（双半盘旋转实现的
+ * 圆环），营养页面的六项逐项条用 `KdyBar`。
+ */
+export { KdyBar, KdyRing } from './KdyRing'
+export type { KdyBarProps, KdyRingProps, KdyRingTone } from './KdyRing'
+
 export { KdyShareEntry } from './KdyShareEntry'
 export type { KdyShareEntryProps } from './KdyShareEntry'
+
+/**
+ * 校园底图（真实校园 GIS 栅格，替代原生 `<map>`）。
+ *
+ * 观测点 / 区域圈 / 推断轨迹三条叠加层全在这里渲染，坐标系一律 **GCJ-02**
+ * （与 `<map>` 时代一致，页面继续用 `buildMapOverlays()` 输出）。
+ * 底图与投影数据来自 `@kedaya/contracts` 的 `campus-map` 模块。
+ */
+export { KdyCampusMap } from './KdyCampusMap'
+export type {
+  KdyCampusMapCircle,
+  KdyCampusMapMarker,
+  KdyCampusMapPolyline,
+  KdyCampusMapProps,
+} from './KdyCampusMap'

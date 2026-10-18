@@ -322,6 +322,19 @@ export class WebviewSessionService implements WebviewAllowlistPort {
     return this.cookieDelivery.deliver(cookieHeader, record);
   }
 
+  /**
+   * 测试用：清空限流窗口。
+   *
+   * 为什么需要（而不是"把测试改宽松"）：`test/techpie-http.spec.ts` 的
+   * 「P0-7 白名单」一个 describe 就有 11 次换票（1 + `it.each` 5 + 5），
+   * 远超人用的 10 次/分钟 —— 那是**白名单**的验收，不是限流的验收。
+   * 限流本身由 `webview-session.service.spec.ts` 的两个用例专门验证
+   * （超过上限 → 429、按主体隔离）。这里只把该窗口让开。
+   */
+  resetRateLimit(): void {
+    this.hits.clear();
+  }
+
   /* ---------------- 内部 ---------------- */
 
   /**

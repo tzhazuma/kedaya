@@ -1,4 +1,4 @@
-import { Image, Map, Text, View } from '@tarojs/components'
+import { Image, Text, View } from '@tarojs/components'
 import { useDidShow } from '@tarojs/taro'
 import { useMemo, useState } from 'react'
 
@@ -11,14 +11,16 @@ import {
   effectiveFeedingPolicy,
   feedingPolicyNotice,
   speciesDisplayName,
-  toMapPoint,
+  toCampusMapPoint,
 } from '../../../../domain/models/wildlife'
+import type { CampusPoint } from '@kedaya/contracts'
 import { getCurrentLocation } from '../../../../platform/location'
 import { chooseAndCompressPhotos } from '../../../../platform/mediaPicker'
 import { navigateBack, toast } from '../../../../platform/navigation'
 import {
   KdyButton,
   KdyCard,
+  KdyCampusMap,
   KdyChip,
   KdyEmpty,
   KdyEthicsNotice,
@@ -29,7 +31,6 @@ import {
   KdyTag,
 } from '../../../components'
 import { useStore } from '../../../hooks'
-import { MAP_MARKER_ICONS, buildCallout } from '../../../theme/mapColors'
 import './index.scss'
 
 /**
@@ -38,8 +39,9 @@ import './index.scss'
  * 坐标系（规格 §3）——**本页同时踩到两个消费点**，必须分清楚：
  * - 「使用当前定位」→ `wx.getLocation({ type: 'wgs84' })` → 已是 **WGS84**，
  *   以 `setPoint(p, 'wgs84')` 交出去（不转换）；
- * - 「在地图上点选」→ `<map>` 的 `onTap` 给的是 **GCJ-02**，
- *   以 `setPoint(p, 'gcj02')` 交出去，由 `toCreateSightingBody()` 转回 WGS84。
+ * - 「在校园底图上点选」→ 底图与点选都是 **GCJ-02**（`KdyCampusMap` 的投影口径，
+ *   与旧的原生 `<map>` 一致），以 `setPoint(p, 'gcj02')` 交出去，
+ *   由 `toCreateSightingBody()` 转回 WGS84。
  *
  * 页面**不做**转换本身，只声明「这个点从哪来」——转换入口只有 domain 的那两个函数。
  *
@@ -79,8 +81,9 @@ export default function WildlifeReportPage() {
   const [time, setTime] = useState(() => timeLocal(now))
   const [pickerOpen, setPickerOpen] = useState(false)
 
-  // 地图点选：`<map>` 的 onTap 给的是 GCJ-02
-  const center = toMapPoint({ lat: state.draft.point.lat, lng: state.draft.point.lng })
+  // 底图点选：`KdyCampusMap` 的 onPick 给的是 GCJ-02（与原生的 onTap 同一口径）
+  const picked = toCampusMapPoint({ lat: state.draft.point.lat, lng: state.draft.point.lng })
+  const [position, setPosition] = useState<CampusPoint | null>(null)
   const selectedSpecies = useMemo(
     () => state.species.find((item) => item.id === state.draft.speciesId),
     [state.species, state.draft.speciesId],
@@ -103,7 +106,16 @@ export default function WildlifeReportPage() {
     // 区域列表复用地图用例（同一份缓存），没有才拉
     mapUseCase.hydrate()
     if (mapUseCase.getSnapshot().zones.length === 0) void mapUseCase.load()
+    // 底图上的「我在这」蓝点（等价于原生 `<map showLocation>`；被拒授权则静默不显示）
+    void locateOnce()
   })
+
+  /** 取一次当前位置用于底图蓝点；失败不影响选点与提交 */
+  async function locateOnce(): Promise<void> {
+    const located = await getCurrentLocation()
+    if (!located.ok) return
+    setPosition(toCampusMapPoint({ lat: located.value.lat, lng: located.value.lng }))
+  }
 
   async function handlePickPhotos(): Promise<void> {
     const picked = await chooseAndCompressPhotos({ count: WILDLIFE_MAX_PHOTOS - state.photos.length })
@@ -126,10 +138,10 @@ export default function WildlifeReportPage() {
     toast('已使用当前定位（WGS84）')
   }
 
-  function handleMapTap(latitude: number, longitude: number): void {
-    // ⚠️ 地图点选 → **GCJ-02**。声明来源，由用例/domain 在提交前转回 WGS84。
-    report.setPoint({ lat: latitude, lng: longitude }, 'gcj02')
-    toast('已选点（地图点选为 GCJ-02，提交前会自动转回 WGS84）')
+  function handleMapTap(point: CampusPoint): void {
+    // ⚠️ 底图点选 → **GCJ-02**。声明来源，由用例/domain 在提交前转回 WGS84。
+    report.setPoint({ lat: point.latitude, lng: point.longitude }, 'gcj02')
+    toast('已选点（底图点选为 GCJ-02，提交前会自动转回 WGS84）')
   }
 
   async function handleSubmit(): Promise<void> {
@@ -210,7 +222,7 @@ export default function WildlifeReportPage() {
             )}
 
             <Text className='kdy-wildlife-report__tip'>
-              照片的 EXIF（含 GPS）由**服务端**强制剥离后再存储 —— 客户端不做、也不能承诺这件事。
+              照片的 EXIF（含 GPS）由服务端强制剥离后再存储 —— 客户端不做、也不能承诺这件事。
             </Text>
           </KdyCard>
 
@@ -218,7 +230,7 @@ export default function WildlifeReportPage() {
           <KdyCard title='物种（必填）' elevated={false}>
             {state.classification.degraded ? (
               <Text className='kdy-wildlife-report__degrade'>
-                自动识别当前不可用（未配置识别能力），已降级为**手动选择**。
+                自动识别暂不可用，请手动选择物种。
                 这不影响上报 —— 分类是增强，不是前置条件。
               </Text>
             ) : (
@@ -345,7 +357,7 @@ export default function WildlifeReportPage() {
             </View>
 
             <Text className='kdy-wildlife-report__tip'>
-              发现时间与「上报时间」是两件事：补录时请填**真正看到它的时间**，
+              发现时间与「上报时间」是两件事：补录时请填真正看到它的时间，
               发现时间需在最近 30 天内。
             </Text>
           </KdyCard>
@@ -367,31 +379,11 @@ export default function WildlifeReportPage() {
             </Text>
 
             {pickerOpen && (
-              <Map
+              <KdyCampusMap
                 className='kdy-wildlife-report__canvas'
-                longitude={center.lng}
-                latitude={center.lat}
-                scale={17}
-                showLocation
-                markers={[
-                  {
-                    id: 0,
-                    latitude: center.lat,
-                    longitude: center.lng,
-                    title: '所选位置',
-                    iconPath: MAP_MARKER_ICONS.sighting,
-                    width: 24,
-                    height: 24,
-                    callout: buildCallout('点地图任意位置选点'),
-                  },
-                ]}
-                onTap={(event) => {
-                  const detail = event.detail as { latitude?: number; longitude?: number }
-                  if (detail.latitude !== undefined && detail.longitude !== undefined) {
-                    handleMapTap(detail.latitude, detail.longitude)
-                  }
-                }}
-                onError={() => toast('地图组件加载失败：请检查网络，或在小程序后台配置地图 key')}
+                picked={picked}
+                position={position}
+                onPick={handleMapTap}
               />
             )}
 
@@ -507,7 +499,7 @@ export default function WildlifeReportPage() {
       )}
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
         投喂规范与告示文案为项目草案，未经校方或动物社团审核；识别结果仅供参考。
       </Text>
     </View>

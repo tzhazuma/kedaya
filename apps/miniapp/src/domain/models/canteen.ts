@@ -1,4 +1,11 @@
-import { fenToYuan, formatRelativeTime, yuanToFen } from '@kedaya/shared'
+import {
+  CANTEEN_NAMES,
+  fenToYuan,
+  formatRelativeTime,
+  isCanteenName,
+  yuanToFen,
+  type CanteenName,
+} from '@kedaya/shared'
 
 /**
  * 食堂营养（`canteen`）领域模型 —— 纯 TypeScript，零框架依赖（契约 §7）。
@@ -15,31 +22,21 @@ import { fenToYuan, formatRelativeTime, yuanToFen } from '@kedaya/shared'
  */
 
 /* ------------------------------------------------------------------ *
- * 食堂白名单 —— 与后端 seed 里的真实食堂名对齐
+ * 食堂白名单 —— 真相在 `@kedaya/shared`（营养管家用同一张菜品表）
  * ------------------------------------------------------------------ */
 
 /**
  * 支持的食堂。**单一真相**：列表筛选 chip 与创建表单都从这里取，
  * 不允许页面里再写一份（否则新增食堂时必定漏改一处）。
  *
- * 刻意包含 `清真食堂` / `其他` 两个名字：它们在校内真实存在 / 作为兜底，
- * 即便当前种子数据里暂时没有对应菜品，筛选后走到空态也是诚实的结果。
+ * 值本身定义在 `@kedaya/shared` 的 `CANTEEN_NAMES`：营养管家（与「共建菜品库」
+ * 读的是同一张菜品表）也要用它 —— 两边各写一份必然漂移，而漂移的表现是
+ * 「筛选点下去是空的」。本文件只做别名，保持既有引用处的写法不变。
  */
-export const CANTEEN_OPTIONS = [
-  '第一食堂',
-  '第二食堂',
-  '第三食堂',
-  '清真食堂',
-  '教工食堂',
-  '咖啡吧',
-  '其他',
-] as const
+export const CANTEEN_OPTIONS = CANTEEN_NAMES
 
-export type CanteenName = (typeof CANTEEN_OPTIONS)[number]
-
-export function isCanteenName(value: unknown): value is CanteenName {
-  return typeof value === 'string' && (CANTEEN_OPTIONS as readonly string[]).includes(value)
-}
+export { isCanteenName }
+export type { CanteenName }
 
 /* ------------------------------------------------------------------ *
  * 字段上限（与服务端 createSchema / listQuerySchema 对齐）

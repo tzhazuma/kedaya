@@ -1,0 +1,25 @@
+/**
+ * 吉祥物样式。
+ *
+ * 只有两件事：把贴图居中，以及提供「白色圆盘」这一种变体。
+ * 圆盘必须是**不透明的浅底**：鸭子是黄色的，垫在品牌黄渐变上会糊成一片。
+ */
+
+.kdy-mascot {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.kdy-mascot--plate {
+  box-sizing: border-box;
+  border: 1px solid rgba($kdy-color-brand, 0.28);
+  border-radius: $kdy-radius-pill;
+  background-color: $kdy-color-surface;
+  box-shadow: 0 2px 8px rgba($kdy-color-brand-strong, 0.16);
+}
+
+.kdy-mascot__image {
+  display: block;
+}

@@ -2,6 +2,7 @@ import { Text, View } from '@tarojs/components'
 
 import { PAGE_PATHS } from '../../../app/routes'
 import { navigateTo } from '../../../platform/navigation'
+import { KdyMascot } from '../KdyMascot'
 import './index.scss'
 
 /**
@@ -25,8 +26,6 @@ export interface KdyAgentFabProps {
   page?: string
   /** 底部已有操作栏时抬高，避免遮挡 */
   raised?: boolean
-  /** 首次进入时的小气泡文案（例如"试试问我今天的课"） */
-  hint?: string
   className?: string
 }
 
@@ -38,7 +37,7 @@ export function agentPathWithContext(module?: string, page?: string): string {
   return query.length === 0 ? PAGE_PATHS.agent : `${PAGE_PATHS.agent}?${query.join('&')}`
 }
 
-export function KdyAgentFab({ module, page, raised = false, hint, className }: KdyAgentFabProps) {
+export function KdyAgentFab({ module, page, raised = false, className }: KdyAgentFabProps) {
   const classes = ['kdy-agent-fab', raised ? 'kdy-agent-fab--raised' : '', className ?? '']
     .filter((item) => item !== '')
     .join(' ')
@@ -48,14 +47,11 @@ export function KdyAgentFab({ module, page, raised = false, hint, className }: K
       className={classes}
       // 悬浮球本身不承载业务逻辑：它只负责"带着上下文去找可达鸭"
       onClick={() => void navigateTo(agentPathWithContext(module, page))}
+      hoverClass='kdy-agent-fab--pressed'
+      hoverStayTime={70}
     >
-      {hint !== undefined && hint !== '' && (
-        <View className='kdy-agent-fab__hint'>
-          <Text className='kdy-agent-fab__hint-text'>{hint}</Text>
-        </View>
-      )}
       <View className='kdy-agent-fab__ball'>
-        <Text className='kdy-agent-fab__emoji'>🦆</Text>
+        <KdyMascot size={28} plate className='kdy-agent-fab__mascot' />
         <Text className='kdy-agent-fab__label'>可达鸭</Text>
       </View>
     </View>

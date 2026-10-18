@@ -5,6 +5,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { getContainer } from '../../../app/container'
 import { PAGE_PATHS } from '../../../app/routes'
 import { KdyButton } from '../KdyButton'
+import { KdyMascot } from '../KdyMascot'
 import './index.scss'
 
 /**
@@ -96,7 +97,7 @@ export class KdyErrorBoundary extends Component<KdyErrorBoundaryProps, KdyErrorB
 
     return (
       <View className='kdy-error-boundary'>
-        <View className='kdy-error-boundary__glyph'>🦆</View>
+        <KdyMascot size={72} className='kdy-error-boundary__glyph' />
         <Text className='kdy-error-boundary__title'>这个页面没能打开</Text>
         <Text className='kdy-error-boundary__desc'>
           {this.props.hint ?? '已经自动把问题记下来了，我们会尽快修。你可以重试，或回到首页。'}

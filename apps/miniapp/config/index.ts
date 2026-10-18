@@ -6,6 +6,7 @@ import type { IProjectConfig } from '@tarojs/taro/types/compile'
 
 import devConfig from './dev'
 import prodConfig from './prod'
+import { CoherentBuildPlugin } from './coherent-build'
 
 /**
  * 设计令牌 SCSS 入口。
@@ -69,8 +70,26 @@ const baseConfig: UserConfigExport<'webpack5'> = {
      *
      * `from` 相对 appPath（`apps/miniapp`），`to` 也相对 appPath
      * （见 `WebpackPlugin.getCopyWebpackPlugin` 的 `context: appPath`）。
+     *
+     * 吉祥物（可达鸭贴图）走同一条路：`theme/mascot.ts` 以
+     * `/assets/mascot/duck.png` 引用，避免被 webpack 内联成 base64 塞进主包 JS。
+     *
+     * ⚠️ **校园底图（`campus.jpg`，约 1 MB）刻意放在 wildlife 分包目录里**：
+     * 微信**主包上限 2 MiB**，主包当前已用到 1.4 MiB，一份 1 MB 的底图
+     * 会把主包顶穿、直接传不上去；放进分包则由**分包**体积（上限 2 MiB）承担。
+     * 因此它不能跟着 `src/assets/wildlife` 一起拷到 `dist/assets/`（那是主包目录），
+     * 只能拷进 `presentation/pages/wildlife/assets/`。
+     * 引用它的三页（地图 / 上报 / 轨迹）都在同一分包里，符合微信「分包只能引用自己包内文件」的约束。
+     * `scripts/verify-weapp-build.cjs` 会同时守住主包与这个分包的上限。
      */
-    patterns: [{ from: 'src/assets/wildlife', to: 'dist/assets/wildlife' }],
+    patterns: [
+      { from: 'src/assets/wildlife', to: 'dist/assets/wildlife' },
+      { from: 'src/assets/mascot', to: 'dist/assets/mascot' },
+      {
+        from: 'src/presentation/pages/wildlife/assets',
+        to: 'dist/presentation/pages/wildlife/assets',
+      },
+    ],
     options: {},
   },
   framework: 'react',
@@ -121,6 +140,18 @@ const baseConfig: UserConfigExport<'webpack5'> = {
         .prepend(path.resolve(__dirname, '..', 'node_modules'))
         // 保留默认的「逐级向上找 node_modules」语义（`react` 之类被提升到仓库根）。
         .add('node_modules')
+
+      /**
+       * 构建指纹（`// kedaya-build:<hash>`，见 `config/coherent-build.ts`）。
+       *
+       * `scripts/verify-weapp-build.cjs` 与 `scripts/publish-weapp.cjs` 靠它判断
+       * 「这份 dist 是同一次完整构建的产物」：所有分包 chunk 的指纹必须一致，
+       * 否则微信会复用旧的文件缓存、出现「页面已更新但代码没更新」。
+       *
+       * ⚠️ 这个插件**必须**挂上，否则 `npm run verify:weapp` 会在
+       * `missing build fingerprint` 上直接失败 —— 插件文件本身不生效。
+       */
+      chain.plugin('kedaya-coherent-build').use(CoherentBuildPlugin)
     },
     postcss: {
       pxtransform: { enable: true, config: {} },

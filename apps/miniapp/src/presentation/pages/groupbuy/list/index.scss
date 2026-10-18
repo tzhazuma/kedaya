@@ -9,7 +9,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: $kdy-space-2;
-  padding: $kdy-space-2 $kdy-space-4 0;
+  padding: $kdy-space-2 $kdy-space-5 0;
 }
 
 .kdy-gb-list__fab {
@@ -31,7 +31,6 @@
   padding: $kdy-space-2 $kdy-space-4 $kdy-space-3;
 }
 
-.kdy-gb-list__hint,
 .kdy-gb-list__more,
 .kdy-gb-list__soft-error {
   display: block;
@@ -40,9 +39,6 @@
   text-align: center;
 }
 
-.kdy-gb-list__hint {
-  color: $kdy-color-info;
-}
 
 .kdy-gb-list__more {
   color: $kdy-color-text-muted;

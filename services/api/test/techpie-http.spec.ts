@@ -4,7 +4,7 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { API_BASE_PATH, IDEMPOTENCY_HEADER, TRACE_HEADER } from '@kedaya/contracts';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { AddressInfo } from 'node:net';
 import { CAMPUS_SESSION_PORT } from '../src/modules/auth/domain/auth.domain';
 import { CAMPUS_DATA_PORT } from '../src/modules/auth/domain/campus-data.domain';
@@ -24,6 +24,7 @@ import {
 } from '../src/modules/campus-card/domain/campus-card.domain';
 import { ScheduleModule } from '../src/modules/schedule/schedule.module';
 import { TechpieModule } from '../src/modules/techpie/techpie.module';
+import { WebviewSessionService } from '../src/modules/techpie/data/webview-session/webview-session.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createInMemoryDelegate, type InMemoryDelegate } from './fixtures/fake-prisma';
 
@@ -359,7 +360,8 @@ describe('TechPie Phase 0 + 校园卡 · 端到端验收', () => {
 
       expect(response.status).toBe(200);
       expect(Object.keys(body.data!).sort()).toEqual(['avatarUrl', 'department', 'name', 'userId']);
-      expect(body.data!.userId).toBe('u-1');
+      // 身份投影必须回**当前登录人**（`USER_ID` 是本次 JWT 的 sub）
+      expect(body.data!.userId).toBe(USER_ID);
     });
 
     it('GET /auth/session 的响应体里扫不到 8 个禁用键名，也没有长 base64 串', async () => {
@@ -602,8 +604,13 @@ describe('TechPie Phase 0 + 校园卡 · 端到端验收', () => {
         reason: 'CAMPUS_CARD_PAYMENT_CODE_NOT_WIRED',
         upstreamReady: false,
       });
-      // 绝不下发任何 `code` 字段
-      expect(JSON.stringify(body)).not.toContain('"code":"');
+      // 绝不下发任何付款码。
+      //
+      // ⚠️ 这里**不能**断言"响应体里没有 `"code":"`"：统一失败信封（契约 §6.1）
+      // 的 `error.code` 本身就是这个形状，那条断言与信封规范自相矛盾、**永远不可能通过**。
+      // 真正要钉死的是「失败形态里没有任何 `data`」—— 付款码只可能在 `data.code` 里出现。
+      expect(body.data).toBeUndefined();
+      expect(JSON.stringify(body.error)).not.toMatch(/payCode|paymentCode|qrCode/);
     });
 
     it('付款码响应带 `Cache-Control: no-store`（§10.3：禁止缓存）', async () => {
@@ -732,6 +739,16 @@ describe('TechPie Phase 0 + 校园卡 · 端到端验收', () => {
    * ================================================================ */
 
   describe('P0-7 · POST /techpie/webview-session 的 origin 白名单校验', () => {
+    /**
+     * 本 describe 会在一秒内换票 11 次（1 + `it.each` 5 + 5），
+     * 而限流是**人用**的 10 次/分钟 —— 本文件测的是**白名单**，
+     * 不是限流。限流由 `webview-session.service.spec.ts` 专门验证
+     * （超过上限 → 429、按主体隔离），这里只把窗口让开。
+     */
+    beforeEach(() => {
+      app.get(WebviewSessionService).resetRateLimit();
+    });
+
     it('非白名单 origin → 403 FORBIDDEN（P0-7）', async () => {
       const response = await fetch(`${baseUrl}/techpie/webview-session`, {
         method: 'POST',

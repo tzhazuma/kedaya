@@ -28,10 +28,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: $kdy-space-2;
-  margin: $kdy-space-3 0;
+  margin: $kdy-space-3 $kdy-space-5;
 }
 
-.kdy-wb__cache-hint,
 .kdy-wb__inline-error {
   display: block;
   margin: $kdy-space-2 0;

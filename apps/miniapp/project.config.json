@@ -12,6 +12,8 @@
     "include": []
   },
   "setting": {
+    "useApiHook": false,
+    "compileHotReLoad": false,
     "urlCheck": false,
     "es6": false,
     "enhance": false,

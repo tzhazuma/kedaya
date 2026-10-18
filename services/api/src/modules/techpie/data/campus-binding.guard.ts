@@ -26,10 +26,25 @@ import { CanActivate, Inject, Injectable, SetMetadata, type ExecutionContext } f
 import { Reflector } from '@nestjs/core';
 import { currentContext } from '../../../common/context/request-context';
 import { CampusBindingRequiredError, UnauthenticatedError } from '../../../common/errors/app-error';
-import { CAMPUS_SESSION_PORT, type CampusSessionPort } from '../../auth/domain/auth.domain';
+import {
+  CAMPUS_SESSION_PORT,
+  isActiveLinkStatus,
+  type CampusPlatform,
+  type CampusSessionPort,
+} from '../domain/ports/campus-session.port';
 
-
-
+/**
+ * 平台标识（§11.20-C 的统一枚举）。
+ *
+ * ⚠️ 本守卫注入的是 **techpie 的** `CAMPUS_SESSION_PORT`，不是 auth 自己那套
+ * 大写平台 + `CampusBinding` 表的实现 —— 后者**没有** `getBinding()`，
+ * 一旦解析到它，「已登录但未绑定」就会以 TypeError 收场（HTTP 500，
+ * 而契约 §11.4 I4 要求 409）。这条由 `test/techpie-http.spec.ts` 的 P0-4 钉死：
+ * 守卫的依赖必须在**每个**用到它的模块里都能解析到同一份实现
+ * （P0-4 的"已绑定 → 放行"分支会往 `TechpieLink` 表里造一行，
+ * 只有解析到 techpie 侧的 `CampusSessionService` 才会命中）。
+ */
+export type GuardPlatform = CampusPlatform;
 
 export const CAMPUS_BINDING_PLATFORM_KEY = 'kedaya:campusBindingPlatform';
 
@@ -40,9 +55,6 @@ export const CAMPUS_BINDING_PLATFORM_KEY = 'kedaya:campusBindingPlatform';
  * 默认值刻意是"最可能被用到的那一个"，而不是"不检查"：
  * **fail-closed** 比"忘了标注就放行"安全得多。
  */
-/** 平台标识。用 `string` 而不是某一边的 `CampusPlatform` —— 见下方 ACTIVE_STATUSES 的说明。 */
-export type GuardPlatform = string;
-
 export const RequireCampusBinding = (platform: GuardPlatform) =>
   SetMetadata(CAMPUS_BINDING_PLATFORM_KEY, platform);
 
@@ -64,12 +76,15 @@ export class CampusBindingGuard implements CanActivate {
     // 正常情况下 AuthGuard 已经拦掉了未登录；这里是纵深防御。
     if (!userId) throw new UnauthenticatedError();
 
-    // ⚠️ auth 的 `CampusSessionPort` **没有 `getBinding`**，只有 `acquireSession`
-    // （未绑定/已过期返回 null）。守卫只需要一个布尔判断，因此用 `acquireSession`：
-    // 拿到非 null = 已绑定且未过期 → 放行；null → 409。
-    // **不把 session 本身传出去** —— 那是能力层内部的东西，守卫只做门禁。
-    const session = await this.campusSession.acquireSession(userId, platform as never);
-    if (!session) {
+    // §11.20-C：平台是统一枚举，`GuardPlatform` 就是 techpie 的 `CampusPlatform`，
+    // 不需要（也不应该）在这里做边界转型 —— 转型会把"写错平台名"变成运行时静默放行。
+    //
+    // ⚠️ 只调 techpie 的 `getBinding()`（状态查询），**不用** auth 的 `acquireSession()`
+    // —— 后者会解密出会话明文，而守卫只需要一个布尔判断，不该把凭证拉进请求路径。
+    const binding = await this.campusSession.getBinding(userId, platform);
+    // §11.19-A：可用状态是 ACTIVE（旧拼法 LINKED 已作废）。
+    // 判定只走 `isActiveLinkStatus` 一处，避免 `=== 'LINKED'` 散落各处。
+    if (!binding || !isActiveLinkStatus(binding.status)) {
       throw new CampusBindingRequiredError(`请先绑定校园系统（${platform}）后再使用该功能`, {
         provider: platform,
         status: 'UNBOUND',
@@ -77,7 +92,6 @@ export class CampusBindingGuard implements CanActivate {
         next: 'GO_BIND',
       });
     }
-    return true;
     return true;
   }
 }

@@ -1,0 +1,166 @@
+.kdy-nu-dishes__hint {
+  display: block;
+  margin-bottom: $kdy-space-3;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+/* KdyField 自带控件框外观与标签布局，这里只负责间距与栅格 */
+.kdy-nu-dishes__field {
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-nu-dishes__label {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-dishes__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-nu-dishes__row {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+
+/* WXSS 不支持通配选择器 `*`，必须写成显式子元素类名 */
+.kdy-nu-dishes__row > .kdy-nu-dishes__field {
+  flex: 1;
+}
+
+/* 当前生效的筛选回显：让「为什么列表只有这几道菜」一眼可解释 */
+.kdy-nu-dishes__filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-2;
+  padding: $kdy-space-2;
+  border-radius: $kdy-radius-md;
+  background-color: $kdy-color-surface-alt;
+}
+
+.kdy-nu-dishes__filters-text {
+  flex: 1;
+  min-width: 200px;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-nu-dishes__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
+}
+
+/* 菜品库列表 */
+.kdy-nu-dishes__list {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-3;
+  margin-top: $kdy-space-3;
+}
+
+.kdy-nu-dishes__row-item {
+  padding: $kdy-space-3;
+  border: 1px solid $kdy-border-hairline;
+  border-radius: $kdy-radius-lg;
+  background-color: $kdy-color-surface;
+}
+
+.kdy-nu-dishes__row-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+}
+
+.kdy-nu-dishes__row-name {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  font-weight: 600;
+}
+
+.kdy-nu-dishes__row-meta {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-nu-dishes__row-source {
+  display: block;
+  margin-top: 2px;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  opacity: 0.85;
+}
+
+.kdy-nu-dishes__row-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: $kdy-space-2;
+}
+
+/* 折叠的演示工具 */
+.kdy-nu-dishes__tools {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $kdy-space-3;
+}
+
+.kdy-nu-dishes__tools-text {
+  flex: 1;
+}
+
+.kdy-nu-dishes__tools-title {
+  display: block;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: 600;
+}
+
+.kdy-nu-dishes__tools-hint {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-nu-dishes__form {
+  margin-top: $kdy-space-3;
+  padding-top: $kdy-space-3;
+  border-top: 1px solid $kdy-border-hairline;
+}
+
+.kdy-nu-dishes__section-title {
+  display: block;
+  margin: $kdy-space-2 0 $kdy-space-3;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: 600;
+}
+
+.kdy-nu-dishes__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 $kdy-space-2;
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-nu-dishes__grid > .kdy-nu-dishes__field {
+  width: calc(50% - #{$kdy-space-1});
+}

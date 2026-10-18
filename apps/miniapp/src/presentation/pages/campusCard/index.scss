@@ -43,6 +43,55 @@
     gap: $kdy-space-2;
   }
 
+  /*
+   * 余额块：品牌渐变 + 大数字。
+   *
+   * 校园卡页的用户问题只有一个——"我卡里还有多少钱"，所以余额值得一整个重色块。
+   * 数字用 `$kdy-font-size-display`（全页唯一一个超大字号）并且是**墨色**：
+   * 黄底白字在真机阳光下几乎看不清（AGENTS 的硬约束）。
+   * 状态（余额偏低 / 演示数据）不再用语义色标签 —— 低透明度的橙/灰标签压在黄底上
+   * 会发脏，改用玻璃胶囊（半透明白底 + 墨色字），在任何底色上都读得清。
+   */
+  &__hero {
+    padding: $kdy-space-4 $kdy-space-5;
+    border-radius: $kdy-radius-2xl;
+    background: $kdy-gradient-brand;
+    box-shadow: $kdy-shadow-accent;
+  }
+
+  &__hero-label {
+    display: block;
+    color: rgba($kdy-color-ink, 0.68);
+    font-size: $kdy-font-size-xs;
+    font-weight: $kdy-font-weight-medium;
+    letter-spacing: 0.4px;
+  }
+
+  &__hero-value {
+    display: block;
+    margin-top: $kdy-space-1;
+    color: $kdy-color-ink;
+    font-size: $kdy-font-size-display;
+    font-weight: 700;
+    line-height: $kdy-line-height-tight;
+  }
+
+  &__hero-badges {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    margin-top: $kdy-space-3;
+  }
+
+  &__balance {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+  }
+
   &__balance-label {
     color: $kdy-color-text-muted;
     font-size: $kdy-font-size-sm;

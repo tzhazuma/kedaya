@@ -72,7 +72,6 @@ export default function ForgotPasswordPage() {
       <KdyHeading
         title='找回密码'
         subtitle='用注册邮箱收一条验证码，就能设置新密码。'
-        eyebrow='KEDAYA · 账号安全'
       />
 
       <KdyCard title='重置密码' elevated={false}>

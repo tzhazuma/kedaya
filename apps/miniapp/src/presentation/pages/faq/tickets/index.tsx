@@ -134,10 +134,6 @@ export default function FaqTicketsPage() {
 
         {state.tickets.length > 0 && (
           <View>
-            {state.fromCache && (
-              <Text className='kdy-faq-tickets__hint'>当前展示本地缓存，正在后台刷新…</Text>
-            )}
-
             {state.tickets.map((ticket) => (
               <View key={ticket.id} className='kdy-faq-tickets__item'>
                 <View className='kdy-faq-tickets__item-head'>
@@ -179,7 +175,7 @@ export default function FaqTicketsPage() {
 
         {state.error !== null && state.status === 'ready' && (
           <Text className='kdy-faq-tickets__soft-error'>
-            后台刷新失败：{state.error}（已继续展示缓存数据，契约 §8 静默降级）
+            刷新失败，正在显示上次的内容
           </Text>
         )}
       </KdyCard>
@@ -191,7 +187,7 @@ export default function FaqTicketsPage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台。工单由志愿者处理，不承诺响应时限。
+        第三方非官方平台。工单由志愿者处理，不承诺响应时限。
       </Text>
     </View>
   )

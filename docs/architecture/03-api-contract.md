@@ -772,3 +772,187 @@ interface ApiClient {
 | A4 | 未定义 webhook / 事件推送给客户端的机制（当前只有轮询 + 推送通知） | 实时性受限 |
 | A5 | 敏感模块的 404 vs 403 边界：本文规定"无权可见一律 404"，但 `wellbeing` 的 `CONSENT_REQUIRED` 用 403 会泄漏"这个模块存在" | 需权衡；当前认为"模块存在"是公开信息，可接受 |
 | A6 | `Idempotency-Key` 在 GET 上无意义，契约说"写操作支持"，未明确 PUT/PATCH/DELETE 是否必需 | 本文规定 POST 必需、PATCH/PUT/DELETE 可选 |
+
+---
+
+## 12. 附录：营养管家（`canteen`）端点全表
+
+> 营养管家是 2026-10-17 上线的第四个业务模块，复用 `canteen` 模块路由（`modulePath('canteen')`），
+> 与菜品 CRUD 同域。设计取舍见 [ADR 0006](../adr/0006-nutrition-butler.md)。
+> 下文只登记**新增/特有**的端点与字段；CRUD 通用形状（信封 / 分页 / 幂等）见 §1–§7，不重复。
+
+### 12.1 端点总览
+
+| 方法 | 路径 | 鉴权 | 说明 |
+| --- | --- | --- | --- |
+| `GET` | `/canteen/dishes` | Optional | 菜品检索（名称/品类/食堂 + 游标分页）。营养管家园的"点选菜品"选择器；`q` 为空时返回全量前 N 条。**已下架（`deletedAt`）的不返回** |
+| `POST` | `/canteen/items` | **Admin** | 录入菜品。营养数据是推荐结论的依据，不接受匿名写入 |
+| `PATCH` | `/canteen/items/:id` | **Admin** | 修正营养值（只影响之后的记录，历史快照不变） |
+| `DELETE` | `/canteen/items/:id` | **Admin** | 下架（软删除，历史餐记录仍可回溯） |
+| `POST` | `/canteen/recognize` | **必需** | 拍照识别候选菜品。演示期为 mock 适配器，响应 `mode: 'mock'`，界面**必须**明示 |
+| `POST` | `/canteen/meals` | **必需** | 记录当餐（拍照确认 / 菜名点选两条路径的共同落点）；支持 `Idempotency-Key` |
+| `GET` | `/canteen/meals?date=` | **必需** | 某一天餐记录，默认今天；`date=YYYY-MM-DD`，项目时区切天 |
+| `PATCH` | `/canteen/meals/:id` | **必需** | 改餐型 / 备注 / 份数（**换菜请删除重记**） |
+| `DELETE` | `/canteen/meals/:id` | **必需** | 删除当餐（只能删自己的） |
+| `GET` | `/canteen/dashboard` | **必需** | 首页聚合：今日汇总 + 需求 + 缺口 + 推荐（一次往返；未设置需求时 `target: null`，不报错） |
+| `GET` | `/canteen/today` | **必需** | 今日营养汇总（进度环数据源） |
+| `GET` | `/canteen/stats?days=7` | **必需** | 近 N 日趋势（含今天）+ 连续记录天数 + 有记录日的平均摄入 |
+| `GET` | `/canteen/targets` | **必需** | 我的每日需求（含身体档案）；没设置过返回 `null`（不是默认值） |
+| `PUT` | `/canteen/targets` | **必需** | 设置/更新每日需求（一人一份，`userId` 唯一；可同时保存身体档案） |
+| `POST` | `/canteen/targets/estimate` | **必需** | 估算器：按身体数据预填需求，**纯计算不落库** |
+| `GET` | `/canteen/recommendations` | **必需** | 今日缺口 + 推荐菜品；未设置需求返回 `400` 引导去设置 |
+
+其余端点（`/canteen/items` CRUD、`/canteen/calories`）走契约 §6.1 通用形状，字段见 schema。
+`Admin` = `AdminGuard`：请求头 `x-admin-key` 与 `ADMIN_API_KEY` 相等，或登录用户 id 在 `ADMIN_USER_IDS` 内；
+两者都未配置时**一律拒绝**（fail-closed）。
+
+### 12.2 六项营养口径（**冻结**）
+
+字段命名继承契约的"字段名一律带单位后缀"约定（§1.2）：
+
+| 字段 | 单位 | 语义 | 来源 |
+| --- | --- | --- | --- |
+| `caloriesKcal` | kcal | 热量（**目标值**） | GB 28050 核心字段 |
+| `proteinG` | g | 蛋白质（目标值） | GB 28050 |
+| `fatG` | g | 脂肪（目标值） | GB 28050 |
+| `carbG` | g | 碳水化合物（目标值） | GB 28050 |
+| `fiberG` | g | 膳食纤维（目标值） | GB 28050 |
+| `sodiumMg` | mg | 钠（**上限值**，超了算过量） | GB 28050 |
+
+**不含糖**：糖（`sugarG`）是碳水化合物的子项（GB 28050 口径），2026-10-17 决策去掉，
+避免同一能量来源重复计量。唯一真相在 `packages/shared/src/nutrition.ts` 的 `NUTRIENT_KEYS`。
+
+### 12.3 关键请求/响应示例
+
+**`POST /canteen/meals`**（记录当餐——营养不在请求里，服务端从菜品库快照）
+
+```jsonc
+// 请求（Idempotency-Key 头可选；也可以放进 body 的 clientRequestId）
+{
+  "mealType": "lunch",            // breakfast / lunch / dinner / snack
+  "source": "photo",              // manual 菜名点选 / photo 拍照识别
+  "eatenAt": "2026-10-17T11:40:00Z",  // 可选；不能晚于当前时间，最多补记 30 天
+  "note": "一食堂二楼",
+  "clientRequestId": "meal-lz3k9-a1b2c3",  // 可选，幂等键
+  "items": [
+    { "dishId": "dsh_01H...", "dishName": "番茄炒蛋", "servings": 1 },
+    { "dishName": "清炒时蔬", "servings": 1.5 }   // dishId 可缺省（按菜名精确匹配）；份数支持 0.5 步进
+  ]
+}
+
+// 响应 201 —— 每道菜的营养是**记录那一刻**菜品库值的拷贝
+{
+  "data": {
+    "id": "mel_01H...",
+    "mealType": "lunch",
+    "source": "photo",
+    "eatenAt": "2026-10-17T11:40:00.000Z",
+    "note": "一食堂二楼",
+    "clientRequestId": "meal-lz3k9-a1b2c3",
+    "items": [
+      { "dishId": "dsh_01H...", "dishName": "番茄炒蛋", "category": "meat",
+        "servings": 1, "caloriesKcal": 180, "proteinG": 8, "fatG": 12, "carbG": 6, "fiberG": 2, "sodiumMg": 300 }
+    ],
+    "totals": { "caloriesKcal": 180, "proteinG": 8, "fatG": 12, "carbG": 6, "fiberG": 2, "sodiumMg": 300 }
+  },
+  "traceId": "..."
+}
+```
+
+`category` 取值为英文枚举（`staple` / `meat` / `vegetable` / `soup` / `dessert` / `drink` / `fruit` / `other`），
+中文名在客户端用 `DISH_CATEGORY_LABELS` 映射 —— **契约里不出现中文枚举值**。
+
+菜品库找不到（`dishId` 无效或菜名无精确匹配）→ `400 VALIDATION_FAILED`，
+`details: { dishName: "xxx" }`。**不做模糊匹配**：宁可记录失败，不许记错菜。
+份数不是 0.5 的整数倍、或超出 0.5–20 → `400`。
+
+**`PATCH /canteen/meals/:id`**（改餐型 / 备注 / 份数）
+
+```jsonc
+{ "mealType": "dinner", "note": "加班晚了", "servings": [0.5, 1] }   // servings 与 items 等长
+```
+
+**`DELETE /canteen/meals/:id`** → `{ "data": { "id": "mel_...", "deleted": true } }`
+（只能删自己的：不属于当前账号一律按 400 处理，不泄漏记录是否存在）
+
+**`GET /canteen/stats?days=7`**
+
+```jsonc
+{
+  "data": {
+    "days": [
+      { "date": "2026-10-11", "totals": { "caloriesKcal": 0, "proteinG": 0, "...": 0 }, "meals": 0 },
+      { "date": "2026-10-17", "totals": { "caloriesKcal": 1104, "proteinG": 43, "...": 0 }, "meals": 2 }
+    ],
+    "streak": 5,
+    "recordedDays": 5,
+    "average": { "caloriesKcal": 1980, "proteinG": 78, "fatG": 62, "carbG": 240, "fiberG": 12, "sodiumMg": 1700 }
+  }
+}
+```
+
+没记录的天也补齐（`meals: 0`），前端柱状图不用自己补空列；一天都没记时 `average` 为 `null`。
+
+**`POST /canteen/recognize`**（演示期 mock）
+
+```jsonc
+// 请求
+{ "imageUrl": "https://.../lunch.jpg" }
+
+// 响应 —— mode 必须透传到界面；dish 为 null 表示"识别到但菜品库还没有"
+{
+  "data": {
+    "mode": "mock",
+    "candidates": [
+      { "name": "红烧肉", "confidence": 0.82, "mode": "mock",
+        "dish": { "id": "dsh_01H...", "caloriesKcal": 520, "proteinG": 22, "fatG": 42, "carbG": 8, "fiberG": 0, "sodiumMg": 980 } },
+      { "name": "新品·和牛盖饭", "confidence": 0.41, "mode": "mock", "dish": null }
+    ]
+  }
+}
+```
+
+**`GET /canteen/recommendations`**
+
+```jsonc
+// 响应 200（未设置需求时 → 400，message 面向用户，形如「还没有设置每日营养需求…」）
+{
+  "data": {
+    "target":   { "caloriesKcal": 2100, "proteinG": 105, "fatG": 70, "carbG": 260, "fiberG": 25, "sodiumMg": 2000 },
+    "consumed": { "caloriesKcal": 1104, "proteinG": 43,  "fatG": 38, "carbG": 118, "fiberG": 8,  "sodiumMg": 1520 },
+    "gaps":     { "caloriesKcal": 996,  "proteinG": 62,  "fatG": 32, "carbG": 142, "fiberG": 17, "sodiumMg": 480 },
+    "recommendations": [
+      {
+        "dish":  { "id": "dsh_...", "name": "清蒸鲈鱼", "category": "meat",
+                   "caloriesKcal": 200, "proteinG": 26, "fatG": 8, "carbG": 2, "fiberG": 0, "sodiumMg": 420 },
+        "score": 1.284,
+        // fills = 该菜品每份对各项缺口的贡献（相对目标的比例，0-1+），UI 用进度条展示
+        "fills": { "proteinG": 0.248, "carbG": 0.008 },
+        "reason": "补蛋白质缺口（还差 62g，这份含 26g）"
+      }
+    ]
+  }
+}
+```
+
+`fills` 是**比例**不是克数（`dish.proteinG / target.proteinG`）；界面上的中文名用
+`NUTRIENT_LABELS` 映射，不要直接把 key 渲染给用户。
+
+`sodiumMg` 的 `gap` 是**剩余额度**（上限 − 已摄入），不是"还需摄入"——已超上限时为负值，
+界面按"已超标"展示，不得推荐继续加钠的菜。
+
+### 12.4 与通用契约的差异点（**有意为之**）
+
+| # | 差异 | 理由 |
+| --- | --- | --- |
+| 1 | `/canteen/meals` 的 `items` 不带营养字段 | 营养只能来自菜品库快照（ADR 0006）。客户端传营养值 = 数据可信度崩塌 |
+| 2 | `POST /canteen/meals` 必须支持 `Idempotency-Key`；`recognize` 不需要 | 记餐是写操作且用户会双击/弱网重试，重复计热量是静默错误；识别是纯读预检 |
+| 3 | `PUT /canteen/targets` 语义是 upsert 而非替换 | 一人一份资源，无列表无 404；未设置过 = `GET` 返回 `null` |
+| 4 | `date` / 「今天」按 `APP_TZ_OFFSET_MINUTES`（默认 480）切天 | 容器默认 UTC 会把北京时间 08:00 前的早餐算进昨天；时区必须显式，不能靠进程 TZ |
+| 5 | 推荐 `limit: 5` 写死在后端；候选池 = 未下架菜品按最近维护取前 200 | 本期不开放客户端调参；按 id 升序取前 N 会让新录入的菜永远进不了推荐 |
+| 6 | 推荐**排除今天已经吃过**的菜品（按 `dishId` 硬过滤） | 「今天还需要吃什么」推荐刚吃完的那道菜没有意义 |
+| 7 | 菜品写操作要求 `AdminGuard`（`x-admin-key` 或 `ADMIN_USER_IDS`） | 菜品库是营养结论的地基，匿名可写等于数据可信度归零 |
+| 8 | `DELETE /canteen/items/:id` 是**软删除**（`deletedAt`） | 菜品是历史餐记录的依据，硬删会让 `MealItem.dishId` 变 NULL |
+| 9 | 菜品带 `allergens`（机器值数组），每日需求带 `avoidAllergens`；推荐接口命中即**整道排除** | 过敏是安全问题：排序靠后仍可能被点，必须不出现。取值见 `@kedaya/shared` 的 `ALLERGENS` |
+| 10 | 「各餐分布」不新增端点，由客户端用 `shared.sumByMealType(meals)` 从 `dashboard` 的 `meals` 现算 | 三端同一份纯函数；少一个端点就少一处漂移 |
+| 11 | `GET /canteen/stats?days=` 上限 **92**，`days[]` 每项带 `mealCounts` / `itemsByCategory` | 季度饮食形象需要 90 天窗口与「餐型/品类」两个维度；这些字段由当天记录现算，不落库（避免为统计加表） |

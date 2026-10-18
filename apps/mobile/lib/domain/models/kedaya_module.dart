@@ -218,9 +218,9 @@ const List<KedayaModule> businessModules = <KedayaModule>[
   ),
   KedayaModule(
     id: 'wildlife',
-    nameZh: '猫鸟黑天鹅',
+    nameZh: '野生动物',
     nameEn: 'Campus Wildlife',
-    summary: '校园动物活动区域地图、投喂规范与上报',
+    summary: '野生居民档案：物种与个体、校园活动地图、投喂规范与观测上报',
     category: ModuleCategory.business,
     sensitivity: ModuleSensitivity.low,
     requiresConsent: false,

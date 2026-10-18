@@ -1,23 +1,26 @@
-import { Map, Text, View } from '@tarojs/components'
-import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
+import { Text, View } from '@tarojs/components'
+import Taro, { useDidShow, usePullDownRefresh, useRouter } from '@tarojs/taro'
+import { useState } from 'react'
 
 import { getContainer } from '../../../../app/container'
-import { wildlifeReportPath, wildlifeTracksPath } from '../../../../app/routes'
+import { wildlifeArchivePath, wildlifeReportPath, wildlifeTracksPath } from '../../../../app/routes'
 import {
   FEEDING_POLICY_TONES,
   WILDLIFE_BLACK_SWAN_NOTICE,
   effectiveFeedingPolicy,
   feedingPolicyNotice,
   toApiPoint,
-  toMapPoint,
+  toCampusMapPoint,
 } from '../../../../domain/models/wildlife'
 import type { WildlifeSighting, WildlifeZone } from '../../../../domain/models/wildlife'
 import { CAMPUS_ORIGIN, distanceMeters, formatRelativeTime } from '@kedaya/shared'
-import { openWildlifePointInMap } from '../../../../platform/location'
+import type { CampusPoint } from '@kedaya/contracts'
+import { getCurrentLocation, openWildlifePointInMap } from '../../../../platform/location'
 import { navigateTo, toast } from '../../../../platform/navigation'
 import {
   KdyButton,
   KdyCard,
+  KdyCampusMap,
   KdyChip,
   KdyEmpty,
   KdyEthicsNotice,
@@ -25,46 +28,76 @@ import {
   KdyTag,
 } from '../../../components'
 import { useStore } from '../../../hooks'
-import { MAP_MARKER_ICONS, MAP_OVERLAY_COLORS, buildCallout } from '../../../theme/mapColors'
+import { MAP_MARKER_ICONS, MAP_OVERLAY_COLORS } from '../../../theme/mapColors'
 import { aggregationNotice, buildMapOverlays, selectedSightingSummary, zoneSummary } from '../../../../application/wildlife/wildlifeMap'
 import './index.scss'
 
 /**
  * 动物地图页（`wildlife`）—— 模块主入口。
  *
- * 底图用小程序原生 `<map>` 组件（规格 §1.1 的方案 A），叠加：
+ * 底图是**校方校园 GIS 的真实底图**（规格 §1.2 的方案 B：静态校园平面图 + 叠加层），
+ * 由 `KdyCampusMap` 渲染；叠加三层：
  * - **活动区域圈**：`circles`（区域圆心 + 半径；敏感区用危险色区分）
  * - **观测点 / 聚合热点标记**：`markers`
  * - **推断轨迹折线**：`polyline`（**虚线** —— 视觉上就不像实测路径）
  *
  * ⚠️ **坐标系（本页最关键的一件事，规格 §3）**：
- * `<map>` 组件的 `markers` / `circles` / `polyline` **全部按 GCJ-02 解释**，
- * 而我们的 API / 存储一律 WGS84（在上海相差约 470 米）。
- * 因此本页**不自己拼叠加层**，一律走 `buildMapOverlays()` ——
- * 它内部调用 `toMapPoint()` 完成 WGS84 → GCJ-02。
+ * 底图瓦片是百度系投影，而叠加层与点选一律走 **GCJ-02**：本页
+ * **不自己拼叠加层**，一律走 `buildMapOverlays()` —— 它内部调用 `toMapPoint()`
+ * 完成 WGS84 → GCJ-02；`KdyCampusMap` 再把它投影到底图像素
+ * （`@kedaya/contracts` 的 `campusPixel()`）。
  * 本页唯一的另一处转换是「在腾讯地图中打开」（`openWildlifePointInMap`，同样内部转换）。
  *
- * ⚠️ 规格 §1.2 推荐的是「静态校园平面图 + 叠加层」（方案 B，无坐标系问题），
- * 本实现采用方案 A（原生 `map`），原因是本任务的显式要求（`<map>` + `markers` + `polyline`）。
- * 两者对用户的核心差别是底图内容；坐标转换的规范两者一致。详见交付说明的偏离记录。
+ * ⚠️ 之前用的原生 `<map>` 是腾讯 / 高德的**城市街道图**：校园里的桥、小路、楼名
+ * 全是错的。换成校方底图后，「黑天鹅在哪片水面旁」才有意义；「在腾讯地图中打开」
+ * 仍然保留 —— 那是**导航出口**（要的是手机地图的路网），不是底图。
  *
  * ⚠️ **E10**（规格 §8.1）：地图**不显示实时点位**。聚合热点延迟 <24h 的一律不渲染，
  * 单条观测也只作为历史数据展示（`buildMapOverlays` 已过滤，`hiddenByDelay` 会提示）。
  */
 
-const MAP_SCALE = 16
-
 export default function WildlifeMapPage() {
+  const router = useRouter()
   const container = getContainer()
   const map = container.useCases.wildlifeMap
   const state = useStore(map)
 
+  /**
+   * 从档案页的物种卡进来时带 `speciesId`（`wildlifeMapWithSpeciesPath`），
+   * 地图直接落在那个物种的筛选上 —— 否则用户点「黑天鹅」却看到全部物种，
+   * 还得自己再点一次筛选。
+   *
+   * ⚠️ 只认**物种 id**：坐标永远由本页自己采集，绝不由 URL 带进来。
+   */
+  const paramSpeciesId =
+    typeof router.params.speciesId === 'string' && router.params.speciesId !== ''
+      ? router.params.speciesId
+      : null
+
   const now = container.clock.now()
   const overlays = buildMapOverlays(state, now, MAP_OVERLAY_COLORS)
 
-  // 地图初始中心：校园原点（WGS84）→ GCJ-02。
-  // 这是「渲染前必须转换」的又一个消费点。
-  const center = toMapPoint({ lat: CAMPUS_ORIGIN.lat, lng: CAMPUS_ORIGIN.lng })
+  /**
+   * 底图要居中的点（**GCJ-02** —— 底图投影与叠加层都是这个口径）。
+   *
+   * 只在用户**明确要看某个东西**时改（点区域卡、点标记），不跟着地图点选走：
+   * 否则手指刚点下去地图就自己跳走，很难受。
+   */
+  const [focus, setFocus] = useState<CampusPoint>(() =>
+    // 校园原点（WGS84）→ GCJ-02：这是「渲染前必须转换」的又一个消费点
+    toCampusMapPoint({ lat: CAMPUS_ORIGIN.lat, lng: CAMPUS_ORIGIN.lng }),
+  )
+
+  /** 用户当前位置（GCJ-02）—— 原生 `<map showLocation>` 的蓝点在这里补齐 */
+  const [position, setPosition] = useState<CampusPoint | null>(null)
+
+  /**
+   * 是否显示区域圈。
+   *
+   * 圈是**有用的**（「这片水面归哪个管理区域」），但也确实会盖住底图细节 ——
+   * 与其争论，不如给一个开关：想看清建筑/水域就点掉，想看范围就点回来。
+   */
+  const [showZones, setShowZones] = useState(true)
 
   const sightingSummary = selectedSightingSummary(state, now)
   const activeZone =
@@ -79,8 +112,29 @@ export default function WildlifeMapPage() {
   useDidShow(() => {
     // 契约 §8 第 1 步（幂等，同步读缓存）+ 第 3 步（后台刷新）
     map.hydrate()
-    void map.load()
+    if (paramSpeciesId === null) {
+      void map.load()
+    } else {
+      // 带物种进来：先落到该物种的筛选，再按该物种拉数据
+      map.selectSpecies(paramSpeciesId)
+      void map.load(paramSpeciesId)
+    }
+    // 底图上的「我在这」蓝点（被拒绝授权就静默不显示，功能不受影响）
+    void locateOnce()
   })
+
+  /**
+   * 取一次当前位置用于底图蓝点。
+   *
+   * 与原生 `<map showLocation>` 等价：授权被拒 / 定位不可用时**什么都不做**，
+   * 不弹提示也不报错 —— 地图本身仍然可用。
+   */
+  async function locateOnce(): Promise<void> {
+    const located = await getCurrentLocation()
+    if (!located.ok) return
+    // `wx.getLocation({ type: 'wgs84' })` 是 WGS84 → 渲染前必须转 GCJ-02
+    setPosition(toCampusMapPoint({ lat: located.value.lat, lng: located.value.lng }))
+  }
 
   usePullDownRefresh(() => {
     void refresh().then(() => Taro.stopPullDownRefresh())
@@ -95,6 +149,9 @@ export default function WildlifeMapPage() {
     const marker = overlays.markers.find((item) => item.markerId === markerId)
     if (marker === undefined) return
 
+    // 点标记 = 用户明确想看它：底图居中过去（叠加层本来就是 GCJ-02）
+    setFocus({ latitude: marker.latitude, longitude: marker.longitude })
+
     if (marker.kind === 'sighting') {
       map.selectSighting(marker.id)
       map.selectZone(null)
@@ -108,11 +165,11 @@ export default function WildlifeMapPage() {
     if (spot?.zoneId == null) toast('该热点尚未划入管理区域')
   }
 
-  function handleMapTap(latitude: number, longitude: number): void {
-    // ⚠️ 用户在地图上点选得到的是 **GCJ-02**。
+  function handleMapTap(point: CampusPoint): void {
+    // ⚠️ 用户在校方底图上点选得到的是 **GCJ-02**（与原生 `<map>` 的 onTap 同一口径）。
     // 本页只把它当作「查看附近区域」的输入，因此先用 domain 的入口转成 WGS84 再比较 ——
     // 绝不把 GCJ-02 直接和 WGS84 的区域圆心做距离比较（那会差约 470 米）。
-    const wgs84 = toApiPoint({ lat: latitude, lng: longitude }, 'gcj02')
+    const wgs84 = toApiPoint({ lat: point.latitude, lng: point.longitude }, 'gcj02')
 
     const hit = state.zones.find(
       (zone) => distanceMeters({ lat: zone.centerLat, lng: zone.centerLng }, wgs84) <= zone.radiusM,
@@ -190,6 +247,9 @@ export default function WildlifeMapPage() {
         <KdyButton size='sm' onClick={() => void navigateTo(wildlifeReportPath())}>
           上报观测
         </KdyButton>
+        <KdyButton size='sm' variant='ghost' onClick={() => void navigateTo(wildlifeArchivePath())}>
+          居民档案
+        </KdyButton>
         <KdyButton size='sm' variant='ghost' onClick={() => void navigateTo(wildlifeTracksPath())}>
           推断轨迹
         </KdyButton>
@@ -230,45 +290,49 @@ export default function WildlifeMapPage() {
 
       {(state.status === 'ready' || state.status === 'idle') && (
         <View>
-          {state.fromCache && (
-            <Text className='kdy-wildlife-map__hint'>当前展示本地缓存，正在后台刷新…</Text>
-          )}
-
           {/*
-            ⚠️ 底图 = 小程序原生 map（腾讯地图街道图）。
+            ⚠️ 底图 = **校方校园 GIS 的真实底图**（不是腾讯 / 高德的城市街道图）。
             所有叠加层的坐标**已经**是 GCJ-02（由 buildMapOverlays 转换）。
           */}
-          <Map
+          <View className='kdy-wildlife-map__overlay-toggle'>
+            <KdyChip active={showZones} onClick={() => setShowZones(!showZones)}>
+              区域圈
+            </KdyChip>
+            <Text className='kdy-wildlife-map__overlay-hint'>
+              圆圈＝已划定的活动区域（圈上标着区域名，红圈是敏感区）；点掉可以看清底图。
+            </Text>
+          </View>
+
+          <KdyCampusMap
             className='kdy-wildlife-map__canvas'
-            longitude={center.lng}
-            latitude={center.lat}
-            scale={MAP_SCALE}
-            showLocation
             markers={overlays.markers.map((marker) => ({
-              id: marker.markerId ?? 0,
+              markerId: marker.markerId ?? 0,
               latitude: marker.latitude,
               longitude: marker.longitude,
               title: marker.title,
               iconPath:
                 marker.kind === 'spot' ? MAP_MARKER_ICONS.spot : MAP_MARKER_ICONS.sighting,
-              width: 24,
-              height: 24,
-              callout: buildCallout(marker.calloutText),
+              calloutText: marker.calloutText,
             }))}
-            circles={overlays.circles}
-            polyline={overlays.polyline === null ? [] : [overlays.polyline]}
-            onMarkerTap={(event) => handleMarkerTap(Number(event.detail.markerId))}
-            onError={() => toast('地图组件加载失败：请检查网络，或在小程序后台配置地图 key')}
-            onTap={(event) => {
-              const detail = event.detail as { latitude?: number; longitude?: number }
-              if (detail.latitude !== undefined && detail.longitude !== undefined) {
-                handleMapTap(detail.latitude, detail.longitude)
-              }
-            }}
+            circles={showZones ? overlays.circles : []}
+            polyline={
+              overlays.polyline === null
+                ? null
+                : {
+                    points: overlays.polyline.points,
+                    color: overlays.polyline.color,
+                    dotted: overlays.polyline.dottedLine,
+                  }
+            }
+            position={position}
+            focus={focus}
+            onMarkerTap={handleMarkerTap}
+            onPick={handleMapTap}
           />
 
           <Text className='kdy-wildlife-map__legend'>
-            图例：黄色圆点 = 聚合热点；蓝色圆点 = 历史观测；圆圈 = 管理区域（红色 = 敏感区，不公开坐标）。
+            图例：黄色圆点 = 聚合热点；蓝色圆点 = 历史观测；带名字的圆圈 = 管理区域（红圈 =
+            敏感区，不公开坐标）；蓝色小字 = 校园建筑与桥。双指捏合可缩放，拖动可平移。点底图空白处可查看该点落在哪个活动区域内。
           </Text>
 
           {overlays.hiddenByDelay > 0 && (
@@ -296,7 +360,11 @@ export default function WildlifeMapPage() {
                 elevated={false}
                 title={zone.name}
                 extra={<KdyTag tone={FEEDING_POLICY_TONES[policy]}>{summary.feedingPolicy}</KdyTag>}
-                onClick={() => map.selectZone(zone.id)}
+                onClick={() => {
+                  map.selectZone(zone.id)
+                  // 明确想看这个区域：把底图居中过去（区域圆心是 WGS84，渲染前转 GCJ-02）
+                  setFocus(toCampusMapPoint({ lat: zone.centerLat, lng: zone.centerLng }))
+                }}
               >
                 <View className='kdy-wildlife-map__zone'>
                   <Text className='kdy-wildlife-map__zone-meta'>
@@ -351,12 +419,12 @@ export default function WildlifeMapPage() {
 
       {state.error !== null && state.status === 'ready' && (
         <Text className='kdy-wildlife-map__soft-error'>
-          后台刷新失败：{state.error}（已继续展示缓存数据，契约 §8 静默降级）
+          刷新失败：{state.error}
         </Text>
       )}
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
         投喂规范与告示文案为项目草案，未经校方或动物社团审核。
       </Text>
     </View>

@@ -6,7 +6,7 @@
 
 .kdy-buddy-list__tabs {
   display: flex;
-  padding: $kdy-space-3 $kdy-space-4 $kdy-space-2;
+  padding: $kdy-space-3 $kdy-space-5 $kdy-space-2;
   background-color: $kdy-color-surface;
   border-bottom: 1px solid $kdy-color-border;
 }
@@ -37,10 +37,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: $kdy-space-2;
-  padding: $kdy-space-3 $kdy-space-4 0;
+  padding: $kdy-space-3 $kdy-space-5 0;
 }
 
-.kdy-buddy-list__hint,
 .kdy-buddy-list__more,
 .kdy-buddy-list__soft-error {
   display: block;
@@ -185,7 +184,7 @@
 
 .kdy-buddy-list__section-hint {
   display: block;
-  padding: $kdy-space-1 $kdy-space-4 0;
+  padding: $kdy-space-1 $kdy-space-5 0;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
 }

@@ -17,9 +17,12 @@
     "verbatimModuleSyntax": false,
     /*
      * 共享包（@kedaya/contracts / @kedaya/shared）的 `main` 指向 TS 源码，
-     * 且内部相对导入带 `.ts` 扩展名 —— 这样 Node 的类型剥离能在运行时直接加载源码。
-     * `rewriteRelativeImportExtensions` 让 tsc 在产物里把 `.ts` 重写回 `.js`，
-     * 保证 CommonJS 产物（`dist/packages/**`）同样可运行。
+     * 内部是 extensionless 相对导入：小程序 / Web 的打包器能补全，直接可用。
+     * 服务端「tsc 产物 + Node 跑 CJS」这条路径靠预加载补丁
+     * （`services/api/register-workspace-modules.cjs`）改指到 `dist/packages/**`，
+     * 详见 `docs/local-development.md` §6。
+     * `rewriteRelativeImportExtensions` 保留着：一旦有人把共享包改成 `.ts` 显式
+     * 扩展名，产物里的相对导入会被重写回 `.js`，那条路径同样可运行。
      */
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,

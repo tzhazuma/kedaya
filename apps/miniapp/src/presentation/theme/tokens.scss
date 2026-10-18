@@ -20,3 +20,74 @@
 @use '@taroify/core/styles/variables' with ($hd: 1);
 @use 'sass:color';
 @import './tokens.generated.scss';
+
+// ==================================================================== //
+// 视觉档位（尺寸 / 效果）——**派生量**，不是新的色值
+// ==================================================================== //
+//
+// 上面是契约 §6.2 的原子令牌（唯一真相）。下面这一层是**由原子令牌派生**的
+// 视觉档位，回答的是"卡片圆角多大、玻璃底多透、阴影叠几层"这类问题。
+//
+// 为什么不写进 `packages/design-tokens/tokens.json`：
+//   该文件是**四个端共享**的（web / mobile / miniapp）。半径与阴影是各端的
+//   视觉语言，不是产品语义；把它塞进共享令牌会让"Web 改一张卡片的圆角"
+//   变成"小程序跟着变"。所以这里只在小程序端派生，且**每一个色相都来自
+//   上面的原子令牌**（`rgba($kdy-color-*)` / `color.mix()`），没有手写色值。
+//
+// 为什么放在 tokens.scss 而不是 appearance.scss：`config/index.ts` 的
+// `sass.resource` 只注入**本文件**，组件级 .scss 必须能直接引用这些变量。
+
+/// 大卡片 / 浮层的圆角（比 `xl` 更"当代"，用于卡片、宫格、弹层）
+$kdy-radius-2xl: 22px;
+/// 主视觉容器（首页 Hero、身份卡）的圆角
+$kdy-radius-3xl: 28px;
+
+/// 半透明表面：毛玻璃卡片的底色（不透明度够高，保证其上文字对比度）
+$kdy-surface-glass: rgba($kdy-color-surface, 0.88);
+/// 更实的半透明表面：需要承载密集文字时用（列表卡片、气泡）
+$kdy-surface-glass-strong: rgba($kdy-color-surface, 0.95);
+/// 玻璃卡片顶部的 1px 高光边（模拟真实的玻璃切边）
+$kdy-border-glass: rgba($kdy-color-surface, 0.7);
+/// 常规划线（比 `$kdy-color-border` 略淡，用在玻璃面上）
+$kdy-border-hairline: rgba($kdy-color-border, 0.7);
+
+/// 卡片阴影：大而软 + 一层贴边的 1px，比单层阴影更"立得住"
+$kdy-shadow-card: 0 10px 26px rgba($kdy-color-ink, 0.07), 0 1px 2px rgba($kdy-color-ink, 0.05);
+/// 浮层阴影（悬浮球、底部操作条）
+$kdy-shadow-float: 0 14px 32px rgba($kdy-color-ink, 0.16);
+/// 品牌色光晕：用在主按钮 / 悬浮球上，让黄色"发亮"而不是平铺
+$kdy-shadow-accent: 0 8px 20px rgba($kdy-color-brand-strong, 0.34);
+
+/// 品牌渐变（两端色相均来自令牌：brand → brand-strong）
+$kdy-gradient-brand: linear-gradient(135deg, $kdy-color-brand 0%, $kdy-color-brand-strong 100%);
+/// 主视觉渐变：品牌渐变再压一层白，用在需要"更亮、更轻"的大面积色块上
+$kdy-gradient-brand-soft: linear-gradient(
+  140deg,
+  $kdy-color-brand 0%,
+  $kdy-color-brand-soft 100%
+);
+/// 暖白渐变：浅色表面上的"有一点点黄"的过渡（卡片头、标签底）
+$kdy-gradient-soft: linear-gradient(
+  150deg,
+  rgba($kdy-color-surface, 0.98) 0%,
+  rgba($kdy-color-brand-soft, 0.55) 100%
+);
+
+/// 页面环境光（ambient）：自上而下的暖黄 + 三个极淡的斜向色相，
+/// 让纯色页面底部有层次。**全部是 linear-gradient**（WXSS 对 radial 支持不稳）。
+///
+/// 色相都是"一个场景一种颜色"的同一套语言（暖黄＝主色、蓝＝校园事务、
+/// 橙＝代办、玫红＝需要照顾的模块），只是压到 6%–10% 的不透明度：
+/// 它们是**环境**，不是内容 —— 一旦超过 10%，卡片上的正文对比度就开始掉。
+$kdy-gradient-aurora: linear-gradient(
+    180deg,
+    rgba($kdy-color-brand-soft, 0.86) 0px,
+    rgba($kdy-color-brand-soft, 0.14) 200px,
+    rgba($kdy-color-brand-soft, 0) 360px
+  ),
+  linear-gradient(205deg, rgba($kdy-color-info, 0.12) 0%, rgba($kdy-color-info, 0) 46%),
+  linear-gradient(335deg, rgba($kdy-color-success, 0.1) 0%, rgba($kdy-color-success, 0) 42%),
+  linear-gradient(20deg, rgba($kdy-color-brand-strong, 0.08) 0%, rgba($kdy-color-brand-strong, 0) 38%);
+
+/// 毛玻璃模糊半径（组件里统一引用，避免各处 8px / 12px / 20px 乱飘）
+$kdy-glass-blur: blur(16px);

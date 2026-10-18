@@ -217,6 +217,9 @@ describe('登录与锁定', () => {
     );
   });
 
+  // ⚠️ 本用例连续做 8 次 scrypt（N=16384），是纯 CPU 重的用例。
+  // 默认 5s 在全量并行（81 个 fork）时会因 CPU 争用被拖超时，与代码正确性无关 ——
+  // 因此按本仓库对重计算用例的惯例显式放宽（参见 buddy-db / techpie-http 等）。
   it('锁定期过后（时间推进）可以正常登录', async () => {
     let current = new Date('2026-10-17T00:00:00.000Z');
     const harness = build({}, () => current);
@@ -234,7 +237,7 @@ describe('登录与锁定', () => {
     await expect(harness.service.login({ email: EMAIL, password: PASSWORD })).resolves.toMatchObject({
       campusBound: false,
     });
-  });
+  }, 30_000);
 });
 
 describe('验证码频控', () => {

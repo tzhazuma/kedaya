@@ -117,12 +117,11 @@ export default function SchedulePage() {
       <KdyHeading
         title='课表'
         subtitle='时间由服务端按学校时钟计算，手机时间不准也不会看错'
-        eyebrow='KEDAYA · 课表'
       />
 
       {today?.simulated === true && (
         <View className='kdy-schedule__notice'>
-          <Text className='kdy-schedule__notice-text'>当前课表来自演示数据源，不代表真实教务数据。</Text>
+          <Text className='kdy-schedule__notice-text'>课表为演示数据，非真实教务数据。</Text>
         </View>
       )}
 
@@ -304,7 +303,7 @@ export default function SchedulePage() {
         )}
       </KdyCard>
 
-      <KdyAgentFab module='schedule' page={PAGE_PATHS.schedule} hint='下一节在哪？' />
+      <KdyAgentFab module='schedule' page={PAGE_PATHS.schedule} />
     </View>
   )
 }

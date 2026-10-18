@@ -10,8 +10,8 @@
  * | 数据来源 / 消费方 | 坐标系 |
  * | --- | --- |
  * | `wx.getLocation({ type: 'wgs84' })` / GPS | **WGS84** |
- * | 小程序 `<map>` 组件的 markers / polyline / circles | **GCJ-02** |
- * | 用户在 `<map>` 上点选（`bindtap` 的 `detail.latitude`） | **GCJ-02** |
+ * | 校园底图（`KdyCampusMap` 的底图与叠加层）/ 原生 `<map>` | **GCJ-02** |
+ * | 用户在底图上点选（`onPick` 回调） | **GCJ-02** |
  * | 我们的存储层与全部 API | **WGS84**（单一真相） |
  *
  * 两者在上海相差 **约 470 米** —— 足以跨过一整栋楼，而且混用后看起来像
@@ -19,8 +19,9 @@
  *
  * 因此本模块**只暴露两个转换入口**，任何渲染 / 上传都必须经过它们：
  *
- * - [toMapPoint]：WGS84 → GCJ-02（画到 `<map>` 之前）
- * - [toApiPoint]：GCJ-02 → WGS84（地图点选后、上传之前；`from` 参数**必填**）
+ * - [toMapPoint]：WGS84 → GCJ-02（画到底图之前）
+ * - [toApiPoint]：GCJ-02 → WGS84（点选后、上传之前；`from` 参数**必填**）
+ * - [toCampusMapPoint]：上面两者之外只多一件事 —— 顺手换成契约点形状
  *
  * 页面**禁止**直接 import `@kedaya/shared` 的 `wgs84ToGcj02` / `gcj02ToWgs84`，
  * 否则「忘记转换」又变成靠自觉 —— 这正是规格 §3.2 要避免的。
@@ -35,6 +36,7 @@ import {
   wgs84ToGcj02,
 } from '@kedaya/shared'
 import type { LatLng } from '@kedaya/shared'
+import type { CampusPoint } from '@kedaya/contracts'
 
 /* ------------------------------------------------------------------ *
  * 1. 类型（与 OpenAPI wildlife 段逐字对齐）
@@ -357,13 +359,30 @@ export const CAMPUS_BBOX = {
  * ------------------------------------------------------------------ */
 
 /**
- * WGS84 → GCJ-02：**唯一**的「画到 `<map>` 之前」转换入口。
+ * WGS84 → GCJ-02：**唯一**的「画到底图上之前」转换入口。
  *
- * 所有来自 API / 存储的坐标都是 WGS84，`<map>` 组件只认 GCJ-02，
- * 因此 markers / polyline / circles 的每一个点都必须先过这里。
+ * 所有来自 API / 存储的坐标都是 WGS84，底图（校方校园 GIS 投影 / `campusPixel`）
+ * 与原生 `<map>` 一样只认 GCJ-02，因此 markers / polyline / circles 的每一个点
+ * 都必须先过这里。
  */
 export function toMapPoint(point: LatLng): LatLng {
   return wgs84ToGcj02(point.lat, point.lng)
+}
+
+/**
+ * WGS84 → GCJ-02 **并**换成契约点形状（`{lat,lng}` → `{latitude,longitude}`）。
+ *
+ * 为什么单列一个函数：坐标系的转换只有 [toMapPoint] 一处，但**形状**在本仓库里
+ * 有两套 —— 存储 / API / `toApiPoint` 用 `{lat,lng}`，`@kedaya/contracts` 的
+ * `campus-map`（以及原生 `<map>` 的叠加层）用 `{latitude,longitude}`。
+ * 没有这个函数，每个页面都得手写 `{ latitude: p.lat, longitude: p.lng }`，
+ * 手写的地方多了就一定会有人把 WGS84 的点也塞进去（少了那一句转换）。
+ *
+ * ⚠️ 入参必须是 **WGS84**：本函数内部会转换，别再给它已经转好的 GCJ-02。
+ */
+export function toCampusMapPoint(point: LatLng): CampusPoint {
+  const mapped = toMapPoint(point)
+  return { latitude: mapped.lat, longitude: mapped.lng }
 }
 
 /** 批量版本（轨迹折线 / 多边形） */
@@ -375,7 +394,7 @@ export function toMapPoints(points: readonly LatLng[]): LatLng[] {
  * GCJ-02 → WGS84：**唯一**的「上传之前」转换入口。
  *
  * `from` 是**必填**参数：调用方必须明确声明手上这个点是从哪来的。
- * 从 `<map>` 点选 / `wx.chooseLocation` 拿到的是 GCJ-02（→ 必须转）；
+ * 从校园底图点选 / `wx.chooseLocation` 拿到的是 GCJ-02（→ 必须转）；
  * 从 `wx.getLocation({ type: 'wgs84' })` 拿到的是 WGS84（→ 原样透传）。
  */
 export function toApiPoint(point: LatLng, from: CoordinateSystem): LatLng {
@@ -400,10 +419,18 @@ export function isInCampus(point: LatLng): boolean {
 export interface MapCircle {
   latitude: number
   longitude: number
+  /** 半径，**米**（`<map circles>` 与 `KdyCampusMap` 都按米解释） */
   radius: number
   color: string
   fillColor: string
   strokeWidth: number
+  /**
+   * 区域名称（如「黑天鹅湖」）。
+   *
+   * 画在圈上而不是只写进图例：底图上是**一个没有名字的圆**时，
+   * 用户唯一能做的就是猜。区域名是公开信息 —— 敏感区被模糊化的是坐标，不是名字。
+   */
+  label?: string
 }
 
 export interface MapMarker {
@@ -440,6 +467,8 @@ export function zoneToMapCircle(zone: WildlifeZone, colors: { stroke: string; fi
     color: colors.stroke,
     fillColor: colors.fill,
     strokeWidth: 2,
+    // 名字带上：地图上的圈必须能自我解释（敏感区模糊的是坐标，不是名字）
+    label: zone.name,
   }
 }
 

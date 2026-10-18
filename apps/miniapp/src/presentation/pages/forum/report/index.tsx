@@ -126,7 +126,7 @@ export default function ForumReportPage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，举报由志愿者版主处理。
+        第三方非官方平台，举报由志愿者版主处理。
       </Text>
     </View>
   )

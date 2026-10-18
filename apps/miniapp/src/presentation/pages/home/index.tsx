@@ -1,164 +1,136 @@
 import { Text, View } from '@tarojs/components'
-import { MODULES } from '@kedaya/contracts'
-import type { KedayaModule } from '@kedaya/contracts'
+import { AppsOutlined, ArrowRight, Edit, LikeOutlined } from '@taroify/icons'
+import { useDidShow } from '@tarojs/taro'
 
 import { getContainer } from '../../../app/container'
-import { PAGE_PATHS, moduleEntryPath } from '../../../app/routes'
+import { PAGE_PATHS, homeEntryPath, homeServicesPath, profileHomePath } from '../../../app/routes'
+import type { HomeEntry } from '../../../domain/models/homeEntries'
+import { WEEKDAY_LABELS } from '../../../domain/models/schedule'
 import { navigateTo, toast } from '../../../platform/navigation'
-import { KdyAgentFab, KdyCard, KdyTag } from '../../components'
+import { KdyAgentFab, KdyCard } from '../../components'
 import { KdyModuleIcon } from '../../components/KdyModuleIcon'
-import { KdyHeading } from '../../components/KdyHeading'
-import { LikeOutlined, ArrowRight } from '@taroify/icons'
-import type { KdyTagTone } from '../../components'
 import { useStore } from '../../hooks'
 import './index.scss'
 
 /**
- * 首页 —— 模块宫格。
+ * 首页 —— 用户自己挑的服务，加一个常驻的安全出口。
  *
- * **模块清单完全由 `@kedaya/contracts` 的 `MODULES` 驱动**（契约 §4 硬规则：
- * 禁止在各端硬编码模块清单）。因此这里没有任何写死的模块数组，
- * 后端/契约新增模块时首页自动出现。
+ * ## 为什么不铺「全部模块」
  *
- * 「哪些模块已经有真实页面」由 `app/routes.ts` 的 `MODULE_ENTRY_PATHS` 声明 ——
- * 这也是一张表，而不是散落在页面里的 `if (id === 'xxx')`。
+ * 契约有 20 个模块，全部平铺就是一张要在里面**找**东西的目录。首页只放
+ * 用户自己挑的入口（默认 9 个、上限 12 个），「全部」交给服务大厅
+ * （分组 + 搜索，从最后一格「全部服务」进）。
  *
- * 敏感级展示规则（契约 §9）：需要二次同意的模块标红，high/critical 标黄。
+ * ## 两个固定格子
+ *
+ * `cou`（凑凑：拼单 + 找搭子）与 `wellbeing`（心理支持）是 `locked`：
+ * 用户能排序、不能移除。前者是产品要求的一级入口，后者是安全出口 ——
+ * 都不能被一次「自定义」误触藏掉。首页底部那条热线行是第二重兜底。
+ *
+ * ## 一份数据
+ *
+ * 入口目录来自 `domain/models/homeEntries`（由契约派生），路径来自
+ * `app/routes.ts`。页面里没有写死的模块数组，也没有「角标」之类的额外装饰：
+ * 没做出来的模块点开时给一句说明，不做成挂在格子上的小字。
  */
 
-function moduleTone(module: KedayaModule): KdyTagTone {
-  if (module.requiresConsent) return 'danger'
-  if (module.sensitivity === 'high' || module.sensitivity === 'critical')
-    return 'warning'
-  return 'neutral'
-}
-
-function moduleBadge(module: KedayaModule): string {
-  if (moduleEntryPath(module.id) !== null) return '已上线'
-  if (module.requiresConsent) return '需二次同意'
-  if (module.sensitivity === 'high' || module.sensitivity === 'critical')
-    return '高敏感'
-  return '开发中'
+/** 「10月18日 周日」——问候语之上的一行日期，是首页唯一的时间锚点 */
+function formatToday(date: Date): string {
+  const weekday = WEEKDAY_LABELS[date.getDay() === 0 ? 6 : date.getDay() - 1] ?? ''
+  return `${date.getMonth() + 1}月${date.getDate()}日 ${weekday}`
 }
 
 export default function HomePage() {
   const container = getContainer()
   const session = container.useCases.session
   const sessionState = useStore(session)
+  const layout = container.useCases.homeLayout
+  useStore(layout)
 
-  function handleModuleTap(module: KedayaModule): void {
-    const path = moduleEntryPath(module.id)
+  // 从「首页管理」改完返回首页时立刻是新布局（hydrate 是同步读缓存且幂等）
+  useDidShow(() => {
+    layout.hydrate()
+  })
+
+  const entries = layout.selectedEntries()
+  const nickname = sessionState.profile?.nickname
+  const today = formatToday(container.clock.now())
+
+  function openEntry(entry: HomeEntry): void {
+    const path = homeEntryPath(entry.id)
     if (path !== null) {
       void navigateTo(path)
       return
     }
-    if (module.requiresConsent) {
-      toast(`${module.nameZh}：需二次同意，该流程尚未实现`)
-      return
-    }
-    toast(`${module.nameZh}：契约已登记，尚未实现`)
+    toast(`${entry.label}还在开发中`)
   }
 
   return (
     <View className='kdy-page kdy-home'>
-      <KdyHeading
-        title={
-          sessionState.profile
-            ? `你好，${sessionState.profile.nickname}`
-            : '校园生活，可达鸭。'
-        }
-        subtitle='上科大，什么需求都可以到达'
-        eyebrow='KEDAYA · 上海科技大学'
-      />
-
-      <View
-        className='kdy-home__feature kdy-glass'
-        onClick={() => void navigateTo(PAGE_PATHS.groupBuyList)}
-      >
-        <View className='kdy-home__feature-copy'>
-          <KdyTag tone='brand'>一起拼，更划算</KdyTag>
-          <Text className='kdy-home__feature-title'>好东西，和同学分享</Text>
-          <Text className='kdy-home__feature-description'>
-            发现校园拼单，让每一份心意都有回应。
+      <View className='kdy-home__hero'>
+        <View className='kdy-home__hero-body'>
+          <Text className='kdy-home__hero-date'>{today}</Text>
+          <Text className='kdy-home__hero-greet'>
+            {nickname === undefined || nickname === '' ? '你好' : `你好，${nickname}`}
           </Text>
-          <View className='kdy-home__feature-link'>
-            去看看拼单 <ArrowRight />
-          </View>
         </View>
-        <View className='kdy-home__feature-art'>
-          <KdyModuleIcon id='groupbuy' />
+        <View
+          className='kdy-pill kdy-home__hero-edit'
+          onClick={() => void navigateTo(profileHomePath())}
+          hoverClass='kdy-home__hero-edit--pressed'
+          hoverStayTime={70}
+        >
+          <Edit />
+          <Text>编辑首页</Text>
         </View>
       </View>
 
-      <KdyCard
-        title='常用服务'
-        extra={<Text>校园日常，轻松到达</Text>}
-        elevated={false}
-      >
+      <KdyCard title='我的常用'>
         <View className='kdy-home__grid'>
-          {MODULES.filter((module) =>
-            ['groupbuy', 'schedule', 'campus-card', 'lost-found'].includes(
-              module.id,
-            ),
-          ).map((module) => (
-            <View
-              key={module.id}
-              className='kdy-home__grid-item'
-              onClick={() => handleModuleTap(module)}
-            >
-              <KdyModuleIcon id={module.id} />
-              <Text className='kdy-home__grid-name'>{module.nameZh}</Text>
+          {entries.map((entry) => (
+            <View key={entry.id} className='kdy-home__grid-item' onClick={() => openEntry(entry)}>
+              <KdyModuleIcon id={entry.icon} />
+              <Text className='kdy-home__grid-name'>{entry.label}</Text>
             </View>
           ))}
+
+          <View
+            className='kdy-home__grid-item'
+            onClick={() => void navigateTo(homeServicesPath())}
+          >
+            <View className='kdy-module-icon kdy-module-icon--plain'>
+              <AppsOutlined />
+            </View>
+            <Text className='kdy-home__grid-name'>全部服务</Text>
+          </View>
         </View>
       </KdyCard>
 
+      {/* 安全出口：常驻一行，不属于可自定义的内容 */}
       <View
-        className='kdy-home__support'
+        className='kdy-home__safety'
         onClick={() => {
-          const module = MODULES.find((item) => item.id === 'wellbeing')
-          if (module) handleModuleTap(module)
+          const wellbeing = entries.find((entry) => entry.id === 'wellbeing')
+          if (wellbeing !== undefined) openEntry(wellbeing)
         }}
+        hoverClass='kdy-home__safety--pressed'
+        hoverStayTime={70}
       >
-        <LikeOutlined />
-        <View>
-          <Text className='kdy-home__support-title'>你的感受，值得被听见</Text>
-          <Text className='kdy-home__support-description'>
-            心理支持 · 需要帮助时，拨打 12356
-          </Text>
+        <View className='kdy-home__safety-icon'>
+          <LikeOutlined />
+        </View>
+        <View className='kdy-home__safety-body'>
+          <Text className='kdy-home__safety-title'>心理支持</Text>
+          <Text className='kdy-home__safety-description'>24 小时热线 12356</Text>
         </View>
         <ArrowRight />
       </View>
 
-      <KdyCard
-        title='全部模块'
-        extra={<Text>{MODULES.length} 个</Text>}
-        elevated={false}
-      >
-        <View className='kdy-home__grid'>
-          {MODULES.map((module) => (
-            <View
-              key={module.id}
-              className='kdy-home__grid-item'
-              onClick={() => handleModuleTap(module)}
-            >
-              <KdyModuleIcon id={module.id} />
-              <Text className='kdy-home__grid-name'>{module.nameZh}</Text>
-              <Text
-                className={`kdy-home__module-state kdy-home__module-state--${moduleTone(module)}`}
-              >
-                {moduleBadge(module)}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </KdyCard>
-
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
       </Text>
 
-      <KdyAgentFab module='home' page={PAGE_PATHS.home} hint='不认识的地方，问我' />
+      <KdyAgentFab module='home' page={PAGE_PATHS.home} />
     </View>
   )
 }

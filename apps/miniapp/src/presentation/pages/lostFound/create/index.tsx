@@ -107,8 +107,7 @@ export default function LostFoundCreatePage() {
     <View className='kdy-page kdy-lost-create'>
       <KdyHeading
         title='登记信息'
-        subtitle='写清楚物品特征与地点，越具体越容易被认出来。'
-        eyebrow='KEDAYA · 失物招领'
+        subtitle='写清物品特征与地点，越具体越容易被认出来。'
       />
 
       <KdyCard title='信息类型' elevated={false}>

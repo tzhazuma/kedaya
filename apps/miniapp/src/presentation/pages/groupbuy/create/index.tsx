@@ -109,8 +109,7 @@ export default function GroupBuyCreatePage() {
     <View className='kdy-page kdy-groupbuy-create'>
       <KdyHeading
         title='发起拼单'
-        subtitle='说清凑几份、多少钱、去哪取，参团的人一眼就能看懂。'
-        eyebrow='KEDAYA · 拼单'
+        subtitle='写清份数、价格与取货点。'
       />
 
       <KdyCard title='拼单信息' elevated={false}>

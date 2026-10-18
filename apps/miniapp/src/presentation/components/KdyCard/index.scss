@@ -2,14 +2,31 @@
   box-sizing: border-box;
   margin: $kdy-space-3 $kdy-space-5;
   padding: $kdy-space-5;
-  background-color: $kdy-color-surface;
-  border: 1px solid rgba($kdy-color-border, 0.5);
-  border-radius: $kdy-radius-xl;
+  background-color: rgba($kdy-color-surface, 0.92);
+  border: 1px solid $kdy-border-hairline;
+  border-radius: $kdy-radius-2xl;
+  /* 一层很淡的投影：列表里十几张卡片靠它和页面底色分层，成本远低于 blur */
+  box-shadow: 0 2px 10px rgba($kdy-color-ink, 0.045);
 }
 
+/*
+ * 阴影分两档。
+ *
+ * 默认档（列表里同时出现十几张的那种）只留一层很淡的投影，且**不加 blur**：
+ * 给十几张卡片同时挂 `backdrop-filter` 会让滚动帧率掉到肉眼可见
+ * （AGENTS：磨砂只用于少量重点区域）。
+ *
+ * `--elevated` 是每页只有一两块的"主视觉卡"（首页宫格、身份卡、汇总卡），
+ * 它才允许上磨砂 —— 底下的环境光会透进来一点，卡片看起来是"浮在页面上的玻璃"
+ * 而不是"贴上去的白纸"。88% 的白底是它的降级方案：不支持 `backdrop-filter`
+ * 的机型只是少一点透明感，正文对比度不受影响。
+ */
 .kdy-card--elevated {
-  border-color: transparent;
-  box-shadow: $kdy-shadow-sm;
+  border-color: $kdy-border-glass;
+  background-color: $kdy-surface-glass;
+  box-shadow: $kdy-shadow-card;
+  backdrop-filter: $kdy-glass-blur;
+  -webkit-backdrop-filter: $kdy-glass-blur;
 }
 
 .kdy-card__header {
@@ -23,7 +40,8 @@
 .kdy-card__title {
   color: $kdy-color-ink;
   font-size: $kdy-font-size-md;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.2px;
 }
 
 .kdy-card__extra {

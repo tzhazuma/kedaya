@@ -1,4 +1,4 @@
-import { Map, Text, View } from '@tarojs/components'
+import { Text, View } from '@tarojs/components'
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 
 import { getContainer } from '../../../../app/container'
@@ -8,11 +8,11 @@ import {
   speciesDisplayName,
   trackToMapPoints,
 } from '../../../../domain/models/wildlife'
-import { CAMPUS_ORIGIN } from '@kedaya/shared'
 import { navigateTo, toast } from '../../../../platform/navigation'
 import {
   KdyButton,
   KdyCard,
+  KdyCampusMap,
   KdyChip,
   KdyEmpty,
   KdyPrivacyNotice,
@@ -20,8 +20,7 @@ import {
   KdyTag,
 } from '../../../components'
 import { useStore } from '../../../hooks'
-import { MAP_MARKER_ICONS, MAP_OVERLAY_COLORS, buildCallout } from '../../../theme/mapColors'
-import { toMapPoint } from '../../../../domain/models/wildlife'
+import { MAP_MARKER_ICONS, MAP_OVERLAY_COLORS } from '../../../theme/mapColors'
 import { trackDetailView } from '../../../../application/wildlife/tracks'
 import './index.scss'
 
@@ -41,8 +40,9 @@ import './index.scss'
  * 3. 展示 `method`（`dbscan-chain`，**明确不做插值**）与 `algorithmVersion`，让来源可追溯；
  * 4. **不做**路径插值 / 样条平滑 / 速度推断 / 地图匹配。
  *
- * ⚠️ 坐标系：轨迹点来自 API，是 **WGS84**；`<map>` 的 `polyline` 只认 **GCJ-02**。
- * 因此 `trackToMapPoints()` 逐点转换 —— 这是「渲染前必须转换」的消费点。
+ * ⚠️ 坐标系：轨迹点来自 API，是 **WGS84**；底图（校方校园 GIS 投影）与叠加层
+ * 都只认 **GCJ-02**。因此 `trackToMapPoints()` 逐点转换 ——
+ * 这是「渲染前必须转换」的消费点。
  */
 
 export default function WildlifeTracksPage() {
@@ -51,7 +51,6 @@ export default function WildlifeTracksPage() {
   const state = useStore(tracks)
 
   const now = container.clock.now()
-  const center = toMapPoint({ lat: CAMPUS_ORIGIN.lat, lng: CAMPUS_ORIGIN.lng })
 
   const detail =
     state.selectedTrack === null
@@ -149,7 +148,7 @@ export default function WildlifeTracksPage() {
           ⚠️ 以下全部是{WILDLIFE_TRACK_INFERRED_LABEL}，不是实测路径
         </Text>
         <Text className='kdy-wildlife-tracks__banner-body'>
-          我们的数据来自同学偶发上报，不是 GPS 项圈，因此**无法**重建动物的真实运动路径。
+          我们的数据来自同学偶发上报，不是 GPS 项圈，因此无法重建动物的真实运动路径。
           这些折线只是「由 N 次上报推断出的活动走廊」。轨迹断裂处表示期间没有上报，
           **不代表**动物没有移动。
         </Text>
@@ -181,41 +180,33 @@ export default function WildlifeTracksPage() {
 
       {state.status === 'ready' && (
         <View>
-          {state.fromCache && (
-            <Text className='kdy-wildlife-tracks__hint'>当前展示本地缓存，正在后台刷新…</Text>
-          )}
-
-          {polylinePoints.length > 0 && (
-            <Map
-              className='kdy-wildlife-tracks__canvas'
-              longitude={center.lng}
-              latitude={center.lat}
-              scale={16}
-              markers={[
-                {
-                  id: 0,
-                  latitude: polylinePoints[0]?.latitude ?? center.lat,
-                  longitude: polylinePoints[0]?.longitude ?? center.lng,
-                  title: '轨迹起点',
-                  iconPath: MAP_MARKER_ICONS.track,
-                  width: 24,
-                  height: 24,
-                  callout: buildCallout(`${WILDLIFE_TRACK_INFERRED_LABEL}（虚线）`),
-                },
-              ]}
-              polyline={[
-                {
-                  points: polylinePoints,
-                  color: MAP_OVERLAY_COLORS.track,
-                  width: 4,
-                  // 虚线是刻意的：视觉上就不像实测路径
-                  dottedLine: true,
-                  arrowLine: true,
-                },
-              ]}
-              onError={() => toast('地图组件加载失败：请检查网络，或在小程序后台配置地图 key')}
-            />
-          )}
+          {polylinePoints.length > 0 &&
+            (() => {
+              const start = polylinePoints[0]
+              if (start === undefined) return null
+              return (
+                <KdyCampusMap
+                  className='kdy-wildlife-tracks__canvas'
+                  markers={[
+                    {
+                      markerId: 0,
+                      latitude: start.latitude,
+                      longitude: start.longitude,
+                      title: '轨迹起点',
+                      iconPath: MAP_MARKER_ICONS.track,
+                      calloutText: `${WILDLIFE_TRACK_INFERRED_LABEL}（虚线）`,
+                    },
+                  ]}
+                  polyline={{
+                    points: polylinePoints,
+                    color: MAP_OVERLAY_COLORS.track,
+                    // 虚线是刻意的：视觉上就不像实测路径
+                    dotted: true,
+                  }}
+                  focus={start}
+                />
+              )
+            })()}
 
           {state.tracks.map((track) => (
             <KdyCard
@@ -316,7 +307,7 @@ export default function WildlifeTracksPage() {
       )}
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
         轨迹为推断结果，不可用于任何科研或管理决策依据。
       </Text>
     </View>

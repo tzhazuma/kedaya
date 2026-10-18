@@ -39,7 +39,6 @@
  */
 
 import {
-  Body,
   Controller,
   Delete,
   Get,

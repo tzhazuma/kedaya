@@ -1,17 +1,22 @@
+/* 搜索框：玻璃胶囊。高度抬到 44px，落在指纹/拇指正中，点击命中率比 36px 明显更高 */
 .kdy-search {
   display: flex;
   align-items: center;
   gap: $kdy-space-2;
-  margin: $kdy-space-2 $kdy-space-4;
-  padding: 0 $kdy-space-3;
-  background-color: $kdy-color-surface;
-  border: 1px solid $kdy-color-border;
+  box-sizing: border-box;
+  min-height: 44px;
+  /* 水平内边距与 `KdyHeading` / `KdyCard` 对齐（都是 20px），左边缘才能连成一条线 */
+  margin: $kdy-space-2 $kdy-space-5;
+  padding: 0 $kdy-space-4;
+  background: $kdy-surface-glass-strong;
+  border: 1px solid $kdy-border-hairline;
   border-radius: $kdy-radius-pill;
+  box-shadow: 0 1px 2px rgba($kdy-color-ink, 0.04);
 }
 
 .kdy-search__input {
   flex: 1;
-  height: 72px;
+  height: 44px;
   color: $kdy-color-text;
   font-size: $kdy-font-size-sm;
 }
@@ -19,6 +24,7 @@
 .kdy-search__clear {
   flex: none;
   padding: 0 $kdy-space-1;
-  color: $kdy-color-info;
+  color: $kdy-color-brand-strong;
   font-size: $kdy-font-size-xs;
+  font-weight: $kdy-font-weight-medium;
 }

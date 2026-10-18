@@ -3,10 +3,13 @@
   "compilerOptions": {
     /*
      * rootDir 显式指向仓库根：因为 `@kedaya/contracts` / `@kedaya/shared` 的入口是
-     * **TypeScript 源码**（`main: ./src/index.ts`，且内部是 extensionless 相对导入），
+     * **TypeScript 源码**（`main: ./src/index.ts`，内部是 extensionless 相对导入），
      * Node 的 ESM 解析器无法在运行时加载它们。
-     * 把它们纳入本编译程序后，tsc 会一并产出 CommonJS，而 `require('./envelope')`
-     * 在 CJS 下能正确解析到 `./envelope.js` —— 这是唯一无需额外打包器就能跑通的路径。
+     * 把它们纳入本编译程序后，tsc 会一并产出 CommonJS —— `dist/packages/**` 里
+     * `require('./envelope')` 能正确解析到 `./envelope.js`。
+     * 但 `require('@kedaya/contracts')` 仍会顺着 node_modules 软链找到源码，
+     * 所以启动脚本用 `node -r ./register-workspace-modules.cjs` 预加载一个解析补丁，
+     * 把这几个包改指到上面那份编译产物（见该文件顶部注释与 local-development §6）。
      * 代价：dist 布局是 `dist/services/api/src/main.js`（见 package.json 的 start 脚本）。
      */
     "rootDir": "../..",

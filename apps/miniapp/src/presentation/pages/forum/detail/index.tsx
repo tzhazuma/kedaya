@@ -148,7 +148,6 @@ export default function ForumDetailPage() {
         <View className='kdy-forum-detail__meta'>
           <KdyTag tone='neutral'>{summary.authorName}</KdyTag>
           {summary.anonymous && <KdyTag tone='info'>匿名</KdyTag>}
-          {state.fromCache && <KdyTag tone='info'>本地缓存</KdyTag>}
           <Text className='kdy-forum-detail__time'>{summary.createdAtLabel}</Text>
         </View>
 
@@ -314,7 +313,7 @@ export default function ForumDetailPage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台。论坛内容由同学发布，平台不保证其真实性。
+        第三方非官方平台。论坛内容由同学发布，平台不保证其真实性。
       </Text>
     </View>
   )

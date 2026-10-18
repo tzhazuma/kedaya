@@ -49,9 +49,16 @@
 | `domain:trade` | 交易域 | `groupbuy`, `flea-market`, `errand`, `lost-found` | 低 | 否 | 否 | 否 |
 | `domain:social` | 社交域 | `forum`, `buddy`, `techpie` | 中 | 否 | 部分（`forum` 治理动作） | 否 |
 | `domain:civic` | 公共域 | `takeout-guard` | 中 | 否 | 是 | 否 |
-| `domain:content` | 内容域 | `canteen`, `faq`, `wildlife` | 低 | 否 | 否 | 否 |
+| `domain:content` | 内容域 | `canteen`（**中**，见下方例外）、`faq`, `wildlife` | 低 | 否 | `canteen` 写操作 | 否 |
 | `domain:protected` | 受保护域 | `dorm-harmony`, `ai-portrait` | **高** | **是** | 是 | 是 |
 | `domain:wellbeing` | 心理域 | `wellbeing` | **最高** | **是** | 是 | 是（+ 应用层加密） |
+
+> **`canteen` 的例外（2026-10-18，ADR 0006 D21）**：`canteen` 不再是纯「菜品营养表」。
+> 营养管家在同模块内保存**每餐饮食记录**与**身体档案（性别/年龄/身高/体重）**，
+> 这些是可推断健康状况的个人信息，因此该模块敏感级单独上调为**中**，
+> 菜品写操作落审计（`canteen.dish.create/update/soft_delete`）。
+> 仍不设二次同意门：不做医学判断、不对外共享、不上传体检数据。
+> 若后续接入食堂/校医院数据，应重新评估是否升级为受保护域。
 
 > **共 9 个权限域**：基础三域（`identity` / `campus` / `platform`）+ 业务四域（`trade` / `social` / `civic` / `content`）+ 受保护两域（`protected` / `wellbeing`）。
 > 契约 §4 的 19 个模块**每个恰好属于一个域**，无遗漏、无重叠。
@@ -68,7 +75,7 @@ export const MODULES = {
   errand:         { domain: 'trade',     sensitivity: 'low',      consent: false, audit: false },
   buddy:          { domain: 'social',    sensitivity: 'low',      consent: false, audit: false },
   'lost-found':   { domain: 'trade',     sensitivity: 'low',      consent: false, audit: false },
-  canteen:        { domain: 'content',   sensitivity: 'low',      consent: false, audit: false },
+  canteen:        { domain: 'content',   sensitivity: 'medium',   consent: false, audit: true  },
   forum:          { domain: 'social',    sensitivity: 'medium',   consent: false, audit: true  },
   'ai-portrait':  { domain: 'protected', sensitivity: 'high',     consent: true,  audit: true  },
   wellbeing:      { domain: 'wellbeing', sensitivity: 'critical', consent: true,  audit: true  },

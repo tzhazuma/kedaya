@@ -1,0 +1,50 @@
+.kdy-nu-targets__hint {
+  display: block;
+  margin-bottom: $kdy-space-3;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.6;
+}
+
+.kdy-nu-targets__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-nu-targets__row {
+  display: flex;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-3;
+}
+
+/* WXSS 不支持通配选择器 `*`，必须写成显式子元素类名 */
+.kdy-nu-targets__row > .kdy-nu-targets__field {
+  flex: 1;
+}
+
+/* KdyField 自带「浅底实心 + 大圆角」控件框，这里只负责间距与半宽栅格 */
+.kdy-nu-targets__field {
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-nu-targets__label {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-nu-targets__estimate-action {
+  margin-top: $kdy-space-1;
+}
+
+.kdy-nu-targets__form {
+  margin-bottom: $kdy-space-3;
+}
+
+.kdy-nu-targets__error {
+  display: block;
+  margin-bottom: $kdy-space-2;
+  color: $kdy-color-danger;
+  font-size: $kdy-font-size-xs;
+}

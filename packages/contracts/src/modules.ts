@@ -103,11 +103,22 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
   },
   {
     id: 'canteen',
-    nameZh: '食堂营养',
-    nameEn: 'Canteen Nutrition',
-    summary: '菜品营养数据、热量估算与饮食建议',
+    nameZh: '营养管家',
+    nameEn: 'Nutrition Butler',
+    summary: '食堂菜品营养库、每餐记录、每日需求与缺口推荐',
     category: 'business',
-    sensitivity: 'low',
+    /**
+     * 模块 id / route 仍是 `canteen`（营养管家建在食堂营养域上，ADR 0006 §2.3），
+     * 但**对用户的名字已改成「营养管家」** —— 宫格、搜索、权限判定都读本注册表，
+     * 所以改名只需改这里，三端自动同步。
+     */
+    /**
+     * 敏感级从 low 上调为 medium（2026-10-17）：
+     * 新增的「每餐记录 + 身体档案（性别/年龄/身高/体重）」是可推断健康状况的
+     * 个人信息，比单纯的菜品营养表敏感得多。仍不设二次同意门（不做医学判断、
+     * 不对外共享），但写操作落审计。
+     */
+    sensitivity: 'medium',
     requiresConsent: false,
     route: 'canteen',
   },
@@ -162,10 +173,15 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
     route: 'techpie',
   },
   {
+    /**
+     * ⚠️ 展示名已从「猫鸟黑天鹅」改为「野生动物」（产品面：野生居民**档案** + 地图）。
+     * `id` 是冻结契约的一部分（它同时是 API 路由段与落库字段），**不改** ——
+     * 改名只发生在展示层，历史数据、审计与路由全都不受影响。
+     */
     id: 'wildlife',
-    nameZh: '猫鸟黑天鹅',
+    nameZh: '野生动物',
     nameEn: 'Campus Wildlife',
-    summary: '校园动物活动区域地图、投喂规范与上报',
+    summary: '野生居民档案：物种与个体、校园活动地图、投喂规范与观测上报',
     category: 'business',
     sensitivity: 'low',
     requiresConsent: false,

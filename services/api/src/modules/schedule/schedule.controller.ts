@@ -9,7 +9,7 @@ import { Controller, Delete, Get, Inject, Param, Patch, Post, Query, UseGuards }
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { modulePath } from '@kedaya/contracts';
 import { z } from 'zod';
-import { AuthGuard, OptionalAuthGuard } from '../../common/auth/auth.guard';
+import { AuthGuard } from '../../common/auth/auth.guard';
 import { CurrentUser, OptionalCurrentUser } from '../../common/auth/current-user';
 import { ValidationError } from '../../common/errors/app-error';
 import { normalizeLimit, readCursor } from '../../common/pagination/cursor';
@@ -44,12 +44,14 @@ export type UpdateSchemaMatchesDomain = AssertAssignable<UpdateScheduleCourseInp
  */
 @ApiTags('schedule · 课表')
 @Controller(modulePath('schedule'))
-// ⚠️ 契约 §11.4 **I4**：课表属校园系统数据，必须「已登录 **且** 已绑定 cpdaily」。
-// 顺序不能反 —— AuthGuard 先解出身份，CampusBindingGuard 才能判断绑定。
-// 曾用 `OptionalAuthGuard`（未登录也放行）：那会让「未登录」与「未绑定」
-// 两种状态**无法区分**，而它们对用户的出路完全不同（去登录 / 去绑定）。
+// 契约 §5 硬规则 3 / 不变式 I4：课表是**校园能力**，需要第二级绑定。
+// 未登录 → 401 UNAUTHENTICATED；**已登录但未绑定 → 409 CAMPUS_BINDING_REQUIRED**（不是 401）。
+// 顺序不能反：AuthGuard 必须先解出身份，CampusBindingGuard 才有 userId 可用。
+// 曾用 `OptionalAuthGuard`（未登录也放行）：那会让「未登录」与「未绑定」两种状态
+// **无法区分**，而它们对用户的出路完全不同（去登录 / 去绑定）。
 @UseGuards(AuthGuard, CampusBindingGuard)
 @RequireCampusBinding('cpdaily')
+@ApiBearerAuth()
 export class ScheduleController {
   constructor(@Inject(ScheduleCourseService) private readonly service: ScheduleCourseService) {}
 

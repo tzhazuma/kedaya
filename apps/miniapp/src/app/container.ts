@@ -62,6 +62,18 @@ import { createLostFoundUseCases } from '../application/lostFound/lostFoundUseCa
 import type { LostFoundUseCases } from '../application/lostFound/lostFoundUseCases'
 import { createCanteenUseCases } from '../application/canteen/canteenUseCases'
 import type { CanteenUseCases } from '../application/canteen/canteenUseCases'
+import { createLogMealUseCase } from '../application/nutrition/logMeal'
+import type { LogMealUseCase } from '../application/nutrition/logMeal'
+import { createDishLibraryUseCase } from '../application/nutrition/dishLibrary'
+import type { DishLibraryUseCase } from '../application/nutrition/dishLibrary'
+import { createMealHistoryUseCase } from '../application/nutrition/mealHistory'
+import type { MealHistoryUseCase } from '../application/nutrition/mealHistory'
+import { createNutritionTargetsUseCase } from '../application/nutrition/nutritionTargets'
+import type { NutritionTargetsUseCase } from '../application/nutrition/nutritionTargets'
+import { createRecommendationsUseCase } from '../application/nutrition/recommendations'
+import type { RecommendationsUseCase } from '../application/nutrition/recommendations'
+import { createTodayNutritionUseCase } from '../application/nutrition/todayNutrition'
+import type { TodayNutritionUseCase } from '../application/nutrition/todayNutrition'
 import { createTakeoutGuardUseCases } from '../application/takeoutGuard/takeoutGuardUseCases'
 import type { TakeoutGuardUseCases } from '../application/takeoutGuard/takeoutGuardUseCases'
 import { createWellbeingUseCases } from '../application/wellbeing/wellbeingUseCases'
@@ -74,6 +86,8 @@ import { createCampusUseCases } from '../application/campus/campusUseCases'
 import type { CampusUseCases } from '../application/campus/campusUseCases'
 import { createPrivacyUseCase } from '../application/privacy/privacyUseCases'
 import type { PrivacyUseCase } from '../application/privacy/privacyUseCases'
+import { createHomeLayoutUseCase } from '../application/homeLayout/homeLayoutUseCases'
+import type { HomeLayoutUseCase } from '../application/homeLayout/homeLayoutUseCases'
 import { createAgentUseCase } from '../application/agent/agentUseCases'
 import type { AgentUseCase } from '../application/agent/agentUseCases'
 import { createMediaUseCases } from '../application/media/mediaUseCases'
@@ -127,6 +141,9 @@ import { createMockMediaRepository } from '../data/repositories/mockMediaReposit
 import { createMockReportRepository } from '../data/repositories/mockReportRepository'
 import { createHttpCanteenRepository } from '../data/repositories/httpCanteenRepository'
 import { createMockCanteenRepository } from '../data/repositories/mockCanteenRepository'
+import { createHttpNutritionRepository } from '../data/repositories/httpNutritionRepository'
+import { createMockNutritionRepository } from '../data/repositories/mockNutritionRepository'
+import type { MockNutritionRepository } from '../data/repositories/mockNutritionRepository'
 import { createHttpTakeoutGuardRepository } from '../data/repositories/httpTakeoutGuardRepository'
 import { createMockTakeoutGuardRepository } from '../data/repositories/mockTakeoutGuardRepository'
 import { createHttpWellbeingRepository } from '../data/repositories/httpWellbeingRepository'
@@ -158,6 +175,7 @@ import type { AvatarPickerPort, ImagePickerPort } from '../domain/ports/mediaPor
 import type { BuddyRepository } from '../domain/ports/buddyRepository'
 import type { CampusCardRepository } from '../domain/ports/campusCardRepository'
 import type { CanteenRepository } from '../domain/ports/canteenRepository'
+import type { NutritionRepository } from '../domain/ports/nutritionRepository'
 import type { DormHarmonyRepository } from '../domain/ports/dormHarmonyRepository'
 import type { ErrandTaskRepository } from '../domain/ports/errandRepository'
 import type { FaqRepository } from '../domain/ports/faqRepository'
@@ -245,6 +263,8 @@ export interface AppContainer {
   lostFoundRepository: LostFoundRepository
   forumRepository: ForumRepository
   canteenRepository: CanteenRepository
+  /** 营养管家（模块 id 仍是 `canteen`）：菜品检索 / 当餐记录 / 需求 / 推荐 */
+  nutritionRepository: NutritionRepository
   faqRepository: FaqRepository
   wildlifeRepository: WildlifeRepository
   takeoutGuardRepository: TakeoutGuardRepository
@@ -269,6 +289,8 @@ export interface AppContainer {
   mockBuddyControls: MockBuddyRepository | null
   /** TechPie / 校园能力的 mock 演示控制面（仅 mock 模式下非空） */
   mockTechpieControls: MockTechpieRepository | null
+  /** 营养管家的 mock 演示控制面（文件内置菜品库；仅 mock 模式下非空） */
+  mockNutritionControls: MockNutritionRepository | null
   useCases: {
     session: SessionUseCase
     auth: AuthAccountUseCase
@@ -287,6 +309,13 @@ export interface AppContainer {
     // 共建型模块（食堂 / FAQ / 动物观察点 / 偷外卖）
     canteen: CanteenUseCases
     takeoutGuard: TakeoutGuardUseCases
+    // 营养管家（模块 id 仍是 `canteen`）：今日 / 记录 / 历史 / 需求 / 推荐 / 菜品库
+    todayNutrition: TodayNutritionUseCase
+    logMeal: LogMealUseCase
+    dishLibrary: DishLibraryUseCase
+    mealHistory: MealHistoryUseCase
+    nutritionTargets: NutritionTargetsUseCase
+    recommendations: RecommendationsUseCase
     // 论坛 / 找搭子 / FAQ / 动物观测 / TechPie 用的是细粒度用例（见下）
     listForumBoards: ListForumBoardsUseCase
     listForumPosts: ListForumPostsUseCase
@@ -315,6 +344,8 @@ export interface AppContainer {
     // 四个核心模块 + 全局助手
     campus: CampusUseCases
     privacy: PrivacyUseCase
+    /** 首页展示哪些入口（本机偏好，按登录用户分片） */
+    homeLayout: HomeLayoutUseCase
     agent: AgentUseCase
     media: MediaUseCases
     report: ReportUseCases
@@ -594,6 +625,35 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     cacheKey: StorageKeys.canteenListCache,
   })
 
+  /**
+   * 营养管家（模块 id 仍是 `canteen`，ADR 0006）。
+   *
+   * 与「共建菜品库」分开装配：营养管家有自己的仓储（菜品检索 + 当餐记录 +
+   * 每日需求 + 推荐），mock 版内置 72 道演示菜品，开箱即可走通
+   * 「搜索菜品 → 记录当餐 → 看缺口推荐」全流程。
+   */
+  const mockNutritionRepository = env.useMock
+    ? createMockNutritionRepository({ latencyMs: env.mockLatencyMs })
+    : null
+  const nutritionRepository: NutritionRepository =
+    mockNutritionRepository ?? createHttpNutritionRepository(apiClient)
+  const todayNutrition = createTodayNutritionUseCase({
+    repository: nutritionRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.nutritionTodayCache,
+  })
+  const logMeal = createLogMealUseCase({ repository: nutritionRepository })
+  const dishLibrary = createDishLibraryUseCase({
+    repository: nutritionRepository,
+    cache,
+    clock,
+    cacheKey: StorageKeys.nutritionDishLibraryCache,
+  })
+  const mealHistory = createMealHistoryUseCase({ repository: nutritionRepository, clock })
+  const nutritionTargets = createNutritionTargetsUseCase({ repository: nutritionRepository })
+  const recommendations = createRecommendationsUseCase({ repository: nutritionRepository })
+
   const takeoutGuardRepository: TakeoutGuardRepository = env.useMock
     ? createMockTakeoutGuardRepository({ viewerId, latencyMs: env.mockLatencyMs, now: clock.now })
     : createHttpTakeoutGuardRepository(apiClient)
@@ -681,6 +741,16 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     clock,
     viewerId,
     cacheKeys: { settings: (owner) => `${StorageKeys.privacySettingsCache}:${owner}` },
+  })
+
+  /**
+   * 首页布局（本机偏好）：key 里拼用户标识，换账号就换一份 ——
+   * 同一台手机上换号是真实场景，不能把上一个人的常用服务留给下一个人。
+   */
+  const homeLayout = createHomeLayoutUseCase({
+    cache,
+    viewerId,
+    cacheKeyFor: (viewer) => `${StorageKeys.homeLayout}:${viewer ?? 'anonymous'}`,
   })
 
   /**
@@ -806,7 +876,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     session: sessionStore,
   })
 
-  /* ---------------- 猫鸟黑天鹅（观察点 / 轨迹 / 上报） ---------------- */
+  /* ---------------- 野生动物（档案 / 观察点 / 轨迹 / 上报） ---------------- */
 
   const wildlifeMap = createWildlifeMapUseCase({
     repository: wildlifeRepository,
@@ -925,6 +995,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     lostFoundRepository,
     forumRepository,
     canteenRepository,
+    nutritionRepository,
     faqRepository,
     wildlifeRepository,
     takeoutGuardRepository,
@@ -943,6 +1014,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     mockWildlifeControls: mockWildlifeRepository,
     mockBuddyControls: mockBuddyRepository,
     mockTechpieControls: mockTechpieRepository,
+    mockNutritionControls: mockNutritionRepository,
     useCases: {
       session,
       auth,
@@ -957,6 +1029,12 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       lostFound,
       canteen,
       takeoutGuard,
+      todayNutrition,
+      logMeal,
+      dishLibrary,
+      mealHistory,
+      nutritionTargets,
+      recommendations,
       listForumBoards,
       listForumPosts,
       forumPostDetail,
@@ -982,6 +1060,7 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       dormHarmony,
       campus,
       privacy,
+      homeLayout,
       agent,
       media,
       report,

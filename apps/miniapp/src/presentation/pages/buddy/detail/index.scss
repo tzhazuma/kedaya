@@ -75,17 +75,12 @@
   font-size: $kdy-font-size-sm;
 }
 
-.kdy-buddy-detail__note,
-.kdy-buddy-detail__hint {
+.kdy-buddy-detail__note {
   display: block;
   margin-top: $kdy-space-2;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;
-}
-
-.kdy-buddy-detail__hint {
-  padding: 0 $kdy-space-4;
 }
 
 .kdy-buddy-detail__blocked {

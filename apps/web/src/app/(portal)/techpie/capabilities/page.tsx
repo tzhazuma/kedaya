@@ -21,7 +21,6 @@ export default function TechpieCapabilitiesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={`校园服务 · ${TECHPIE_MODULE.id}`}
         title="校园能力清单"
         description="按绑定状态分组：可用 / 需要先绑定 / 尚未开放。未绑定项显示的是引导而不是错误 —— 「已登录但未绑定」是契约 §5 明确承认的合法状态，不绑定不影响可达鸭的自有功能。"
         actions={

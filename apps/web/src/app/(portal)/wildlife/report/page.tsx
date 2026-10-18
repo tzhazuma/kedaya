@@ -14,7 +14,6 @@ export default function WildlifeReportPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="wildlife · 上报"
         title="上报一条动物观测"
         description="发现时间与上报时间是两个字段：请填写你实际看到动物的时间。分类是增强而不是前置条件 —— 没有自动识别也能完整上报。"
       />

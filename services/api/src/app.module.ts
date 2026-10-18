@@ -36,6 +36,8 @@ import { TechpieModule } from './modules/techpie/techpie.module';
 import { WildlifeModule } from './modules/wildlife/wildlife.module';
 // 跨模块隐私基础设施（不是契约 §4 的用户可见模块）：U8 联系方式交换
 import { ContactExchangeModule } from './modules/contact-exchange/contact-exchange.module';
+// 内置助手「可达鸭」：不是契约 §4 的模块（没有首页宫格），而是横跨各模块的组织层
+import { AgentModule } from './modules/agent/agent.module';
 
 /**
  * 应用根模块 —— 契约 §4 的 **20 个模块全部装配**（v1.2 §11.10-C 新增 `facility`），
@@ -91,6 +93,8 @@ import { ContactExchangeModule } from './modules/contact-exchange/contact-exchan
     WildlifeModule,
     // 联系方式交换（U8）：跨模块隐私基础设施，路由 /contact-exchange
     ContactExchangeModule,
+    // 内置助手「可达鸭」：路由 /agent（契约 §4 之外，客户端 `agent` 页面的后端）
+    AgentModule,
   ],
   providers: [
     // TraceMiddleware 必须**显式提供**：虽然它由 `configure(consumer)` 挂载，
@@ -116,6 +120,18 @@ import { ContactExchangeModule } from './modules/contact-exchange/contact-exchan
     { provide: APP_PIPE, useValue: new ZodValidationPipe() },
     { provide: APP_INTERCEPTOR, useClass: EnvelopeInterceptor },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
+
+    /*
+     * trace 中间件**必须**是提供者，即使它不用 `MiddlewareConsumer.forRoutes`
+     * 注册（见类头注释：Express 5 不接受裸 `*`，改在 main.ts 用 `app.use()`）。
+     *
+     * 原因：`main.ts` 与 `test/app-assembly.spec.ts` 都走 `app.get(TraceMiddleware)`
+     * 取实例 —— 而 `app.get()` 只查**容器里的提供者**。
+     * 只 import 不 provide 会让真实服务启动时就抛
+     *   `Nest could not find TraceMiddleware element`
+     * （即装配合法但服务起不来），这个缺陷由 `test/app-assembly.spec.ts` 抓出来。
+     */
+    TraceMiddleware,
   ],
 })
 export class AppModule {}

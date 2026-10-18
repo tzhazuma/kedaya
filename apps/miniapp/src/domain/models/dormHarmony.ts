@@ -96,7 +96,7 @@ export const DORM_HARMONY_EMERGENCY_NOTICE =
 
 /** 契约 §9：全站保留第三方非官方声明 */
 export const DORM_HARMONY_PLATFORM_DISCLAIMER =
-  '可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。'
+  '第三方非官方平台 · 与上海科技大学官方系统无关。'
 
 /* ------------------------------------------------------------------ *
  * 实体（字段与后端视图一一对应；**绝不包含 trackCodeHash**）

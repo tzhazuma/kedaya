@@ -13,7 +13,6 @@ export default function BuddyProfilePage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="校园服务 · buddy"
         title="我的匹配资料"
         description="这份资料只被算法使用：它不会展示给任何人（包括你申请活动的发起人），对外只输出聚合后的理由。默认关闭匹配，可随时撤回或删除。"
       />

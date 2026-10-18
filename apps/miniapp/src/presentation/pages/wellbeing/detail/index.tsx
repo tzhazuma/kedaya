@@ -337,7 +337,6 @@ export default function WellbeingDetailPage() {
       <KdyHeading
         title='预约详情'
         subtitle='只有你和中心值班老师能看到这一页。'
-        eyebrow='KEDAYA · 心理支持'
       />
 
       <CrisisCard line={crisisLine} stale={crisisStale} />

@@ -44,9 +44,17 @@ import { dirname, join } from 'node:path';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const API_ROOT = join(HERE, '..');
 
-const { SPECIES_SEED, ZONES_SEED, SIGHTINGS_SEED, INDIVIDUALS_SEED, seedSummary } = await import(
-  './seed-data.ts'
-);
+const {
+  SPECIES_SEED,
+  ZONES_SEED,
+  SIGHTINGS_SEED,
+  INDIVIDUALS_SEED,
+  DISHES_SEED,
+  CANTEEN_SOURCE,
+  DISHES_VERIFIED_AT,
+  inferAllergensFromSeedName,
+  seedSummary,
+} = await import('./seed-data.ts');
 
 /* ------------------------------------------------------------------ *
  * 复用编译产物里的隐私流水线（同一份实现）
@@ -135,6 +143,10 @@ async function dryRun() {
   console.log('[seed] 没有 DATABASE_URL → 干跑模式（不写库，但**真实执行**模糊化流水线）');
   console.log('[seed] 统计：', JSON.stringify(seedSummary()));
   console.log('[seed] 待实地核实（U2）的物种条目：', seedSummary().speciesPendingVerification);
+  console.log(
+    '[seed] 营养管家菜品库：',
+    `${DISHES_SEED.length} 道，覆盖 ${seedSummary().dishCanteens} 个食堂（演示量级，非公示值）`,
+  );
   console.log('');
 
   for (const sighting of SIGHTINGS_SEED) {
@@ -151,6 +163,151 @@ async function dryRun() {
 
   console.log('');
   console.log('[seed] 干跑完成：未写入任何数据。设置 DATABASE_URL 后重跑即会写库。');
+}
+
+/* ------------------------------------------------------------------ *
+ * 营养管家（`canteen`）· 菜品库
+ * ------------------------------------------------------------------ */
+
+/**
+ * 灌菜品库（ADR 0006 C2）。
+ *
+ * 幂等键选 `(canteen, name)` 而不是自增 id：菜品目录是**人工维护**的列表，
+ * 重复执行种子脚本不应该产生第二份「红烧排骨」——那会让推荐里出现两道一样的菜。
+ *
+ * 过敏原按菜名初标（`inferAllergensFromSeedName`）；`source` / `lastVerifiedAt`
+ * 一起写进去，页面才能回答「这个数字凭什么可信」。
+ */
+async function seedDishes(prisma) {
+  let created = 0;
+  let updated = 0;
+  for (const dish of DISHES_SEED) {
+    const data = {
+      ...dish,
+      source: CANTEEN_SOURCE[dish.canteen] ?? '人工录入',
+      lastVerifiedAt: new Date(DISHES_VERIFIED_AT),
+      allergens: inferAllergensFromSeedName(dish.name),
+    };
+    const existing = await prisma.canteenDish.findFirst({
+      where: { canteen: dish.canteen, name: dish.name },
+    });
+    if (existing === null) {
+      await prisma.canteenDish.create({ data });
+      created += 1;
+    } else {
+      await prisma.canteenDish.update({ where: { id: existing.id }, data });
+      updated += 1;
+    }
+  }
+  console.log(`[seed] 菜品库：新增 ${created} 道，更新 ${updated} 道（共 ${DISHES_SEED.length} 道）`);
+}
+
+/** 与服务端一致的「一天」口径（分钟），用于把演示餐落在今天 */
+const TZ_OFFSET_MINUTES = Number(process.env.APP_TZ_OFFSET_MINUTES ?? 480);
+
+/** 今天的某个时刻（按项目时区口径，与 `common/time/app-day.ts` 对齐） */
+function todayAt(hour, minute, now = new Date()) {
+  const shifted = new Date(now.getTime() + TZ_OFFSET_MINUTES * 60 * 1000);
+  const wallMidnight = Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate());
+  const dayStart = wallMidnight - TZ_OFFSET_MINUTES * 60 * 1000;
+  return new Date(dayStart + hour * 60 * 60 * 1000 + minute * 60 * 1000);
+}
+
+/**
+ * 给**已存在的**账号灌一天演示饮食（每日需求 + 今日早/午餐）。
+ *
+ * 刻意**不新建账号**：账号由用户自己用邮箱注册或 CAS 登录产生，
+ * 种子脚本凭空造一个能登录的账号是安全债（`docs/local-development.md` 的口径）。
+ * 目标账号用 `SEED_NUTRITION_EMAIL` 指定（默认 `demo@kedaya.dev`）；
+ * 找不到就如实说明并跳过，而不是静默成功。
+ *
+ * 幂等：今天已有记录时不写；每日需求用 upsert。
+ */
+async function seedNutritionDemo(prisma) {
+  const email = (process.env.SEED_NUTRITION_EMAIL ?? 'demo@kedaya.dev').trim().toLowerCase();
+  const credential = await prisma.userCredential.findUnique({
+    where: { email },
+    include: { user: true },
+  });
+  if (credential === null) {
+    console.log(
+      `[seed] 跳过营养管家演示数据：找不到账号 ${email}（用 SEED_NUTRITION_EMAIL 指定一个已注册邮箱）`,
+    );
+    return;
+  }
+  const userId = credential.userId;
+
+  await prisma.nutritionTarget.upsert({
+    where: { userId },
+    create: {
+      userId,
+      caloriesKcal: 2400,
+      proteinG: 96,
+      fatG: 66,
+      carbG: 336,
+      fiberG: 34,
+      sodiumMg: 2000,
+      sex: 'male',
+      age: 20,
+      heightCm: 175,
+      weightKg: 70,
+      activity: 'moderate',
+      goal: 'maintain',
+    },
+    // 已有需求就不覆盖：用户的真实需求优先于种子
+    update: {},
+  });
+
+  const todayStart = todayAt(0, 0);
+  const existingMeals = await prisma.mealRecord.count({
+    where: { userId, eatenAt: { gte: todayStart } },
+  });
+  if (existingMeals > 0) {
+    console.log(`[seed] ${email} 今天已有 ${existingMeals} 条饮食记录，跳过写入`);
+    return;
+  }
+
+  const pick = async (name) => {
+    const dish = await prisma.canteenDish.findFirst({ where: { name, deletedAt: null } });
+    if (dish === null) throw new Error(`种子菜品缺失：${name}`);
+    return dish;
+  };
+  const toItem = (dish, servings) => ({
+    dishId: dish.id,
+    dishName: dish.name,
+    category: dish.category,
+    servings,
+    caloriesKcal: dish.caloriesKcal,
+    proteinG: dish.proteinG,
+    fatG: dish.fatG,
+    carbG: dish.carbG,
+    fiberG: dish.fiberG,
+    sodiumMg: dish.sodiumMg,
+  });
+
+  const breakfast = [await pick('豆浆'), await pick('小笼包')];
+  const lunch = [await pick('米饭'), await pick('红烧排骨'), await pick('清炒菠菜')];
+
+  await prisma.mealRecord.create({
+    data: {
+      userId,
+      mealType: 'breakfast',
+      source: 'manual',
+      eatenAt: todayAt(8, 5),
+      items: { create: breakfast.map((dish) => toItem(dish, 1)) },
+    },
+  });
+  await prisma.mealRecord.create({
+    data: {
+      userId,
+      mealType: 'lunch',
+      source: 'photo',
+      eatenAt: todayAt(12, 10),
+      note: '一食堂二楼',
+      items: { create: lunch.map((dish) => toItem(dish, 1)) },
+    },
+  });
+  console.log(`[seed] 营养管家演示数据：${email} 已写入每日需求 + 今日早餐/午餐`);
 }
 
 /* ------------------------------------------------------------------ *
@@ -287,6 +444,10 @@ async function writeToDatabase() {
         },
       });
     }
+
+    // —— 营养管家：菜品库（ADR 0006 C2）——
+    await seedDishes(prisma);
+    await seedNutritionDemo(prisma);
 
     console.log('[seed] 写入完成：', JSON.stringify(seedSummary()));
     console.log('[seed] 热点/轨迹是**派生只读**资源，需由 Worker 调用 recomputeAll() 生成。');

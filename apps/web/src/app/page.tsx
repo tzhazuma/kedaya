@@ -69,8 +69,9 @@ export default function HomePage() {
           </p>
           <p className="max-w-xl text-xs text-muted">
             其中 {DELIVERED_MODULES.length} 个模块已经能在端上真的用起来：微信小程序为主端
-            （账号体系 + 拼单 + 跳蚤 + 跑腿 + 找搭子 + 失物招领 + 论坛 + 宿舍矛盾），
-            Web 门户先交付拼单垂直切片。宫格角标会如实标注每个模块当前的交付状态。
+            （账号体系 + 六个生活模块 + 宿舍矛盾 + 食堂营养 / 常见问题 / 动物观察 / 偷外卖
+            四个共建模块 + 技术服务目录 + 心理支持 + AI 画像），Web 门户先交付拼单垂直切片。
+            宫格角标会如实标注每个模块当前的交付状态 —— 目前只剩「场馆预约」还没有端上页面。
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <KdyButton href="/groupbuy">

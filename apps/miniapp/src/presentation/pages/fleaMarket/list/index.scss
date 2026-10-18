@@ -2,7 +2,7 @@
   display: flex;
   align-items: flex-end;
   gap: $kdy-space-2;
-  margin: $kdy-space-3 0;
+  margin: $kdy-space-3 $kdy-space-5;
 }
 
 .kdy-flea__search {
@@ -22,7 +22,6 @@
   gap: $kdy-space-2;
 }
 
-.kdy-flea__cache-hint,
 .kdy-flea__inline-error {
   display: block;
   margin: $kdy-space-2 0;

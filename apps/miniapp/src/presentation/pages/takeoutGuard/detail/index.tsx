@@ -131,7 +131,6 @@ export default function TakeoutGuardDetailPage() {
       <KdyHeading
         title={item.place}
         subtitle='只有你自己能看到这条记录'
-        eyebrow='KEDAYA · 偷外卖'
       />
 
       <KdyCard elevated={false}>
@@ -222,7 +221,7 @@ export default function TakeoutGuardDetailPage() {
       {detail.error !== null && <Text className='kdy-tg-detail__error'>{detail.error}</Text>}
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。请勿公开点名或在群里扩散他人信息。
+        第三方非官方平台 · 与上海科技大学官方系统无关。请勿公开点名或在群里扩散他人信息。
       </Text>
     </View>
   )

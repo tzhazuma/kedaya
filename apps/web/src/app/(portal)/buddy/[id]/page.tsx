@@ -17,7 +17,6 @@ export default async function BuddyPostDetailPage({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="校园服务 · buddy"
         title="活动详情"
         description="申请（join）只是表达意向，不占名额；发起人接受（decide）后才计入人数。联系方式不会出现在这里。"
       />

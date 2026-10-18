@@ -149,8 +149,7 @@ export default function TakeoutGuardListPage() {
       <View className='kdy-page kdy-tg'>
         <KdyHeading
           title='外卖被拿错'
-          subtitle='把经过记下来，需要时再请平台或辅导员协助沟通。'
-          eyebrow='KEDAYA · 偷外卖'
+          subtitle='只记录你自己的经历，需要时再请平台协助。'
         />
         <Text className='kdy-tg__notice'>{TAKEOUT_GUARD_NOTICE}</Text>
         <KdyEmpty
@@ -163,7 +162,7 @@ export default function TakeoutGuardListPage() {
           }}
         />
         <Text className='kdy-disclaimer'>
-          可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。平台不判定谁对谁错，也不代你追责。
+          第三方非官方平台 · 与上海科技大学官方系统无关。平台不判定谁对谁错，也不代你追责。
         </Text>
       </View>
     )
@@ -173,8 +172,7 @@ export default function TakeoutGuardListPage() {
     <View className='kdy-page kdy-tg'>
       <KdyHeading
         title='外卖被拿错'
-        subtitle='只记录你自己的经历；把经过说清楚，需要时再请平台协助沟通。'
-        eyebrow='KEDAYA · 偷外卖'
+        subtitle='只记录你自己的经历，需要时再请平台协助。'
       />
 
       <Text className='kdy-tg__notice'>{TAKEOUT_GUARD_NOTICE}</Text>
@@ -190,10 +188,6 @@ export default function TakeoutGuardListPage() {
           </KdyChip>
         ))}
       </View>
-
-      {state.fromCache && state.status === 'ready' && (
-        <Text className='kdy-tg__cache-hint'>正在后台刷新…</Text>
-      )}
 
       {state.status === 'loading' && <KdyListSkeleton />}
 
@@ -257,7 +251,7 @@ export default function TakeoutGuardListPage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。平台不判定谁对谁错，请勿公开点名或在群里扩散他人信息。
+        第三方非官方平台 · 与上海科技大学官方系统无关。平台不判定谁对谁错，请勿公开点名或在群里扩散他人信息。
       </Text>
     </View>
   )

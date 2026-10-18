@@ -28,6 +28,10 @@
 | 投影 | WGS84 → 本地等距平面（ENU，原点 31.1795,121.591）→ 线性视口；**不经过 GCJ-02** |
 | 学校官方平面图 | **未抓取、未复制、未逐点比对**（版权未确认） |
 
+> **小程序端另有一套底图**：`/wildlife/*` 三页用的是**校方校园 GIS 的真实栅格底图**
+> （`https://map.shanghaitech.edu.cn` 快照），不与本文件的 OSM 矢量底图共用。
+> 见 `docs/features/miniapp-campus-map.md`（来源、署名、坐标链路、授权状态）。
+
 ---
 
 ## 1. 坐标核实：用户给的数字与实测不一致
@@ -380,14 +384,18 @@ mock fixture（`apps/web/src/data/mock/fixtures/wildlife.ts`）的区域坐标�
   该衍生数据库也受 ODbL 约束（需做法务确认具体边界）。
 - **不额外加限制**：不得对 OSM 数据附加 DRM 或"禁止提取"条款。
 
-### 7.2 学校官网校园地图：**没有抓取、没有复制**
+### 7.2 学校官网校园地图：**本文件所述路线没有抓取、没有复制**
 
 - 学校官网/迎新页可能发布过校园平面图，但**版权状态未确认**，也没有书面授权；
-- 本次任务**没有**下载、截图、描摹或复制学校地图；
+- 本文件的 Web 端底图路线**没有**下载、截图、描摹或复制学校地图；
 - 因此"用官方图逐点核对 POI"这一步**未完成**，页面上不能声称"已与官方图核对"；
 - 如果将来拿到书面授权：把底图作为可配置资源替换（`CAMPUS_BASEMAP.imageLight/imageDark`），
   许可标为 `school-authorized`，并在 `docs/legal/basemap-authorization.md` 记录授权来源
   （该文件当前**不存在**，因为尚未获得授权）。
+
+> ⚠️ **小程序端不同**：`/wildlife/*` 三页用的是校方校园 GIS（`map.shanghaitech.edu.cn`）
+> 的真实栅格快照，**授权口径同样未确认**，已在界面上署名（`CAMPUS_ATTRIBUTION`）。
+> 明细见 `docs/features/miniapp-campus-map.md`（§6 许可、§8 C1 未决问题）。
 
 ### 7.3 其他
 
@@ -420,23 +428,28 @@ mock fixture（`apps/web/src/data/mock/fixtures/wildlife.ts`）的区域坐标�
 
 - 没有实地 GPS 采集（无设备、无授权），因此所有 POI 精度都是"OSM 的精度"，不是我们的实测；
 - 没有与学校官方平面图逐点比对（版权未确认）；
-- 没有改 `apps/miniapp` 与 `apps/mobile`（写作用域只到 `apps/web/public/map`、
-  `apps/web/src/features/map`、`docs/`）；
+- 没有改 `apps/miniapp` 与 `apps/mobile` 的**本文件所述 OSM 底图路线**（写作用域只到
+  `apps/web/public/map`、`apps/web/src/features/map`、`docs/`）；
+  小程序端后来**另起**了一条校方 GIS 栅格路线（见 `miniapp-campus-map.md`，不在本文件写作用域内）；
 - 没有改 `apps/web/src/domain/models/wildlife/*`（新增的底图配置放在 `features/map`，
   旧占位底图保持原样，`/wildlife` 页行为不变）。
 
-### 9.2 给小程序 / 移动端的建议（**未实施**）
+### 9.2 给小程序 / 移动端的建议
 
 1. **小程序**：`<map>` 组件只接受 GCJ-02，且**不能换底图**。若要复用本底图：
    - 走方案 B：`<image src="/map/campus-basemap.svg">` + 覆盖层（SVG/Canvas），完全不碰 GCJ-02；
    - 若必须用 `wx.openLocation`，只在该 API 调用前用 `wgs84ToGcj02()` 转换（唯一消费点）；
    - 不要直接 `import` `apps/web/public/map/*.svg`（小程序包体限制），建议 CDN/对象存储 + 本地缓存。
+   - ✅ **已实施（另一条路线）**：小程序改用**校方 GIS 栅格**而不是本文件的 SVG，
+     叠加层坐标系仍是 GCJ-02；见 `miniapp-campus-map.md`。
 2. **移动端（Flutter）**：可以直接复用 `campus-basemap.geojson` 与
    `campus-basemap.geometry.json` 的 affine，但要注意 SVG 渲染库的兼容性；
    建议用 GeoJSON + `CustomPainter` 渲染，避免引入 WebView。
 3. **共享 25 个地点坐标**：`CAMPUS_MAP_LOCATIONS` 目前只在 Web 的 `features/map` 里。
    建议下一轮提升到 `@kedaya/contracts`（或 `packages/shared`），
    让小程序/移动端/服务端用同一份坐标与可信度，避免三端各写一份再漂移。
+   - ✅ **已实施（口径不同）**：`@kedaya/contracts` 新增 `campus-map` 模块，
+     共享的是**校方 GIS** 的投影与 65 项地标；本文件的 OSM 25 个地点仍未提升。
 4. **数据层修正**：按 §6.3 重锚定 mock fixture；这是上线前必须做的，
    否则地图上的"图书馆后草坪"会一直落在信息学院旁边。
 
@@ -497,3 +510,6 @@ npm run start -w @kedaya/web -- --port 3100
 | M6 | 是否把 `CAMPUS_MAP_LOCATIONS` 提升到 contracts | 架构负责人 |
 | M7 | 学校官方平面图授权（如拿到，替换底图并记录 `docs/legal/basemap-authorization.md`） | 校方 + 法务 |
 | M8 | 基线 `modules.ts` 缺导出（阻塞 typecheck/build） | 该模块负责人 |
+
+> 小程序端的未决问题（校方 GIS 授权 C1、建筑名核对 C2、桥名 C3 等）列在
+> `docs/features/miniapp-campus-map.md` §8。

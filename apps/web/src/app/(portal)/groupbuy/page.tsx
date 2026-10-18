@@ -12,7 +12,6 @@ export default function GroupBuyPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="垂直切片 · groupbuy"
         title="拼单"
         description="数据流：presentation（本页）→ application（用例）→ domain（端口/模型）← data（mock / HTTP 适配器）。列表使用游标分页，金额一律整数分。"
       />

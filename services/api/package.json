@@ -9,9 +9,9 @@
   },
   "scripts": {
     "dev": "tsc -w -p tsconfig.build.json",
-    "dev:serve": "node --watch dist/services/api/src/main.js",
+    "dev:serve": "node --watch -r ./register-workspace-modules.cjs dist/services/api/src/main.js",
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/services/api/src/main.js",
+    "start": "node -r ./register-workspace-modules.cjs dist/services/api/src/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",

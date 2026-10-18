@@ -2,7 +2,7 @@
   display: flex;
   align-items: flex-end;
   gap: $kdy-space-2;
-  margin: $kdy-space-3 0;
+  margin: $kdy-space-3 $kdy-space-5;
 }
 
 .kdy-lost__search {
@@ -22,7 +22,6 @@
   gap: $kdy-space-2;
 }
 
-.kdy-lost__cache-hint,
 .kdy-lost__inline-error {
   display: block;
   margin: $kdy-space-2 0;

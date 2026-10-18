@@ -80,7 +80,6 @@ export default function ChangePasswordPage() {
       <KdyHeading
         title='修改密码'
         subtitle='修改后，其它设备需要重新登录。'
-        eyebrow='KEDAYA · 账号安全'
       />
 
       <KdyCard title='验证当前密码' elevated={false}>

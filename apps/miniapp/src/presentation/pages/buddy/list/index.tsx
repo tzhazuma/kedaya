@@ -280,10 +280,6 @@ export default function BuddyListPage() {
 
       {state.status === 'ready' && (
         <View>
-          {state.fromCache && (
-            <Text className='kdy-buddy-list__hint'>当前展示本地缓存，正在后台刷新…</Text>
-          )}
-
           {state.items.map((item) => (
             <BuddyCard key={item.id} item={item} />
           ))}
@@ -297,7 +293,7 @@ export default function BuddyListPage() {
 
       {state.error !== null && state.status === 'ready' && (
         <Text className='kdy-buddy-list__soft-error'>
-          后台刷新失败：{state.error}（已继续展示缓存数据，契约 §8 静默降级）
+          刷新失败：{state.error}
         </Text>
       )}
 
@@ -305,7 +301,7 @@ export default function BuddyListPage() {
       <KdyBuddyPrivacyNotice compact />
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
       </Text>
     </View>
   )

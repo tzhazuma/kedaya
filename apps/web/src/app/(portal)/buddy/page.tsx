@@ -20,7 +20,6 @@ export default function BuddyPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={`校园服务 · ${BUDDY_MODULE.id}`}
         title={BUDDY_MODULE.nameZh}
         description={`${BUDDY_MODULE.summary}。数据流：presentation（本页）→ application（用例）→ domain（端口/模型）← data（mock / HTTP 适配器）。列表使用游标分页，板块由活动类型派生。`}
       />

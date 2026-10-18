@@ -15,7 +15,6 @@ export default function AdminWildlifePage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="管理后台 · wildlife"
         title="动物观测审核"
         description="审核队列按「疑似受伤优先」排序；保护物种必须两名审核员复核；拒绝必须填写理由（仅审核端可见）。"
       />

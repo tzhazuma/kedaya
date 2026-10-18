@@ -5,11 +5,15 @@
 #
 # 为什么上下文必须是仓库根：api 的产物里 `require('@kedaya/contracts')` 是**裸模块名**，
 # 运行时靠 npm workspaces 的符号链接 `node_modules/@kedaya/contracts → packages/contracts`
-# 解析；而 contracts 的入口是 TypeScript 源码（`main: ./src/index.ts`），
-# 由 Node 的类型剥离在运行时直接加载。所以镜像里必须同时有：
+# 解析；而 contracts 的入口是 TypeScript 源码（`main: ./src/index.ts`，内部是
+# extensionless 相对导入），Node 的类型剥离**无法**加载它（`./envelope` 找不到）。
+# 解决办法是启动时预加载 `register-workspace-modules.cjs`，把这两个工作区包改指到
+# `tsc` 一起编译出来的 CJS 副本（`dist/packages/**`，见 services/api/tsconfig.json）。
+# 所以镜像里必须同时有：
 #   · node_modules（含 workspace 符号链接）
-#   · packages/*/src（TS 源码）
-# 这也是为什么基础镜像必须是 Node ≥ 22.18（类型剥离默认开启）而不能用更老的版本。
+#   · services/api/dist（含 dist/packages/**）
+#   · register-workspace-modules.cjs（启动脚本，见下面的 CMD）
+# 基础镜像仍必须是 Node ≥ 22.18（类型剥离默认开启）。
 #
 # 关于构建耗时：这里刻意用 `npm ci -w @kedaya/api --include-workspace-root`
 # 只装 api 这个 workspace 的依赖，避免把 Taro（小程序）与 Next（Web）的依赖
@@ -76,6 +80,8 @@ COPY --from=builder /repo/packages/shared/package.json ./packages/shared/package
 COPY --from=builder /repo/packages/shared/src ./packages/shared/src
 COPY --from=builder /repo/services/api/package.json ./services/api/package.json
 COPY --from=builder /repo/services/api/dist ./services/api/dist
+# 启动脚本：把 @kedaya/contracts / @kedaya/shared 指到 dist/packages/** 的 CJS 副本
+COPY --from=builder /repo/services/api/register-workspace-modules.cjs ./services/api/register-workspace-modules.cjs
 COPY --from=builder /repo/services/api/prisma ./services/api/prisma
 COPY --from=builder /repo/services/api/prisma.config.ts ./services/api/prisma.config.ts
 
@@ -91,4 +97,6 @@ EXPOSE 80
 # （这是云托管「部署成功但服务不通」最常见的原因之一）。
 # 迁移不在启动脚本里自动跑：多实例并发启动会让 `migrate deploy` 互相打架，
 # 迁移应作为**发布流程的独立步骤**（见 docs/deploy.md）。
-CMD ["node", "services/api/dist/services/api/src/main.js"]
+# `-r` 必须是绝对路径：相对路径按 workdir 解析，换个 WORKDIR 就会静默失效
+# （症状是启动即 `ERR_MODULE_NOT_FOUND: .../packages/contracts/src/envelope`）。
+CMD ["node", "-r", "/repo/services/api/register-workspace-modules.cjs", "services/api/dist/services/api/src/main.js"]

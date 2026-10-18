@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ExternalLink, KeyRound, RefreshCw, ShieldCheck } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
 import { loadCapabilities } from '@/application/techpie/capabilities';
 import {
@@ -12,6 +12,7 @@ import {
   openCampusWebview,
   refuseIfTicketInUrl,
   webviewHostOf,
+  type TicketState,
 } from '@/application/techpie/webviewTicket';
 import { getRepositories } from '@/data/repositories';
 import {
@@ -39,6 +40,18 @@ interface LaunchFeedback {
 }
 
 /**
+ * 票据状态 → 用户可读文案。
+ *
+ * ⚠️ 三种状态都要有名字，尤其是 `consumed` —— 只说"未持有"会让用户
+ * 分不清"还没换取"和"已经用过并作废了"（这是一次性票据最容易被误解的地方）。
+ */
+const TICKET_STATE_LABEL: Readonly<Record<TicketState, string>> = {
+  empty: '未持有',
+  issued: '已签发（待兑换）',
+  consumed: '已使用并作废',
+};
+
+/**
  * WebView 直连（规格 §8.4 / §9.1 的 W4 方案）。
  *
  * 三条硬约束在这里落地：
@@ -50,8 +63,11 @@ interface LaunchFeedback {
  */
 export function WebviewLauncher() {
   const repository = getRepositories().techpie;
-  const holderRef = useRef<OneTimeTicketHolder | null>(null);
-  if (holderRef.current === null) holderRef.current = new OneTimeTicketHolder();
+  // 票据持有者：**只在内存**里活着（不进 Query 缓存 / URL / storage / 日志）。
+  // 用 `useState` 惰性初始化拿到跨渲染稳定的实例 —— 在渲染期间读 `useRef().current`
+  // 会被 React 编译器的 `react-hooks/refs` 判为非法（refs 不参与渲染）。
+  const [holder] = useState(() => new OneTimeTicketHolder());
+  const [ticketState, setTicketState] = useState<TicketState>('empty');
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<LaunchFeedback | null>(null);
@@ -67,15 +83,25 @@ export function WebviewLauncher() {
   const selected =
     capabilities.find((item) => item.id === selectedId) ?? capabilities[0] ?? null;
 
+  /**
+   * 把票据状态从 holder 同步到 React state。
+   *
+   * 为什么要有这一步：`holder` 是内存里的可变盒子，**不能**在渲染期间读
+   * （React 编译器的 `react-hooks/refs` 会拒绝，而且那本来就不会触发重渲染）。
+   * 只在事件处理器里读一次、写进 state，渲染就永远拿到的是**快照**。
+   */
+  const syncTicketState = (): void => {
+    setTicketState(holder.state);
+  };
+
   const launch = async (capability: TechpieCapability): Promise<void> => {
-    const holder = holderRef.current;
-    if (!holder) return;
     setBusy(true);
     setFeedback(null);
     try {
       const result = await openCampusWebview(repository, { capability, holder });
       if (!result.ok) {
         const error = result.error;
+        syncTicketState();
         // `CAMPUS_BINDING_REQUIRED` 是**合法状态**：给引导，不给红色报错
         if (error.code === 'CAMPUS_BINDING_REQUIRED') {
           setFeedback({
@@ -99,12 +125,15 @@ export function WebviewLauncher() {
 
       const refusal = refuseIfTicketInUrl(result.value.launch.url);
       if (refusal) {
+        // 票据还在 holder 里（没有打开，也没有 clear）—— 如实同步，不假装它是空的
+        syncTicketState();
         setFeedback({ tone: 'danger', title: '已拒绝打开', text: refusal, bindHref: null });
         return;
       }
 
       // 票据已用后即焚：holder 里不再保留任何东西
       holder.clear();
+      syncTicketState();
 
       // ⚠️ 不能用 `window.open(...) !== null` 判断成功：带 `noopener` 时
       // 浏览器**按规范**返回 `null`（新上下文不可访问），返回值不是成功标志。
@@ -155,7 +184,7 @@ export function WebviewLauncher() {
         <KdyAlert tone="warning" title="可打开的目标来自服务端白名单（内容为占位）">
           <p>{CAMPUS_TARGET_ALLOWLIST_NOTE}</p>
           <p className="mt-1 text-xs">
-            页面不提供"自定义 URL"输入框：客户端不得自行拼接任意 URL，也不允许通配整个
+            页面不提供「自定义 URL」输入框：客户端不得自行拼接任意 URL，也不允许通配整个
             shanghaitech.edu.cn。
           </p>
         </KdyAlert>
@@ -203,7 +232,7 @@ export function WebviewLauncher() {
       {!query.isPending && !query.isError && capabilities.length === 0 ? (
         <KdyAlert tone="warning" title="服务端没有下发任何可直连的校园系统">
           <p>
-            没有目标可打开时，可达鸭不会退化成"随便填一个 URL"——那正是契约 §11.18-B
+            没有目标可打开时，可达鸭不会退化成「随便填一个 URL」——那正是契约 §11.18-B
             要禁止的行为。请稍后重试或联系维护者。
           </p>
         </KdyAlert>
@@ -256,7 +285,7 @@ export function WebviewLauncher() {
             </KdyButton>
             <span className="flex items-center gap-1 text-xs text-muted">
               <ShieldCheck className="size-3.5" aria-hidden />
-              票据状态：{holderRef.current.state === 'issued' ? '已签发（待兑换）' : '未持有'}
+              票据状态：{TICKET_STATE_LABEL[ticketState]}
             </span>
           </div>
         </div>

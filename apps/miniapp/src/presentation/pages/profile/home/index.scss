@@ -1,0 +1,53 @@
+.kdy-manage__row {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-3;
+  padding: $kdy-space-3 0;
+  border-bottom: 1px solid $kdy-color-border;
+}
+.kdy-manage__row-copy {
+  flex: 1;
+  min-width: 0;
+}
+.kdy-manage__row-name {
+  display: block;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-sm;
+  font-weight: $kdy-font-weight-semibold;
+}
+.kdy-manage__row-order {
+  display: block;
+  margin-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+}
+.kdy-manage__actions {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+}
+.kdy-manage__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: $kdy-radius-pill;
+  background: $kdy-color-surface;
+  border: 1px solid $kdy-color-border;
+  color: $kdy-color-ink-soft;
+  font-size: $kdy-font-size-lg;
+}
+.kdy-manage__action--remove {
+  color: $kdy-color-danger;
+}
+.kdy-manage__note {
+  display: block;
+  margin-top: $kdy-space-3;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-loose;
+}
+.kdy-manage__reset {
+  padding: $kdy-space-2 $kdy-space-5 $kdy-space-4;
+}

@@ -153,13 +153,13 @@ export default function BuddyRecommendationsPage() {
 
                 {/*
                   ⚠️ 诚实性：标题（服务端原文，排序依据）与标签（`explainMatch` 产出）
-                  是**两个不同的东西**。服务端的字符串是用双方完整资料算的，
+                  是两个不同的东西。服务端的字符串是用双方完整资料算的，
                   客户端拿不到（规格 §6.1），因此标签只能覆盖公开信息那部分。
                   这里显式说明，避免用户把「公开共同点」误当成完整排序依据。
                 */}
                 {item.reasonSource === 'client' && item.reasons.length > 0 && (
                   <Text className='kdy-buddy-reco__reason-note'>
-                    上面的标签由客户端用 explainMatch() 按**公开信息**（活动标签 / 地点 / 时间）
+                    上面的标签由客户端用 explainMatch() 按公开信息（活动标签 / 地点 / 时间）
                     与你自己的资料算出；服务端排序还会用到它独有的信息，因此两者不必完全相同。
                   </Text>
                 )}
@@ -218,7 +218,7 @@ export default function BuddyRecommendationsPage() {
       <KdyBuddyPrivacyNotice compact />
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
       </Text>
     </View>
   )

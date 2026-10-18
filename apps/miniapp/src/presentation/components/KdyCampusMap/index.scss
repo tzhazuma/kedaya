@@ -1,0 +1,213 @@
+/* KdyCampusMap —— 真实校园底图上的地图（替代原生 `<map>`）。
+   色值全部取自设计令牌，禁止手写色值（契约 §6.2）。
+   叠加层的位置 / 尺寸由 JS 内联样式给出（坐标是算出来的，不能写死在样式表里），
+   这里只负责"长什么样"。 */
+
+.kdy-campus {
+  display: block;
+}
+
+.kdy-campus__tools {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+  padding: $kdy-space-2 0;
+}
+
+.kdy-campus__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+}
+
+.kdy-campus__results {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: $kdy-space-2;
+  border-radius: $kdy-radius-xl;
+  background-color: rgba($kdy-color-surface, 0.98);
+  box-shadow: $kdy-shadow-card;
+  overflow: hidden;
+}
+
+.kdy-campus__result {
+  padding: $kdy-space-3 $kdy-space-4;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-sm;
+  line-height: $kdy-line-height-normal;
+}
+
+/* 底图视口：`<scroll-view>` 必须有确定高度，否则渲染为 0（高度由组件内联给出） */
+.kdy-campus__scroll {
+  width: 100%;
+  border-radius: $kdy-radius-xl;
+  background-color: $kdy-color-surface-alt;
+  overflow: hidden;
+}
+
+.kdy-campus__surface {
+  position: relative;
+  overflow: hidden;
+}
+
+/* 底图不做任何手势响应：点选由外层 `surface` 统一处理 */
+.kdy-campus__image {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.kdy-campus__circle {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid $kdy-color-border;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/*
+ * 圈的名字：贴在圈的上沿、水平居中（`translate(-50%, -100%)`）。
+ * 必须 `pointer-events: none` —— 它只是说明文字，不该抢走点选底图的手势。
+ */
+.kdy-campus__circle-label {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 1px 6px;
+  border-radius: $kdy-radius-sm;
+  background-color: rgba(255, 255, 255, 0.88);
+  font-size: $kdy-font-size-xs;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* 折线的一段：一个旋转后的细长条（transform-origin 必须在左上角） */
+.kdy-campus__segment {
+  position: absolute;
+  height: 4px;
+  border-radius: 2px;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+/* 折线终点箭头：两条边画出的"人字"，旋转 45° 后指向线段方向 */
+.kdy-campus__arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-top: 3px solid $kdy-color-brand;
+  border-right: 3px solid $kdy-color-brand;
+  transform-origin: 50% 50%;
+  pointer-events: none;
+}
+
+/* 建筑 / 地标名称：不拦手势（否则点选会被楼名吃掉） */
+.kdy-campus__label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  max-width: 220px;
+  padding: 1px $kdy-space-1;
+  border: 1px solid $kdy-border-hairline;
+  border-radius: $kdy-radius-md;
+  background-color: $kdy-surface-glass-strong;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.kdy-campus__label--landmark {
+  background-color: $kdy-color-ink;
+  border-color: $kdy-color-ink;
+  color: $kdy-color-text-inverse;
+  font-weight: $kdy-font-weight-semibold;
+}
+
+.kdy-campus__label--bridge {
+  border-color: rgba($kdy-color-info, 0.5);
+  color: $kdy-color-info;
+}
+
+/* 观测点 / 聚合热点：触摸区 44px，图标本身 24px（AGENTS：触摸区至少 44px） */
+.kdy-campus__marker {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+}
+
+.kdy-campus__marker--focused {
+  border: 2px solid $kdy-color-brand-strong;
+  background-color: rgba($kdy-color-surface, 0.72);
+}
+
+.kdy-campus__marker-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* 点中标记后的气泡（等价于原生 `<map>` 的 callout） */
+.kdy-campus__callout {
+  position: absolute;
+  left: 50%;
+  bottom: 46px;
+  transform: translateX(-50%);
+  padding: 2px $kdy-space-2;
+  border: 1px solid $kdy-border-hairline;
+  border-radius: $kdy-radius-md;
+  background-color: $kdy-surface-glass-strong;
+  box-shadow: $kdy-shadow-card;
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+  white-space: nowrap;
+}
+
+/* 当前位置（蓝色） */
+.kdy-campus__position {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 3px solid $kdy-color-surface;
+  border-radius: 50%;
+  background-color: $kdy-color-info;
+  box-shadow: 0 0 0 4px rgba($kdy-color-info, 0.25);
+  pointer-events: none;
+}
+
+/* 待上报 / 已选定位置（品牌黄） */
+.kdy-campus__picked {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 3px solid $kdy-color-surface;
+  border-radius: 50%;
+  background-color: $kdy-color-brand;
+  box-shadow: 0 0 0 5px rgba($kdy-color-brand, 0.3);
+  pointer-events: none;
+}
+
+.kdy-campus__caption {
+  display: block;
+  padding-top: $kdy-space-1;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+.kdy-campus__notice {
+  display: block;
+  padding-top: $kdy-space-1;
+  color: $kdy-color-warning;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}

@@ -1,8 +1,106 @@
 .kdy-profile__hint {
   display: block;
+  margin-top: $kdy-space-2;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
-  line-height: 1.7;
+  line-height: 1.6;
+}
+
+/*
+ * 身份卡：与首页 Hero 同一套语言（品牌渐变 + 光晕 + 大圆角）。
+ *
+ * 未登录 / 已登录共用一张卡：形状不变、只换文案 —— 登录状态是"这张卡的内容"，
+ * 不是"另一张卡"。整卡可点（未登录 → 登录，已登录 → 编辑资料）。
+ */
+.kdy-profile__identity {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-4;
+  box-sizing: border-box;
+  margin: $kdy-space-4 $kdy-space-5 $kdy-space-3;
+  padding: $kdy-space-4 $kdy-space-5;
+  border-radius: $kdy-radius-3xl;
+  background: $kdy-gradient-brand;
+  box-shadow: $kdy-shadow-accent;
+}
+
+.kdy-profile__identity--pressed {
+  opacity: 0.94;
+}
+
+/* 渐变底上的头像要有一圈"白边"，否则头像的浅黄底会和卡片底糊在一起 */
+.kdy-profile__avatar {
+  border: 2px solid rgba($kdy-color-surface, 0.8);
+}
+
+.kdy-profile__identity-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.kdy-profile__name {
+  display: block;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-xl;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* 状态行在渐变底上：墨色压低不透明度即可，不用灰色（灰字压黄底会发脏） */
+.kdy-profile__identity .kdy-profile__hint {
+  color: rgba($kdy-color-ink, 0.72);
+}
+
+.kdy-profile__identity-action {
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 6px $kdy-space-3;
+  border: 1px solid rgba($kdy-color-surface, 0.8);
+  border-radius: $kdy-radius-pill;
+  background: rgba($kdy-color-surface, 0.9);
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-xs;
+  font-weight: $kdy-font-weight-semibold;
+  line-height: 1.2;
+}
+
+/* 常用功能：4 列宫格，图标用的是全局 `.kdy-module-icon`（与首页同一套尺寸/色相） */
+.kdy-profile__grid {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: $kdy-space-4;
+}
+
+.kdy-profile__grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  width: 25%;
+  gap: $kdy-space-2;
+  min-width: 0;
+}
+
+.kdy-profile__grid-name {
+  color: $kdy-color-text;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.kdy-profile__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
+}
+
+/* 绑定状态：一行小标签 + 一行邮箱，替代原来三行「键值对」 */
+.kdy-profile__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-top: $kdy-space-3;
 }
 
 .kdy-profile__row {
@@ -10,11 +108,12 @@
   align-items: center;
   justify-content: space-between;
   gap: $kdy-space-3;
-  padding: $kdy-space-2 0;
-  border-bottom: 1px solid $kdy-color-border;
+  min-height: 40px;
+  border-bottom: 1px solid $kdy-border-hairline;
 }
 
 .kdy-profile__k {
+  flex-shrink: 0;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
 }
@@ -27,97 +126,29 @@
   word-break: break-all;
 }
 
-.kdy-profile__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $kdy-space-2;
-  margin-top: $kdy-space-4;
-}
-
-.kdy-profile__rule {
-  padding: $kdy-space-2 0;
-  border-bottom: 1px solid $kdy-color-border;
-}
-
-.kdy-profile__rule-title {
-  display: block;
-  color: $kdy-color-ink;
-  font-size: $kdy-font-size-sm;
-  font-weight: 600;
-}
-
-.kdy-profile__rule-detail {
-  display: block;
-  margin-top: $kdy-space-1;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-  line-height: 1.7;
-}
-.kdy-profile__identity {
-  display: flex;
-  align-items: center;
-  gap: $kdy-space-4;
-  margin: $kdy-space-3 $kdy-space-5 $kdy-space-5;
-  padding: $kdy-space-5;
-  border-radius: $kdy-radius-xl;
-}
-
-.kdy-profile__identity-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.kdy-profile__name {
-  display: block;
-  margin-bottom: $kdy-space-1;
-  font-size: $kdy-font-size-lg;
-  font-weight: 600;
-}
-
-.kdy-profile__link {
-  color: $kdy-color-brand-strong;
-  font-size: $kdy-font-size-sm;
-}
-
 .kdy-profile__error {
   display: block;
-  margin-top: $kdy-space-3;
   color: $kdy-color-danger;
   font-size: $kdy-font-size-xs;
   line-height: 1.6;
 }
 
-/* 「校园服务」入口：一列可点击的导航行（箭头用 @taroify/icons，不用 emoji） */
+/* 「关于」里的文档入口：一列可点击的导航行（箭头用 @taroify/icons，不用 emoji） */
 .kdy-profile__nav {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: $kdy-space-3 0;
-  border-bottom: 1px solid $kdy-color-border;
+  min-height: 48px;
+  border-bottom: 1px solid $kdy-border-hairline;
 
   &:last-child {
     border-bottom: none;
   }
 }
 
-.kdy-profile__nav-body {
-  flex: 1;
-  min-width: 0;
-  padding-right: $kdy-space-3;
-}
-
 .kdy-profile__nav-title {
   display: block;
   color: $kdy-color-text;
   font-size: $kdy-font-size-md;
-  font-weight: 500;
-}
-
-.kdy-profile__nav-detail {
-  display: block;
-  margin-top: 2px;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-  line-height: $kdy-line-height-normal;
 }

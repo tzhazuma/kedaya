@@ -125,8 +125,6 @@ export default function BuddyDetailPage() {
 
       {post !== null && summary !== null && (
         <View>
-          {state.fromCache && <Text className='kdy-buddy-detail__hint'>当前展示本地缓存，正在后台刷新…</Text>}
-
           <KdyCard elevated={false}>
             <View className='kdy-buddy-detail__head'>
               <Text className='kdy-buddy-detail__title'>{post.title}</Text>
@@ -207,7 +205,7 @@ export default function BuddyDetailPage() {
               ) : (
                 <View>
                   <Text className='kdy-buddy-detail__note'>
-                    提交的是**申请**，不占名额；发起人接受后才算加入。
+                    提交的是申请，不占名额；发起人接受后才算加入。
                   </Text>
                   <KdyField
                     label='申请留言'
@@ -316,7 +314,7 @@ export default function BuddyDetailPage() {
                 </KdyButton>
               </View>
               <Text className='kdy-buddy-detail__note'>
-                关闭后状态变为 CLOSED，无法再收到申请（契约 §11.2 的 `close` 动作）。
+                关闭后不再接收新的申请，且不能恢复。
               </Text>
             </KdyCard>
           )}
@@ -370,7 +368,7 @@ export default function BuddyDetailPage() {
       )}
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
       </Text>
     </View>
   )

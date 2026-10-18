@@ -98,8 +98,14 @@ docker push <registry-host>/<namespace>/kedaya-api:v1
 
 - **构建上下文不是仓库根** → `npm ci -w @kedaya/api` 找不到 workspace，镜像里没有
   `node_modules/@kedaya/contracts` 符号链接，启动即 `Cannot find module '@kedaya/contracts'`。
-- **基础镜像 Node < 22.18** → 运行时要在 Node 的类型剥离下直接加载
-  `packages/contracts` 的 **TS 源码**，低版本会解析失败。请沿用 Dockerfile 里的 `node:22.23-alpine`。
+- **基础镜像 Node < 22.18** → 运行时要用 Node 的类型剥离去加载
+  `packages/contracts`/`shared` 的 TS 源码（预加载补丁会把它改指到
+  `dist/packages/**` 的 CJS 副本，但这项能力本身要求 Node ≥ 22.18）。
+  请沿用 Dockerfile 里的 `node:22.23-alpine`。
+- **启动命令漏了 `-r /repo/services/api/register-workspace-modules.cjs`** →
+  `require('@kedaya/contracts')` 会顺着 node_modules 软链找到 TS 源码，
+  报 `ERR_MODULE_NOT_FOUND: .../packages/contracts/src/envelope`。云托管若在控制台
+  自定义了启动命令，要照着 Dockerfile 的 `CMD` 抄全（别只写 `node dist/.../main.js`）。
 - **在 Dockerfile 里写多条 `CMD`** → 只有最后一条生效。
 
 ---
@@ -192,8 +198,8 @@ curl -X POST "https://你的域名/api/v1/auth/login" \
 
 | 变量 | 默认 | 说明 |
 | --- | --- | --- |
-| `AGENT_LLM_BASE_URL` / `AGENT_LLM_API_KEY` / `AGENT_LLM_MODEL` | 空 | **全部留空也能用**：可达鸭走确定性规则回答（响应 `degraded: true`），功能完整。配置后走 OpenAI 兼容的 `/chat/completions` |
-| `AGENT_LLM_TIMEOUT_MS` | `8000` | 超时即降级为规则回答，不让用户干等 |
+| `AGENT_LLM_BASE_URL` / `AGENT_LLM_API_KEY` / `AGENT_LLM_MODEL` | 空 | **全部留空也能用**：可达鸭走确定性规则回答（响应 `degraded: true`），功能完整。三个都填上即走 OpenAI 兼容的 `/chat/completions`（例：优云智算 `https://api.modelverse.cn/v1` + `deepseek-v4.1-flash`；DeepSeek 官方 `https://api.deepseek.com/v1` + `deepseek-chat`） |
+| `AGENT_LLM_TIMEOUT_MS` | `8000` | 超时即降级为规则回答，不让用户干等；推理型模型建议 12000 以上 |
 | `WECHAT_MINIAPP_APPID` / `WECHAT_MINIAPP_SECRET` | 空 | 小程序快捷登录。留空时非生产环境接受 `dev:<设备标识>` 模拟凭证；**生产环境必须配置真实值** |
 | `CORS_ORIGINS` | 空（=允许所有来源） | 小程序不走 CORS，可留空；若将来有 Web 前端，务必收紧为白名单 |
 | `WELLBEING_CRISIS_HOTLINE` / `..._ALT` | 已内置 | 心理模块的危机干预热线（契约 §9：不可被埋进二级菜单） |
@@ -352,8 +358,8 @@ delete from "ClientEvent" where "createdAt" < now() - interval '30 days';
 举报 → 落 `ContentReport` 表 → 打一条 `WARN` 日志（前缀 `[moderation]`）。
 十个可举报对象：`flea-item` / `errand-task` / `buddy-group` / `lost-found-item` /
 `forum-post` / `forum-reply` / `canteen-dish` / `faq-entry` / `wildlife-spot` / `techpie-link`
-（后四个是同学共建的内容：食堂菜品、常见问题、动物观察点、技术服务链接 ——
-公开 UGC 可能被塞广告或诈骗引导；服务目录尤其如此）；
+（`canteen-dish` 已改为**管理员维护**（见 ADR 0006），但同学仍可就「营养值不对 / 菜名有误」
+发起纠错；其余三类是同学共建：常见问题 / 动物观察点 / 技术服务链接）；
 七个原因：诈骗 / 违法违规 / 色情低俗 / 侮辱谩骂 / 泄露隐私 / 垃圾广告 / 其它。
 共建内容没有作者字段，`targetAuthorId` 记为 null。
 注意 `takeout-guard`（偷外卖）**不在可举报范围内**：它是本人可见的报备记录，
@@ -720,8 +726,9 @@ node -e '
 
 提审前请自查（这几条是最常见的驳回点）：
 
-- [ ] 首页没有任何「测试数据 / 演示账号 / Mock」字样外露给普通用户
-      （Mock 操作都在折叠的「演示与调试工具」里）
+- [ ] 首页与**登录页**没有任何「测试数据 / 演示账号 / Mock」字样外露给普通用户
+      （Mock 凭据只在「发现 → 演示与调试工具」的折叠面板与文档里；审核用的账号
+      写在提审备注中，不要印在登录页上）
 - [ ] `TARO_APP_USE_MOCK=false`，且 `DEFAULT_API_BASE_URL` 没有被打进产物
 - [ ] 未获得审批的敏感模块（心理支持 / AI 画面）**入口是关闭的**，且页面明确标注
       「待合规审批」—— 不要给一个点进去就报错的入口
@@ -756,6 +763,7 @@ node -e '
 | 部署后「健康检查失败」 | 容器端口是不是 `80`；健康检查路径是不是 `/health`；容器日志有没有启动异常（例如 `DATABASE_URL 未配置`） |
 | 启动日志 `Cannot find module '@kedaya/contracts'` | 构建上下文不是仓库根，`node_modules` 里的 workspace 符号链接没打进去 |
 | 启动日志 `Cannot find module '@kedaya/shared/src/index.ts'` 之类 | 基础镜像 Node < 22.18，类型剥离不可用 |
+| 启动日志 `ERR_MODULE_NOT_FOUND: .../packages/contracts/src/envelope` | 启动命令漏了 `-r register-workspace-modules.cjs` 预加载（见 §3 自查清单） |
 | 接口全 500，日志 `数据库连接失败` | `DATABASE_URL` 错、PG 白名单没放行、迁移没跑 |
 | 时间差 8 小时 | 容器时区被改成 UTC（应为 `Asia/Shanghai`） |
 | 小程序登录偶发失败 | 是否开启了「开放接口服务」（会让自管 `access_token` 超时） |

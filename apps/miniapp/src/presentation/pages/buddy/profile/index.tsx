@@ -266,7 +266,7 @@ export default function BuddyProfilePage() {
             extra={<KdyTag tone='brand'>{data.availability.length} 段</KdyTag>}
           >
             <Text className='kdy-buddy-profile__note'>
-              这是**硬过滤**的依据：时间碰不上的活动不会推荐给你。
+              这是硬过滤的依据：时间碰不上的活动不会推荐给你。
               时段本身不跨零点（跨零点的活动会自动按次日判定）。
             </Text>
 
@@ -358,7 +358,7 @@ export default function BuddyProfilePage() {
               ))}
             </View>
             <Text className='kdy-buddy-profile__note'>
-              只到「区域」粒度，**不采集精确坐标**（规格 §6.3 的数据最小化）。
+              只到「区域」粒度，不采集精确坐标（规格 §6.3 的数据最小化）。
             </Text>
           </KdyCard>
 
@@ -437,7 +437,7 @@ export default function BuddyProfilePage() {
       )}
 
       <Text className='kdy-disclaimer'>
-        可达鸭是第三方非官方校园服务平台，与上海科技大学官方系统无关。
+        第三方非官方平台 · 与上海科技大学官方系统无关。
       </Text>
     </View>
   )

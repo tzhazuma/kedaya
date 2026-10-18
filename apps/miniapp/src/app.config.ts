@@ -21,6 +21,8 @@ const color = tokens.color
  * | 放主包 | 理由 |
  * | --- | --- |
  * | 4 个 tabBar 页（首页/发现/消息/我的） | 微信**强制**要求 tabBar 页在主包 |
+ * | `home/services`（服务大厅）`profile/home`（首页管理） | 分别是首页宫格与「我的」的下一跳，属于首屏路径 |
+ * | `cou`（凑凑） | 首页主推的聚合入口，点开要立刻出来（它只是两个入口的导航页，体积可忽略） |
  * | `auth/*`（登录/注册/找回/改密/绑邮箱） | 崩溃最常发生在登录前，且任何入口都可能跳到登录页。分包会让"点登录先等下载" |
  * | `profile/*`（编辑/设置/资产） | 与 tabBar 的 `profile` 同根目录，拆开会让 `profile/index` 落进子包（tabBar 页不允许） |
  * | `agent` | 可达鸭是**全局悬浮球**，任何页面都可能点开，必须没有下载延迟 |
@@ -53,9 +55,25 @@ const subPackages = [
   },
   {
     root: 'presentation/pages/wildlife',
-    pages: ['map/index', 'report/index', 'tracks/index'],
+    pages: ['archive/index', 'map/index', 'report/index', 'tracks/index'],
   },
   { root: 'presentation/pages/canteen', pages: ['list/index', 'create/index', 'detail/index'] },
+  /**
+   * 营养管家（模块 id 仍是 `canteen`）：今日营养是主界面，其余五页从它进入。
+   * 与上面的 `canteen` 子包分开是为了**下载体积**：进营养管家不需要
+   * 拉旧的共建菜品库三页（它们只在纠错/浏览时才用得到）。
+   */
+  {
+    root: 'presentation/pages/nutrition',
+    pages: [
+      'index',
+      'log/index',
+      'history/index',
+      'targets/index',
+      'recommend/index',
+      'dishes/index',
+    ],
+  },
   { root: 'presentation/pages/faq', pages: ['index/index', 'tickets/index'] },
   { root: 'presentation/pages/takeoutGuard', pages: ['list/index', 'create/index', 'detail/index'] },
   {
@@ -70,12 +88,15 @@ const subPackages = [
 export default {
   pages: [
     'presentation/pages/home/index',
+    'presentation/pages/home/services/index',
     'presentation/pages/discover/index',
     'presentation/pages/messages/index',
     'presentation/pages/profile/index',
     'presentation/pages/profile/edit/index',
     'presentation/pages/profile/settings/index',
+    'presentation/pages/profile/home/index',
     'presentation/pages/profile/assets/index',
+    'presentation/pages/cou/index',
     'presentation/pages/auth/login/index',
     'presentation/pages/auth/register/index',
     'presentation/pages/auth/forgot/index',
@@ -128,7 +149,17 @@ export default {
    */
   permission: {
     'scope.userLocation': {
-      desc: '用于记录你发现动物的位置（仅在你主动上报时采集，公开位置会做模糊化处理）',
+      /**
+       * ⚠️ 微信硬限制：`desc` **不得超过 30 个字符**（中英文都按 1 个算），
+       * 超了会在**上传**阶段直接失败，报
+       * `错误码 80058 ... of scope.userLocation exceeds 30, word count: N`，
+       * 而本地编译、单测、`verify:weapp` 全都不会报错 —— 只有真机上传时才炸。
+       * 所以这条文案由 `src/app/__tests__/appConfig.test.ts` 守着，改长短先跑测试。
+       *
+       * 文案要把三件事说完（少一件都可能过不了审核 / 用户不敢授权）：
+       * 用途、采集时机（仅主动上报）、以及公开时的处理（模糊化）。
+       */
+      desc: '用于上报你发现的动物，仅主动采集、公开位置模糊化',
     },
   },
   requiredPrivateInfos: ['getLocation', 'chooseLocation'],

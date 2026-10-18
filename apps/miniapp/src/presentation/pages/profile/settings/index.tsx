@@ -123,7 +123,6 @@ export default function PrivacySettingsPage() {
       <KdyHeading
         title='隐私与数据'
         subtitle='开关与同意随时可改、可撤回；你的数据你说了算'
-        eyebrow='KEDAYA · 我的'
       />
 
       {state.status === 'error' && settings === null && (
@@ -180,7 +179,7 @@ export default function PrivacySettingsPage() {
             />
           ))}
         <Text className='kdy-privacy__muted'>
-          撤回同意是幂等的：重复撤回不会报错，撤回后该模块的记录不会进入任何通用画像或分析。
+          撤回后，该模块的记录不会进入画像或分析；重复撤回不会有问题。
         </Text>
       </KdyCard>
 

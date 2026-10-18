@@ -410,7 +410,7 @@ export function notFoundError(message = '不存在'): Result<never, RepositoryEr
 }
 
 /* ------------------------------------------------------------------ *
- * wildlife（猫 / 鸟 / 黑天鹅）仓储替身
+ * wildlife（野生动物：档案 / 观察点 / 轨迹）仓储替身
  * ------------------------------------------------------------------ */
 
 export function wildlifeSpecies(id: string, overrides: Partial<WildlifeSpecies> = {}): WildlifeSpecies {

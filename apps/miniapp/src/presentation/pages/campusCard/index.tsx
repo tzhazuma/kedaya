@@ -72,8 +72,7 @@ export default function CampusCardPage() {
     <View className='kdy-page kdy-card-page'>
       <KdyHeading
         title='校园卡'
-        subtitle='余额、消费与挂失指引 —— 先说清"这数据是什么时候的"'
-        eyebrow='KEDAYA · 校园卡'
+        subtitle='余额与账单，都标着数据时间。'
       />
 
       {/* 缓存/上游不可用：必须显眼，且说清时间 */}
@@ -97,7 +96,7 @@ export default function CampusCardPage() {
       {state.fromCache && overview !== null && overview.stale === false && (
         <View className='kdy-card-page__stale'>
           <Text className='kdy-card-page__stale-text'>
-            当前显示的是本地缓存（还没连上服务端），下拉或点「刷新」获取最新余额。
+            还没连上服务端，下拉或点「刷新」试试。
           </Text>
           <View className='kdy-card-page__stale-action'>
             <KdyButton size='sm' variant='secondary' onClick={() => void campusCard.load()}>
@@ -130,13 +129,25 @@ export default function CampusCardPage() {
 
       {overview !== null && (
         <>
-          {/* 主数字：余额 */}
+          {/* 主数字：余额。整页唯一的重色块，用"大数字 + 品牌渐变"把余额立起来 */}
           <KdyCard>
-            <View className='kdy-card-page__balance'>
-              <Text className='kdy-card-page__balance-label'>当前余额</Text>
-              <Text className='kdy-card-page__balance-value'>{formatYuan(overview.balanceFen)}</Text>
-              {overview.lowBalance && <KdyTag tone='warning'>余额偏低，建议充值</KdyTag>}
-              {overview.simulated && <KdyTag tone='neutral'>演示数据</KdyTag>}
+            <View className='kdy-card-page__hero'>
+              <Text className='kdy-card-page__hero-label'>当前余额</Text>
+              <Text className='kdy-card-page__hero-value'>{formatYuan(overview.balanceFen)}</Text>
+              {(overview.lowBalance || overview.simulated) && (
+                <View className='kdy-card-page__hero-badges'>
+                  {overview.lowBalance && (
+                    <View className='kdy-pill'>
+                      <Text>余额偏低，建议充值</Text>
+                    </View>
+                  )}
+                  {overview.simulated && (
+                    <View className='kdy-pill'>
+                      <Text>演示数据</Text>
+                    </View>
+                  )}
+                </View>
+              )}
             </View>
             {daysLeftLabel(overview) !== null && (
               <Text className='kdy-card-page__muted'>{daysLeftLabel(overview)}</Text>
@@ -252,7 +263,7 @@ export default function CampusCardPage() {
 
       {state.error !== null && overview !== null && <Text className='kdy-card-page__error'>{state.error}</Text>}
 
-      <KdyAgentFab module='campus-card' page={PAGE_PATHS.campusCard} hint='卡里还剩多少？' />
+      <KdyAgentFab module='campus-card' page={PAGE_PATHS.campusCard} />
     </View>
   )
 }

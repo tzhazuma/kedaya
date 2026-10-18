@@ -5,27 +5,41 @@
   display: flex;
   flex-wrap: wrap;
   gap: $kdy-space-2;
-  padding: $kdy-space-3 $kdy-space-4 $kdy-space-1;
+  padding: $kdy-space-3 $kdy-space-5 $kdy-space-1;
 }
 
 .kdy-wildlife-map__actions {
   display: flex;
   flex-wrap: wrap;
   gap: $kdy-space-2;
-  padding: $kdy-space-2 $kdy-space-4 $kdy-space-3;
+  padding: $kdy-space-2 $kdy-space-5 $kdy-space-3;
 }
 
-/* 底图：`<map>` 组件必须有确定高度，否则渲染为 0 */
+/* 底图容器：高度由 KdyCampusMap 按视口自己算（原生 `<map>` 的固定 520px 已不再需要） */
 .kdy-wildlife-map__canvas {
-  width: 100%;
-  height: 520px;
-  border-radius: $kdy-radius-lg;
+  display: block;
+  margin-top: $kdy-space-2;
 }
 
 .kdy-wildlife-map__legend,
 .kdy-wildlife-map__hint {
   display: block;
   padding: $kdy-space-2 $kdy-space-4;
+  color: $kdy-color-text-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: $kdy-line-height-normal;
+}
+
+/* 「区域圈」开关：圈是能点掉的（圈会盖住底图细节），因此配一行说明 */
+.kdy-wildlife-map__overlay-toggle {
+  display: flex;
+  align-items: center;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-2;
+}
+
+.kdy-wildlife-map__overlay-hint {
+  flex: 1;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-xs;
   line-height: $kdy-line-height-normal;

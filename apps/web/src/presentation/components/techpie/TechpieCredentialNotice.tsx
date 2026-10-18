@@ -16,7 +16,7 @@ export function TechpieCredentialNotice({ compact = false }: { compact?: boolean
       <ul className="flex list-disc flex-col gap-1 pl-4">
         <li>
           <strong className="font-medium text-body">两级身份是分开的</strong>
-          ：登录态里只有"你是谁"（学号 / 姓名 / 院系），
+          ：登录态里只有「你是谁」（学号 / 姓名 / 院系），
           <strong className="font-medium text-body">不包含</strong>
           任何校园系统的 cookie、会话或票据。
         </li>

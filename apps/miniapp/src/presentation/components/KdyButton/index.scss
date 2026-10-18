@@ -8,7 +8,7 @@
   border: 1px solid transparent;
   border-radius: $kdy-radius-pill;
   font-size: $kdy-font-size-sm;
-  font-weight: 500;
+  font-weight: $kdy-font-weight-semibold;
   line-height: 1;
   text-align: center;
 
@@ -38,31 +38,46 @@
   width: 100%;
 }
 
+/*
+ * 主按钮：品牌渐变 + 同色光晕。
+ *
+ * 渐变两端都是**已有的黄**（brand → brand-strong），所以它不是"加了一个颜色"，
+ * 而是把主色拉出一条方向感；光晕用 brand-strong 的低透明度投影，
+ * 让按钮看起来是"发光的"，而不是贴了一层灰影。
+ * 文字保持墨色（深色）—— 黄底白字在真机阳光下几乎看不清。
+ */
 .kdy-btn--primary {
-  background-color: $kdy-color-brand;
+  background: $kdy-gradient-brand;
+  box-shadow: $kdy-shadow-accent;
   color: $kdy-color-ink;
 }
 
 .kdy-btn--secondary {
-  background-color: $kdy-color-brand-soft;
+  background: rgba($kdy-color-brand-soft, 0.9);
   color: $kdy-color-ink;
 }
 
+/* 次级按钮（描边档）：半透明白底 + 细描边，落在任何底色上都不脏 */
 .kdy-btn--ghost {
-  background-color: transparent;
-  border-color: $kdy-color-border;
+  background: $kdy-surface-glass-strong;
+  border-color: $kdy-border-hairline;
   color: $kdy-color-ink-soft;
 }
 
 .kdy-btn--danger {
-  background-color: $kdy-color-danger;
+  background: $kdy-color-danger;
+  box-shadow: 0 8px 20px rgba($kdy-color-danger, 0.3);
   color: $kdy-color-text-inverse;
 }
 
+/*
+ * 按下反馈。
+ *
+ * 用 `scale` 而不是改背景色：改色会让"按下"和"禁用"看起来一样（都是变淡），
+ * 缩放是**形状**上的反馈，一眼能分清。
+ * 只有按钮会用到这个类，且按钮不是 `position: fixed`，缩放不会影响点击热区。
+ */
 .kdy-btn--hover {
-  opacity: 0.85;
-}
-
-.kdy-btn--disabled {
-  opacity: 0.45;
+  opacity: 0.9;
+  transform: scale(0.97);
 }

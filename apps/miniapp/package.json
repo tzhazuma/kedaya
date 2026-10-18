@@ -39,7 +39,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.28.0",
+    "@babel/parser": "^7.29.9",
     "@babel/preset-react": "^7.24.1",
+    "@babel/traverse": "^7.29.10",
     "@eslint/js": "^10.0.0",
     "@kedaya/design-tokens": "*",
     "@tarojs/cli": "4.3.0",

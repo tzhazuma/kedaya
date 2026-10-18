@@ -51,7 +51,6 @@ export default async function ModulePage({ params }: ModulePageProps) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={mod.category === 'core' ? '基础能力' : '校园服务'}
         title={mod.nameZh}
         description={mod.summary}
         actions={

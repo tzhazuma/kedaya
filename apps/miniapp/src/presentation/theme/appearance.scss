@@ -1,4 +1,7 @@
 // 小程序独立主题：颜色均从共享令牌派生，不改变 Web。
+//
+// 视觉档位（圆角 / 玻璃 / 阴影 / 渐变）来自 `tokens.scss` 的派生层，
+// 色相一律取自 `tokens.generated.scss` 的原子令牌 —— 本文件不出现手写色值。
 page,
 .kdy-root {
   --primary-color: #{$kdy-color-brand};
@@ -22,33 +25,82 @@ page,
   --loading-color: #{$kdy-color-ink-soft};
 }
 
+/* ==================================================================== *
+ * 表面（surface）
+ * ==================================================================== */
+
+/**
+ * 玻璃面。
+ *
+ * 承载密集文字的浮层用它：88% 的白底保证了正文对比度，
+ * `backdrop-filter` 只负责把背后的环境光带一点进来（不让它"死白一块"）。
+ *
+ * 降级路径是**安全**的：不支持 `backdrop-filter` 的机型拿到的是
+ * 88% 白色 + 细描边，视觉上只是"少一点透明感"，不会变成看不清的毛玻璃。
+ */
 .kdy-glass {
-  background: rgba($kdy-color-surface, 0.94);
-  border: 1px solid rgba($kdy-color-surface, 0.9);
-  box-shadow: $kdy-shadow-md;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: $kdy-surface-glass;
+  border: 1px solid $kdy-border-glass;
+  box-shadow: $kdy-shadow-card;
+  backdrop-filter: $kdy-glass-blur;
+  -webkit-backdrop-filter: $kdy-glass-blur;
 }
+
+/** 玻璃胶囊：Hero 上的次级操作、状态徽标 */
+.kdy-pill {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: $kdy-space-1;
+  padding: 6px $kdy-space-3;
+  border: 1px solid $kdy-border-glass;
+  border-radius: $kdy-radius-pill;
+  background: $kdy-surface-glass-strong;
+  color: $kdy-color-ink;
+  font-size: $kdy-font-size-xs;
+  font-weight: $kdy-font-weight-medium;
+  line-height: 1.2;
+}
+
+/**
+ * 深色胶囊：状态类信息（在线 / 已连接 / 计数）。
+ *
+ * 整个暖白体系里唯一的"重"色块，所以它只用来放**需要一眼扫到**的状态，
+ * 不用于操作（操作是黄色的）。深底 + 白字是这套配色里对比度最高的一档，
+ * 在浅色页面上不需要描边也站得住。
+ */
+.kdy-pill--dark {
+  border-color: transparent;
+  background: $kdy-color-ink;
+  color: $kdy-color-text-inverse;
+}
+
+.kdy-pill--pressed {
+  opacity: 0.85;
+}
+
+/* ==================================================================== *
+ * 标题
+ * ==================================================================== */
 
 .kdy-page-heading {
-  padding: $kdy-space-6 $kdy-space-5 $kdy-space-3;
+  padding: $kdy-space-5 $kdy-space-5 $kdy-space-2;
 }
 
-.kdy-eyebrow {
-  display: block;
-  margin-bottom: $kdy-space-2;
-  color: $kdy-color-text-muted;
-  font-size: $kdy-font-size-xs;
-  font-weight: 600;
-  letter-spacing: 2px;
-}
-
+/*
+ * 页面标题。
+ *
+ * 28px / 字重 700 / 负字距：这是参考稿里"大标题压住整页"的做法 ——
+ * 一屏只有一个最大的字，用户扫一眼就知道这是哪一页。
+ * 负字距对中文生效（字面本来就留有边距），所以不会挤在一起。
+ */
 .kdy-page-title {
   display: block;
   color: $kdy-color-ink;
-  font-size: $kdy-font-size-xxl;
+  font-size: 28px;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.15;
+  letter-spacing: -0.3px;
 }
 
 .kdy-page-subtitle {
@@ -56,5 +108,78 @@ page,
   margin-top: $kdy-space-2;
   color: $kdy-color-text-muted;
   font-size: $kdy-font-size-sm;
-  line-height: 1.7;
+  line-height: 1.6;
+}
+
+/* ==================================================================== *
+ * 模块宫格图标（`KdyModuleIcon`）
+ * ==================================================================== */
+
+/*
+ * 放在全局样式里而不是某个页面的 scss：首页、服务大厅、发现页都用它，
+ * 挂在页面样式下会变成"谁先加载谁说了算"——首页改了图标尺寸，
+ * 发现页跟着变，但没人能从文件名看出这层耦合。
+ *
+ * 四个容易踩的点：
+ *   1. 图标是**字体字形**：不锁 `line-height` 就会继承 page 的 1.5，
+ *      字形框被撑高、视觉重心上移，和旁边 1 倍行高的图标对不齐 → 锁 1；
+ *   2. `flex-shrink: 0`：窄屏或长标签下不能被压扁成椭圆；
+ *   3. `box-sizing: border-box`：加了描边之后外边距不能变；
+ *   4. 底色是**同色相的低透明度渐变 + 同色相描边**，不用纯灰底 ——
+ *      纯灰底会让一整屏宫格糊成一片，同色相才分得清"这是哪一类服务"。
+ *
+ * 色相只是**分类**（暖色＝常去的地方，蓝＝校园事务，橙＝代办，玫红＝需要照顾
+ * 的敏感模块），不是装饰彩虹：透明度压到 20% 以下，字形色统一混入墨色，
+ * 所以整屏仍然是"暖白 + 一点颜色"，不会花。
+ */
+.kdy-module-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba($kdy-color-brand, 0.26);
+  border-radius: $kdy-radius-2xl;
+  background: linear-gradient(150deg, rgba($kdy-color-brand, 0.2) 0%, rgba($kdy-color-brand, 0.06) 100%);
+  box-shadow: 0 1px 2px rgba($kdy-color-ink, 0.04);
+  color: $kdy-color-ink;
+  font-size: 26px;
+  line-height: 1;
+}
+
+/* 六档色相：每一档的底、边、字形都由**同一个令牌色**派生 */
+$kdy-icon-tones: (
+  'brand': $kdy-color-brand,
+  'success': $kdy-color-success,
+  'info': $kdy-color-info,
+  'warning': $kdy-color-warning,
+  'danger': $kdy-color-danger,
+  'neutral': $kdy-color-ink-soft,
+);
+
+@each $name, $tone in $kdy-icon-tones {
+  .kdy-module-icon--#{$name} {
+    border-color: rgba($tone, 0.26);
+    background: linear-gradient(150deg, rgba($tone, 0.2) 0%, rgba($tone, 0.06) 100%);
+    color: color.mix($tone, $kdy-color-ink, 62%);
+  }
+}
+
+/* 黄底 / 灰底上不混色：纯黄底配墨色字最清楚，混出的是"脏黄" */
+.kdy-module-icon--brand {
+  color: $kdy-color-ink;
+}
+
+.kdy-module-icon--neutral {
+  color: $kdy-color-ink-soft;
+}
+
+/* 导航格（「全部服务」这类），描边与底色都弱化，避免被误当成一个服务模块 */
+.kdy-module-icon--plain {
+  border-color: $kdy-border-hairline;
+  background: $kdy-color-surface;
+  box-shadow: none;
+  color: $kdy-color-ink-soft;
 }

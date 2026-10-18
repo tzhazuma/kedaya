@@ -20,7 +20,6 @@ export default function ForumPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={`校园服务 · ${FORUM_MODULE.id}`}
         title={FORUM_MODULE.nameZh}
         description={`${FORUM_MODULE.summary}。数据流：presentation（本页）→ application（用例）→ domain（端口/模型）← data（mock / HTTP 适配器）。主题列表使用游标分页。`}
       />

@@ -74,8 +74,7 @@ export default function CanteenCreatePage() {
     <View className='kdy-page kdy-canteen-create'>
       <KdyHeading
         title='补充菜品'
-        subtitle='把你常吃的菜记下来，帮助同学估算热量。创建无需登录，数据由同学共建。'
-        eyebrow='KEDAYA · 食堂营养'
+        subtitle='无需登录；热量由同学估算，仅供参考。'
       />
 
       <KdyCard title='食堂' elevated={false}>
@@ -171,7 +170,7 @@ export default function CanteenCreatePage() {
       </View>
 
       <Text className='kdy-disclaimer'>
-        {CANTEEN_DISCLAIMER}。请勿录入与食堂无关的内容；可达鸭是第三方非官方校园服务平台。
+        {CANTEEN_DISCLAIMER}。请勿录入与食堂无关的内容；第三方非官方平台。
       </Text>
     </View>
   )
