@@ -209,7 +209,7 @@ export const CAMPUS_SERVICES = [
         'CAMPUS_CAS_MOCK_ALLOWED',
       ],
       upstreamConfirmed: false,
-      blockedBy: ['U7'],
+      blockedBy: ['U6'],
       blockedReason:
         '真实 CAS / OAuth 客户端需要向学校信息化办申请；仓库里只有 Mock 实现，`CAMPUS_CAS_URL` 等变量只被 `describeUpstream()` 读取，没有真实客户端。',
     },
@@ -259,8 +259,8 @@ export const CAMPUS_SERVICES = [
       '联调：绑定 → `fetchIdentity` → 默认脱敏返回；`reveal=1` 才返回明文并写审计。',
     ],
     caveats: [
-      '`HttpCampusDataAdapter.fetchIdentity` 已经写好，但 live 模式下永远走不到：会话在 auth 的旧表里，而旧表没有写入者。',
-      '`CAMPUS_DATA_MODE=live` 且未配 `CAMPUS_EGATE_DATA_URL` 时抛的是 `InternalError`（HTTP 500），不是可重试的 `UPSTREAM_UNAVAILABLE`（503）——语义上像「服务坏了」。',
+      '`HttpCampusDataAdapter.fetchIdentity` 已经写好，但产品路径下走不到：会话在 auth 的旧表里，而旧表没有写入者。',
+      '在能拿到会话的前提下，`CAMPUS_DATA_MODE=live` 且未配 `CAMPUS_EGATE_DATA_URL` 时抛的是 `InternalError`（HTTP 500），不是可重试的 `UPSTREAM_UNAVAILABLE`（503）——语义上像「服务坏了」。',
     ],
     userFacingNote: '演示期：实名信息为模拟生成（响应标 simulated），真实 eGate 未接通。',
   },
@@ -333,7 +333,7 @@ export const CAMPUS_SERVICES = [
     ],
     caveats: [
       '`GET /schedule/*` 全部挂在类级 `@RequireCampusBinding("cpdaily")` 下，而 Phase 0 只允许绑定 `ecard`（`campus-session.port.ts:110`）——因此**真实后端下所有 schedule 端点恒 409**，包括手动加课与今日课表。小程序「课表已上线」只在 mock 仓储下成立。',
-      '`HttpCampusDataAdapter.fetchSchedule` 的 live 路径永远走不到（会话断在上一条）。',
+      '`HttpCampusDataAdapter.fetchSchedule` 的 live 路径在产品路径下走不到（会话断在 `acquireSession("JWC")`）。',
       '`schedule.today/week` 的 `simulated` 取的是**当前全局模式**（`schedule.service.ts:170,200`），不是行的来源；mock→live 切换后，旧 mock 行会被标成真实数据。',
     ],
     userFacingNote: '演示期课表来自本地模拟/缓存；真实教务同步未接通。',
@@ -367,7 +367,7 @@ export const CAMPUS_SERVICES = [
         'CAMPUS_CARD_DATA_URL',
       ],
       upstreamConfirmed: false,
-      blockedBy: ['U7', 'U12'],
+      blockedBy: [],
       blockedReason:
         '绑定只把一次性 `authCode` 当占位标识存起来，没有 `code2session` 换取 openid；`CampusDataPort.fetchCard` 已实现但没有任何调用点，卡片模块只读本地流水表。',
     },
@@ -439,7 +439,7 @@ export const CAMPUS_SERVICES = [
 export const CAMPUS_SERVICE_AUDIT = {
   /** 审计日期（Asia/Shanghai） */
   auditedAt: '2026-10-18',
-  /** 审计起点 commit（期间仓库前进到 e6193f3，但 campus 相关实现未变） */
+  /** 审计起点 commit（期间仓库前进到 bce3101，但 campus 相关实现未变） */
   auditedCommit: 'd8979d4',
   /** 证据文档（文件:行号、不变式核对、问题清单） */
   evidenceDoc: 'docs/architecture/05-campus-integration-audit.md',

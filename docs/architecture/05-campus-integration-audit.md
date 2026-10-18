@@ -1,9 +1,9 @@
 # 05 · 校内服务对接审计
 
 > **审计日期**：2026-10-18（Asia/Shanghai）
-> **审计基线**：`d8979d4`（审计期间仓库前进到 `e6193f3`；`e6193f3` 只新增/修改了
-> `packages/contracts/src/campus-services.ts` 与 `index.ts`，`0b31fa0` 只改 facility 小程序页，
-> **campus 相关实现代码未变**）
+> **审计基线**：`d8979d4`（审计期间仓库继续前进到 `bce3101`；已核对
+> `git diff d8979d4..HEAD -- services/api/src/modules/{auth,schedule,campus-card,techpie}` 无变化，
+> 新增的是 facility / group-bot / 契约文件。因此本文的行号仍以 `d8979d4` 的 campus 文件为准）
 > **审计方式**：只读代码 + grep + 运行既有架构/HTTP 测试；**未改 `apps/`、`services/api/src/`**
 > **结论文件**：`packages/contracts/src/campus-services.ts`（本文的「结论」；本文是「证据」）
 
@@ -79,6 +79,9 @@ cd services/api && npx vitest run test/techpie-arch.spec.ts test/techpie-http.sp
 
 npm run typecheck -w @kedaya/contracts
 → 0 errors
+
+npm test -w @kedaya/contracts
+→ 6 files / 55 tests passed
 ```
 
 ### 1.3 没做什么
@@ -110,7 +113,7 @@ npm run typecheck -w @kedaya/contracts
    `CAMPUS_DATA_MODE` 只决定 `CAMPUS_DATA_PORT` 注入 Mock 还是 Http
    （`auth.module.ts:84-90`）；它**不控制** `AUTH_PORT`（`:78` 永远 Mock），
    也不控制校园卡模块（`campus-card.service.ts:59-62` 根本没注入 `CAMPUS_DATA_PORT`）。
-2. **`PRO` 的 JWC/eGate 是「适配器在，但 live 走不到」**，不是「live 会降级」。
+2. **JWC / eGate 是「适配器在，但 live 走不到」**，不是「live 会降级」。
    会话从 auth 的旧 `CampusSessionPort.acquireSession()` 取，而旧表 `CampusBinding`
    没有任何写入者（见 §6 P0-1）。
 3. **CpDaily 的 `cpdaily` 与 JWC 的 `jwc` 在代码里不是同一个 owner。**
@@ -240,10 +243,10 @@ npm run typecheck -w @kedaya/contracts
 
 #### 风险 / 不变量
 
-- **live 路径不可达**：`HttpCampusDataAdapter.fetchIdentity` 永远不会被调用，
+- **live 路径不可达**：产品路径下 `HttpCampusDataAdapter.fetchIdentity` 不会被调用，
   因为 `acquireSession('EGATE')` 在旧表里恒为 `null` → 409
   （`campus-identity.service.ts:94-100`）。
-- **未配 URL 时是 500**：`baseUrl()` 抛 `InternalError`（`http-campus-data.adapter.ts:74-84`），
+- **能拿到会话但未配 URL 时是 500**：`baseUrl()` 抛 `InternalError`（`http-campus-data.adapter.ts:74-84`），
   不是 `UPSTREAM_UNAVAILABLE`（503）。客户端会把「配置缺失」当成「服务坏了」。
 - **`simulated` 标了**：`CampusIdentityView.simulated = dataMode === 'mock'`
   （`campus-identity.service.ts:127`），这一点是诚实的；但它标的是「当前全局模式」，
@@ -263,9 +266,10 @@ npm run typecheck -w @kedaya/contracts
   三个分支（`:31-70`），没有 `CPDAILY`。
 - `CAMPUS_CPDAILY_DATA_URL` **没有任何代码读取**（全仓 grep 只出现在
   `docs/` 与本审计文档里；`.env.example` 也没有它）。
-- `CPDAILY` 在代码里只出现在：平台枚举（`auth.domain.ts:50`）、
+- `CPDAILY` 在**可执行路径**里只出现在：平台枚举（`auth.domain.ts:50`）、
   `DEFAULT_SCOPES`（`auth.service.ts:41`）、能力目录（`capabilities.ts:244-275`）、
-  agent 的 `platformLabel`（`agent-tools.service.ts:457`）。
+  agent 的 `platformLabel`（`agent-tools.service.ts:457`）；其余只有注释、
+  日志脱敏正则（`common/logging/redact.ts:62`）与内置知识文案。
 - Phase 0 的绑定闸门只允许 `ecard`（`campus-session.port.ts:110`），
   所以 `cpdaily` 连绑定都建不了。
 
@@ -354,10 +358,11 @@ npm run typecheck -w @kedaya/contracts
 
 - **P0-2**：schedule 全端点恒 409（除非手工往 `TechpieLink` 插一条
   `cpdaily` + `ACTIVE` 的行；那不是产品路径）。
+- `HttpCampusDataAdapter.fetchSchedule` 的 live 路径在产品路径下走不到：会话断在 `schedule.service.ts:233` 的 `acquireSession("JWC")`（旧表无写入者）。
 - **P1-6**：`today/week` 的 `simulated` 取全局模式，不是行来源。mock 模式同步进来的
   行没有 `sourceMode` 列；切到 live 后这些行会被标成 `simulated: false`。
-- 小程序 `delivery.ts` 把 schedule 标成「小程序已上线」
-  （`apps/web/src/domain/models/delivery.ts:57-60`），但真实后端下它不可用；
+- `apps/web/src/domain/models/delivery.ts:57-60` 把 schedule 标成「小程序已上线」，
+  但真实后端下它不可用；
   只有 mock 仓储（`TARO_APP_USE_MOCK` 默认 true）能跑。这是一条需要在
   「已上线」措辞里补 caveat 的诚实问题。
 
@@ -398,6 +403,9 @@ npm run typecheck -w @kedaya/contracts
 
 - `WECHAT_MINIAPP_APPID` / `WECHAT_MINIAPP_SECRET`（`code2session` 换 openid）；
 - eCard 的 OPENID 授权流程与 API 地址（**未确认，需要校方提供**）；
+- 注意 `HttpCampusDataAdapter.getJson()` 目前把所有平台都当成 cookie 认证
+  （`Cookie: session.sessionRef`，`http-campus-data.adapter.ts:90-95`）；
+  eCard OPENID / OAuth 很可能需要 `Authorization: Bearer`，当前没有分支。
 - `CAMPUS_CARD_DATA_URL` + 余额/流水 JSON 形状；
 - 校方与银行侧对「校园卡余额/流水/付款码」的授权。
 
@@ -434,11 +442,20 @@ npm run typecheck -w @kedaya/contracts
   - 服务端只有 `GET /account|transactions|payment-code` 与 `POST /account/activate`。
 - **P1-3**：一次性 `authCode` 明文落库（两条 `externalUserId` 列）。
 - **付款码 503 的语义本身是对的**：不给假码、`Cache-Control: no-store`、
-  `details.upstreamReady=false` 机器可见。问题是客户端方法不匹配导致
-  用户看到的是 404，而不是这条诚实提示；且小程序
-  `CAMPUS_CARD_PAYMENT_CODE_REGISTERED = false`
+  `details.upstreamReady=false` 机器可见。注意它与 `CAMPUS_DATA_MODE` **无关** ——
+  只看 `ecard` 绑定是否 `ACTIVE`，mock 模式下同样是 503。
+- **用户实际会看到什么**（按当前代码）：
+
+  | 场景 | 用户看到 |
+  | --- | --- |
+  | 未绑定 `ecard` | 409 `CAMPUS_BINDING_REQUIRED`，引导「去开通校园卡」 |
+  | 已绑定 + 按契约发 `GET /payment-code` | 503 `UPSTREAM_UNAVAILABLE`，文案「校园卡付款码通道尚未打通……不会返回一个假的付款码」，`details.upstreamReady=false` |
+  | 已绑定 + 按三端现状发 `POST /payment-code` | **404 `NOT_FOUND`**（路由/方法不存在），那条诚实的 503 文案根本看不到 |
+
+- 小程序 `CAMPUS_CARD_PAYMENT_CODE_REGISTERED = false`
   （`apps/miniapp/src/domain/models/campusCard.ts:217`）与契约 §11.21-B
-  「登记后置 true」的裁决（`00-FROZEN-CONTRACT.md:1196-1199`）不一致。
+  「登记后置 true」的裁决（`00-FROZEN-CONTRACT.md:1196-1199`）不一致，
+  UI 会继续按「端点未登记」处理。
 - **`CAMPUS_CARD_DATA_URL` 命名**：`HttpCampusDataAdapter.fetchCard` 用
   `CAMPUS_${platform}_DATA_URL`，platform 是 `CARD`
   （`http-campus-data.adapter.ts:57,74-84`），所以变量是 `CAMPUS_CARD_DATA_URL`；
@@ -546,7 +563,7 @@ npm run typecheck -w @kedaya/contracts
   写的是 `TechpieLink` + `CampusSession`（小写平台、大写 `'ACTIVE'`）。
 - `CampusBinding` 表**唯一**的写入者是 `AuthService.bindCampus()`
   （`auth.service.ts:287-301`），而它**没有任何控制器调用**（全仓 grep 只有定义）。
-  所以旧表在运行时永远是空的。
+  所以正常产品路径下旧表是空的（只有手工插行才会有数据）。
 
 **结论**：I2 不能按「扫描过了」算通过。修复目标是把两套 port 合并成
 techpie 那一套，并删掉 `auth/data/prisma-campus-session.adapter.ts` 与
@@ -776,8 +793,8 @@ acquireSession(userId: string, platform: CampusPlatform): Promise<CampusSession 
 `techpie-http.spec.ts:435-442`（测试本身就断言「未绑定 → 409」）。
 
 **影响**：`GET /schedule/today`、`GET /schedule/week`、`POST /schedule/items`
-全部不可用；小程序/agent 的课表只有在 mock 仓储下能跑。`delivery.ts` 的
-「schedule 小程序已上线」在真实后端下不成立。
+全部不可用；小程序页面只有在 mock 仓储下能跑（agent 直调 service 绕过守卫，见 P2-1）。
+`delivery.ts` 的「schedule 小程序已上线」在真实后端下不成立。
 
 **修复**：短期把 `today/week/next` 与 `items`（本地数据）移出类级守卫，
 只给 `sync` 加 `@RequireCampusBinding`；长期按 P0-1 修好会话后，
@@ -820,7 +837,7 @@ acquireSession(userId: string, platform: CampusPlatform): Promise<CampusSession 
 | 小程序 | `GET /campus-card/items`（`httpTechpieRepository.ts:176`） | 只有 `GET /transactions`（`:116`） |
 | Flutter | `POST campus-card/payment-code`（`remote_campus_card_repository.dart:92`） | 只有 `GET` |
 
-**影响**：真实后端下校园卡页面 404；付款码的诚实 503 永远到不了用户。
+**影响**：真实后端下校园卡页面 404；付款码的诚实 503 到不了三端用户（它们发的是 POST）。
 
 **修复**：以契约为准（`00-FROZEN-CONTRACT.md:1180-1187`）统一为
 `GET /account`、`POST /account/activate`、`DELETE /account`、
@@ -907,7 +924,7 @@ Web 收到 `jwc` 会当成未知平台。
 **证据**：`git show e6193f3:packages/contracts/src/campus-services.ts` 里
 `platform: 'techpie'` 的 `mode: 'live'`、`authorization: 'granted'`、
 `upstreamConfirmed: true`、`adapterFile: '.../techpie.service.ts'`，
-并声称它的 `POST /items/:id/sync` 只是把 status 写成 synced。
+提交说明还声称它的 `POST /items/:id/sync` 只是把 status 写成 synced（提交说明的说法，不是文件里的字段）。
 但当前 `techpie.controller.ts` **没有** `items` 路由，`techpie.service.ts`
 **没有**上游 HTTP 客户端，`provider: 'techpie'` 是 `phase2`。
 
@@ -1145,7 +1162,7 @@ export function campusServicesByWiring(wiring: CampusWiring): readonly CampusSer
 | `CAMPUS_JWC_DATA_URL` | 同上 | JWC 取数 base URL | 空；**地址未确认** |
 | `CAMPUS_CARD_DATA_URL` | 同上（platform=`CARD`） | 校园卡快照 base URL | 空；`fetchCard` 无调用点；**地址未确认** |
 | `CAMPUS_CPDAILY_DATA_URL` | **没有代码读取** | 预留的 CpDaily 地址 | 不存在于 `.env.example`；**未确认** |
-| `CAMPUS_CAS_URL` | `mock-campus-auth.provider.ts:68`（仅 `describeUpstream()`） | CAS serviceValidate / 登录地址 | `.env.example:17` 有仓库既有值，**未经校方确认**；`describeUpstream()` 无调用方 |
+| `CAMPUS_CAS_URL` | `mock-campus-auth.provider.ts:68`（仅 `describeUpstream()`） | CAS serviceValidate / 登录地址 | `.env.example:17` 有仓库既有值，**未经校方确认**；`describeUpstream()` 在生产代码中无调用方 |
 | `CAMPUS_SSO_CLIENT_ID` | 同上 `:69` | OAuth/CAS 客户端 id | `.env.example:18` 有占位值；未使用 |
 | `CAMPUS_SSO_CLIENT_SECRET` | **没有代码读取** | OAuth/CAS 客户端 secret | `.env.example:19` 有占位值；真实客户端不存在 |
 | `CAMPUS_CAS_MOCK_ALLOWED` | `mock-campus-auth.provider.ts:84` | 生产环境临时打开 Mock CAS | 默认未配；**不要在生产配** |
