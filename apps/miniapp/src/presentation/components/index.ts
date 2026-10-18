@@ -90,6 +90,9 @@ export type { KdyReportEntryProps } from './KdyReportEntry'
 export { KdyListSkeleton } from './KdyListSkeleton'
 export type { KdyListSkeletonProps } from './KdyListSkeleton'
 
+export { KdyTimetable } from './KdyTimetable'
+export type { KdyTimetableProps } from './KdyTimetable'
+
 export { KdyModuleIcon } from './KdyModuleIcon'
 export type { KdyModuleIconTone } from './KdyModuleIcon'
 

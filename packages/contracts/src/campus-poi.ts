@@ -33,7 +33,7 @@
  *
  * ## 坐标系：WGS84，且**不要**和 `CAMPUS_BOUNDS` 混用
  *
- * 契约 §2.6（见 `packages/shared/src/geo/gcj02.ts` 头注释）规定
+ * 契约 §2.6 与 `packages/shared/src/geo/gcj02.ts` 头注释都规定
  * **WGS84 是唯一真相**：数据库、API、上传一律 WGS84。
  * `apps/web/public/map/campus-poi.json` 里的 186 个 POI 也是 WGS84。
  *
@@ -207,7 +207,7 @@ export const CAMPUS_POI_PHOTO_POLICY = {
   /** 有照片就必须有署名（validatePoiSupplement 强制） */
   creditRequired: true,
   /** 允许的录入方式 */
-  allowedOrigins: ['owner-upload', 'admin-upload-with-authorization', 'public-domain-with-proof'],
+  allowedUploadMethods: ['owner-upload', 'admin-upload-with-authorization', 'public-domain-with-proof'],
   /** 明令禁止抓取的来源：另一个参赛组的照片版权归拍摄者 */
   forbiddenOrigins: ['https://map.niyiwei.com'],
 } as const;
@@ -227,6 +227,7 @@ export type CampusPoiIssueCode =
   | 'source-unknown'
   | 'photo-urls-invalid'
   | 'photo-url-empty'
+  | 'photo-url-forbidden-origin'
   | 'photo-credit-required'
   | 'verified-at-invalid';
 
@@ -245,6 +246,31 @@ function issue(
 }
 
 /**
+ * 照片 URL 是否指向**明令禁止抓取**的站点（含其子域）。
+ *
+ * 用户名写、署名写得再漂亮也不行：著作权不在录入者手里。相对路径不受影响。
+ *
+ * 刻意**不用 `new URL()`**：本契约会被小程序打包运行，而微信小程序的 JS
+ * 运行时不保证有完整的 `URL` 全局；用正则解析只依赖字符串能力。
+ */
+function isForbiddenPhotoUrl(url: string): boolean {
+  const host = hostnameOf(url);
+  if (host === null) return false;
+
+  return CAMPUS_POI_PHOTO_POLICY.forbiddenOrigins.some((origin) => {
+    const forbidden = hostnameOf(origin);
+    if (forbidden === null) return false;
+    return host === forbidden || host.endsWith(`.${forbidden}`);
+  });
+}
+
+/** 从绝对 / 协议相对 URL 里取主机名（跳过 userinfo 与端口）；相对路径返回 null */
+function hostnameOf(url: string): string | null {
+  const match = /^(?:https?:)?\/\/(?:[^/?#@]*@)?([^/?#:]+)(?::\d+)?(?:[/?#]|$)/i.exec(url.trim());
+  return match?.[1]?.toLowerCase() ?? null;
+}
+
+/**
  * 校验一条补充 POI，返回**全部**问题（空数组 = 通过）。
  *
  * 规则（硬要求）：
@@ -252,7 +278,7 @@ function issue(
  * 2. `lat` / `lng` 必须是有限值，且落在 [CAMPUS_POI_BOUNDS]（WGS84）内；
  * 3. `floor` 必须是整数；**负数只允许出现在地下车库**；
  * 4. **`photoUrls` 非空时 `photoCredit` 必填** —— 版权合规，测试锁死；
- * 5. 照片 URL 不能是空串；`verifiedAt` 若存在必须可解析为时间。
+ * 5. 照片 URL 不能是空串、不得指向明令禁止的来源；`verifiedAt` 若存在必须可解析为时间。
  *
  * 注意：本函数只做**单条**校验。id 在集合内是否唯一、同一 POI 是否时间冲突
  * 属于集合级问题，分别由调用方 / [findPoiSlotConflicts] 处理。
@@ -317,6 +343,14 @@ export function validatePoiSupplement(poi: CampusPoiSupplement): CampusPoiIssue[
     for (const url of poi.photoUrls) {
       if (typeof url !== 'string' || url.trim() === '') {
         issues.push(issue('photo-url-empty', 'photoUrls', '照片 URL 不能是空串'));
+      } else if (isForbiddenPhotoUrl(url)) {
+        issues.push(
+          issue(
+            'photo-url-forbidden-origin',
+            'photoUrls',
+            '该照片来源已被明令禁止（另一个参赛组拍摄，著作权归拍摄者）；请改用有授权的素材',
+          ),
+        );
       }
     }
 
@@ -342,6 +376,28 @@ export function validatePoiSupplement(poi: CampusPoiSupplement): CampusPoiIssue[
   }
 
   return issues;
+}
+
+/* ------------------------------------------------------------------ *
+ * 外部录入闸门（管理员 / 用户自己录入合法内容）
+ * ------------------------------------------------------------------ */
+
+/** 外部录入的结果：要么通过并拿到规范对象，要么带着问题列表被拒 */
+export type CampusPoiImportResult =
+  | { readonly ok: true; readonly poi: CampusPoiSupplement }
+  | { readonly ok: false; readonly issues: readonly CampusPoiIssue[] };
+
+/**
+ * 外部录入（管理员后台 / 用户提交）的**唯一闸门**：先校验，再入库。
+ *
+ * 本函数不下载图片、不补默认署名、不「先入库再补授权」：
+ * 带照片但没写 `photoCredit` 的提交会直接被拒。调用方拿到 `ok: false` 后
+ * 应当把 `issues` 原样展示给录入者，而不是自行猜测怎么修。
+ */
+export function importPoiSupplement(candidate: CampusPoiSupplement): CampusPoiImportResult {
+  const issues = validatePoiSupplement(candidate);
+  if (issues.length === 0) return { ok: true, poi: candidate };
+  return { ok: false, issues };
 }
 
 /* ------------------------------------------------------------------ *
@@ -501,7 +557,8 @@ function byStartThenTitle(a: SlotWindow, b: SlotWindow): number {
  * 找出 `at` 这一刻**正在进行的**全部 POI 安排（左闭右开）。
  *
  * - 只返回 `pois` 里存在、且 `slots` 里时间窗覆盖 `at` 的项；
- * - 每个 POI 的 `slots` 按开始时间、结束时间、标题排序，结果可复现；
+ * - 结果按传入 `pois` 的顺序返回；每个 POI 的 `slots` 按开始时间、结束时间、
+ *   标题排序，结果可复现；
  * - `at` 不可解析、或 slot 指向不存在的 POI 时，对应项被忽略（不抛错）。
  *
  * 典型用途：地图高亮「现在有课的楼」「正在进行活动的场地」。

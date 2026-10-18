@@ -25,8 +25,13 @@ export interface AccountSession {
   /** 本次调用是否**首次建号**（客户端据此引导「完善资料」） */
   isNewUser: boolean;
   /**
-   * 是否来自**开发模拟**（服务端未配置小程序密钥，走 `dev:` 凭证）。
-   * 仅微信登录可能为 true；UI 必须明确标注，绝不把它当成真实微信身份。
+   * 本次身份是否来自**模拟实现**。当前有两个来源：
+   *   · 微信小程序：服务端未配置 `WECHAT_MINIAPP_APPID/SECRET` 时的 `dev:` 凭证；
+   *   · 校园 CAS：`AUTH_PORT` 仍是 `MockCampusAuthProvider`（它恒为 true）。
+   *
+   * 两种登录都会返回该字段；CAS 路径是**必填布尔值**（见 `AuthService.LoginResult`），
+   * 真实 CAS 实现为 false。UI 必须明确标注「演示身份」，
+   * 绝不把 `mock-<学号>` 当成真实学号、也不把 `dev_openid_*` 当成真实微信身份。
    */
   simulated?: boolean;
 }

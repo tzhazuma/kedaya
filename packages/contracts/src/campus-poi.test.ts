@@ -14,6 +14,7 @@ import {
   createPoiDraft,
   findPoiSlotConflicts,
   findPoiSlotsAt,
+  importPoiSupplement,
   isPoiWithinCampusBounds,
   nextSlotAt,
   poiToMapMarker,
@@ -22,6 +23,7 @@ import {
   type CampusPoiSupplement,
   type PoiTimeSlot,
 } from './campus-poi';
+import { CAMPUS_POI_BOUNDS as BOUNDS_FROM_INDEX } from './index';
 
 const REPO_ROOT = join(__dirname, '..', '..', '..');
 const POI_SNAPSHOT = join(REPO_ROOT, 'apps', 'web', 'public', 'map', 'campus-poi.json');
@@ -186,6 +188,10 @@ describe('campus POI 补充层：形状与分类', () => {
     expect(JSON.stringify(CAMPUS_POI_CATEGORY_TONES)).not.toMatch(/#[0-9a-f]{3,8}/i);
   });
 
+  it('从包入口 `@kedaya/contracts` 可导入（index.ts 只加一行 export）', () => {
+    expect(BOUNDS_FROM_INDEX).toBe(CAMPUS_POI_BOUNDS);
+  });
+
   it('校园 WGS84 bounds 与 OSM 快照逐字一致（防止悄悄漂移）', () => {
     type Snapshot = {
       campus: {
@@ -219,6 +225,8 @@ describe('validatePoiSupplement', () => {
     expect(DEMO_POIS.length).toBeLessThanOrEqual(5);
 
     for (const poi of DEMO_POIS) {
+      // 假数据必须在名字里自曝，避免被当成真实采集
+      expect(poi.name).toContain('演示数据');
       expect(validatePoiSupplement(poi), `${poi.id} 应通过校验`).toEqual([]);
     }
   });
@@ -247,6 +255,32 @@ describe('validatePoiSupplement', () => {
   it('空照片 URL 也会被拒绝', () => {
     const poi: CampusPoiSupplement = { ...STUDY, photoUrls: [''] };
     expect(validatePoiSupplement(poi).map((item) => item.code)).toContain('photo-url-empty');
+  });
+
+  it('明令禁止的来源即使写了署名也拒收（版权不在录入者手里）', () => {
+    const scraped: CampusPoiSupplement = {
+      ...STUDY,
+      photoUrls: ['https://map.niyiwei.com/uploads/garage-1.jpg'],
+      photoCredit: '某同学（未获授权）',
+    };
+    expect(validatePoiSupplement(scraped).map((item) => item.code)).toContain(
+      'photo-url-forbidden-origin',
+    );
+    expect(importPoiSupplement(scraped).ok).toBe(false);
+  });
+
+  it('禁止来源的子域 / userinfo 变体也被识别；相似域名与相对路径放行', () => {
+    const codes = (url: string): string[] =>
+      validatePoiSupplement({ ...STUDY, photoUrls: [url] }).map((item) => item.code);
+
+    expect(codes('https://sub.map.niyiwei.com/a.jpg')).toContain('photo-url-forbidden-origin');
+    expect(codes('https://evil.com@map.niyiwei.com/a.jpg')).toContain(
+      'photo-url-forbidden-origin',
+    );
+    expect(codes('https://map.niyiwei.com.evil.com/a.jpg')).not.toContain(
+      'photo-url-forbidden-origin',
+    );
+    expect(codes('/uploads/local-study-room.jpg')).not.toContain('photo-url-forbidden-origin');
   });
 
   it('坐标越界 → 校验失败；NaN → 非有限值失败', () => {
@@ -296,6 +330,16 @@ describe('validatePoiSupplement', () => {
     expect(draft.source).toBe('unknown');
     expect(draft.floor).toBeNull();
     expect(validatePoiSupplement(draft)).toEqual([]);
+  });
+
+  it('外部录入闸门：合法数据放行，缺署名直接拒收（不会先入库再补）', () => {
+    expect(importPoiSupplement(STUDY)).toEqual({ ok: true, poi: STUDY });
+
+    const rejected = importPoiSupplement({ ...STUDY, photoCredit: null });
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.issues.map((item) => item.code)).toContain('photo-credit-required');
+    }
   });
 
   it('照片版权策略常量锁死「有图必署名」并点名禁止抓取的来源', () => {
@@ -372,6 +416,21 @@ describe('findPoiSlotsAt / nextSlotAt', () => {
 
     // 12:00 两段都结束，当天没有别的安排
     expect(findPoiSlotsAt(DEMO_POIS, DEMO_SLOTS, '2026-10-19T12:00:00+08:00')).toEqual([]);
+  });
+
+  it('同一时刻多个 POI 都有安排时按 pois 顺序分组返回', () => {
+    const simultaneous: readonly PoiTimeSlot[] = [
+      DEMO_SLOTS[0]!,
+      {
+        ...DEMO_SLOTS[2]!,
+        startsAt: '2026-10-19T09:30:00+08:00',
+        endsAt: '2026-10-19T10:00:00+08:00',
+      },
+    ];
+
+    const active = findPoiSlotsAt(DEMO_POIS, simultaneous, '2026-10-19T09:45:00+08:00');
+    expect(active.map((entry) => entry.poiId)).toEqual([EVENT.id, STUDY.id]);
+    expect(active.every((entry) => entry.slots.length === 1)).toBe(true);
   });
 
   it('接受 Date 入参；非法时刻 / 不存在的 POI 会被忽略而不是抛错', () => {

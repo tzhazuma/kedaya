@@ -1,0 +1,204 @@
+/**
+ * KdyTimetable —— 周课表的格子。
+ *
+ * 版式常量都写在这里（节次轴 40px、日列 88px、单节 52px）：
+ * 位置 / 高度由组件内联给出百分比，所以改这三个数**不需要**改任何 JS 计算。
+ *
+ * 颜色只从令牌取：方块是「浅黄便签 + 墨字」，撞课的便签换成奶白 + 危险色描边。
+ * 不在方块上加投影：一屏几十块小方块同时挂阴影会显脏，而且滚动掉帧。
+ */
+
+.kdy-timetable {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  margin-top: $kdy-space-3;
+  overflow: hidden;
+  border: 1px solid $kdy-tone-border;
+  border-radius: $kdy-radius-xl;
+  background: $kdy-color-campus-white;
+}
+
+/* ---------------- 左侧节次轴 ---------------- */
+
+.kdy-timetable__axis {
+  flex: 0 0 40px;
+  width: 40px;
+  background: $kdy-tone-milk;
+  border-right: 1px solid $kdy-tone-border;
+}
+
+.kdy-timetable__axis-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  border-bottom: 1px solid $kdy-tone-border;
+}
+
+.kdy-timetable__axis-head-text {
+  color: $kdy-color-campus-muted;
+  font-size: $kdy-font-size-xs;
+}
+
+.kdy-timetable__axis-cell {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 52px;
+  padding-top: 6px;
+  border-bottom: 1px solid $kdy-tone-border;
+}
+
+.kdy-timetable__axis-cell:last-child {
+  border-bottom: none;
+}
+
+.kdy-timetable__axis-text {
+  color: $kdy-color-campus-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1;
+}
+
+/* ---------------- 右侧 7 天 ---------------- */
+
+.kdy-timetable__scroll {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+}
+
+/* 7 × 88px：按 375px 基准换算成 rpx，宽屏上等比放大 */
+.kdy-timetable__canvas {
+  width: 616px;
+}
+
+.kdy-timetable__head {
+  display: flex;
+  flex-direction: row;
+  height: 40px;
+}
+
+.kdy-timetable__head-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 88px;
+  height: 40px;
+  border-bottom: 1px solid $kdy-tone-border;
+}
+
+.kdy-timetable__head-cell + .kdy-timetable__head-cell {
+  border-left: 1px solid $kdy-tone-border;
+}
+
+.kdy-timetable__head-cell--selected {
+  background: $kdy-tone-milk;
+}
+
+.kdy-timetable__head-cell--today {
+  background: $kdy-tone-yellow;
+}
+
+.kdy-timetable__head-text {
+  color: $kdy-color-campus-muted;
+  font-size: $kdy-font-size-xs;
+  font-weight: 600;
+}
+
+.kdy-timetable__head-cell--today .kdy-timetable__head-text {
+  color: $kdy-color-campus-ink;
+}
+
+.kdy-timetable__body {
+  display: flex;
+  flex-direction: row;
+  height: 624px;
+}
+
+.kdy-timetable__day {
+  position: relative;
+  box-sizing: border-box;
+  width: 88px;
+  height: 100%;
+  background: $kdy-color-campus-white;
+}
+
+.kdy-timetable__day + .kdy-timetable__day {
+  border-left: 1px solid $kdy-tone-border;
+}
+
+/* 选中日：奶白底（比今天浅一档）；今天：更明显的淡黄底，压住选中态 */
+.kdy-timetable__day--selected {
+  background: rgba($kdy-color-campus-milk, 0.55);
+}
+
+.kdy-timetable__day--today {
+  background: rgba($kdy-color-campus-yellow-soft, 0.35);
+}
+
+.kdy-timetable__slot {
+  box-sizing: border-box;
+  height: 52px;
+  border-bottom: 1px solid rgba($kdy-color-campus-border, 0.7);
+}
+
+.kdy-timetable__slot:last-child {
+  border-bottom: none;
+}
+
+/* ---------------- 课程方块 ---------------- */
+
+.kdy-timetable__course {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 4px 5px;
+  overflow: hidden;
+  border: 1px solid rgba($kdy-color-campus-yellow, 0.75);
+  border-radius: $kdy-radius-lg;
+  background: $kdy-tone-yellow;
+}
+
+.kdy-timetable__course--compact {
+  padding: 3px 4px;
+  border-radius: $kdy-radius-md;
+}
+
+.kdy-timetable__course--conflict {
+  border-color: $kdy-color-danger;
+  border-left-width: 3px;
+  background: $kdy-tone-pink;
+}
+
+.kdy-timetable__course-name {
+  display: -webkit-box;
+  overflow: hidden;
+  color: $kdy-color-campus-ink;
+  font-size: $kdy-font-size-xs;
+  font-weight: 600;
+  line-height: 1.25;
+  word-break: break-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.kdy-timetable__course--compact .kdy-timetable__course-name {
+  font-size: $kdy-font-size-xs;
+  -webkit-line-clamp: 2;
+}
+
+.kdy-timetable__course-meta {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 2px;
+  color: rgba($kdy-color-campus-ink, 0.62);
+  font-size: $kdy-font-size-xs;
+  line-height: 1.25;
+  word-break: break-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}

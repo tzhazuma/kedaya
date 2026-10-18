@@ -148,8 +148,26 @@ describe('契约 §5 · 两级身份模型解耦', () => {
         'expiresAt',
         'expiresIn',
         'refreshToken',
+        'simulated',
         'user',
       ]);
+    });
+
+    it('CAS mock 身份 → simulated: true（客户端可区分真假身份）', async () => {
+      const authPort: AuthPort = {
+        authenticateTicket: vi.fn().mockResolvedValue(IDENTITY),
+        simulated: true,
+      };
+      const { service } = build(authPort);
+
+      expect((await service.login('mock-20260001')).simulated).toBe(true);
+    });
+
+    it('真实 CAS 实现（没有 simulated 标记）→ simulated: false', async () => {
+      const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
+      const { service } = build(authPort);
+
+      expect((await service.login('ST-real-ticket')).simulated).toBe(false);
     });
 
     it('响应里不含任何 cookie/session/tgc 字段（自有 JWT 除外）', async () => {

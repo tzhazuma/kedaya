@@ -1,46 +1,69 @@
 import { Text, View } from '@tarojs/components'
-import { useDidShow } from '@tarojs/taro'
+import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import { useState } from 'react'
 
 import { getContainer } from '../../../app/container'
 import { PAGE_PATHS } from '../../../app/routes'
-import { MAX_SLOT, SLOT_OPTIONS, WEEKDAY_LABELS, conflictLabel, countdownLabel, courseSubtitle } from '../../../domain/models/schedule'
-import type { ScheduleCourseView } from '../../../domain/models/schedule'
+import { MAX_SLOT, SLOT_OPTIONS, WEEKDAY_LABELS } from '../../../domain/models/schedule'
 import { navigateTo, toast } from '../../../platform/navigation'
-import { KdyAgentFab, KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyTag } from '../../components'
+import {
+  KdyAgentFab,
+  KdyButton,
+  KdyCard,
+  KdyChip,
+  KdyEmpty,
+  KdyField,
+  KdyListSkeleton,
+  KdyTag,
+} from '../../components'
 import { KdyHeading } from '../../components/KdyHeading'
 import { useStore } from '../../hooks'
+import { TodayPanel } from './TodayPanel'
+import { WeekPanel } from './WeekPanel'
 import './index.scss'
 
 /**
- * 课表（`schedule`）—— 「我现在该去哪」。
+ * 课表（`schedule`）—— 「我现在该去哪」，以及「这周什么时候有空」。
  *
- * 页面结构按**用户当下最急的问题**排序，而不是按数据表的结构：
- *   1. 今天（正在上什么 / 下一节还有多久 / 今天还剩几节）—— 站着看手机的那 3 秒要用到；
- *   2. 本周（切换星期看某天）—— 计划用；
- *   3. 同步 / 手动加课 —— 数据不对时才用到，所以收在下面。
+ * ## 两种视图，而不是一条长页面
  *
- * 高可用设计：
- *   · 首屏用缓存秒出（`hydrate()`），再后台刷新，失败不清空；
- *   · 没有课表时不说"加载失败"，而是明确区分「还没绑定教务系统」与
- *     「已绑定但今天没课」—— 这两种情况的下一步动作完全不同；
- *   · 手动加课做**节次区间校验**（后端也会校验），并且加完立刻刷新今日视图，
- *     让用户马上看到结果。
+ * 用户打开课表只有两件事要做：**马上要上的课**（今天）和**安排这一周**（本周）。
+ * 原来把"今天 → 本周 → 同步 → 手动加课"堆成一条长滚动，四件事互相稀释；
+ * 现在顶部一个「今天 / 本周」切换，各自占满一屏：
+ *   · 今天：状态大字 + 下一节倒计时 + 时间轴（课与空档）；
+ *   · 本周：7×12 格子 + 选中那天的课程清单。
+ * 同步 / 手动加课是低频维护动作，收在页面最下面的「课表工具」里。
+ *
+ * ## 状态机沿用用例层
+ *
+ * `hydrate()` 同步出缓存 → `load()` 后台刷新 → 失败保留旧数据（`application/campus`）。
+ * 页面不写自己的 `loading` 布尔：`status` 就是唯一真相，
+ * 首屏没有数据时用 `KdyListSkeleton`，有旧数据时只标「缓存数据」。
+ *
+ * ## 时间文案
+ *
+ * "还有 20 分钟"来自服务端（`minutesUntilNext`），页面只做本地流逝递减；
+ * 每节课的起止时间直接显示服务端的 `timeLabel`，客户端不维护作息表。
  */
 
-function CourseRow({ course }: { course: ScheduleCourseView }) {
-  return (
-    <View className='kdy-schedule__course'>
-      <View className='kdy-schedule__course-time'>
-        <Text className='kdy-schedule__course-time-main'>{course.timeLabel}</Text>
-        <Text className='kdy-schedule__course-time-sub'>{course.slotLabel}</Text>
-      </View>
-      <View className='kdy-schedule__course-body'>
-        <Text className='kdy-schedule__course-name'>{course.courseName}</Text>
-        <Text className='kdy-schedule__course-meta'>{courseSubtitle(course) || '地点未登记'}</Text>
-      </View>
-    </View>
-  )
+type ScheduleView = 'today' | 'week'
+
+interface CourseDraft {
+  courseName: string
+  location: string
+  teacher: string
+  weekday: number
+  startSlot: number
+  endSlot: number
+}
+
+const EMPTY_DRAFT: CourseDraft = {
+  courseName: '',
+  location: '',
+  teacher: '',
+  weekday: 1,
+  startSlot: 1,
+  endSlot: 2,
 }
 
 export default function SchedulePage() {
@@ -48,9 +71,11 @@ export default function SchedulePage() {
   const schedule = container.useCases.campus.schedule
   const state = useStore(schedule)
 
+  const [view, setView] = useState<ScheduleView>('today')
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
+  const [focusCourseId, setFocusCourseId] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
-  const [draft, setDraft] = useState({ courseName: '', location: '', teacher: '', weekday: 1, startSlot: 1, endSlot: 2 })
+  const [draft, setDraft] = useState<CourseDraft>(EMPTY_DRAFT)
   const [formError, setFormError] = useState<string | null>(null)
 
   useDidShow(() => {
@@ -58,10 +83,18 @@ export default function SchedulePage() {
     void schedule.load()
   })
 
+  usePullDownRefresh(() => {
+    // 转圈必须等请求真的结束再收：早收会让用户以为刷完了
+    void schedule.load().then(() => Taro.stopPullDownRefresh())
+  })
+
   const today = state.today
   const week = state.week
+  const hasAnyData = today !== null || week !== null
+  const initialLoading = !hasAnyData && (state.status === 'idle' || state.status === 'loading')
+  const initialError = !hasAnyData && state.status === 'error'
+  const simulated = today?.simulated === true || week?.simulated === true
   const activeDay = selectedDay ?? week?.today ?? today?.weekday ?? 1
-  const activeDayCourses = week?.days.find((day) => day.weekday === activeDay)?.courses ?? []
 
   async function handleSync(): Promise<void> {
     const result = await schedule.sync()
@@ -74,13 +107,17 @@ export default function SchedulePage() {
     toast(`已同步 ${result.lastSync?.imported ?? 0} 门课程`)
   }
 
-  /** 节次选择：点更晚的节次延长区间；点区间内则重新以它作为起点 */
-  function pickSlot(value: number): void {
-    setDraft((prev) => {
-      if (value < prev.startSlot) return { ...prev, startSlot: value }
-      if (value > prev.endSlot) return { ...prev, endSlot: value }
-      return { ...prev, startSlot: value, endSlot: value }
-    })
+  function pickStart(value: number): void {
+    setDraft((prev) => ({
+      ...prev,
+      startSlot: value,
+      // 开始节次往后挪时把结束节次一起推后，避免出现"开始 5 结束 2"的非法区间
+      endSlot: Math.max(value, prev.endSlot),
+    }))
+  }
+
+  function pickEnd(value: number): void {
+    setDraft((prev) => ({ ...prev, endSlot: Math.max(value, prev.startSlot) }))
   }
 
   async function handleAddCourse(): Promise<void> {
@@ -108,217 +145,213 @@ export default function SchedulePage() {
       return
     }
     toast(result.message)
-    setDraft({ courseName: '', location: '', teacher: '', weekday: draft.weekday, startSlot: 1, endSlot: 2 })
+    setDraft({ ...EMPTY_DRAFT, weekday: draft.weekday })
     setShowAddForm(false)
+  }
+
+  function handleSelectDay(weekday: number): void {
+    setSelectedDay(weekday)
+    setFocusCourseId(null)
+  }
+
+  function handleSelectCourse(course: { id: string; weekday: number }): void {
+    setSelectedDay(course.weekday)
+    setFocusCourseId(course.id)
   }
 
   return (
     <View className='kdy-page kdy-schedule'>
-      <KdyHeading
-        title='课表'
-        subtitle='时间由服务端按学校时钟计算，手机时间不准也不会看错'
-      />
+      <KdyHeading title='课表' subtitle={week?.termLabel} />
 
-      {today?.simulated === true && (
+      {simulated && (
         <View className='kdy-schedule__notice'>
           <Text className='kdy-schedule__notice-text'>课表为演示数据，非真实教务数据。</Text>
         </View>
       )}
 
-      {/* 今日：页面最重要的一块 */}
-      <KdyCard
-        title={`今天 · ${today?.weekdayLabel ?? ''}`}
-        extra={
-          <KdyTag tone={state.syncing ? 'warning' : state.error === null ? 'brand' : 'neutral'}>
-            {state.syncing ? '同步中' : state.fromCache ? '缓存数据' : '已同步'}
-          </KdyTag>
-        }
-      >
-        {today === null && state.status === 'loading' && <Text className='kdy-schedule__muted'>正在读取课表…</Text>}
-
-        {today !== null && (
-          <>
-            <Text className='kdy-schedule__status'>{todayStatusText(today.ongoing.length > 0, today.next !== null, today.finishedForToday, countdownLabel(today.minutesUntilNext), state.needsBinding)}</Text>
-
-            {today.courses.length === 0 ? (
-              <KdyEmpty
-                mode={state.needsBinding ? 'empty' : 'empty'}
-                title='今天没有排课'
-                description={
-                  state.needsBinding
-                    ? '还没有绑定教务系统，绑定后才能同步本学期课表。'
-                    : '如果这不对，可能还没同步过课表。'
-                }
-                actionText={state.needsBinding ? '去绑定教务系统' : '同步课表'}
-                onAction={() => {
-                  if (state.needsBinding) void navigateTo(PAGE_PATHS.identity)
-                  else void handleSync()
-                }}
-              />
-            ) : (
-              <View className='kdy-schedule__courses'>
-                {today.courses.map((course) => (
-                  <CourseRow key={course.id} course={course} />
-                ))}
-              </View>
-            )}
-
-            {today.conflicts.length > 0 && (
-              <View className='kdy-schedule__conflict'>
-                <Text className='kdy-schedule__conflict-title'>检测到时间冲突</Text>
-                {today.conflicts.map((conflict) => (
-                  <Text key={`${conflict.a.id}-${conflict.b.id}`} className='kdy-schedule__conflict-text'>
-                    {conflictLabel(conflict)}
-                  </Text>
-                ))}
-              </View>
-            )}
-          </>
-        )}
-
-        <View className='kdy-schedule__actions'>
-          <KdyButton size='sm' loading={state.syncing} onClick={() => void handleSync()}>
-            同步课表
-          </KdyButton>
-          <KdyButton size='sm' variant='ghost' onClick={() => setShowAddForm((value) => !value)}>
-            {showAddForm ? '收起手动添加' : '手动添加课程'}
-          </KdyButton>
+      {initialLoading ? (
+        <View className='kdy-schedule__loading'>
+          <KdyListSkeleton rows={2} />
         </View>
-
-        {state.error !== null && <Text className='kdy-schedule__error'>{state.error}</Text>}
-      </KdyCard>
-
-      {/* 手动加课：只覆盖"临时调课"这一种场景 */}
-      {showAddForm && (
-        <KdyCard title='手动添加课程'>
-          <KdyField
-            label='课程名'
-            value={draft.courseName}
-            maxLength={80}
-            placeholder='例如：数据结构与算法'
-            onChange={(value) => setDraft((prev) => ({ ...prev, courseName: value }))}
+      ) : initialError ? (
+        <KdyCard title='课表'>
+          <KdyEmpty
+            mode='error'
+            title='课表没加载出来'
+            description={state.error ?? '网络不太稳定，重试一次。'}
+            actionText='重试'
+            onAction={() => void schedule.load()}
           />
-          <KdyField
-            label='地点'
-            value={draft.location}
-            maxLength={60}
-            placeholder='例如：信息楼 305'
-            onChange={(value) => setDraft((prev) => ({ ...prev, location: value }))}
-          />
-          <KdyField
-            label='教师'
-            value={draft.teacher}
-            maxLength={40}
-            placeholder='可留空'
-            onChange={(value) => setDraft((prev) => ({ ...prev, teacher: value }))}
-          />
-
-          <Text className='kdy-schedule__form-label'>星期</Text>
-          <View className='kdy-schedule__chips'>
-            {WEEKDAY_LABELS.map((label, index) => (
-              <KdyChip
-                key={label}
-                active={draft.weekday === index + 1}
-                onClick={() => setDraft((prev) => ({ ...prev, weekday: index + 1 }))}
-              >
-                {label}
-              </KdyChip>
-            ))}
-          </View>
-
-          <Text className='kdy-schedule__form-label'>节次</Text>
-          <View className='kdy-schedule__chips'>
-            {SLOT_OPTIONS.map((option) => (
-              <KdyChip
-                key={option.value}
-                active={option.value >= draft.startSlot && option.value <= draft.endSlot}
-                onClick={() => pickSlot(option.value)}
-              >
-                {option.label}
-              </KdyChip>
-            ))}
-          </View>
-          <Text className='kdy-schedule__muted'>
-            已选：第 {draft.startSlot}–{draft.endSlot} 节（点更晚的节次延长区间，点区间内则重新开始，最多 {MAX_SLOT} 节）
-          </Text>
-
-          {formError !== null && <Text className='kdy-schedule__error'>{formError}</Text>}
-
-          <View className='kdy-schedule__actions'>
-            <KdyButton size='sm' onClick={() => void handleAddCourse()}>
-              加入课表
-            </KdyButton>
-          </View>
         </KdyCard>
-      )}
-
-      {/* 本周 */}
-      <KdyCard
-        title='本周'
-        extra={week !== null && week.terms.length > 1 ? <KdyTag tone='neutral'>{week.termLabel}</KdyTag> : undefined}
-      >
-        <View className='kdy-schedule__chips'>
-          {WEEKDAY_LABELS.map((label, index) => {
-            const weekday = index + 1
-            return (
-              <KdyChip key={label} active={activeDay === weekday} onClick={() => setSelectedDay(weekday)}>
-                {week?.today === weekday ? `今天` : label}
-              </KdyChip>
-            )
-          })}
-        </View>
-
-        {week !== null && week.terms.length > 1 && (
-          <>
-            <Text className='kdy-schedule__form-label'>学期</Text>
-            <View className='kdy-schedule__chips'>
-              {week.terms.map((term) => (
-                <KdyChip key={term} active={state.term === term} onClick={() => void schedule.switchTerm(term)}>
-                  {term}
-                </KdyChip>
-              ))}
-            </View>
-          </>
-        )}
-
-        {activeDayCourses.length === 0 ? (
-          <Text className='kdy-schedule__muted'>{WEEKDAY_LABELS[activeDay - 1]}没有课。</Text>
-        ) : (
-          <View className='kdy-schedule__courses'>
-            {activeDayCourses.map((course) => (
-              <CourseRow key={course.id} course={course} />
-            ))}
+      ) : (
+        <>
+          <View className='kdy-schedule__switch'>
+            <KdyChip active={view === 'today'} onClick={() => setView('today')}>
+              今天
+            </KdyChip>
+            <KdyChip active={view === 'week'} onClick={() => setView('week')}>
+              本周
+            </KdyChip>
+            {state.syncing && <KdyTag tone='warning'>同步中</KdyTag>}
           </View>
-        )}
 
-        {week !== null && week.conflicts.length > 0 && (
-          <View className='kdy-schedule__conflict'>
-            <Text className='kdy-schedule__conflict-title'>本周有 {week.conflicts.length} 处时间冲突</Text>
-            {week.conflicts.map((conflict) => (
-              <Text key={`${conflict.a.id}-${conflict.b.id}`} className='kdy-schedule__conflict-text'>
-                {conflictLabel(conflict)}
+          {view === 'today' ? (
+            <TodayPanel
+              today={today}
+              week={week}
+              needsBinding={state.needsBinding}
+              fromCache={state.fromCache}
+              syncing={state.syncing}
+              onSync={() => void handleSync()}
+              onBind={() => void navigateTo(PAGE_PATHS.identity)}
+              onRetry={() => void schedule.load()}
+              onOpenWeek={() => setView('week')}
+            />
+          ) : (
+            <WeekPanel
+              week={week}
+              selectedWeekday={activeDay}
+              focusCourseId={focusCourseId}
+              needsBinding={state.needsBinding}
+              onSelectDay={handleSelectDay}
+              onSelectCourse={handleSelectCourse}
+              onSwitchTerm={(term) => void schedule.switchTerm(term)}
+              onSync={() => void handleSync()}
+              onBind={() => void navigateTo(PAGE_PATHS.identity)}
+              onRetry={() => void schedule.load()}
+            />
+          )}
+
+          <KdyCard
+            title='课表工具'
+            extra={
+              <KdyTag tone={state.syncing ? 'warning' : state.error === null ? 'neutral' : 'danger'}>
+                {state.syncing ? '同步中' : state.error === null ? '数据维护' : '同步失败'}
+              </KdyTag>
+            }
+          >
+            <Text className='kdy-schedule__muted'>
+              课表来自教务系统同步；临时调课可以手动加一节。
+            </Text>
+
+            {state.fromCache && state.updatedAt !== null && (
+              <Text className='kdy-schedule__muted'>
+                当前显示 {formatUpdatedAt(state.updatedAt)} 的缓存数据，联网后会自动刷新。
               </Text>
-            ))}
-          </View>
-        )}
-      </KdyCard>
+            )}
+
+            {state.needsBinding && (
+              <Text className='kdy-schedule__muted'>
+                还没有绑定教务系统，同步前需要先去身份页绑定。
+              </Text>
+            )}
+
+            <View className='kdy-schedule__actions'>
+              <KdyButton size='sm' loading={state.syncing} onClick={() => void handleSync()}>
+                同步课表
+              </KdyButton>
+              <KdyButton
+                size='sm'
+                variant='ghost'
+                onClick={() => setShowAddForm((value) => !value)}
+              >
+                {showAddForm ? '收起手动添加' : '手动添加课程'}
+              </KdyButton>
+            </View>
+
+            {state.error !== null && <Text className='kdy-schedule__error'>{state.error}</Text>}
+          </KdyCard>
+
+          {showAddForm && (
+            <KdyCard title='手动添加课程'>
+              <KdyField
+                label='课程名'
+                value={draft.courseName}
+                maxLength={80}
+                placeholder='例如：数据结构与算法'
+                onChange={(value) => setDraft((prev) => ({ ...prev, courseName: value }))}
+              />
+              <KdyField
+                label='地点'
+                value={draft.location}
+                maxLength={60}
+                placeholder='例如：信息楼 305'
+                onChange={(value) => setDraft((prev) => ({ ...prev, location: value }))}
+              />
+              <KdyField
+                label='教师'
+                value={draft.teacher}
+                maxLength={40}
+                placeholder='可留空'
+                onChange={(value) => setDraft((prev) => ({ ...prev, teacher: value }))}
+              />
+
+              <Text className='kdy-schedule__form-label'>星期</Text>
+              <View className='kdy-schedule__chips'>
+                {WEEKDAY_LABELS.map((label, index) => (
+                  <KdyChip
+                    key={label}
+                    active={draft.weekday === index + 1}
+                    onClick={() => setDraft((prev) => ({ ...prev, weekday: index + 1 }))}
+                  >
+                    {label}
+                  </KdyChip>
+                ))}
+              </View>
+
+              <Text className='kdy-schedule__form-label'>开始节次</Text>
+              <View className='kdy-schedule__chips'>
+                {SLOT_OPTIONS.map((option) => (
+                  <KdyChip
+                    key={`start-${option.value}`}
+                    active={draft.startSlot === option.value}
+                    onClick={() => pickStart(option.value)}
+                  >
+                    {option.value}
+                  </KdyChip>
+                ))}
+              </View>
+
+              <Text className='kdy-schedule__form-label'>结束节次</Text>
+              <View className='kdy-schedule__chips'>
+                {SLOT_OPTIONS.filter((option) => option.value >= draft.startSlot).map((option) => (
+                  <KdyChip
+                    key={`end-${option.value}`}
+                    active={draft.endSlot === option.value}
+                    onClick={() => pickEnd(option.value)}
+                  >
+                    {option.value}
+                  </KdyChip>
+                ))}
+              </View>
+
+              <Text className='kdy-schedule__muted'>
+                已选：第 {draft.startSlot}–{draft.endSlot} 节（{draft.endSlot - draft.startSlot + 1}{' '}
+                节，最多 {MAX_SLOT} 节）
+              </Text>
+
+              {formError !== null && <Text className='kdy-schedule__error'>{formError}</Text>}
+
+              <View className='kdy-schedule__actions'>
+                <KdyButton size='sm' onClick={() => void handleAddCourse()}>
+                  加入课表
+                </KdyButton>
+              </View>
+            </KdyCard>
+          )}
+        </>
+      )}
 
       <KdyAgentFab module='schedule' page={PAGE_PATHS.schedule} />
     </View>
   )
 }
 
-/** 今日状态一句话 —— 把四种情况写成四种不同的话，而不是一句"暂无数据" */
-function todayStatusText(
-  hasOngoing: boolean,
-  hasNext: boolean,
-  finished: boolean,
-  countdown: string,
-  needsBinding: boolean,
-): string {
-  if (hasOngoing) return '正在上课'
-  if (hasNext) return countdown === '' ? '接下来还有课' : `下一节${countdown}`
-  if (finished) return '今天的课上完了 🎉'
-  if (needsBinding) return '还没有绑定教务系统'
-  return '今天没有排课'
+/** 缓存时间：显示到分钟就够，用户只需要判断"是不是很久以前" */
+function formatUpdatedAt(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  const pad = (input: number): string => String(input).padStart(2, '0')
+  return `${date.getMonth() + 1} 月 ${date.getDate()} 日 ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }

@@ -42,8 +42,18 @@ const DEFAULT_SCOPES: Record<CampusPlatform, string[]> = {
   CARD: ['card:read'],
 };
 
-/** 登录结果（与邮箱密码 / 微信路径同构，客户端只写一套解析） */
-export type LoginResult = Omit<AccountSession, 'isNewUser'>;
+/**
+ * 登录结果（与邮箱密码 / 微信路径同构，客户端只写一套解析）。
+ *
+ * `simulated` 在 CAS 登录里是**必填布尔值**（不是可选）：
+ * 审计 P0-3 发现 mock CAS 的响应没有这个字段，客户端无法区分「真实学号」
+ * 与「`mock-20230001` 采信出来的假身份」。现在：
+ *   · `MockCampusAuthProvider`（带 `simulated = true`）→ 响应 `simulated: true`；
+ *   · 将来接入的真实 CAS 实现不设该属性 → 响应 `simulated: false`。
+ */
+export type LoginResult = Omit<AccountSession, 'isNewUser' | 'simulated'> & {
+  simulated: boolean;
+};
 
 /** 令牌三元组 + 绝对过期时间（客户端可直接落本地） */
 export interface IssuedTokens {
@@ -130,6 +140,9 @@ export class AuthService {
       expiresAt: issued.expiresAt,
       campusBound: false,
       account,
+      // 身份来源自报了模拟（当前唯一的 MockCampusAuthProvider 恒为 true）。
+      // 真实 CAS 实现不设该属性 → false。客户端必须据此标注「演示身份」。
+      simulated: this.authPort.simulated === true,
     };
   }
 

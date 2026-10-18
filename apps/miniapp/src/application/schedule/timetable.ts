@@ -268,3 +268,20 @@ export function countdownHeadline(minutes: number | null): string {
 export function shortWeekday(label: string): string {
   return label.startsWith('周') ? label.slice(1) : label
 }
+
+/**
+ * 学期 id → 胶囊上的短标签（`2026-2027-1` → `26–27 第一学期`）。
+ *
+ * 只在**有多个学期可切换**时使用：直接显示 `2026-2027-1` 是数据库口径，
+ * 用户认不出这是哪个学期；而完整的 `2026-2027 学年 第一学期` 在胶囊里会折行。
+ * 解析失败时原样返回（未知的学期格式不该被猜成别的学期）。
+ */
+export function shortTermLabel(term: string): string {
+  const match = /^(\d{4})-(\d{4})-([12])$/.exec(term)
+  if (match === null) return term
+
+  const startYear = match[1] ?? ''
+  const endYear = match[2] ?? ''
+  const index = match[3]
+  return `${startYear.slice(2)}–${endYear.slice(2)} ${index === '1' ? '第一学期' : '第二学期'}`
+}

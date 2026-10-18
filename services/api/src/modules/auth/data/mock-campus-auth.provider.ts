@@ -27,21 +27,38 @@ import type { AuthPort, CampusIdentity } from '../domain/auth.domain';
  * 本 Mock 的语义：用 ticket 的 sha256 派生一个稳定的 externalId，
  * 使"同一 ticket → 同一账户"，便于本地把登录/绑定/二次同意整条链路跑通。
  */
+
 /**
- * ⚠️ 本 Mock **在生产环境默认关闭**（见 `assertAllowedInProduction`）。
+ * ⚠️ 本 Mock **默认关闭**，且是 fail-closed（见 `assertMockExplicitlyAllowed`）。
  *
  * 这不是洁癖：`authenticateTicket` 会**直接采信** `mock-<学号>` 形式的票据
  * （`externalId` 就等于学号），而 `POST /auth/login` 按设计是公开接口 ——
- * 若把它带进生产，任何人 `curl` 一个学号就能拿到该校学生的令牌。
- * 所以生产环境必须显式 `CAMPUS_CAS_MOCK_ALLOWED=true` 才会打开，
- * 且这条限制要写在部署记录里。
+ * 若把它带进任何真实环境，任何人 `curl` 一个学号就能拿到该校学生的令牌。
+ *
+ * 开启条件（**两条都必须满足**，缺一即拒绝）：
+ *   1. `NODE_ENV` **显式**等于 `development` 或 `test`。
+ *      —— 未设置 / 拼错 / `production` **一律拒绝**。
+ *      （审计 P0-3：旧实现只在 `NODE_ENV === 'production'` 时拒绝，
+ *       `NODE_ENV` 未设或拼错就放行 = 一条完整的身份伪造路径。）
+ *   2. `CAMPUS_CAS_MOCK_ALLOWED` 是显式真值（`true` / `1` / `yes` / `on`）。
+ *
+ * `NODE_ENV=production` 下**即使**设置 `CAMPUS_CAS_MOCK_ALLOWED=true` 仍拒绝 ——
+ * 生产必须接入真实 CAS，不能靠一个环境变量把后门打开。
  */
 @Injectable()
 export class MockCampusAuthProvider implements AuthPort {
+  /**
+   * 本实现产出的身份**永远是模拟身份**（不是真实 CAS 返回的学号/姓名）。
+   *
+   * `AuthService.login()` 会把它带进 CAS 登录响应（`simulated: true`），
+   * 客户端据此显著标注「演示身份」，不把它当成真实校园身份。
+   */
+  readonly simulated = true;
+
   constructor(@Inject(ConfigService) private readonly config: ConfigService) {}
 
   async authenticateTicket(ticket: string): Promise<CampusIdentity> {
-    this.assertAllowedInProduction();
+    this.assertMockExplicitlyAllowed();
 
     const normalized = ticket.trim();
     if (normalized.length === 0) {
@@ -71,7 +88,12 @@ export class MockCampusAuthProvider implements AuthPort {
   }
 
   /**
-   * 生产环境的兜底闸门。
+   * Mock 身份闸门 —— **fail-closed**。
+   *
+   * 判定顺序（每一步都只会更严格）：
+   *   1. `NODE_ENV=production` → 无条件拒绝（`CAMPUS_CAS_MOCK_ALLOWED` 也不放行）；
+   *   2. `NODE_ENV` 未设置 / 拼错 → 拒绝（不能把"忘记设 NODE_ENV"当成开发环境）；
+   *   3. 只有 `development` / `test` **且** `CAMPUS_CAS_MOCK_ALLOWED` 为真 → 放行。
    *
    * 为什么是 401 而**不是**拒绝启动（对比 `resolveMailTransport` 的取舍）：
    * 邮件没配时整条注册链路都是假的，起不来才是对的；
@@ -79,14 +101,41 @@ export class MockCampusAuthProvider implements AuthPort {
    * 所以正确的行为是「这个入口暂时不可用」，而不是整站不上线。
    * 用户看到的是明确的一句话，不是一个能冒充别人的后门。
    */
-  private assertAllowedInProduction(): void {
-    if (this.config.get<string>('NODE_ENV') !== 'production') return;
-    if (isTruthy(this.config.get<string>('CAMPUS_CAS_MOCK_ALLOWED'))) return;
-    throw new UnauthenticatedError(
-      '校园统一身份认证仍在向校方申请对接中，暂不可用。请改用邮箱密码或微信登录；' +
-        '若这只是一次演示部署，请显式设置 CAMPUS_CAS_MOCK_ALLOWED=true' +
-        '（它会信任 mock-<学号> 形式的票据，等于暂时放弃这一级的身份校验）。',
-    );
+  private assertMockExplicitlyAllowed(): void {
+    const nodeEnv = (this.config.get<string>('NODE_ENV') ?? '').trim().toLowerCase();
+
+    // 1) 生产环境无条件拒绝 —— 不给「设了开关就放行」留口子。
+    if (nodeEnv === 'production') {
+      throw new UnauthenticatedError(
+        '校园统一身份认证仍在向校方申请对接中，暂不可用。' +
+          'Mock 身份在 NODE_ENV=production 下**无条件禁用**' +
+          '（即使设置了 CAMPUS_CAS_MOCK_ALLOWED=true 也不会生效）——' +
+          '它会信任 mock-<学号> 形式的票据，等于把任意学号的账号交给调用方。' +
+          '请改用邮箱密码或微信登录；生产接入真实 CAS 后再开放这个入口。',
+      );
+    }
+
+    // 2) 未设置 / 拼错一律拒绝。旧实现在这里 return（fail-open），是 P0-3 的根因。
+    if (nodeEnv !== 'development' && nodeEnv !== 'test') {
+      throw new UnauthenticatedError(
+        'Mock 校园统一身份认证被拒绝：NODE_ENV 未设置或不是 development/test' +
+          `（当前值：${nodeEnv === '' ? '未设置' : nodeEnv}）。` +
+          '这项 fail-closed 校验是刻意的 —— NODE_ENV 拼错时绝不能退回「信任 mock 票据」。' +
+          '本地开发/演示请**同时**设置 NODE_ENV=development 与 CAMPUS_CAS_MOCK_ALLOWED=true；' +
+          '生产请接入真实 CAS，或改用邮箱密码 / 微信登录。',
+      );
+    }
+
+    // 3) 非生产也要显式开启（默认关闭）。
+    if (!isTruthy(this.config.get<string>('CAMPUS_CAS_MOCK_ALLOWED'))) {
+      throw new UnauthenticatedError(
+        'Mock 校园统一身份认证未开启：本环境的 CAS 登录要求显式设置 ' +
+          'CAMPUS_CAS_MOCK_ALLOWED=true。' +
+          '该开关会信任 mock-<学号> 形式的票据（等于暂时放弃这一级的身份校验），' +
+          '只能用于本地开发/演示；生产环境即使设置也不会生效。' +
+          '若不打算使用 mock，请改用邮箱密码或微信登录。',
+      );
+    }
   }
 }
 
