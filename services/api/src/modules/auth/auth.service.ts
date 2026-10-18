@@ -36,10 +36,12 @@ import { sha256Hex } from './domain/verification-code';
 
 /** 各校园系统默认申请的权限域（真实对接时以官方文档为准） */
 const DEFAULT_SCOPES: Record<CampusPlatform, string[]> = {
-  EGATE: ['identity:read'],
-  JWC: ['schedule:read'],
-  CPDAILY: ['notice:read'],
-  CARD: ['card:read'],
+  cas: ['identity:read'],
+  egate: ['identity:read'],
+  jwc: ['schedule:read'],
+  cpdaily: ['notice:read'],
+  ecard: ['card:read'],
+  techpie: ['directory:read'],
 };
 
 /**

@@ -355,6 +355,19 @@ export interface CampusSessionPort {
   renew(userId: string, platform: CampusPlatform): Promise<CampusBindingState>;
 
   /**
+   * ⚠️ **服务端内部方法**：取可用于代用户请求上游的会话。
+   *
+   * 返回值**绝不能**序列化进任何 API 响应 —— 它是凭证。
+   * 只允许 `modules/<模块>/data/` 下的数据适配器调用（由 `p0-1-session-port.spec.ts` 约束）。
+   *
+   * 未绑定 / 已过期返回 `null`（调用方据此抛 `CAMPUS_BINDING_REQUIRED`，**不是** 401）。
+   */
+  acquireSession(
+    userId: string,
+    platform: CampusPlatform,
+  ): Promise<{ platform: CampusPlatform; sessionRef: string; expiresAt: Date | null } | null>;
+
+  /**
    * 契约 §11.4 **I3** —— 校园 cookie 的唯一受限出口，**仅供 WebView 注入使用**。
    *
    * 返回**完整 header 串**而不是 cookie 对象是刻意的：调用方在**类型上**

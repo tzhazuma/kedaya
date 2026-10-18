@@ -186,35 +186,43 @@ describe('架构不变式 I1–I3（契约 §11.4）', () => {
       expect(offenders).toEqual([]);
     });
 
-    it('[已知偏离] 合并同学分支后 I2/I3 在 auth 模块内被回退 —— 记录而非掩盖', () => {
-      // ⚠️ 这是一个**已知的架构回归**，由合并 feat/wechat-auth-account-self-service 引入。
-      //
-      // 我们的不变式要求（契约 §11.4）：
-      //   I2：`modules/auth/data/**` 不得 import `campus-session.port`
-      //   I3：`cookieHeaderFor(` 的调用点全在 `webview-session/` 内（cookie 只能一个出口）
-      //
-      // 同学的 auth 自带一套 `CampusSessionPort` + `acquireSession`，
-      // 且 `prisma-campus-session.adapter.ts` 就放在 `auth/data/` 下 —— 两条都不满足。
-      //
-      // 本测试**断言这个偏离确实存在**，理由：
-      //   1. 假装它不存在，比记录它更危险 —— 后来者会以为不变量还成立；
-      //   2. 它给出了明确的修复目标（把两套 CampusSessionPort 合并成 techpie 那一套）。
-      //
-      // 修复后本测试应当失败 —— 那时请把它改成断言**没有**这两个文件/调用。
+    it('I2/P0-1 已修复：全仓只剩**一个** CampusSessionPort 与**一个** Symbol', () => {
+      // 这条测试原本是「[已知偏离] 断言回归确实存在」。
+      // 它的注释里写着："修复后本测试应当失败 —— 那时请把它改成断言**没有**这两个文件/调用。"
+      // P0-1 修完后，就是现在。下面断言修复后的状态。
+
+      // 1) auth/data 不再持有校园会话适配器（凭证的唯一落点在 techpie/data）
+      const authData = readdirSync(join(API_DIR, 'src/modules/auth/data'));
+      expect(authData, 'auth/data 不应再有校园会话适配器').not.toContain(
+        'prisma-campus-session.adapter.ts',
+      );
+
+      // 2) ⚠️ 最关键的一条：`Symbol(...)` 每次调用都产生新值。
+      // 两个文件各写一行 `Symbol('KEDAYA_CAMPUS_SESSION_PORT')`，
+      // 就得到两个 description 相同、却互不相认的 Symbol ——
+      // Nest DI 会解析到不同实现，一边写 CampusBinding、一边读 CampusSession，
+      // 接口恒报"未绑定"（这就是审计 P0-1 的技术根因）。
+      // 所以全仓必须**只有一处** `Symbol('KEDAYA_CAMPUS_SESSION_PORT')`。
+      const portFile = readFileSync(
+        join(API_DIR, 'src/modules/techpie/domain/ports/campus-session.port.ts'),
+        'utf8',
+      );
+      expect(portFile).toContain("Symbol('KEDAYA_CAMPUS_SESSION_PORT')");
+
       const authDomainSource = readFileSync(
         join(API_DIR, 'src/modules/auth/domain/auth.domain.ts'),
         'utf8',
       );
-      const authData = readdirSync(join(API_DIR, 'src/modules/auth/data'));
-      expect(authData, '已知偏离：auth/data 仍持有校园会话适配器').toContain(
-        'prisma-campus-session.adapter.ts',
-      );
-      const authService = readFileSync(join(API_DIR, 'src/modules/auth/auth.service.ts'), 'utf8');
-      expect(authService, '已知偏离：auth 仍有 acquireSession 这个取会话明文的出口').toContain(
-        'acquireSession',
-      );
-      // 修复目标：全仓只应剩 techpie 那一套 CampusSessionPort
-      expect(authDomainSource).toContain('CampusSessionPort'); // ← 待删除
+      // ⚠️ 查的是**声明**而不是"任何提及" —— 注释里解释这件事时必然会写到这个名字，
+      // 用 toContain 会把解释性注释也判成违规。所以匹配 `export const ... = Symbol(...)` 这个形状。
+      expect(
+        authDomainSource,
+        'auth.domain 不得再自建同名 Symbol，必须 re-export techpie 那一个',
+      ).not.toMatch(/export\s+const\s+CAMPUS_SESSION_PORT\s*=\s*Symbol\(/);
+      expect(authDomainSource).toContain('export { CAMPUS_SESSION_PORT }');
+
+      // 3) 平台枚举也只有一份（大写那套曾让 acquireSession 永远查不到小写的行）
+      expect(authDomainSource).not.toMatch(/CampusPlatform\s*=\s*'EGATE'/);
     });
 
     it('能力层的实现确实在 techpie/data 下（"搬走"不等于"删掉"）', () => {

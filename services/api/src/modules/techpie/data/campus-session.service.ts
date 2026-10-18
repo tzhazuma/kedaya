@@ -282,6 +282,46 @@ export class CampusSessionService implements CampusSessionPort {
     return secret.cookieHeader;
   };
 
+  /**
+   * 取一个**可用于服务端取数**的校园会话。
+   *
+   * ## ⚠️ 这是**服务端内部**方法，返回值**绝不能**出现在任何 API 响应里
+   *
+   * 它存在的唯一理由：`schedule` / `campus-identity` 需要拿会话来**代用户请求上游**
+   * （比如同步课表）。没有它，这些模块只能各自再写一套「读 CampusSession 表 + 解密」，
+   * 那正是 P0-1 里"两套 CampusSessionPort"的成因。
+   *
+   * 边界（与 `cookieHeaderFor` 一致）：
+   * - 只读 `CampusSession` 表（凭证的唯一落点）
+   * - 未绑定 / 已过期 → 返回 `null`，让调用方抛 `CAMPUS_BINDING_REQUIRED`
+   * - 更新 `lastRenewedAt` 但不泄露内容
+   *
+   * 与 `cookieHeaderFor` 的区别：后者只给 webview 注入 cookie（I3 限制），
+   * 本方法给**数据适配器**用，返回结构化 session 而不是 cookie 串。
+   */
+  async acquireSession(
+    userId: string,
+    platform: CampusPlatform,
+  ): Promise<{ platform: CampusPlatform; sessionRef: string; expiresAt: Date | null } | null> {
+    const row = await this.prisma.campusSession.findUnique({
+      where: { userId_platform: { userId, platform } },
+    });
+
+    if (!row || row.status !== 'ACTIVE') return null;
+    if (row.expiresAt !== null && row.expiresAt.getTime() <= Date.now()) return null;
+
+    await this.prisma.campusSession.update({
+      where: { id: row.id },
+      data: { lastRenewedAt: new Date() },
+    });
+
+    return {
+      platform,
+      sessionRef: decryptSecret(row.sessionCipher, this.encryptionKey()),
+      expiresAt: row.expiresAt,
+    };
+  }
+
   /* ---------------- 内部 ---------------- */
 
   private encryptionKey(): string {

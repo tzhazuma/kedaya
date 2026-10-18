@@ -60,9 +60,15 @@ export const AUTH_PORT = Symbol('KEDAYA_AUTH_PORT');
  *   "任何校园系统能力必须通过 CampusSessionPort 获取，不得从 AuthPort 读取。"
  * ================================================================== */
 
-export type CampusPlatform = 'EGATE' | 'CPDAILY' | 'JWC' | 'CARD';
+// ⚠️ P0-1：平台枚举的**唯一真相**是 techpie 端口里的那份（小写 6 值）。
+// 这里改成 re-export，避免再出现"两套枚举"——大写那套曾导致
+// `acquireSession(userId, 'JWC')` 去查一个存着 'jwc' 的表，**永远查不到**。
+export type { CampusPlatform } from '../../techpie/domain/ports/campus-session.port';
+import type { CampusPlatform } from '../../techpie/domain/ports/campus-session.port';
 
-export const CAMPUS_PLATFORMS: readonly CampusPlatform[] = ['EGATE', 'CPDAILY', 'JWC', 'CARD'];
+export const CAMPUS_PLATFORMS: readonly CampusPlatform[] = [
+  'cas', 'egate', 'cpdaily', 'jwc', 'ecard', 'techpie',
+];
 
 /** 面向调用方的绑定视图 —— **刻意不包含** session 明文或密文 */
 export interface CampusBindingRecord {
@@ -104,7 +110,16 @@ export interface CampusSessionPort {
   unbind(userId: string, platform: CampusPlatform): Promise<void>;
 }
 
-export const CAMPUS_SESSION_PORT = Symbol('KEDAYA_CAMPUS_SESSION_PORT');
+// ⚠️ P0-1 的**核心修复**：这里**不再** `Symbol('KEDAYA_CAMPUS_SESSION_PORT')`。
+//
+// `Symbol()` 每次调用都产生新值 —— 两个文件各写一行，就得到**两个不同的 Symbol**，
+// 只是 `description` 相同、打印出来长得一样。于是 Nest 的 DI 容器里
+// "auth 的 CAMPUS_SESSION_PORT" 与 "techpie 的 CAMPUS_SESSION_PORT" 互不相认，
+// 结果是：一边写 `CampusBinding` 表、另一边读 `CampusSession` 表，
+// 接口恒报"未绑定"（审计 P0-1）。
+//
+// 现在**全仓只剩一个 Symbol**，就是 techpie 端口里定义的那个。
+export { CAMPUS_SESSION_PORT } from '../../techpie/domain/ports/campus-session.port';
 
 /* ================================================================== *
  * KedaYa 自有账户

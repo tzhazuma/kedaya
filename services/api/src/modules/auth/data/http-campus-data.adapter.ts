@@ -29,7 +29,7 @@ export class HttpCampusDataAdapter implements CampusDataPort {
   constructor(@Inject(ConfigService) private readonly config: ConfigService) {}
 
   async fetchIdentity(session: CampusSession): Promise<CampusIdentityDatum> {
-    const body = await this.getJson(session, 'EGATE', '/identity');
+    const body = await this.getJson(session, 'egate', '/identity');
     return {
       studentId: readString(body, 'studentId'),
       realName: readString(body, 'realName'),
@@ -40,7 +40,7 @@ export class HttpCampusDataAdapter implements CampusDataPort {
   }
 
   async fetchSchedule(session: CampusSession, term: string): Promise<CampusCourseDatum[]> {
-    const body = await this.getJson(session, 'JWC', `/schedule?term=${encodeURIComponent(term)}`);
+    const body = await this.getJson(session, 'jwc', `/schedule?term=${encodeURIComponent(term)}`);
     const rows = Array.isArray(body) ? body : readArray(body, 'courses');
     return rows.map((row) => ({
       courseName: readString(row, 'courseName'),
@@ -54,7 +54,7 @@ export class HttpCampusDataAdapter implements CampusDataPort {
   }
 
   async fetchCard(session: CampusSession): Promise<CampusCardSnapshot> {
-    const body = await this.getJson(session, 'CARD', '/snapshot');
+    const body = await this.getJson(session, 'ecard', '/snapshot');
     const rows = readArray(body, 'transactions');
     return {
       balanceFen: readNumber(body, 'balanceFen'),

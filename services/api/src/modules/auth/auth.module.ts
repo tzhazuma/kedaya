@@ -16,7 +16,6 @@ import { HttpCampusDataAdapter } from './data/http-campus-data.adapter';
 import { LocalAccountPrismaRepository } from './data/local-account.prisma-repository';
 import { MockCampusAuthProvider } from './data/mock-campus-auth.provider';
 import { MockCampusDataAdapter } from './data/mock-campus-data.adapter';
-import { PrismaCampusSessionAdapter } from './data/prisma-campus-session.adapter';
 import { RefreshSessionPrismaRepository } from './data/refresh-session.prisma-repository';
 import { UserPrismaRepository } from './data/user.prisma-repository';
 import { VerificationCodePrismaRepository } from './data/verification-code.prisma-repository';
@@ -77,7 +76,6 @@ import { WECHAT_SESSION_PORT } from './domain/wechat.domain';
     HttpCampusDataAdapter,
     { provide: AUTH_PORT, useClass: MockCampusAuthProvider },
     { provide: WECHAT_SESSION_PORT, useClass: WeChatMiniProgramAdapter },
-    { provide: CAMPUS_SESSION_PORT, useClass: PrismaCampusSessionAdapter },
     {
       // 第二级「取数」实现：默认模拟（确定性数据，响应里标注 simulated），
       // 拿到官方授权后把 CAMPUS_DATA_MODE 切成 live 即可，端口契约不变。
@@ -117,7 +115,11 @@ import { WECHAT_SESSION_PORT } from './domain/wechat.domain';
     CampusIdentityService,
     AUTH_PORT,
     WECHAT_SESSION_PORT,
-    CAMPUS_SESSION_PORT,
+    // ⚠️ P0-1：**不再**从这里导出 `CAMPUS_SESSION_PORT`。
+    // 凭证的唯一落点是 techpie 的 `CampusSessionService`（本模块已 import TechpieModule）。
+    // 之前 auth 自己提供一份 `PrismaCampusSessionAdapter` 并导出同名 symbol，
+    // 导致"两个 Symbol 同名不同值 + 两套表 + 读写互不相认"。
+    // 需要它的模块请直接 import `TechpieModule`（`schedule.module` 已经这么做）。
     // 课表 / 校园卡模块依赖它去上游取数；导出后它们不必知道实现是谁。
     CAMPUS_DATA_PORT,
     // 系统时钟：跨模块共享同一份"现在"，便于测试注入固定时钟（课表/倒计时依赖它）。

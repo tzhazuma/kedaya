@@ -67,6 +67,12 @@
   flex: 1;
   width: 0;
   min-width: 0;
+  /* H5 的 Taro scroll-view 依赖运行时追加的 `taro-scroll-view__scroll-x` 类；
+     React 重渲染会把宿主 className 覆盖掉，类没了就不再可滚。这里显式兜住，
+     小程序端是原生组件，overflow 不参与滚动判定，无副作用。 */
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* 7 × 88px：按 375px 基准换算成 rpx，宽屏上等比放大 */

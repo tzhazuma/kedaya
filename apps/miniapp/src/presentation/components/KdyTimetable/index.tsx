@@ -35,6 +35,14 @@ import './index.scss'
 
 const SLOTS: readonly number[] = Array.from({ length: MAX_SLOT }, (_, index) => index + 1)
 
+/**
+ * 构建期常量（Taro 在编译时静态注入，小程序产物里这一行折叠成 `false`）。
+ *
+ * 不引 `platform/env` 的 `isH5()`：那条路径依赖 `typeof process`，
+ * H5 运行时没有 process polyfill，会退化成 unknown（实测）。
+ */
+const IS_H5_BUILD = process.env.TARO_ENV === 'h5'
+
 /** 把节次夹进 1..MAX_SLOT：脏数据不该把方块画到格子外面 */
 function clampSlot(slot: number): number {
   return Math.max(1, Math.min(MAX_SLOT, Math.round(slot)))
@@ -62,14 +70,48 @@ export function KdyTimetable({
   const classes = ['kdy-timetable', className ?? ''].filter((item) => item !== '').join(' ')
 
   /**
-   * 挂载后再设 `scrollIntoView`，而不是首帧就传：
-   * H5 的 web-component 版 scroll-view 只在**属性变化**时执行滚动，
-   * 首帧传入的值会被忽略（表现是"打开永远停在周一"）。
-   * 先给空串、effect 里再赋值，小程序与 H5 都能滚到"今天"。
+   * 打开时滚到"今天"。
+   *
+   * 两个坑：
+   *   1. H5 的 web-component 版 scroll-view 只在**属性变化**时执行滚动，
+   *      首帧传入的值会被忽略（表现是"打开永远停在周一"）；
+   *   2. 页面转场期间容器还没有稳定尺寸，早于布局完成的 scrollIntoView
+   *      会被浏览器当成"目标已可见"而跳过。
+   *
+   * 因此：挂载后延后 ~150ms 再滚；H5 直接调 DOM 的 `scrollIntoView`
+   *（Taro H5 的属性监听实测不可靠），小程序仍走 `scroll-into-view`。
+   * 两端都带平滑滚动，用户看到的是"滑到今天"，不是跳变。
+   *
+   * 用 `IS_H5_BUILD`（构建期常量）而不是运行时探测：小程序运行时也有
+   * 一层 `document` 垫片，`typeof document` 在两端都成立，不能拿来区分平台。
    */
   const [scrollTarget, setScrollTarget] = useState('')
   useEffect(() => {
-    setScrollTarget(`kdy-timetable-day-${selectedWeekday}`)
+    const target = `kdy-timetable-day-${selectedWeekday}`
+
+    if (IS_H5_BUILD && typeof document !== 'undefined') {
+      const scrollToTarget = (behavior: ScrollBehavior): void => {
+        document.querySelector(`#${target}`)?.scrollIntoView({
+          behavior,
+          block: 'nearest',
+          inline: 'start',
+        })
+      }
+      // 第一次平滑滚动可能在数据到位后的重渲染中被取消；700ms 后若还停在起点再补一次
+      const first = setTimeout(() => scrollToTarget('smooth'), 150)
+      const retry = setTimeout(() => {
+        const container = document.querySelector('.kdy-timetable__scroll')
+        if (container !== null && container.scrollLeft !== 0) return
+        scrollToTarget('auto')
+      }, 700)
+      return () => {
+        clearTimeout(first)
+        clearTimeout(retry)
+      }
+    }
+
+    const timer = setTimeout(() => setScrollTarget(target), 150)
+    return () => clearTimeout(timer)
   }, [selectedWeekday])
 
   return (

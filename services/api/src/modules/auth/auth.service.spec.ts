@@ -65,7 +65,7 @@ function makeBindings(): CampusBindingRecord[] {
   return [
     {
       id: 'bind-1',
-      platform: 'CARD',
+      platform: 'ecard',
       status: 'active',
       scopes: ['balance:read'],
       createdAt: new Date('2026-11-01T00:00:00.000Z'),
@@ -77,7 +77,7 @@ function makeBindings(): CampusBindingRecord[] {
 
 function makeCampusSession(options: {
   bindings?: CampusBindingRecord[];
-  session?: { platform: 'CARD'; sessionRef: string; expiresAt: Date } | null;
+  session?: { platform: 'ecard'; sessionRef: string; expiresAt: Date } | null;
 } = {}): CampusSessionPort {
   const bindings = options.bindings ?? [];
   const session = options.session ?? null;
@@ -246,11 +246,11 @@ describe('契约 §5 · 两级身份模型解耦', () => {
       const { service } = build(
         authPort,
         makeCampusSession({
-          session: { platform: 'CARD', sessionRef: 'SECRET-SESSION', expiresAt: new Date() },
+          session: { platform: 'ecard', sessionRef: 'SECRET-SESSION', expiresAt: new Date() },
         }),
       );
 
-      const capability = await service.campusCapability(USER.id, 'CARD');
+      const capability = await service.campusCapability(USER.id, 'ecard');
 
       expect(capability).toEqual({ available: true });
       expect(JSON.stringify(capability)).not.toContain('SECRET-SESSION');
@@ -260,10 +260,10 @@ describe('契约 §5 · 两级身份模型解耦', () => {
       const authPort: AuthPort = { authenticateTicket: vi.fn().mockResolvedValue(IDENTITY) };
       const { service } = build(authPort, makeCampusSession({ session: null }));
 
-      await expect(service.requireCampusSession(USER.id, 'CARD')).rejects.toThrow(
+      await expect(service.requireCampusSession(USER.id, 'ecard')).rejects.toThrow(
         CampusBindingRequiredError,
       );
-      await expect(service.requireCampusSession(USER.id, 'CARD')).rejects.toMatchObject({
+      await expect(service.requireCampusSession(USER.id, 'ecard')).rejects.toMatchObject({
         code: 'CAMPUS_BINDING_REQUIRED',
       });
     });

@@ -91,11 +91,11 @@ export class CampusIdentityService {
    * 而不是返回一个空对象让前端显示"姓名：--"。
    */
   async view(userId: string, reveal: boolean): Promise<CampusIdentityView> {
-    const session = await this.campusSession.acquireSession(userId, 'EGATE');
+    const session = await this.campusSession.acquireSession(userId, 'egate');
     if (!session) {
       throw new CampusBindingRequiredError(
         '请先完成统一身份认证（EGATE）绑定，才能查看实名信息',
-        { platform: 'EGATE' },
+        { platform: 'egate' },
       );
     }
 
@@ -116,12 +116,12 @@ export class CampusIdentityService {
         action: 'auth.campus-identity.reveal',
         resource: 'CampusIdentity',
         module: 'auth',
-        metadata: { platform: 'EGATE', dataMode: this.dataMode },
+        metadata: { platform: 'egate', dataMode: this.dataMode },
       });
     }
 
     return {
-      platform: 'EGATE',
+      platform: 'egate',
       masked: !reveal,
       identity: reveal ? datum : maskCampusIdentity(datum),
       simulated: this.dataMode === 'mock',

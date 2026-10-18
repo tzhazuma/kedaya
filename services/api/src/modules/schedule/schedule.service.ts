@@ -230,11 +230,11 @@ export class ScheduleCourseService extends CrudService<
    */
   async syncFromCampus(userId: string, termOverride?: string): Promise<ScheduleSyncResult> {
     const term = termOverride ?? termOf(this.clock());
-    const session = await this.campusSession.acquireSession(userId, 'JWC');
+    const session = await this.campusSession.acquireSession(userId, 'jwc');
     if (!session) {
       throw new CampusBindingRequiredError(
         '请先绑定教务系统（JWC）才能同步课表',
-        { platform: 'JWC' },
+        { platform: 'jwc' },
       );
     }
 
