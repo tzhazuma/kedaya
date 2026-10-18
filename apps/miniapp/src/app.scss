@@ -19,6 +19,18 @@
 
 @import './presentation/theme/appearance.scss';
 
+/*
+ * KdyDock 的样式**必须在全局 app.wxss 里**。
+ *
+ * 原因：`custom-tab-bar/` 是微信的特殊组件，Taro 对它**只产出 js/json/wxml，
+ * 不产出 wxss**（实测）。而 KdyDock 的图标是 `<Image src="sketch-*.svg">`，
+ * 样式缺失后它们按 SVG 固有尺寸渲染 —— 用户看到的是几个巨大黑色轮廓
+ * （＋ / 爪印 / 人像）糊整页，而不是底部那条手绘胶囊导航。
+ *
+ * 放到全局后，无论 KdyDock 出现在 tabBar 还是普通页面，尺寸都成立。
+ */
+@import './presentation/components/KdyDock/index.scss';
+
 // 图标字体的本地内联在 `presentation/theme/taroify-icon-style.ts`（由 config 的 alias 接管），
 // 不能放在这里：app.scss 会编译进 `app-origin.wxss`，而它被 `app.wxss` 在 `common.wxss` **之前**引入，
 // 覆盖不了 common.wxss 里 Taroify 的外链 @font-face。
