@@ -2,7 +2,7 @@ import { DEFAULT_PAGE_SIZE, modulePath } from '@kedaya/contracts'
 import type { Page } from '@kedaya/contracts'
 import { err, ok, type Result } from '@kedaya/shared'
 
-import type { CreateFacilityBookingInput, FacilityBooking } from '../../domain/models/facility'
+import type { FacilityBooking } from '../../domain/models/facility'
 import type { RepositoryError } from '../../domain/ports/errors'
 import type { FacilityRepository } from '../../domain/ports/facilityRepository'
 import type { ApiClient } from '../api/request'
