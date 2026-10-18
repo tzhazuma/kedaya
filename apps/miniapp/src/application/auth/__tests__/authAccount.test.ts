@@ -60,6 +60,8 @@ interface FakeCalls {
   changePassword: ChangePasswordInput[]
   requestRegisterCode: string[]
   requestResetCode: string[]
+  requestLoginCode: string[]
+  loginWithCode: { email: string; code: string }[]
   logout: (string | null)[]
   loginWithWechat: WechatLoginInput[]
   bindWechat: string[]
@@ -80,6 +82,8 @@ function createFakeRepository(overrides: Partial<AuthRepository> = {}): {
     changePassword: [],
     requestRegisterCode: [],
     requestResetCode: [],
+    requestLoginCode: [],
+    loginWithCode: [],
     logout: [],
     loginWithWechat: [],
     bindWechat: [],
@@ -93,6 +97,15 @@ function createFakeRepository(overrides: Partial<AuthRepository> = {}): {
     async requestRegisterCode(email) {
       calls.requestRegisterCode.push(email)
       return ok({ sent: true, email, purpose: 'register', expiresInSeconds: 600 })
+    },
+    async requestLoginCode(email) {
+      calls.requestLoginCode.push(email)
+      // 与后端一致：**不区分邮箱是否已注册**，形状完全相同（防枚举）
+      return ok({ sent: true, email, purpose: 'login', expiresInSeconds: 600 })
+    },
+    async loginWithCode(input) {
+      calls.loginWithCode.push(input)
+      return ok(sessionDto())
     },
     async register(input) {
       calls.register.push(input)

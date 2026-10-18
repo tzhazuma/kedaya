@@ -16,6 +16,7 @@ import type {
   AuthRepository,
   BindEmailInput,
   ChangePasswordInput,
+  LoginCodeInput,
   LogoutResultDto,
   PasswordStatusDto,
   UpdateProfileInput,
@@ -42,7 +43,7 @@ export interface MockAuthOptions {
   now?: () => Date
 }
 
-type MockPurpose = 'register' | 'reset-password' | 'bind-email'
+type MockPurpose = 'register' | 'reset-password' | 'bind-email' | 'login'
 
 interface MockAccount {
   id: string
@@ -271,6 +272,44 @@ export function createMockAuthRepository(options: MockAuthOptions = {}): AuthRep
         return delay(err(wrong))
       }
       return delay(ok(issueTokens(account)))
+    },
+
+    /**
+     * 发送**登录用**验证码（免密登录）。
+     *
+     * 与后端一致：未注册的邮箱同样返回 `sent: true`（防账号枚举）。
+     * 首次验证码登录会建号，因此这里先建一个**免密占位账号**
+     * （`password === ''`，与 `requestRegisterCode` 的占位思路相同），
+     * 验证码消费成功后才签发会话。
+     */
+    async requestLoginCode(email) {
+      const target = normalizeEmail(email)
+      const code = '135790'
+      const existing = byEmail(target)
+      const account =
+        existing ??
+        createAccount({
+          id: `mock-user-${target}`,
+          email: target,
+          displayName: target.split('@')[0] ?? '新同学',
+          password: '',
+        })
+      account.codes.login = { code, expiresAt: now().getTime() + CODE_TTL_MS }
+      return delay(ok(receipts(target, 'login', code)))
+    },
+
+    async loginWithCode(input: LoginCodeInput) {
+      const target = normalizeEmail(input.email)
+      const account = byEmail(target)
+      if (!account || !account.codes.login) {
+        return delay(err<RepositoryError>({ code: 'VALIDATION_FAILED', message: '请先获取验证码' }))
+      }
+      const checked = validateCode(account, 'login', input.code)
+      if (!checked.ok) return delay(checked)
+
+      // 免密账号（从未设置密码）第一次用验证码登录 = 首次建号
+      const isNewUser = account.password === '' && account.sessions.size === 0
+      return delay(ok(issueTokens(account, { isNewUser })))
     },
 
     async requestResetCode(email) {

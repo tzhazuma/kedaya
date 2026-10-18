@@ -6,6 +6,7 @@ import type {
   AuthRepository,
   BindEmailInput,
   ChangePasswordInput,
+  LoginCodeInput,
   LoginInput,
   LogoutResultDto,
   PasswordStatusDto,
@@ -88,6 +89,18 @@ export function createHttpAuthRepository(api: ApiClient): AuthRepository {
 
     login(input: LoginInput) {
       return postSession(`${AUTH_BASE}/login`, input)
+    },
+
+    async requestLoginCode(email) {
+      return api.post<CodeReceiptDto, { email: string }>(
+        `${AUTH_BASE}/login/code`,
+        { email },
+        { anonymous: true },
+      )
+    },
+
+    loginWithCode(input: LoginCodeInput) {
+      return postSession(`${AUTH_BASE}/login/code/verify`, input)
     },
 
     async requestResetCode(email) {

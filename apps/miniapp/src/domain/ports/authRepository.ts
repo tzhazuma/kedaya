@@ -77,11 +77,23 @@ export interface BindEmailInput {
 }
 
 /**
+ * 免密登录的输入：邮箱 + 一次性验证码。
+ *
+ * 对应后端 `POST /auth/account/login/code/verify`（`loginCodeSchema`：
+ * `email` + 6 位数字 `code`）。**不传密码** —— 首次登录会自动建号（免密账号）。
+ */
+export interface LoginCodeInput {
+  email: string
+  code: string
+}
+
+/**
  * 账号端口 —— application 只依赖本接口，实现见 data/repositories。
  *
  * 后端端点（`services/api/src/modules/auth/`）：
  *   POST   /auth/account/register/code      POST /auth/account/register
  *   POST   /auth/account/login              POST /auth/account/password/forgot
+ *   POST   /auth/account/login/code         POST /auth/account/login/code/verify （免密登录）
  *   POST   /auth/account/password/reset     POST /auth/account/password/change （需登录）
  *   POST   /auth/account/logout             GET  /auth/account/password/status （需登录）
  *   POST   /auth/account/bind-email/code    POST /auth/account/bind-email      （需登录）
@@ -119,6 +131,15 @@ export interface AuthRepository {
   register(input: RegisterInput): Promise<Result<AuthSessionDto, RepositoryError>>
   login(input: LoginInput): Promise<Result<AuthSessionDto, RepositoryError>>
   requestResetCode(email: string): Promise<Result<CodeReceiptDto, RepositoryError>>
+  /**
+   * 发送**登录用**验证码（免密登录）。
+   *
+   * 后端 `POST /auth/account/login/code`：不区分邮箱是否已注册（防枚举），
+   * 60 秒冷却、每小时最多 5 条、10 分钟有效。仅接受上科大校园邮箱。
+   */
+  requestLoginCode(email: string): Promise<Result<CodeReceiptDto, RepositoryError>>
+  /** 用验证码登录；首次登录自动建号（免密账号） */
+  loginWithCode(input: LoginCodeInput): Promise<Result<AuthSessionDto, RepositoryError>>
   resetPassword(input: ResetPasswordInput): Promise<Result<PasswordResetResultDto, RepositoryError>>
   /** 修改密码成功后服务端会**换发一套新令牌**（旧会话全部作废） */
   changePassword(input: ChangePasswordInput): Promise<Result<AuthSessionDto, RepositoryError>>

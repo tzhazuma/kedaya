@@ -83,7 +83,13 @@ export interface WechatConfigDto {
 export interface CodeReceiptDto {
   sent: true
   email: string
-  purpose: 'register' | 'reset-password' | 'change-password' | 'bind-email'
+  /**
+   * 验证码用途 —— 与后端 `VerificationPurpose` 一一对应。
+   *
+   * `login` 是**免密登录**（`POST /auth/account/login/code`）：与注册码分开存放，
+   * 注册码不能拿来登录，登录码也不能拿来注册（服务端按 purpose 分别校验）。
+   */
+  purpose: 'register' | 'reset-password' | 'change-password' | 'bind-email' | 'login'
   expiresInSeconds: number
   /**
    * **仅开发环境**后端回带的验证码（`AUTH_DEV_EXPOSE_CODES=true`）。

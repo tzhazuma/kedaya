@@ -1,4 +1,4 @@
-import { err, ok, type Result } from '@kedaya/shared'
+import { err, isShanghaiTechEmail, ok, type Result } from '@kedaya/shared'
 
 import {
   isValidCode,
@@ -19,6 +19,7 @@ import type {
   AuthRepository,
   BindEmailInput,
   ChangePasswordInput,
+  LoginCodeInput,
   LoginInput,
   RegisterInput,
   ResetPasswordInput,
@@ -53,6 +54,15 @@ export interface AuthAccountUseCase {
   register(input: RegisterInput): Promise<Result<Session, RepositoryError>>
   login(input: LoginInput): Promise<Result<Session, RepositoryError>>
   requestResetCode(email: string): Promise<Result<CodeReceiptDto, RepositoryError>>
+  /**
+   * 发送**登录用**验证码（免密登录）。
+   *
+   * 与注册/找回码分开：服务端按 purpose 分别校验，登录码不能拿去注册。
+   * 只有上科大校园邮箱可以走这条路径（见 `parseCampusEmailOrFail`）。
+   */
+  requestLoginCode(email: string): Promise<Result<CodeReceiptDto, RepositoryError>>
+  /** 邮箱 + 验证码登录；首次登录自动建号（免密账号） */
+  loginWithCode(input: LoginCodeInput): Promise<Result<Session, RepositoryError>>
   resetPassword(input: ResetPasswordInput): Promise<Result<string, RepositoryError>>
   changePassword(input: ChangePasswordInput): Promise<Result<Session, RepositoryError>>
   logout(): Promise<Result<true, RepositoryError>>
@@ -95,6 +105,28 @@ function parseEmailOrFail(value: string): { email: string } | RepositoryError {
 
 function isRepositoryError(value: { email: string } | RepositoryError): value is RepositoryError {
   return 'code' in value
+}
+
+/**
+ * 免密登录专用：在格式校验之外再加一道**校园邮箱**拦截。
+ *
+ * 依据：后端 `local-auth.service.ts` 的 `normalizeTarget()` 对所有验证码路径
+ * （注册 / 登录 / 找回 / 绑定）强制 `isCampusEmail()`，只放行
+ * `@shanghaitech.edu.cn` 与 `@stu.shanghaitech.edu.cn`。前端复用
+ * `@kedaya/shared` 的 `isShanghaiTechEmail`（同一份域名白名单），
+ * 只为即时反馈；最终裁决仍在后端。
+ */
+function parseCampusEmailOrFail(value: string): { email: string } | RepositoryError {
+  const parsed = parseEmailOrFail(value)
+  if (isRepositoryError(parsed)) return parsed
+  if (!isShanghaiTechEmail(parsed.email)) {
+    return {
+      code: 'VALIDATION_FAILED',
+      message:
+        '请使用上海科技大学邮箱（@shanghaitech.edu.cn 或 @stu.shanghaitech.edu.cn）登录',
+    }
+  }
+  return parsed
 }
 
 export function createAuthAccountUseCase(options: AuthAccountOptions): AuthAccountUseCase {
@@ -160,6 +192,22 @@ export function createAuthAccountUseCase(options: AuthAccountOptions): AuthAccou
       if (input.password.length === 0) return invalid('请输入密码')
 
       const result = await repository.login({ email: email.email, password: input.password })
+      if (!result.ok) return result
+      return ok(persist(result.value))
+    },
+
+    async requestLoginCode(rawEmail) {
+      const email = parseCampusEmailOrFail(rawEmail)
+      if (isRepositoryError(email)) return err(email)
+      return repository.requestLoginCode(email.email)
+    },
+
+    async loginWithCode(input) {
+      const email = parseCampusEmailOrFail(input.email)
+      if (isRepositoryError(email)) return err(email)
+      if (!isValidCode(input.code)) return invalid('验证码是 6 位数字')
+
+      const result = await repository.loginWithCode({ email: email.email, code: input.code })
       if (!result.ok) return result
       return ok(persist(result.value))
     },

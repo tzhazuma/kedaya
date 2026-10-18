@@ -9,6 +9,14 @@
   padding: $kdy-space-2 0;
 }
 
+/* 登录页「密码登录 / 验证码登录」二选一（KdyChip 单选） */
+.kdy-auth__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $kdy-space-2;
+  margin-bottom: $kdy-space-3;
+}
+
 .kdy-auth__actions {
   display: flex;
   flex-direction: column;
