@@ -59,7 +59,6 @@ import './index.scss'
 /** 用例是页面级单例：切页返回时 useDidShow 会重新 hydrate，storage 是唯一真相 */
 const board = createDeadlineBoardUseCase({
   store: createDeadlineLocalRepository(),
-  clock: { now: () => new Date() },
 })
 
 /** 相对时间每 30 秒刷新一次（分钟级文案不需要更密） */

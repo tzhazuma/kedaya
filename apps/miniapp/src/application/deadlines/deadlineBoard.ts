@@ -15,8 +15,6 @@ import {
   type DeadlineUrgency,
 } from '@kedaya/shared'
 
-import type { ClockPort } from '../../domain/ports/clockPort'
-
 /**
  * 「DDL 聚合」页的用例（本机数据，不碰网络）。
  *
@@ -87,13 +85,12 @@ export interface DeadlineBoardUseCase {
 
 export interface DeadlineBoardDeps {
   store: DeadlineLocalStore
-  clock: ClockPort
 }
 
 const INITIAL_STATE: DeadlineBoardState = { status: 'idle', items: [] }
 
 export function createDeadlineBoardUseCase(deps: DeadlineBoardDeps): DeadlineBoardUseCase {
-  const { store, clock } = deps
+  const { store } = deps
 
   let state: DeadlineBoardState = INITIAL_STATE
   const listeners = new Set<() => void>()

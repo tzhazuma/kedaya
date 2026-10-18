@@ -140,7 +140,6 @@ describe('createDeadlineBoardUseCase', () => {
   it('hydrate 同步读本机，读出空列表也是 ready', () => {
     const useCase = createDeadlineBoardUseCase({
       store: createStore(),
-      clock: { now: () => NOW },
     })
     expect(useCase.getSnapshot()).toEqual({ status: 'idle', items: [] })
     expect(useCase.hydrate()).toEqual({ status: 'ready', items: [] })
@@ -148,7 +147,7 @@ describe('createDeadlineBoardUseCase', () => {
 
   it('每次 hydrate 都重读：粘贴页写入后返回本页能看到', () => {
     const store = createStore([item({ id: 'pasted-1', dueAt: '2026-10-20T15:59:00.000Z' })])
-    const useCase = createDeadlineBoardUseCase({ store, clock: { now: () => NOW } })
+    const useCase = createDeadlineBoardUseCase({ store })
     expect(useCase.hydrate().items.map((entry) => entry.id)).toEqual(['pasted-1'])
     store.write([item({ id: 'pasted-2', dueAt: '2026-10-21T15:59:00.000Z' })])
     expect(useCase.hydrate().items.map((entry) => entry.id)).toEqual(['pasted-2'])
@@ -156,7 +155,7 @@ describe('createDeadlineBoardUseCase', () => {
 
   it('手动添加会落本机、补全默认字段，并返回创建的条目', () => {
     const store = createStore()
-    const useCase = createDeadlineBoardUseCase({ store, clock: { now: () => NOW } })
+    const useCase = createDeadlineBoardUseCase({ store })
 
     const created = useCase.add({
       title: '  作业 3  ',
@@ -177,7 +176,7 @@ describe('createDeadlineBoardUseCase', () => {
 
   it('同一条 DDL 加两次是覆盖而不是两条（否则汇总数字会翻倍）', () => {
     const store = createStore()
-    const useCase = createDeadlineBoardUseCase({ store, clock: { now: () => NOW } })
+    const useCase = createDeadlineBoardUseCase({ store })
     const input = {
       title: '作业 3',
       courseName: 'CS101',
@@ -194,7 +193,7 @@ describe('createDeadlineBoardUseCase', () => {
 
   it('标题/课程为空或时间不可解析时不写入（页面给表单提示）', () => {
     const store = createStore()
-    const useCase = createDeadlineBoardUseCase({ store, clock: { now: () => NOW } })
+    const useCase = createDeadlineBoardUseCase({ store })
     const base = {
       title: '作业',
       courseName: 'CS101',
@@ -210,7 +209,7 @@ describe('createDeadlineBoardUseCase', () => {
 
   it('标记已交 / 删除 / 清空都会立刻写回本机', () => {
     const store = createStore([item({ id: 'a', dueAt: '2026-10-20T15:59:00.000Z' })])
-    const useCase = createDeadlineBoardUseCase({ store, clock: { now: () => NOW } })
+    const useCase = createDeadlineBoardUseCase({ store })
     useCase.hydrate()
 
     useCase.toggleSubmitted('a')
