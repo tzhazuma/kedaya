@@ -200,7 +200,7 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
 ] as const;
 
 /* ------------------------------------------------------------------ *
- * 5 个基础模块
+ * 6 个基础模块（第 6 个是 2026-10-19 新增的 deadlines，见条目的分类说明）
  * ------------------------------------------------------------------ */
 export const CORE_MODULES: readonly KedayaModule[] = [
   {
@@ -222,6 +222,38 @@ export const CORE_MODULES: readonly KedayaModule[] = [
     sensitivity: 'medium',
     requiresConsent: false,
     route: 'schedule',
+  },
+  /**
+   * DDL 聚合（第 21 个模块，2026-10-19 加入）。
+   *
+   * ## 为什么是 `core` 而不是 `business`
+   *
+   * 它和 `schedule` 是同一层**学业基础设施**：课表回答「什么时候上课」，
+   * DDL 回答「什么时候交作业 / 考试」，数据都来自课程系统（Blackboard /
+   * Gradescope / Piazza / e云平台）的绑定。它不产生交易、不涉及社交内容，
+   * 不属于需求图里那 14 个校园生活业务模块，因此不占用业务模块名额。
+   *
+   * ## 为什么是 `medium` 而不是 `low`
+   *
+   * 条目里含课程名、作业标题、截止时间与占总评比例，能反推出在修哪些课、
+   * 学业负担与考核安排；但**不含成绩、答案与平台凭据**，与 `schedule` 同级。
+   * 不设二次同意门（进入即使用，不额外采集数据）；将来若接入成绩或答案，
+   * 必须重新评估为 `high` 并补审计。
+   *
+   * ⚠️ 本轮**没有对应的后端模块**（`services/` 里还没有 deadlines）：
+   * 小程序端的条目只来自本机粘贴 / 手填。`route` 仍先按契约登记 ——
+   * 它是 API 路由段与落库字段，等接口上线时不必再改一次 id。
+   */
+  {
+    id: 'deadlines',
+    nameZh: 'DDL 聚合',
+    nameEn: 'Deadlines',
+    summary:
+      '把散在 Blackboard / Gradescope / Piazza / e云平台的作业与考试截止日期聚到一处，按紧迫度排序并保留回源链接',
+    category: 'core',
+    sensitivity: 'medium',
+    requiresConsent: false,
+    route: 'deadlines',
   },
   {
     id: 'campus-card',

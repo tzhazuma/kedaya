@@ -111,7 +111,7 @@ export const HOME_SECTIONS: readonly HomeSection[] = [
   {
     id: 'daily',
     title: '校园日常',
-    entryIds: ['cou', 'flea-market', 'errand', 'lost-found', 'canteen', 'wildlife', 'facility', 'schedule', 'campus-card'],
+    entryIds: ['cou', 'flea-market', 'errand', 'lost-found', 'canteen', 'wildlife', 'facility', 'schedule', 'deadlines', 'campus-card'],
   },
   {
     id: 'community',
@@ -133,8 +133,12 @@ export const HOME_SECTIONS: readonly HomeSection[] = [
 /**
  * 首页默认展示的入口。
  *
- * 只放 9 个：首页的价值是「最常用的那几个一眼可见」，
+ * 只放 10 个：首页的价值是「最常用的那几个一眼可见」，
  * 全部 19 个入口平铺是这次要修掉的问题本身（服务大厅才是「全部」的家）。
+ *
+ * 2026-10-19：新增的 `deadlines`（DDL 聚合）也放进默认值 —— 它是本轮的
+ * 新入口，不默认出现在首页就等于「做了但找不到」。已有缓存布局的老用户
+ * 不会被强行改布局：它仍在服务大厅「校园日常」组，也可从「首页管理」添加。
  *
  * 顺序必须与 `normalizeHomeEntryIds` 的「固定入口置前」一致
  * （`cou` → `wellbeing` → 其余），否则「默认值 → 规范化」会改变顺序，
@@ -149,6 +153,7 @@ export const DEFAULT_HOME_ENTRY_IDS: readonly string[] = [
   'lost-found',
   'wildlife',
   'schedule',
+  'deadlines',
   'campus-card',
 ]
 

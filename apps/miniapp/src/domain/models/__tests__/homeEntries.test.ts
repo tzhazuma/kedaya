@@ -46,6 +46,14 @@ describe('首页入口目录', () => {
     expect(homeEntryById('buddy')).toBeUndefined()
   })
 
+  it('DDL 聚合有首页入口：在默认宫格里，也在服务大厅分组里', () => {
+    // 新增契约模块时最容易漏掉的两处：默认首页（看不见）与分组（服务大厅里看不见）。
+    expect(homeEntryById('deadlines')?.label).toBe('DDL 聚合')
+    expect(DEFAULT_HOME_ENTRY_IDS).toContain('deadlines')
+    const grouped = HOME_SECTIONS.flatMap((section) => [...section.entryIds])
+    expect(grouped).toContain('deadlines')
+  })
+
   it('默认值合法：都在目录里、不超过上限、含全部固定入口', () => {
     for (const id of DEFAULT_HOME_ENTRY_IDS) expect(isHomeEntryId(id)).toBe(true)
     expect(DEFAULT_HOME_ENTRY_IDS.length).toBeLessThanOrEqual(MAX_HOME_ENTRY_IDS)

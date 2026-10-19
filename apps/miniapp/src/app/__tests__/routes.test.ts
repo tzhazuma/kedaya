@@ -162,6 +162,8 @@ describe('页面路由表', () => {
     }
 
     expect(homeEntryPath('cou')).toBe(PAGE_PATHS.cou)
+    // DDL 聚合本轮只有本机数据（没有后端模块），但页面与入口都已登记。
+    expect(homeEntryPath('deadlines')).toBe(PAGE_PATHS.deadlines)
     expect(homeEntryPath('not-a-module')).toBeNull()
   })
 

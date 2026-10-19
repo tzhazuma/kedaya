@@ -36,9 +36,15 @@ describe('OpenAPI 契约文件', () => {
     }
   });
 
-  it('20 个模块都有对应的 tag 与至少一个端点', () => {
+  it('有后端端点的 20 个模块都有对应的 tag 与至少一个端点', () => {
+    // 第 21 个模块 `deadlines`（DDL 聚合）本轮只有小程序端本机数据
+    // （粘贴 / 手填），`services/` 里还没有对应接口，因此 OpenAPI 里
+    // 暂时没有它的 tag 与端点。这里显式排除，并保留「数量必须相等」
+    // 的强断言：等后端模块落地，删掉这个 filter，测试会立刻要求它 MUST 有 tag ——
+    // 不要为了变绿把断言放宽成 `> 0`。
+    const withApi = MODULES.filter((module) => module.id !== 'deadlines');
     const tagNames = (spec.tags ?? []).map((t: any) => t.name);
-    expect(tagNames).toHaveLength(20);
+    expect(tagNames).toHaveLength(withApi.length);
 
     const taggedRoutes = new Set<string>();
     for (const [path, ops] of Object.entries(spec.paths ?? {})) {
@@ -48,7 +54,7 @@ describe('OpenAPI 契约文件', () => {
       void path;
     }
 
-    for (const m of MODULES) {
+    for (const m of withApi) {
       expect(tagNames, `模块 ${m.id} 缺 tag`).toContain(m.id);
       expect(taggedRoutes, `模块 ${m.id} 没有任何带该 tag 的端点`).toContain(m.id);
     }

@@ -175,6 +175,8 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   // 四个核心模块（身份 / 课表 / 校园卡 / 我的）
   auth: PAGE_PATHS.identity,
   schedule: PAGE_PATHS.schedule,
+  /** DDL 聚合：本轮条目只存本机（无后端），但页面与入口已真实可用 */
+  deadlines: PAGE_PATHS.deadlines,
   'campus-card': PAGE_PATHS.campusCard,
   profile: PAGE_PATHS.profile,
 }

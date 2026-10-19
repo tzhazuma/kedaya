@@ -12,10 +12,13 @@ import {
 } from './modules';
 
 describe('模块注册表', () => {
-  it('共 20 个模块（15 业务 + 5 基础）', () => {
-    expect(MODULES).toHaveLength(20);
+  it('共 21 个模块（15 业务 + 6 基础）', () => {
+    // 第 21 个是 2026-10-19 新增的 `deadlines`（DDL 聚合）。它归入基础模块：
+    // 与课表同属学业基础设施，不占用需求图里的 14 个业务模块名额。
+    // 本轮只有小程序端（数据存本机），服务端尚未有对应模块。
+    expect(MODULES).toHaveLength(21);
     expect(BUSINESS_MODULES).toHaveLength(15);
-    expect(CORE_MODULES).toHaveLength(5);
+    expect(CORE_MODULES).toHaveLength(6);
   });
 
   it('覆盖需求图中的全部 14 个业务模块 + 场馆预约（TechPie 并入）', () => {
@@ -81,6 +84,20 @@ describe('模块注册表', () => {
 
   it('心理支持是最高敏感级', () => {
     expect(getModule('wellbeing')?.sensitivity).toBe('critical');
+  });
+
+  it('DDL 聚合：学业数据按 medium 处理，不设同意门', () => {
+    expect(getModule('deadlines')).toMatchObject({
+      id: 'deadlines',
+      nameZh: 'DDL 聚合',
+      nameEn: 'Deadlines',
+      category: 'core',
+      sensitivity: 'medium',
+      requiresConsent: false,
+      route: 'deadlines',
+    });
+    // 摘要必须写清「聚合哪些平台」，而不是一句空泛的「课程 DDL」。
+    expect(getModule('deadlines')?.summary).toContain('Gradescope');
   });
 
   it('需要二次同意的正好是 wellbeing / dorm-harmony / ai-portrait', () => {

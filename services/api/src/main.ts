@@ -10,6 +10,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { API_BASE_PATH, TRACE_HEADER } from '@kedaya/contracts';
 
 import { AppModule } from './app.module';
+import { createEdgeTokenMiddleware } from './common/edge-token.middleware';
 import { TraceMiddleware } from './common/middleware/trace.middleware';
 
 /** 请求体上限：base64 图片比原图大 ~33%，8 MB 足够 2 MB 的图 + JSON 外壳 */
@@ -59,6 +60,12 @@ async function bootstrap(): Promise<void> {
   app.use((req: Request, res: Response, next: NextFunction) =>
     traceMiddleware.use(req, res, next),
   );
+
+  // ---- 公网边缘令牌（可选）----
+  // 后端经 Cloudflare quick tunnel 暴露在公网，那是**公开 URL**。
+  // 设了 `API_EDGE_TOKEN` 就要求所有请求带 `x-edge-token`（`/health` 豁免）。
+  // 未设置时完全放行 —— 本地开发与内网部署零影响。
+  app.use(createEdgeTokenMiddleware(config.get<string>('API_EDGE_TOKEN')));
 
   // ---- CORS ----
   const configuredOrigins = (config.get<string>('CORS_ORIGINS') ?? '')
