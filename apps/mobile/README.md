@@ -11,14 +11,14 @@ iOS / Android / **鸿蒙** 三端原生客户端骨架。包名 `kedaya`，Dart 
 
 | 项 | 状态 |
 | --- | --- |
-| 代码 | 已写完（六边形分层 + 拼单/论坛/常见问题/校园动物/**找搭子**五个垂直切片 + 亮/暗主题 + 42 个测试文件） |
-| **本机编译验证** | ❌ **未验证** —— 开发机上**没有安装 Flutter SDK**（`flutter` / `dart` 命令都不存在），因此 `flutter pub get` / `flutter analyze` / `flutter test` **一次都没有跑过** |
-| 静态自检（替代验证） | ✅ **已实际执行**：`/opt/homebrew/bin/python3 tool/selfcheck.py` —— 10 项文本检查全部通过（203 个 Dart 文件：lib 161 + test 42，0 处违规），见 §6.5 |
-| 依赖版本解析 | ❌ 未验证（`pubspec.yaml` 的版本区间是按 TechPie 的可用组合与 pub.dev 常见版本手写的，`pub get` 可能要求微调） |
-| 静态分析 | ❌ 未验证（`analysis_options.yaml` 打开了 `strict-casts` / `strict-inference` / `strict-raw-types`，代码按这些规则手写，但仍需 `flutter analyze` 复核） |
-| 运行时行为 | ❌ 未验证（未在真机/模拟器上启动过） |
+| 代码 | 已写完（六边形分层 + 拼单/论坛/常见问题/校园动物/**找搭子**五个垂直切片 + 亮/暗主题 + 46 个测试文件） |
+| **本机编译验证** | ✅ **已验证（2026-10-19）** —— 本机已安装 **Flutter 3.35.1 stable / Dart 3.9.0**（SDK 位于 `~/toolchains/flutter`，未改 shell 配置文件）。`flutter pub get` 成功；`flutter analyze` **0 issue**；`flutter test` **680 例：679 通过 / 1 失败**（失败是既有的令牌镜像头 hash 断言，见 §8 第 8 条，与本次改动无关） |
+| 静态自检（补充验证） | ✅ 已实际执行（历史记录）：`/opt/homebrew/bin/python3 tool/selfcheck.py` —— 10 项文本检查全部通过（203 个 Dart 文件：lib 161 + test 42，0 处违规），见 §6.5 |
+| 依赖版本解析 | ✅ 已验证：`flutter pub get` 成功，实际解析 riverpod **2.6.1** / go_router **14.8.1** / freezed **2.5.8** 等，全部落在 `pubspec.yaml` 的区间内，无需微调 |
+| 静态分析 | ✅ 已验证：`flutter analyze` → `No issues found!`（**0 error / 0 warning / 0 info**；`strict-casts` / `strict-inference` / `strict-raw-types` 保持开启） |
+| 运行时行为 | ❌ 未验证（未在真机/模拟器上启动过；`flutter run` 不在本次范围） |
 
-**下面第 6 节的命令是"装好 Flutter 后必须执行"的清单**；执行结果与本文档不一致时，以实际结果为准，并请回报 Lead。
+**第 6 节是已在 2026-10-19 实际执行过的验证清单**；执行结果与本文档不一致时，以实际结果为准，并请回报 Lead。
 
 ---
 
@@ -80,7 +80,7 @@ apps/mobile/
 │   │   ├── theme_controller.dart
 │   │   └── module_catalog.dart
 │   ├── domain/                       # 纯领域：零框架依赖（只 dart:core + 自有模型）
-│   │   ├── models/                   #   19 个模块注册表 / 金额 / 结果 / 主题模式 / 模型
+│   │   ├── models/                   #   21 个模块注册表（含 deadlines）/ 金额 / 结果 / 主题模式 / 模型
 │   │   └── ports/                    #   接口（依赖倒置的支点）
 │   ├── data/                         # adapters：实现 ports
 │   │   ├── api/                      #   Dio 装配 + 信封解包
@@ -98,8 +98,8 @@ apps/mobile/
 │       ├── wildlife/                 #   ✅ 校园动物（静态底图 + 叠加层 + 上报 + 推断轨迹）
 │       └── buddy/                    #   ✅ 找搭子（三板块列表 + 申请/审批/关闭 + 发布 + 匹配资料 + 可解释推荐）
 ├── tool/
-│   └── selfcheck.py                  # 替代验证：本机无 Flutter SDK，用静态自检覆盖能查的部分
-└── test/                             # 42 个测试文件
+│   └── selfcheck.py                  # 补充验证：静态自检覆盖 analyze 查不到的文本层问题
+└── test/                             # 46 个测试文件
     ├── domain/  data/  application/  presentation/
 ```
 
@@ -148,8 +148,8 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 `pubspec.yaml` 里声明了 `freezed_annotation` / `json_annotation` / `build_runner` /
 `freezed` / `json_serializable`（任务要求），但**当前所有模型都是手写的**。原因：
 
-1. 代码生成产物（`*.g.dart` / `*.freezed.dart`）没有提交，而开发机没有 Flutter SDK，
-   无法运行 `build_runner`；如果模型依赖生成代码，`git clone` 后**一定编译不过**。
+1. 代码生成产物（`*.g.dart` / `*.freezed.dart`）没有提交，而开发机当时没有 Flutter SDK
+   （**现已安装 Flutter 3.35.1，见 §0**），无法运行 `build_runner`；如果模型依赖生成代码，`git clone` 后**一定编译不过**。
 2. 手写版可以用纯 `dart:core` 实现，正好满足"`domain` 层零框架依赖"。
 3. 解析逻辑集中在 `domain/models/json_read.dart`（类型不符即抛 `FormatException`，
    未知枚举值收敛为 `unknown` 而不是崩溃）。
@@ -213,7 +213,7 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | 契约 §8 启动时序 | `lib/app/bootstrap.dart` + `lib/main.dart` |
 | 六边形分层骨架（目录名严格按 §7） | `lib/{app,application,domain,data,platform,presentation}/` |
 | 13 个 domain port | `lib/domain/ports/`：`AuthPort`、`CampusSessionPort`、`KedayaApiPort`、`CredentialStorePort`、`LocalCachePort`、`ConsentPort`、`ThemeModePort`、`GroupbuyPort`、`ForumPort`、`FaqPort`、`ErrandPort`、`LostFoundPort`、`WellbeingPort` + `platform_ports.dart` |
-| 19 个模块注册表（镜像 `packages/contracts`） | `lib/domain/models/kedaya_module.dart` |
+| 21 个模块注册表（镜像 `packages/contracts`，含 2026-10-19 新增的 `deadlines`） | `lib/domain/models/kedaya_module.dart` |
 | 金额整数分（镜像 `packages/shared/money.ts`） | `lib/domain/models/money.dart` |
 | 统一信封 + Dio 装配（Bearer / Trace / 401 刷新重试） | `lib/data/api/{api_envelope,dio_client,kedaya_api_client}.dart` |
 | 远端 repositories（auth / campus / consent / groupbuy / **forum** / **faq** / errand / lost-found / wellbeing） | `lib/data/repositories/` |
@@ -230,8 +230,8 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | **匿名身份与实名身份在模型层解耦**（契约 §9）：`ForumAuthor` sealed 类型 + `AnonymousIdentity` | `lib/domain/models/{forum,anonymous_identity}.dart` |
 | 底部导航 + 每个模块的路由段 | `lib/app/app_router.dart`、`lib/presentation/pages/module_detail_page.dart` |
 | 二次同意门（`wellbeing`/`dorm-harmony`/`ai-portrait`） | `lib/application/consent_controller.dart` |
-| 53 个测试文件 | `test/`（见第 5 节） |
-| 静态自检脚本（本机替代验证） | `tool/selfcheck.py`（见第 6.5 节） |
+| 46 个测试文件 | `test/`（见第 5 节） |
+| 静态自检脚本（补充验证） | `tool/selfcheck.py`（见第 6.5 节） |
 
 ### ❌ 未实现（如实列出，没有用 TODO 占位函数冒充）
 
@@ -261,15 +261,17 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 
 ---
 
-## 5. 测试（53 个文件；其中 `wildlife` 新增 13 个文件 / 184 个用例，`buddy` 新增 10 个文件 / 199 个用例，`techpie` 新增 11 个文件）
+## 5. 测试（46 个文件；其中 `wildlife` 新增 13 个文件 / 184 个用例，`buddy` 新增 10 个文件 / 199 个用例，`techpie` 新增 11 个文件）
 
-> ⚠️ **全部用例都没有在本机执行过**（没有 Flutter SDK）。下面是"每个文件测什么"的清单，
-> 不是"测试通过"的证据。
+> ✅ **已在 2026-10-19 用 Flutter 3.35.1 实际执行**：`flutter test` → **680 个用例，
+> 679 通过、1 失败**（`test/presentation/kedaya_tokens_mirror_test.dart` 的
+> source-blob hash 断言，属既有问题且与本次改动无关，见 §8 第 8 条）。
+> 下表是"每个文件测什么"。
 
 | 文件 | 覆盖 |
 | --- | --- |
 | `test/domain/money_test.dart` | 整数分 ↔ 元、非法输入、往返一致、带符号展示 |
-| `test/domain/module_registry_test.dart` | 19 个模块、id 唯一、route==id、**同意门规则**（`auth`/`campus-card` 不设门） |
+| `test/domain/module_registry_test.dart` | 21 个模块（含 `deadlines`）、id 唯一、route==id、**同意门规则**（`auth`/`campus-card` 不设门） |
 | `test/domain/result_and_api_error_test.dart` | `Result` 的 Ok/Err/map/flatMap/unwrap、错误码 wire 往返、未知码收敛 |
 | `test/domain/auth_session_boundary_test.dart` | **契约 §5 边界机械校验**：序列化键名不含校园凭据；未知校园系统抛错 |
 | `test/domain/groupbuy_order_test.dart` | 模型解析/序列化、未知状态收敛、进度收敛、查询参数收敛 |
@@ -324,7 +326,14 @@ mock repository 行为 2 个 + application 三态/幂等 2 个**。
 
 ---
 
-## 6. 装好 Flutter 后的验证命令（按顺序执行）
+## 6. 验证命令与结果（2026-10-19 已在 Flutter 3.35.1 上执行）
+
+| 命令 | 本机实际结果 |
+| --- | --- |
+| `flutter --version` | Flutter 3.35.1 • stable • Dart 3.9.0 |
+| `flutter pub get` | ✅ Got dependencies（riverpod 2.6.1 / go_router 14.8.1 / freezed 2.5.8，无版本冲突） |
+| `flutter analyze` | ✅ `No issues found!`（0 error / 0 warning / 0 info） |
+| `flutter test` | ⚠️ 680 例：679 通过 / 1 失败（`kedaya_tokens_mirror_test.dart` 的 hash 断言） |
 
 ```bash
 # 环境
@@ -339,7 +348,7 @@ flutter pub get
 # 2) 静态分析（必须 0 error；strict-* 三个开关已打开）
 flutter analyze
 
-# 3) 单元测试（19 个文件应全绿）
+# 3) 单元测试（46 个文件；2026-10-19 实测 680 例）
 flutter test
 flutter test test/domain/auth_session_boundary_test.dart   # 单跑契约 §5 边界测试
 flutter test test/domain/forum_anonymity_boundary_test.dart # 单跑契约 §9 匿名边界测试
@@ -355,7 +364,7 @@ flutter test test/domain/buddy_privacy_boundary_test.dart # 单跑「无 dating 
 flutter test test/data/mock_buddy_recommend_test.dart     # 单跑推荐硬过滤 F1–F7 与理由
 flutter test test/presentation/buddy_widget_test.dart     # 单跑「推荐理由必须展示」与亮暗主题
 
-# 4) 格式化检查（代码按 dart format 风格手写，未在本机跑过）
+# 4) 格式化检查（可选；本次只对改动的 2 个文件跑过 dart format）
 dart format --output=none --set-exit-if-changed lib test
 
 # 5) 运行（mock 运行时，无后端）
@@ -365,9 +374,9 @@ flutter run
 flutter run --dart-define=KEDAYA_FLAVOR=dev --dart-define=KEDAYA_API_BASE_URL=<dev-host>
 ```
 
-### 6.5 本机替代验证（**已实际执行**）
+### 6.5 本机静态自检（补充验证，**已实际执行**）
 
-本机没有 Flutter SDK，所以用一个纯 Python 的静态自检覆盖能查的部分：
+在 Flutter 装好之前，用一个纯 Python 的静态自检覆盖能查的部分（历史记录，仍然保留）：
 
 ```bash
 cd apps/mobile
@@ -460,7 +469,15 @@ cd apps/mobile
    后同步 `KedaYaColors.tokenKeys` 与 `toMap()`。
 7. `freezed` / `json_serializable` 目前是**未被使用**的依赖（见 §3.3），
    `flutter pub get` 不会报错，但如需精简可以删掉这 5 行。
-8. 全部 208 个测试用例都**没有在本机执行过**。
+8. **测试已执行，但有 1 例既有失败**（2026-10-19，Flutter 3.35.1）：`flutter test`
+   共 680 例，679 通过、1 失败 —— `test/presentation/kedaya_tokens_mirror_test.dart`
+   的「生成文件头记录了正确的 source blob hash」。根因：
+   `packages/design-tokens/tokens.json` 在提交 `6ff0164` 新增了 `colorCampus`（11 个）
+   与 `colorNight`（22 个）两组令牌，但 `scripts/sync-flutter-mirrors.mjs` 未同步扩展
+   （现在直接运行会抛 `未知令牌组 "colorCampus"`），导致 Flutter 镜像无法重新生成，
+   头部 hash 停留在旧版本。镜像里已覆盖的 10 组 / 73 个令牌**值本身仍与源逐键一致**
+   （其余断言全绿）。修法：先扩展生成器的分组规则再 `node scripts/sync-flutter-mirrors.mjs`
+   重新生成；**不要手改生成物里的 hash**（那会掩盖真实漂移）。
 
 ### 8.1 `forum` / `faq` 新增的风险点（需要 `flutter analyze` 复核）
 

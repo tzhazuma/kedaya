@@ -1,7 +1,7 @@
 // DO NOT EDIT —— 由 scripts/sync-flutter-mirrors.mjs 从 packages/design-tokens/tokens.json 生成。
 // source: packages/design-tokens/tokens.json
-// source-blob-sha1: d570decedd9b51deccd8855a220df2819e3ca610
-// 生成物覆盖: 10 组 / 73 个令牌
+// source-blob-sha1: 03b0b267d90883e23c199ac7a2e103861b1b43fd
+// 生成物覆盖: 12 组 / 104 个令牌
 // 重新生成: node scripts/sync-flutter-mirrors.mjs
 // 校验:     node scripts/sync-flutter-mirrors.mjs --check
 //
@@ -53,6 +53,41 @@ abstract final class KedaYaTokens {
   static const Color colorDarkWarning = Color(0xFFF0A05A);
   static const Color colorDarkDanger = Color(0xFFF07171);
   static const Color colorDarkInfo = Color(0xFF60A5FA);
+
+  // ---------------- colorCampus ----------------
+  static const Color colorCampusWhite = Color(0xFFFFFFFF);
+  static const Color colorCampusInk = Color(0xFF111C2D);
+  static const Color colorCampusMuted = Color(0xFF6B7A90);
+  static const Color colorCampusYellow = Color(0xFFFFDC45);
+  static const Color colorCampusYellowSoft = Color(0xFFFFF4BF);
+  static const Color colorCampusPink = Color(0xFFFDE8EF);
+  static const Color colorCampusMint = Color(0xFFF3FCD8);
+  static const Color colorCampusBorder = Color(0xFFE5E8ED);
+  static const Color colorCampusMilk = Color(0xFFF1F3F6);
+  static const Color colorCampusBubbleShade = Color(0xFFCDD4DF);
+
+  // ---------------- colorNight ----------------
+  static const Color colorNightBg = Color(0xFF232427);
+  static const Color colorNightBgDeep = Color(0xFF17181A);
+  static const Color colorNightSurface = Color(0xFF2C2D31);
+  static const Color colorNightSurfaceRaised = Color(0xFF35363B);
+  static const Color colorNightGlass = Color.fromARGB(20, 255, 255, 255);
+  static const Color colorNightGlassStrong = Color.fromARGB(41, 255, 255, 255);
+  static const Color colorNightGlassBorder = Color.fromARGB(46, 255, 255, 255);
+  static const Color colorNightText = Color(0xFFF5F5F7);
+  static const Color colorNightTextMuted = Color(0xFFA5A7AE);
+  static const Color colorNightTextFaint = Color(0xFF7B7D85);
+  static const Color colorNightOnAccent = Color(0xFF1B1B1E);
+  static const Color colorNightAccentPink = Color(0xFFF2A9E4);
+  static const Color colorNightAccentPinkDeep = Color(0xFFDE8CCF);
+  static const Color colorNightAccentPinkSoft = Color(0xFFF9D4F1);
+  static const Color colorNightAccentLime = Color(0xFFF3EDA0);
+  static const Color colorNightAccentLimeDeep = Color(0xFFDFD575);
+  static const Color colorNightAccentLimeSoft = Color(0xFFFAF6C9);
+  static const Color colorNightSuccess = Color(0xFF6FD8A8);
+  static const Color colorNightWarning = Color(0xFFF2B36B);
+  static const Color colorNightDanger = Color(0xFFF08A8A);
+  static const Color colorNightInfo = Color(0xFF93B7FF);
 
   /// 暗色覆盖表：key 为亮色常量名后缀，value 为暗色值。
   static const Map<String, Color> darkColors = <String, Color>{

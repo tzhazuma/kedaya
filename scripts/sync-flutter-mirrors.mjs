@@ -70,8 +70,35 @@ const dartString = (value) =>
 
 const pascal = (key) => key.charAt(0).toUpperCase() + key.slice(1);
 
-const hexToDart = (hex) => {
-  const value = String(hex).replace('#', '').toUpperCase();
+/**
+ * 令牌值 → Dart `Color` 表达式。
+ *
+ * ⚠️ 令牌**不只有 hex**：`colorNightGlass` 这类半透明玻璃色用的是
+ * `rgba(255,255,255,0.08)`。第一版只处理 hex，于是生成了
+ * `Color(0xRGBA(255,255,255,0.08))` —— 编译期才炸（`Too many positional arguments`）。
+ *
+ * 三种形态：
+ *   · `#RRGGBB`   → `Color(0xFFRRGGBB)`
+ *   · `#AARRGGBB` → `Color(0xAARRGGBB)`
+ *   · `rgba(r,g,b,a)` / `rgb(r,g,b)` → `Color.fromARGB(alpha, r, g, b)`
+ */
+const hexToDart = (raw) => {
+  const text = String(raw).trim();
+
+  const rgba = /^rgba?\(([^)]+)\)$/i.exec(text);
+  if (rgba !== null) {
+    const parts = rgba[1].split(',').map((s) => s.trim());
+    const [r, g, b] = parts;
+    const aRaw = parts[3];
+    // alpha 可能是 0–1 小数，也可能是 0–255 整数
+    const alpha =
+      aRaw === undefined
+        ? 255
+        : Math.max(0, Math.min(255, Math.round(aRaw.includes('.') ? Number(aRaw) * 255 : Number(aRaw))));
+    return `Color.fromARGB(${alpha}, ${Number(r)}, ${Number(g)}, ${Number(b)})`;
+  }
+
+  const value = text.replace('#', '').toUpperCase();
   const argb = value.length === 6 ? `FF${value}` : value;
   return `Color(0x${argb})`;
 };
@@ -83,11 +110,24 @@ function generateTokens() {
   const rel = TOKENS_SRC;
   const raw = readFileSync(join(repoRoot, rel), 'utf8');
   const tokens = JSON.parse(raw);
+  // `$comment` 在顶层与**各子组内部**都可能出现；生成常量前必须逐组剥掉，
+  // 否则会生成一个名叫 `comment` 的假令牌（punycode 风险：编译能过，语义是错的）。
+  for (const group of Object.keys(tokens)) {
+    if (tokens[group] && typeof tokens[group] === 'object' && '$comment' in tokens[group]) {
+      delete tokens[group].$comment;
+    }
+  }
   delete tokens.$comment;
 
   const known = new Set([
     'color',
     'colorDark',
+    // 6ff0164 引入的两套独立调色板（不是 color/colorDark 的明暗对）：
+    //   colorCampus = 「校园贴纸簿」浅色系（10 个令牌）
+    //   colorNight  = 「星夜」深色系（21 个令牌，键名与 colorDark 不完全重叠）
+    // 它们各自是独立组，不能简单当成 color 的子集/覆盖表。
+    'colorCampus',
+    'colorNight',
     'space',
     'radius',
     'fontSize',
@@ -136,6 +176,19 @@ function generateTokens() {
     lines.push(`  static const Color colorDark${pascal(key)} = ${hexToDart(value)};`);
   }
   lines.push('');
+
+  // ---- 独立调色板：colorCampus（校园贴纸簿）/ colorNight（星夜）----
+  // 它们不是 color/colorDark 的镜像，键名集合不同，所以单独出常量而不是并进 darkColors。
+  for (const [group, prefix] of [
+    ['colorCampus', 'colorCampus'],
+    ['colorNight', 'colorNight'],
+  ]) {
+    lines.push(`  // ---------------- ${group} ----------------`);
+    for (const [key, value] of Object.entries(tokens[group] ?? {})) {
+      lines.push(`  static const Color ${prefix}${pascal(key)} = ${hexToDart(value)};`);
+    }
+    lines.push('');
+  }
 
   lines.push('  /// 暗色覆盖表：key 为亮色常量名后缀，value 为暗色值。');
   lines.push('  static const Map<String, Color> darkColors = <String, Color>{');
