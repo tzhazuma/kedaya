@@ -54,12 +54,21 @@ export function createEdgeTokenMiddleware(
    */
   verifyEdgeJwt?: (token: string) => boolean,
 ) {
-  // 未配置 → 完全放行。这是一个**有意的**默认：不能因为忘了配就锁死自己。
-  if (expectedToken === undefined || expectedToken.trim() === '') {
+  // ⚠️ 闸门的启用条件**不只是**共享密钥。
+  //
+  // 第一次部署踩的坑：服务器上配了 `EDGE_USERNAME`/`EDGE_PASSWORD`（登录口可用），
+  // 但没配 `API_EDGE_TOKEN`，于是这里走"未配置 → 完全放行"，
+  // 结果**登录口存在、闸门却没关** —— 无票访问照样 200。
+  //
+  // 正确判据：**只要配置了任意一种通行方式，闸门就必须启用。**
+  const hasSharedToken = expectedToken !== undefined && expectedToken.trim() !== '';
+  const hasLogin = verifyEdgeJwt !== undefined;
+
+  if (!hasSharedToken && !hasLogin) {
     return (_req: Request, _res: Response, next: NextFunction): void => next();
   }
 
-  const expected = expectedToken.trim();
+  const expected = expectedToken?.trim() ?? '';
 
   return (req: Request, res: Response, next: NextFunction): void => {
     // 探活与登录口豁免：前者探针不会带头，后者是拿第一张通行证的地方
@@ -83,7 +92,7 @@ export function createEdgeTokenMiddleware(
 
     const provided = req.header(EDGE_TOKEN_HEADER);
 
-    if (provided === undefined || !constantTimeEqual(provided, expected)) {
+    if (expected === '' || provided === undefined || !constantTimeEqual(provided, expected)) {
       // 不告诉对方"令牌错了"还是"没带令牌"—— 两者都是 401，减少信息泄漏
       res.status(401).json({
         ok: false,

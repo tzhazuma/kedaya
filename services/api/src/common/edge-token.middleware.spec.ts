@@ -27,11 +27,15 @@ function makeRes() {
   return { res: res as unknown as Response, raw };
 }
 
-function makeReq(path: string, token?: string): Request {
+function makeReq(path: string, token?: string, authorization?: string): Request {
   return {
     path,
-    header: (name: string) =>
-      name.toLowerCase() === EDGE_TOKEN_HEADER ? token : undefined,
+    header: (name: string) => {
+      const key = name.toLowerCase();
+      if (key === EDGE_TOKEN_HEADER) return token;
+      if (key === 'authorization') return authorization;
+      return undefined;
+    },
   } as unknown as Request;
 }
 
@@ -70,6 +74,41 @@ describe('createEdgeTokenMiddleware', () => {
       expect(raw.statusCode).toBe(401);
       expect(raw.body).toMatchObject({ ok: false, error: { code: 'UNAUTHENTICATED' } });
     }
+  });
+
+  it('⚠️ 只配登录口、没配共享令牌 → 闸门**仍然启用**（首次部署踩的坑）', () => {
+    // 服务器上配了 EDGE_USERNAME/EDGE_PASSWORD（登录口可用）但没配 API_EDGE_TOKEN，
+    // 旧实现走"未配置 → 放行"，结果**登录口存在、闸门却没关**，无票访问照样 200。
+    const verify = () => false;
+    const mw = createEdgeTokenMiddleware(undefined, verify);
+    const next = vi.fn() as unknown as NextFunction;
+    const { res, raw } = makeRes();
+    mw(makeReq('/api/v1/modules'), res, next);
+    expect(next).not.toHaveBeenCalled();
+    expect(raw.statusCode).toBe(401);
+  });
+
+  it('登录口 + 有效 Bearer 票 → 放行', () => {
+    const mw = createEdgeTokenMiddleware(undefined, (token) => token === 'good');
+    const next = vi.fn() as unknown as NextFunction;
+    mw(makeReq('/api/v1/modules', undefined, 'Bearer good'), makeRes().res, next);
+    expect(next).toHaveBeenCalledOnce();
+  });
+
+  it('登录口 + 无效 Bearer 票 → 401', () => {
+    const mw = createEdgeTokenMiddleware(undefined, (token) => token === 'good');
+    const next = vi.fn() as unknown as NextFunction;
+    const { res, raw } = makeRes();
+    mw(makeReq('/api/v1/modules', undefined, 'Bearer bad'), res, next);
+    expect(next).not.toHaveBeenCalled();
+    expect(raw.statusCode).toBe(401);
+  });
+
+  it('登录口本身豁免（否则没人能拿到第一张票）', () => {
+    const mw = createEdgeTokenMiddleware(undefined, () => false);
+    const next = vi.fn() as unknown as NextFunction;
+    mw(makeReq('/api/v1/edge/login'), makeRes().res, next);
+    expect(next).toHaveBeenCalledOnce();
   });
 
   it('⚠️ /health 永远豁免（探针不会带我们的头）', () => {

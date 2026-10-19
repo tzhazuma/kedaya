@@ -1,8 +1,16 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Injectable,
+  Logger,
+  NotFoundException,
+  Post,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 /**
@@ -92,10 +100,10 @@ export class EdgeAuthController {
     const expected = this.credential();
 
     // 未配置 → 当作这条路由不存在。不返回 401，避免暴露"这里有个登录口"
+    // ⚠️ 必须抛 Nest 的 `NotFoundException` —— 抛裸 `Error` + `status` 字段
+    // 会变成 500（异常过滤器不认那个字段）。第一次部署就踩了这个坑。
     if (expected === null) {
-      const error = new Error('Not Found') as Error & { status?: number };
-      error.status = 404;
-      throw error;
+      throw new NotFoundException('未启用');
     }
 
     const record = (body ?? {}) as Record<string, unknown>;
@@ -109,9 +117,7 @@ export class EdgeAuthController {
 
     if (!userOk || !passOk) {
       this.logger.warn(`边缘登录失败 username=${username.slice(0, 32)}`);
-      const error = new Error('用户名或密码错误') as Error & { status?: number };
-      error.status = 401;
-      throw error;
+      throw new UnauthorizedException('用户名或密码错误');
     }
 
     const nowSec = Math.floor(Date.now() / 1000);
