@@ -1,3 +1,4 @@
+import { MailModule } from './modules/mail/mail.module';
 import { EdgeModule } from './modules/edge/edge.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -58,6 +59,7 @@ import { AgentModule } from './modules/agent/agent.module';
  */
 @Module({
   imports: [
+    MailModule,
     EdgeModule,
     GroupBotModule,
     ConfigModule.forRoot({
