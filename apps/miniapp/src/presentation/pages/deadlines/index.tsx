@@ -5,7 +5,7 @@ import {
   DEADLINE_SOURCES,
   type DeadlineSource,
 } from '@kedaya/contracts'
-import { parseDueText, parsePastedDeadlines } from '@kedaya/shared'
+import { buildDeadlineIcs, parseDueText, parsePastedDeadlines } from '@kedaya/shared'
 import { useEffect, useState } from 'react'
 
 import {
@@ -118,6 +118,47 @@ export default function DeadlinesPage() {
    * ⚠️ **解析不了的行必须回显给用户** —— 否则他以为全导进去了，
    * 到截止日才发现少了一条。这是这个功能最容易做错的地方。
    */
+  /**
+   * 导出为 ICS 日历。
+   *
+   * ⚠️ 小程序里**没有**"下载文件"这个动作，所以只能把 ICS 文本放进剪贴板，
+   * 让用户自己粘进日历应用 / 存成 `.ics` 文件。
+   *
+   * 为什么值得做：这是 DDL 模块里**唯一不需要任何平台凭据**的输出侧能力 ——
+   * 我们不去登 Blackboard / Gradescope，只是把用户已经导入的截止日期
+   * 渲染成标准日历格式。用户的日历每天都会看，我们的页面不会。
+   */
+  async function handleExportIcs(): Promise<void> {
+    // `state.items` 里**只有**用户自己导入/手填的条目 —— 演示数据是页面上
+    // 用 `buildDemoDeadlineItems()` 现算的，从不写进 state。所以不需要过滤。
+    const exportable = state.items
+    if (exportable.length === 0) {
+      toast('还没有可导出的 DDL')
+      return
+    }
+
+    const ics = buildDeadlineIcs(
+      exportable.map((item) => ({
+        id: item.id,
+        title: item.title,
+        courseName: item.courseName,
+        dueAt: item.dueAt,
+        sourceLabel: DEADLINE_SOURCE_LABELS[item.source],
+        submitted: item.submitted,
+      })),
+      { calendarName: '可达鸭 DDL' },
+    )
+
+    try {
+      await Taro.setClipboardData({ data: ics })
+      // ⚠️ 必须说清"复制了什么"和"下一步做什么" —— 用户拿到一堆
+      // BEGIN:VCALENDAR 文本会懵。也不要说"已导入日历"，那是他没做的事。
+      toast(`已复制 ${exportable.length} 条 DDL 的日历文本，粘到日历应用即可`)
+    } catch {
+      toast('复制失败，请检查剪贴板权限')
+    }
+  }
+
   function handlePaste(): void {
     const result = parsePastedDeadlines(pasteText, {
       source: pasteSource,
@@ -490,6 +531,10 @@ export default function DeadlinesPage() {
             <View className='kdy-ddl__add'>
               <KdyButton block variant='secondary' onClick={() => setShowForm(true)}>
                 手动添加一条
+              </KdyButton>
+              {/* 导出到日历：唯一不需要平台凭据的输出侧能力 */}
+              <KdyButton block variant='ghost' onClick={() => void handleExportIcs()}>
+                导出到日历（ICS）
               </KdyButton>
             </View>
           )}
