@@ -134,6 +134,13 @@ function createFakeRepository(overrides: Partial<AuthRepository> = {}): {
     async passwordStatus() {
       return ok<PasswordStatusDto>({ hasPassword: true })
     },
+    async deleteAccount(input) {
+      // mock 如实模拟后端防误触：confirm 不对时**零副作用**。
+      if (input.confirm !== 'DELETE') {
+        return err({ code: 'VALIDATION_FAILED', message: '确认字段必须是 DELETE' })
+      }
+      return ok({ deletedAt: '2026-10-20T00:00:00.000Z' })
+    },
     async wechatConfig() {
       return ok({ provider: 'WECHAT_MINIPROGRAM', configured: false, appIdTail: null })
     },

@@ -2,6 +2,7 @@ import { modulePath } from '@kedaya/contracts'
 import { err, ok, type Result } from '@kedaya/shared'
 
 import type {
+  DeleteAccountResultDto,
   AccountProfileDto,
   AuthRepository,
   BindEmailInput,
@@ -42,6 +43,8 @@ import type { ApiClient } from '../api'
 const AUTH_BASE = modulePath('auth', 'account')
 const WECHAT_BASE = `${modulePath('auth')}/wechat`
 const ME_PATH = `${modulePath('auth')}/me`
+// `DELETE /auth/account` —— 注销账号（与 `me` 同属账号资源，但语义是销毁）
+const ACCOUNT_PATH = `${modulePath('auth')}/account`
 
 /** 响应形状不对时统一翻成 INTERNAL（而不是让 undefined 流进 UI） */
 function malformed(what: string): RepositoryError {
@@ -128,6 +131,13 @@ export function createHttpAuthRepository(api: ApiClient): AuthRepository {
         `${AUTH_BASE}/logout`,
         refreshToken === null ? {} : { refreshToken },
       )
+    },
+
+    async deleteAccount(input) {
+      // ⚠️ 这是唯一一个 `DELETE` 会**永久改变账号状态**的调用。
+      // 不在客户端做任何"预删除"，把判定权完全交给后端事务 ——
+      // 客户端若先本地清缓存再调用，一旦后端回滚，用户会以为已注销。
+      return api.del<DeleteAccountResultDto>(ACCOUNT_PATH)
     },
 
     async passwordStatus() {

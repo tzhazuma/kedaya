@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Headers, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { MODULES, modulePath } from '@kedaya/contracts';
 import { z } from 'zod';
@@ -20,10 +20,17 @@ import {
 import { readAuthContext } from './request-context';
 import { toCampusBindingSummary } from './campus-binding-summary';
 import { AuthService } from './auth.service';
+import { AccountDeletionService } from './application/account-deletion.service';
 
 const loginSchema = z.object({
   /** 上科大 CAS 回调拿到的 ticket（真实实现里服务端校验后立即丢弃） */
   ticket: z.string().min(1, 'ticket 不能为空').max(512, 'ticket 过长'),
+});
+
+const deleteAccountSchema = z.object({
+  password: z.string().min(1, 'password 不能为空').max(256),
+  /** 必须是字面量 DELETE —— 防误触，写错就整单拒绝（不删任何东西） */
+  confirm: z.string(),
 });
 
 const refreshSchema = z.object({
@@ -61,6 +68,7 @@ const updateProfileSchema = z
 @Controller(modulePath('auth'))
 export class AuthController {
   constructor(
+    @Inject(AccountDeletionService) private readonly accountDeletion: AccountDeletionService,
     private readonly authService: AuthService,
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     /**
@@ -222,6 +230,32 @@ export class AuthController {
     const parsed = readCampusProvider(platform);
     const binding = await this.campusLinks.getBinding(userId, parsed);
     return { available: binding !== null && isActiveLinkStatus(binding.status) };
+  }
+
+  /**
+   * 账号注销（PIPL 自助注销）。
+   *
+   * ⚠️ 三个刻意的设计：
+   * 1. **要求 `confirm: 'DELETE'`** —— 不可逆操作不能只靠一个按钮的点击。
+   * 2. **密码错误与账号不存在同一条文案** —— 否则这个端点会变成账号枚举器。
+   * 3. **不物理删除业务内容** —— 帖子/拼单还挂在别人页面上，删掉会变孤儿；
+   *    改为撤销身份 + 匿名化。详情见 `AccountDeletionService` 的注释。
+   */
+  @Delete('account')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: '注销账号（立即撤销会话/凭据/身份/校园绑定，业务内容保留并匿名化）',
+  })
+  async deleteAccount(
+    @CurrentUser() userId: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = deleteAccountSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new ValidationError('请求体不合法：需要 password 与 confirm 两个字段');
+    }
+    return this.accountDeletion.deleteAccount(userId, parsed.data);
   }
 
   @Get('modules')

@@ -43,6 +43,16 @@ export interface PasswordStatusDto {
   hasPassword: boolean
 }
 
+/** 注销账号的入参。`confirm` 必须是字面量 'DELETE'（后端会校验，写错则零写入） */
+export interface DeleteAccountInput {
+  password: string
+  confirm: string
+}
+
+export interface DeleteAccountResultDto {
+  deletedAt: string
+}
+
 export interface LogoutResultDto {
   loggedOut: true
   revoked: number
@@ -145,6 +155,13 @@ export interface AuthRepository {
   changePassword(input: ChangePasswordInput): Promise<Result<AuthSessionDto, RepositoryError>>
   logout(refreshToken: string | null): Promise<Result<LogoutResultDto, RepositoryError>>
   passwordStatus(): Promise<Result<PasswordStatusDto, RepositoryError>>
+  /**
+   * 注销账号（PIPL 自助注销）。
+   *
+   * ⚠️ 这是**不可逆**操作。后端要求 `confirm === 'DELETE'`，
+   * 且确认字段不对时**不会删除任何数据**。
+   */
+  deleteAccount(input: DeleteAccountInput): Promise<Result<DeleteAccountResultDto, RepositoryError>>
 
   /* ---------------- 微信（第一级身份层的第三条入口） ---------------- */
 

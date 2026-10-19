@@ -21,14 +21,41 @@
  * 让并发调用表现为"单连接数据库"。它不改变任何一条 SQL 的语义。
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
+// 自动发现会把**全部**迁移都跑一遍，其中 `..._buddy` 需要 pgvector。
+// 不带扩展建库会在那一步报 `extension "vector" is not available`。
+import { vector } from '@electric-sql/pglite/vector';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
-const MIGRATION_DIRS = ['20261017030000_init', '20261017190000_contact_exchange'];
+/**
+ * 迁移目录：**自动发现**，按文件名排序执行。
+ *
+ * ⚠️ 这里曾经是一份硬编码的两项清单
+ * （`['20261017030000_init', '20261017190000_contact_exchange']`）。
+ * 它在本模块自己的测试里一直是对的，直到**别人**给 `User` 加了一列
+ * （`deletedAt`，账号注销用）：
+ *
+ *   Prisma 客户端是按**完整** schema 生成的，所以 `prisma.user.create()`
+ *   会带上 `deletedAt`；而数据库里只有那两份迁移建出来的表 → 
+ *   `The column User.deletedAt does not exist in the current database`。
+ *
+ * 失败点在**别人的模块**里，看起来像"我给 User 加列把联系方式测试搞挂了"，
+ * 实际根因是这份清单不会跟着 `prisma/migrations/` 长。
+ *
+ * `test/fixtures/pglite-prisma.ts` 早就改成自动发现了，注释里写着同一句话：
+ * 「曾经硬编码的清单在'新增迁移忘了同步'时会静默失效」。
+ * 这里改成同样的做法。
+ */
+function discoverMigrationDirs(root: string): string[] {
+  return readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && /^\d/.test(entry.name))
+    .map((entry) => entry.name)
+    .sort();
+}
 
 function migrationsRoot(): string {
   const candidates = [
@@ -36,7 +63,9 @@ function migrationsRoot(): string {
     join(process.cwd(), 'services', 'api', 'prisma', 'migrations'),
   ];
   for (const candidate of candidates) {
-    if (existsSync(join(candidate, MIGRATION_DIRS[0] as string))) return candidate;
+    // 用"这个目录下有没有 `migration_lock.toml`"来判断，而不是拿某个
+    // 具体迁移名当探针 —— 后者会在迁移改名/合并时静默失效。
+    if (existsSync(join(candidate, 'migration_lock.toml'))) return candidate;
   }
   throw new Error(`找不到 prisma/migrations（cwd=${process.cwd()}）`);
 }
@@ -85,10 +114,10 @@ export interface ContactPglite {
 }
 
 export async function createContactPglite(): Promise<ContactPglite> {
-  const db = new PGlite();
+  const db = new PGlite({ extensions: { vector } });
   const root = migrationsRoot();
 
-  for (const dir of MIGRATION_DIRS) {
+  for (const dir of discoverMigrationDirs(root)) {
     await db.exec(readFileSync(join(root, dir, 'migration.sql'), 'utf8'));
   }
 

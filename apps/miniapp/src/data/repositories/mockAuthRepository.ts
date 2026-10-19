@@ -371,6 +371,13 @@ export function createMockAuthRepository(options: MockAuthOptions = {}): AuthRep
       const account = current()
       return delay(ok<PasswordStatusDto>({ hasPassword: account !== undefined && account.password !== '' }))
     },
+    async deleteAccount(input) {
+      // mock 也要如实模拟后端的防误触：confirm 不对时**什么都不做**。
+      if (input.confirm !== 'DELETE') {
+        return err({ code: 'VALIDATION_FAILED', message: '确认字段必须是 DELETE' })
+      }
+      return ok({ deletedAt: new Date().toISOString() })
+    },
 
     /* ---------------- 微信 ---------------- */
 

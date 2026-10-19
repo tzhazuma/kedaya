@@ -33,6 +33,10 @@ model User {
   anonEnabled  Boolean @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  /// 账号注销时刻（PIPL 要求自助注销）。**不物理删这行** ——
+  /// 他的帖子/拼单还挂在别人页面上，删掉会变孤儿；改为匿名化 + 打这个时间戳。
+  /// 所有查询用户资料的地方都必须按 `deletedAt == null` 过滤。
+  deletedAt    DateTime?
 
   /// 自建账号凭据（邮箱 + 密码）。仅密码登录方式存在时为 null（例如纯 CAS 账号）
   credential     UserCredential?
@@ -84,6 +88,7 @@ model User {
   target      NutritionTarget?
 
   @@index([createdAt])
+  @@index([deletedAt])
 }
 
 /// 自建账号凭据：邮箱 + 密码（**与 CAS 身份层物理分离**）。

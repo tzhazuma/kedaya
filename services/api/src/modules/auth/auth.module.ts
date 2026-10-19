@@ -18,6 +18,9 @@ import { MockCampusAuthProvider } from './data/mock-campus-auth.provider';
 import { MockCampusDataAdapter } from './data/mock-campus-data.adapter';
 import { RefreshSessionPrismaRepository } from './data/refresh-session.prisma-repository';
 import { UserPrismaRepository } from './data/user.prisma-repository';
+import { AccountDeletionPrismaRepository } from './data/account-deletion.prisma-repository';
+import { ACCOUNT_DELETION_REPOSITORY } from './domain/account-deletion.domain';
+import { AccountDeletionService } from './application/account-deletion.service';
 import { VerificationCodePrismaRepository } from './data/verification-code.prisma-repository';
 import { WeChatMiniProgramAdapter } from './data/wechat-miniprogram.adapter';
 import {
@@ -88,6 +91,9 @@ import { WECHAT_SESSION_PORT } from './domain/wechat.domain';
       ) => ((config.get<string>('CAMPUS_DATA_MODE') ?? 'mock') === 'live' ? http : mock),
     },
     { provide: USER_REPOSITORY, useClass: UserPrismaRepository },
+    // 账号注销（PIPL 自助注销）：端口 → Prisma 实现
+    { provide: ACCOUNT_DELETION_REPOSITORY, useClass: AccountDeletionPrismaRepository },
+    AccountDeletionService,
     { provide: LOCAL_ACCOUNT_REPOSITORY, useClass: LocalAccountPrismaRepository },
     { provide: VERIFICATION_CODE_REPOSITORY, useClass: VerificationCodePrismaRepository },
     { provide: REFRESH_SESSION_REPOSITORY, useClass: RefreshSessionPrismaRepository },

@@ -66,6 +66,13 @@ export interface AuthAccountUseCase {
   resetPassword(input: ResetPasswordInput): Promise<Result<string, RepositoryError>>
   changePassword(input: ChangePasswordInput): Promise<Result<Session, RepositoryError>>
   logout(): Promise<Result<true, RepositoryError>>
+  /**
+   * 注销账号（PIPL 自助注销）。**不可逆**。
+   *
+   * 成功后必须清掉本地令牌 —— 否则用户会停在"界面上还登录着、
+   * 但每个请求都 401"的状态里。
+   */
+  deleteAccount(input: { password: string; confirm: string }): Promise<Result<true, RepositoryError>>
 
   /** 微信一键登录 / 首次注册 */
   loginWithWechat(input?: {
@@ -257,6 +264,17 @@ export function createAuthAccountUseCase(options: AuthAccountOptions): AuthAccou
       } catch {
         // 网络失败也要让用户登出：本地令牌是唯一的凭据来源
       }
+      session.signOut()
+      return ok(true)
+    },
+
+    /* ---------------- 注销账号 ---------------- */
+
+    async deleteAccount(input) {
+      const result = await repository.deleteAccount(input)
+      if (!result.ok) return result
+      // ⚠️ 注销成功后**必须**清本地会话。不清的话页面还显示"已登录"，
+      // 而所有请求都会 401 —— 用户会以为注销失败或程序坏了。
       session.signOut()
       return ok(true)
     },

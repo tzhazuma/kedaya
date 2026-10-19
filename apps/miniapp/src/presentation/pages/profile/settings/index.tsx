@@ -6,7 +6,7 @@ import { getContainer } from '../../../../app/container'
 import { PRIVACY_TOGGLES, SENSITIVITY_LABELS } from '../../../../domain/models/privacy'
 import type { ConsentView, PrivacySettings } from '../../../../domain/models/privacy'
 import { toast } from '../../../../platform/navigation'
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyTag } from '../../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyTag } from '../../../components'
 import { KdyHeading } from '../../../components/KdyHeading'
 import { useStore } from '../../../hooks'
 import './index.scss'
@@ -92,6 +92,14 @@ export default function PrivacySettingsPage() {
   const state = useStore(privacy)
   const [showExport, setShowExport] = useState(false)
 
+  // ---- 注销账号（PIPL 自助注销）----
+  // ⚠️ 两个输入是刻意的：不可逆操作不能只靠"点一下"。
+  // 后端也独立校验 `confirm === 'DELETE'`，写错时**零写入**。
+  const [showDelete, setShowDelete] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deleting, setDeleting] = useState(false)
+
   useDidShow(() => {
     privacy.hydrate()
     void privacy.load()
@@ -108,6 +116,34 @@ export default function PrivacySettingsPage() {
   async function handleConsent(consent: ConsentView): Promise<void> {
     const result = consent.active ? await privacy.revoke(consent.module) : await privacy.grant(consent.module)
     toast(result.ok ? result.message : `操作失败：${result.message}`)
+  }
+
+  async function handleDeleteAccount(): Promise<void> {
+    if (deleteConfirm !== 'DELETE') {
+      toast('请把确认框填成 DELETE（全大写）；填错时不会删除任何数据')
+      return
+    }
+    if (deletePassword.length === 0) {
+      toast('请输入登录密码')
+      return
+    }
+
+    setDeleting(true)
+    const result = await container.useCases.auth.deleteAccount({
+      password: deletePassword,
+      confirm: deleteConfirm,
+    })
+    setDeleting(false)
+
+    if (!result.ok) {
+      toast(`注销失败：${result.error.message}`)
+      return
+    }
+    // 成功：本地会话已在用例里清掉，这里只要说清发生了什么
+    toast('账号已注销。已登录状态、密码与全部绑定已删除，业务内容保留并匿名化')
+    setShowDelete(false)
+    setDeletePassword('')
+    setDeleteConfirm('')
   }
 
   async function handleExport(): Promise<void> {
@@ -244,6 +280,69 @@ export default function PrivacySettingsPage() {
             </View>
 
             <Text className='kdy-privacy__muted'>{exported.note}</Text>
+          </View>
+        )}
+      </KdyCard>
+
+      {/* ④ 注销账号 —— PIPL 自助注销入口 */}
+      <KdyCard title='注销账号'>
+        <Text className='kdy-privacy__row-detail'>
+          注销后**立即生效、不可恢复**：所有设备上的登录状态、密码凭据、微信与校园身份绑定、
+          隐私开关与同意记录、AI 画像、心理预约记录、校园邮箱数据都会删除；
+          昵称头像清空并显示为「已注销用户」。
+        </Text>
+        <Text className='kdy-privacy__row-detail'>
+          你发布过的帖子、拼单与闲置记录**会保留**（其他人的回复与已成团记录依赖它们），
+          但作者不再与你的真实身份关联。这是为了不在别人页面上留下空洞，也是交易记录的留存义务。
+        </Text>
+
+        {!showDelete ? (
+          <View className='kdy-privacy__actions'>
+            <KdyButton
+              size='sm'
+              variant='ghost'
+              onClick={() => setShowDelete(true)}
+            >
+              我要注销账号
+            </KdyButton>
+          </View>
+        ) : (
+          <View className='kdy-privacy__danger'>
+            <KdyField
+              label='登录密码'
+              password
+              value={deletePassword}
+              onChange={setDeletePassword}
+              placeholder='用于确认是你本人'
+              hint='免密登录（微信 / 统一身份认证）的账号暂不支持自助注销，请联系我们'
+            />
+            <KdyField
+              label='确认'
+              value={deleteConfirm}
+              onChange={setDeleteConfirm}
+              placeholder='输入 DELETE'
+              hint='必须是大写 DELETE；填错时不会删除任何数据'
+            />
+            <View className='kdy-privacy__actions'>
+              <KdyButton
+                size='sm'
+                loading={deleting}
+                onClick={() => void handleDeleteAccount()}
+              >
+                确认注销
+              </KdyButton>
+              <KdyButton
+                size='sm'
+                variant='ghost'
+                onClick={() => {
+                  setShowDelete(false)
+                  setDeletePassword('')
+                  setDeleteConfirm('')
+                }}
+              >
+                取消
+              </KdyButton>
+            </View>
           </View>
         )}
       </KdyCard>

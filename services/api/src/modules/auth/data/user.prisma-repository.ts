@@ -73,7 +73,18 @@ export class UserPrismaRepository implements UserRepository {
   }
 
   async findById(id: string): Promise<UserRecord | null> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    // ⚠️ **必须**过滤 `deletedAt: null`。
+    //
+    // 注销时我们**刻意不删 User 行**（否则他的帖子/拼单会变成孤儿），
+    // 只做匿名化。而 JWT 是无状态的 —— 旧 access token 签名依然有效。
+    // 如果这里不过滤，注销后拿旧 token 调 `/auth/me` 仍会 200，
+    // 「注销后立即失效」就是一句空话。
+    //
+    // 用 `findFirst` 而不是 `findUnique`：加了 `deletedAt` 条件后
+    // `findUnique` 的 where 只接受唯一字段。
+    const user = await this.prisma.user.findFirst({
+      where: { id, deletedAt: null },
+    });
     return user ? toUserRecord(user) : null;
   }
 
@@ -127,7 +138,11 @@ export class UserPrismaRepository implements UserRepository {
   }
 
   async updateProfile(userId: string, patch: ProfilePatch): Promise<UserRecord> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    // 与 `findById` 同一条不变式：已注销（deletedAt 非空）的账号视同不存在。
+    // 否则旧 access token 仍能把「已注销用户」改回一个真实昵称 —— 破坏匿名化。
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+    });
     if (!user) throw new NotFoundError('账号不存在，请重新登录');
 
     const updated = await this.prisma.user.update({
