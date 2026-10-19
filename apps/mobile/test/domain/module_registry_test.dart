@@ -4,10 +4,26 @@ import 'package:kedaya/domain/models/kedaya_module.dart';
 /// 模块注册表是契约 §4 的冻结项，Dart 侧只是镜像 —— 因此这里断言镜像没走样。
 /// 对应用例见 `packages/contracts/src/modules.test.ts`。
 void main() {
-  test('注册表共 20 个模块：15 业务 + 5 基础', () {
-    expect(kedayaModules, hasLength(20));
+  test('注册表共 21 个模块：15 业务 + 6 基础', () {
+    expect(kedayaModules, hasLength(21));
     expect(businessModules, hasLength(15));
-    expect(coreModules, hasLength(5));
+    expect(coreModules, hasLength(6));
+  });
+
+  // 2026-10-19 契约新增第 21 个模块 `deadlines`（DDL 聚合），Dart 侧必须同步。
+  // 期望值逐条抄自 `packages/contracts/src/modules.test.ts` 的同名断言。
+  test('deadlines 是第 21 个模块：core / medium / 无同意门 / route == id', () {
+    final KedayaModule? module = moduleById('deadlines');
+    expect(module, isNotNull, reason: '契约已有 deadlines，Dart 镜像不能缺项');
+    expect(module!.nameZh, 'DDL 聚合');
+    expect(module.nameEn, 'Deadlines');
+    expect(module.category, ModuleCategory.core);
+    expect(module.sensitivity, ModuleSensitivity.medium);
+    expect(module.requiresConsent, isFalse);
+    expect(module.route, 'deadlines');
+    expect(module.summary, contains('Gradescope'));
+    expect(moduleIsSensitive('deadlines'), isFalse);
+    expect(moduleRequiresConsent('deadlines'), isFalse);
   });
 
   test('id 唯一，route 与 id 一致，中文名与一句话定义非空', () {

@@ -23,3 +23,4 @@ export * from './campus-services';
 export * from './campus-poi';
 export * from './group-bot';
 export * from './deadlines';
+export * from './deadline-collect';

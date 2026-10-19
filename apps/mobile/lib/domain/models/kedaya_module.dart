@@ -2,7 +2,7 @@
 ///
 /// 真相来源：`packages/contracts/src/modules.ts`。导航、宫格、权限判定、路由前缀
 /// 全部由本表驱动 —— **禁止在 widget 里硬编码模块清单**。
-/// 两边一致性由 `test/domain/module_registry_test.dart` 断言（20 个模块、id 唯一、
+/// 两边一致性由 `test/domain/module_registry_test.dart` 断言（21 个模块、id 唯一、
 /// route == id、同意门规则与 `modules.test.ts` 相同）。
 library;
 
@@ -239,7 +239,7 @@ const List<KedayaModule> businessModules = <KedayaModule>[
 ];
 
 /* ------------------------------------------------------------------ *
- * 5 个基础模块
+ * 6 个基础模块（第 6 个是 2026-10-19 新增的 deadlines，与契约同序）
  * ------------------------------------------------------------------ */
 const List<KedayaModule> coreModules = <KedayaModule>[
   KedayaModule(
@@ -261,6 +261,20 @@ const List<KedayaModule> coreModules = <KedayaModule>[
     sensitivity: ModuleSensitivity.medium,
     requiresConsent: false,
     route: 'schedule',
+  ),
+  // DDL 聚合（第 21 个模块，2026-10-19 加入，逐字镜像契约 `modules.ts`）。
+  // 归入 core：与 `schedule` 同属学业基础设施；medium 因为条目能反推在修哪些课，
+  // 但不含成绩、答案与平台凭据。本轮**没有**对应的后端模块。
+  KedayaModule(
+    id: 'deadlines',
+    nameZh: 'DDL 聚合',
+    nameEn: 'Deadlines',
+    summary:
+        '把散在 Blackboard / Gradescope / Piazza / e云平台的作业与考试截止日期聚到一处，按紧迫度排序并保留回源链接',
+    category: ModuleCategory.core,
+    sensitivity: ModuleSensitivity.medium,
+    requiresConsent: false,
+    route: 'deadlines',
   ),
   KedayaModule(
     id: 'campus-card',
