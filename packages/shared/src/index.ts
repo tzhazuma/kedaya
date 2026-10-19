@@ -21,3 +21,4 @@ export * from './group-import';
 export * from './deadline-normalize';
 export * from './deadline-paste';
 export * from './deadline-html';
+export * from './deadline-ics';
