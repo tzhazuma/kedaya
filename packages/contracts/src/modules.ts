@@ -244,6 +244,36 @@ export const CORE_MODULES: readonly KedayaModule[] = [
    * 小程序端的条目只来自本机粘贴 / 手填。`route` 仍先按契约登记 ——
    * 它是 API 路由段与落库字段，等接口上线时不必再改一次 id。
    */
+  /**
+   * 校园地点（第 22 个模块，2026-10-19 加入）。
+   *
+   * ## 为什么也要登记成契约模块
+   *
+   * 页面早就写好（`presentation/pages/campusMap/`），但它**没有任何入口** ——
+   * 因为首页宫格、路由表都只认契约模块（`modules.ts` 的注释写得很清楚：
+   * 「禁止在各端硬编码模块清单」）。不登记就只能手动 navigate，等于不可达。
+   *
+   * 这与 `deadlines` 是同一类问题，处理方式也一致：先登记，再让各端自动跟上。
+   *
+   * ## 为什么是 `core` + `low`
+   *
+   * 它展示的是**校园公开地点信息**（快递站 / 车库 / 食堂 / 活动场地 / 自习空间），
+   * 不含任何个人数据，也不产生交易或社交内容 —— 因此 `low`。
+   *
+   * ⚠️ **照片版权**：`map.niyiwei.com` 的地库与菜单照片是另一参赛组同学手拍，
+   * 著作权归拍摄者。我们的 POI 契约（`campus-poi.ts`）在校验层主动拒收该域名的
+   * 照片，且**有图必须署名**。演示数据不带任何照片。
+   */
+  {
+    id: 'campus-map',
+    nameZh: '校园地点',
+    nameEn: 'Campus Map',
+    summary: '快递站、地下车库、食堂菜单、活动场地与自习空间的位置与「下一站」安排',
+    category: 'core',
+    sensitivity: 'low',
+    requiresConsent: false,
+    route: 'campus-map',
+  },
   {
     id: 'deadlines',
     nameZh: 'DDL 聚合',

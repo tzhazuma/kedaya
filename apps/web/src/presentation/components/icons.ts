@@ -13,6 +13,7 @@ import {
   HeartPulse,
   Home,
   KeyRound,
+  MapPin,
   MessagesSquare,
   Plug,
   Search,
@@ -57,6 +58,7 @@ export const MODULE_ICONS: Record<ModuleIconKey, KdyIcon> = {
   user: User,
   bell: Bell,
   dumbbell: Dumbbell,
+  'map-pin': MapPin,
 };
 
 export function moduleIcon(key: ModuleIconKey): KdyIcon {

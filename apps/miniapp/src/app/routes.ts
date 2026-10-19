@@ -185,6 +185,7 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   schedule: PAGE_PATHS.schedule,
   /** DDL 聚合：本轮条目只存本机（无后端），但页面与入口已真实可用 */
   deadlines: PAGE_PATHS.deadlines,
+  'campus-map': PAGE_PATHS.campusMap,
   'campus-card': PAGE_PATHS.campusCard,
   profile: PAGE_PATHS.profile,
 }

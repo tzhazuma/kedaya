@@ -111,7 +111,7 @@ export const HOME_SECTIONS: readonly HomeSection[] = [
   {
     id: 'daily',
     title: '校园日常',
-    entryIds: ['cou', 'flea-market', 'errand', 'lost-found', 'canteen', 'wildlife', 'facility', 'schedule', 'deadlines', 'campus-card'],
+    entryIds: ['cou', 'flea-market', 'errand', 'lost-found', 'canteen', 'wildlife', 'facility', 'schedule', 'deadlines', 'campus-map', 'campus-card'],
   },
   {
     id: 'community',
@@ -154,6 +154,7 @@ export const DEFAULT_HOME_ENTRY_IDS: readonly string[] = [
   'wildlife',
   'schedule',
   'deadlines',
+  'campus-map',
   'campus-card',
 ]
 

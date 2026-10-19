@@ -53,6 +53,13 @@ const DELIVERY: Readonly<Record<string, ModuleDelivery>> = {
     stage: 'miniapp',
     note: '我的：账号状态、隐私开关与敏感模块同意（可撤回）、数据导出、我的资产入口。',
   },
+  'campus-map': {
+    stage: 'miniapp',
+    note:
+      '快递站、地下车库、食堂菜单、活动场地与自习空间的列表与「下一站」安排。' +
+      '**照片一律不内置**：`map.niyiwei.com` 的地库与菜单照片是另一参赛组同学手拍，' +
+      '著作权归拍摄者；我们的校验层主动拒收该域名，且有图必须署名。',
+  },
   deadlines: {
     stage: 'miniapp',
     note:

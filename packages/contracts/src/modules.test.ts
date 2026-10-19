@@ -12,13 +12,13 @@ import {
 } from './modules';
 
 describe('模块注册表', () => {
-  it('共 21 个模块（15 业务 + 6 基础）', () => {
+  it('共 22 个模块（15 业务 + 7 基础）', () => {
     // 第 21 个是 2026-10-19 新增的 `deadlines`（DDL 聚合）。它归入基础模块：
     // 与课表同属学业基础设施，不占用需求图里的 14 个业务模块名额。
     // 本轮只有小程序端（数据存本机），服务端尚未有对应模块。
-    expect(MODULES).toHaveLength(21);
+    expect(MODULES).toHaveLength(22);
     expect(BUSINESS_MODULES).toHaveLength(15);
-    expect(CORE_MODULES).toHaveLength(6);
+    expect(CORE_MODULES).toHaveLength(7);
   });
 
   it('覆盖需求图中的全部 14 个业务模块 + 场馆预约（TechPie 并入）', () => {
