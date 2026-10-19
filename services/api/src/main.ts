@@ -11,6 +11,7 @@ import { API_BASE_PATH, TRACE_HEADER } from '@kedaya/contracts';
 
 import { AppModule } from './app.module';
 import { createEdgeTokenMiddleware } from './common/edge-token.middleware';
+import { EdgeTokenVerifier } from './modules/edge/edge-auth.controller';
 import { TraceMiddleware } from './common/middleware/trace.middleware';
 
 /** 请求体上限：base64 图片比原图大 ~33%，8 MB 足够 2 MB 的图 + JSON 外壳 */
@@ -65,7 +66,14 @@ async function bootstrap(): Promise<void> {
   // 后端经 Cloudflare quick tunnel 暴露在公网，那是**公开 URL**。
   // 设了 `API_EDGE_TOKEN` 就要求所有请求带 `x-edge-token`（`/health` 豁免）。
   // 未设置时完全放行 —— 本地开发与内网部署零影响。
-  app.use(createEdgeTokenMiddleware(config.get<string>('API_EDGE_TOKEN')));
+  // 第二参数注入 edge JWT 校验器：允许用「用户名+密码换来的票」访问，
+  // 与 `x-edge-token` 并行；任一种通过即可。
+  const edgeVerifier = app.get(EdgeTokenVerifier);
+  app.use(
+    createEdgeTokenMiddleware(config.get<string>('API_EDGE_TOKEN'), (token) =>
+      edgeVerifier.verify(token),
+    ),
+  );
 
   // ---- CORS ----
   const configuredOrigins = (config.get<string>('CORS_ORIGINS') ?? '')

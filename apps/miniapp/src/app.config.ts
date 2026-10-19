@@ -107,6 +107,9 @@ export default {
     'presentation/pages/identity/index',
     'presentation/pages/schedule/index',
     'presentation/pages/campusCard/index',
+    // 校园地点（POI 补充层）：与 `src/app/routes.ts` 的 `PAGE_PATHS.campusMap` 成对登记。
+    // 放主包 —— 本页只有列表与「下一站」，没有底图 / 地图 SDK，体积很小。
+    'presentation/pages/campusMap/index',
     // 课程 DDL 聚合：与 `src/app/routes.ts` 的 `PAGE_PATHS.deadlines` 成对登记。
     // 放主包而不是分包 —— 它是核心模块的下一跳，点开要立刻出来（体积由 verify:weapp 守着）。
     'presentation/pages/deadlines/index',

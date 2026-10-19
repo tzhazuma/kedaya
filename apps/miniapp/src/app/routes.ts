@@ -111,6 +111,14 @@ export const PAGE_PATHS = {
   schedule: '/presentation/pages/schedule/index',
   campusCard: '/presentation/pages/campusCard/index',
   /**
+   * 校园地点（POI 补充层）—— 快递站 / 车库 / 食堂菜单 / 活动场地 / 自习空间。
+   *
+   * 这一轮只做**列表 + 下一站**，不画地图、不接地图 SDK；数据来自本机 storage
+   * （5 条演示数据，名字带「【演示】」），没有后端接口。
+   * 与 `app.config.ts` 的 `pages` 成对登记，否则点进去白屏。
+   */
+  campusMap: '/presentation/pages/campusMap/index',
+  /**
    * 课程 DDL 聚合（Blackboard / Gradescope / Piazza / e云平台）。
    *
    * 与 `app.config.ts` 的 `pages` 必须同时登记：路由表与构建配置由

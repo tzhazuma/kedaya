@@ -29,7 +29,7 @@ describe('模块交付状态', () => {
     }
   });
 
-  it('小程序已上线的模块 = 20 个契约模块里除 groupbuy（走 Web）之外的 19 个', () => {
+  it('小程序已上线的模块 = 21 个契约模块里除 groupbuy（走 Web）之外的 20 个', () => {
     // 这份清单必须与小程序 `MODULE_ENTRY_PATHS`（真实有页面的模块）逐条对齐：
     // 端上真的做了才列进来，没做就老实留在 api-only —— 端上页面数对不上这里会红。
     expect(MINIAPP_MODULES.map((m) => m.id).sort()).toEqual([
@@ -38,6 +38,8 @@ describe('模块交付状态', () => {
       'buddy',
       'campus-card',
       'canteen',
+      // 第 21 个模块：DDL 聚合（粘贴导入在 miniapp，Web 暂无独立功能页）
+      'deadlines',
       'dorm-harmony',
       'errand',
       'facility',
@@ -61,7 +63,7 @@ describe('模块交付状态', () => {
     }
   });
 
-  it('20 个模块都已交付（facility 本轮补齐），api-only 为空', () => {
+  it('21 个模块都已交付（facility 本轮补齐），api-only 为空', () => {
     // 这一条的含义变了：以前它守的是「不要假装做了 facility」，
     // 现在它守的是「不要漏登记」—— 有模块交付了却没更新 delivery.ts，
     // 这里会红（因为 MODULES.length 与 DELIVERED_MODULES.length 会对不上）。

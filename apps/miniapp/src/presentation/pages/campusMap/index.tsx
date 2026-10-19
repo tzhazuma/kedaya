@@ -200,8 +200,7 @@ export default function CampusMapPage() {
 
                       {row.nextSlot !== null ? (
                         <Text className='kdy-campus-poi__row-next'>
-                          下一站：{row.nextSlot.whenLabel} · {row.nextSlot.title}（
-                          {row.nextSlot.relativeLabel}）
+                          {`下一站：${row.nextSlot.whenLabel} · ${row.nextSlot.title}（${row.nextSlot.relativeLabel}）`}
                         </Text>
                       ) : (
                         <Text className='kdy-campus-poi__row-next kdy-campus-poi__row-next--muted'>

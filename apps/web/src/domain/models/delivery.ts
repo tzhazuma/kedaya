@@ -53,6 +53,13 @@ const DELIVERY: Readonly<Record<string, ModuleDelivery>> = {
     stage: 'miniapp',
     note: '我的：账号状态、隐私开关与敏感模块同意（可撤回）、数据导出、我的资产入口。',
   },
+  deadlines: {
+    stage: 'miniapp',
+    note:
+      '把散在 Blackboard / Gradescope / Piazza / e云平台的截止日期聚到一处，按紧迫度排序、' +
+      '标出来源与是否已交。**收集方式是用户自己粘贴**已有的作业列表 —— 不代登录任何平台、' +
+      '不存平台密码。认不出的行会原样回显，不静默丢弃。',
+  },
   schedule: {
     stage: 'miniapp',
     note: '今日课表（正在上 / 下一节还有多久）、本周课表与学期切换、一键同步教务、手动加课；未绑定校园系统时明确提示而不是显示空课表。',

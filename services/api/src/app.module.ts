@@ -1,3 +1,4 @@
+import { EdgeModule } from './modules/edge/edge.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
@@ -57,6 +58,7 @@ import { AgentModule } from './modules/agent/agent.module';
  */
 @Module({
   imports: [
+    EdgeModule,
     GroupBotModule,
     ConfigModule.forRoot({
       isGlobal: true,

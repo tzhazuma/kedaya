@@ -42,6 +42,9 @@ model User {
   techpieLinks   TechpieLink[]
   /// TechPie 整合（规格 §5.3）：校园会话密文的唯一落点。业务层永不直接读。
   campusSessions CampusSession[]
+  /// 校园邮箱接入（IMAP 只读）：账户与归一后的活动
+  mailAccount    MailAccount?
+  mailEvents     MailEvent[]
   consents       Consent[]
   auditLogs      AuditLog[]
   profileSetting ProfileSetting?
@@ -1133,6 +1136,84 @@ model CampusSession {
   @@unique([userId, platform])
   @@index([status, expiresAt])
   @@map("CampusSession")
+}
+
+/* ================================================================== *
+ * 2.9-b 校园邮箱接入（IMAP 只读）
+ *
+ * 用户诉求：「活动可以从学校邮件中获取」。
+ * 这里只做两件事：**只读收信**，以及把邮件里认出的讲座/会议/宣讲会
+ * 归一成 `MailEvent`。**不做发信**（没有 SMTP 字段、没有 sendMail 路径）。
+ * ================================================================== */
+
+/// 校园邮箱账户（IMAP 只读）。
+///
+/// 访问域：mail-credential（凭证密文的唯一落点）
+/// 硬规则：
+///   1. `passwordCipher` 是 AES-256-GCM **密文**，**永不出现在任何响应里**，
+///      也不得写日志；明文密码只在绑定时用于一次 IMAP 验证，随即丢弃。
+///   2. 一个用户只保留一个邮箱（`userId @unique`）；重新绑定覆盖旧密文。
+///   3. 解绑 = **硬删**本行（密文随行消失），并级联删除由该邮箱归一出的活动。
+///   4. `status = stale` 只表示"上次同步失败"，**上次结果必须保留**，绝不清空。
+model MailAccount {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  /// 校园邮箱地址（规范化小写）
+  email          String
+  /// IMAP 服务器主机名（如 imap.shanghaitech.edu.cn）
+  imapHost       String
+  /// IMAP 端口（993 = TLS；143 = STARTTLS）
+  imapPort       Int
+  /// AES-256-GCM 密文。**永不出现在任何响应里**，也不得写日志。
+  passwordCipher String
+  /// 密钥版本（支持轮换）。**永不出现在任何响应里**。
+  cipherKeyId    String
+  lastSyncAt     DateTime?
+  /// active | stale
+  status         String    @default("active")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events MailEvent[]
+
+  @@index([status])
+  @@map("MailAccount")
+}
+
+/// 从邮件中归一出的活动（讲座 / 会议 / 宣讲会等）。
+///
+/// 访问域：mail-events（只存归一结果与最小元数据）
+/// 硬规则：
+///   1. **不存邮件正文、不存附件、不存附件名**；只存活动字段、UID、收信时刻
+///      与命中的时间片段（`matchedText`）。
+///   2. `(accountId, uid)` 唯一：IMAP UID 在同一个邮箱内稳定，重复同步不会产生重复活动。
+///   3. `stale` 在同步失败时置 true，旧结果**保留**；下次成功同步再清除。
+model MailEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  accountId   String
+  /// INBOX 内的 UID（用于幂等去重）
+  uid         Int
+  title       String
+  startsAt    DateTime
+  location    String?
+  organizer   String?
+  /// 0..1 的启发式置信度
+  confidence  Float
+  /// 命中的时间原文片段（可解释性）；**不是**邮件正文
+  matchedText String
+  receivedAt  DateTime
+  /// 上次同步失败时置 true（保留上次结果）
+  stale       Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account MailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, uid])
+  @@index([userId, startsAt])
+  @@map("MailEvent")
 }
 
 /* ================================================================== *

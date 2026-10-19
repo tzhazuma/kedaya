@@ -26,6 +26,9 @@ const DECORATION: Readonly<Record<string, ModuleDecoration>> = {
   // ---- 基础模块 ----
   auth: { icon: 'key-round', accent: 'brand' },
   schedule: { icon: 'calendar-days', accent: 'info' },
+  // 第 21 个模块：DDL 聚合。与 schedule 同属学业基础设施（core），
+  // 但详情页在小程序（Web 暂无独立功能页），所以只剩装饰 + 交付状态两处需要登记。
+  deadlines: { icon: 'calendar-days', accent: 'warning' },
   'campus-card': { icon: 'credit-card', accent: 'warning' },
   profile: { icon: 'user', accent: 'neutral' },
   notifications: { icon: 'bell', accent: 'info' },
@@ -49,7 +52,7 @@ const DECORATION: Readonly<Record<string, ModuleDecoration>> = {
   facility: { icon: 'dumbbell', accent: 'success' },
 };
 
-/** 20 个模块，顺序 = 契约顺序（基础在前，业务在后） */
+/** 21 个模块，顺序 = 契约顺序（基础在前，业务在后） */
 export const PORTAL_MODULES: readonly PortalModule[] = MODULES.map((m) =>
   decorateModule(m, DECORATION[m.id]),
 );
