@@ -1,3 +1,4 @@
+import { OSM_CAMPUS_POIS } from '../../application/campusPoi/campusPoiOsm'
 import {
   POI_TIME_SLOT_KINDS,
   validatePoiSupplement,
@@ -51,8 +52,16 @@ export function createCampusPoiLocalRepository(
   return {
     readPois(): CampusPoiSupplement[] {
       const value = cache.read<unknown>(CAMPUS_POI_LOCAL_STORAGE_KEY)
-      if (!Array.isArray(value)) return []
-      return value.filter(isCampusPoiSupplement)
+      const stored = Array.isArray(value) ? value.filter(isCampusPoiSupplement) : []
+
+      // ⚠️ 本机没有数据时，回退到 **OpenStreetMap 真实数据**（ODbL 1.0），
+      // 而不是演示数据。理由：演示数据会让人误以为"这里有真实地点"，
+      // 而 OSM 的 7 个具名 POI 是**真的**（虽然不含快递站/车库/菜单）。
+      //
+      // 用户一旦写入了自己的条目，storage 优先，不再回退 —— 否则
+      // "删掉某条 OSM 地点"这个动作会无效（下次读又冒出来）。
+      if (stored.length === 0) return [...OSM_CAMPUS_POIS]
+      return stored
     },
     readSlots(): PoiTimeSlot[] {
       const value = cache.read<unknown>(CAMPUS_POI_SLOT_STORAGE_KEY)

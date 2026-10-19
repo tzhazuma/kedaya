@@ -82,7 +82,16 @@ describe('校园 POI · 本机仓储', () => {
     ])
 
     repository.clear()
-    expect(repository.readPois()).toEqual([])
+    // ⚠️ 语义变化：`clear()` 现在表示「清掉我写入的内容，回到**初始状态**」。
+    // 初始状态是 **OpenStreetMap 的 7 个真实 POI**，不是空列表 ——
+    // 因为本机没数据时 `readPois()` 会回退到 OSM（见仓储里的注释）。
+    //
+    // 这条断言刻意写成「等于 OSM 种子」而不是「非空」：
+    // 如果哪天有人把回退改成返回演示数据，这里会红。
+    expect(repository.readPois()).toHaveLength(7)
+    expect(repository.readPois().every((poi) => poi.source === 'osm')).toBe(true)
+    // 但 storage 里的两个 key 必须真的被清掉（回退是读时行为，不落盘）
+    expect(Object.keys(cache.dump())).toEqual([])
     expect(repository.readSlots()).toEqual([])
   })
 
