@@ -49,6 +49,16 @@
  * 平台枚举（契约 §11.20-C：六值、小写、唯一一套）
  * ------------------------------------------------------------------ */
 
+// 信任/能力正交：`trust` = 敢不敢让它进来，`declaredCapabilities` = 进来能做什么。
+// 两者正交，判定见 `campus-service-trust.ts`。
+import {
+  CAPABILITY_SCOPE_LABELS,
+  isCapabilityAllowed,
+  TRUST_LEVEL_LABELS,
+  type CapabilityScope,
+  type TrustLevel,
+} from './campus-service-trust';
+
 export const CAMPUS_PLATFORMS = ['cas', 'egate', 'cpdaily', 'jwc', 'ecard', 'techpie'] as const;
 
 export type CampusPlatform = (typeof CAMPUS_PLATFORMS)[number];
@@ -169,6 +179,33 @@ export interface CampusServiceDescriptor {
    * `mode: 'mock'` 时不能写「已同步」；`wiring: 'not-wired'` 时不能写「点击查看」。
    */
   readonly userFacingNote: string;
+
+  /**
+   * 这条链路的**可信度** —— 「敢不敢让它进来」。
+   *
+   * ⚠️ 与 `authorization` 是**两件事**：
+   * - `authorization` 是**法律事实**（校方有没有书面授权）
+   * - `trust` 是**技术可信度**（这段代数据流程有没有被审过、来源可不可查）
+   *
+   * 当前 6 个服务全部是 `unverified`：没有书面授权、没有真实对接、
+   * 凭据流向也没有经过第三方审计。等真实适配器上线并审过之后才能升级。
+   *
+   * 判定逻辑见 `campus-service-trust.ts` 的 `isCapabilityAllowed`。
+   */
+  readonly trust: TrustLevel;
+
+  /**
+   * 它**声明需要**什么能力（不代表已授予）。
+   *
+   * ⚠️ 与 `trust` **正交**：声明了不等于允许。真正的判定是
+   * `isCapabilityAllowed(trust, capability)` —— 而 `credential-access`
+   * 对**任何** trust 都不允许（凭据只能留在用户设备上）。
+   *
+   * 这条「声明 / 授予」分离是从另一参赛组的插件 API 学来的：
+   * 把「代码能不能进来」（trust）与「进来能做什么」（capability）混为一谈，
+   * 结果就是「信任了这段代码」被误读成「授权它访问一切」。
+   */
+  readonly declaredCapabilities: readonly CapabilityScope[];
 }
 
 /* ------------------------------------------------------------------ *
@@ -226,6 +263,9 @@ export const CAMPUS_SERVICES = [
       '`.env.example` 与 `test/setup.ts` 里有一个 `https://cas.shanghaitech.edu.cn/cas`；它是仓库既有值，**未经校方确认**，不能当作真实地址使用。',
     ],
     userFacingNote: '演示期：CAS 登录为模拟身份（响应带 simulated: true），不是真实学号',
+    // 无可信授权 → unverified；声明需要读个人数据，但**没有** credential-access
+    trust: 'unverified',
+    declaredCapabilities: ['read-personal'],
   },
 
   /* ------------------------------------------------------------------ *
@@ -263,6 +303,9 @@ export const CAMPUS_SERVICES = [
       '在能拿到会话的前提下，`CAMPUS_DATA_MODE=live` 且未配 `CAMPUS_EGATE_DATA_URL` 时抛的是 `InternalError`（HTTP 500），不是可重试的 `UPSTREAM_UNAVAILABLE`（503）——语义上像「服务坏了」。',
     ],
     userFacingNote: '演示期：实名信息为模拟生成（响应标 simulated），真实 eGate 未接通。',
+    // 无可信授权 → unverified；声明需要读个人数据，但**没有** credential-access
+    trust: 'unverified',
+    declaredCapabilities: ['read-personal'],
   },
 
   /* ------------------------------------------------------------------ *
@@ -300,6 +343,9 @@ export const CAMPUS_SERVICES = [
       '`DEFAULT_SCOPES.CPDAILY = ["notice:read"]` 只是注释性常量，techpie 的 `bind()` 根本不读 `scopes`。',
     ],
     userFacingNote: 'CpDaily 尚未接入：课表目前没有真实数据源。',
+    // 无可信授权 → unverified；声明需要读个人数据，但**没有** credential-access
+    trust: 'unverified',
+    declaredCapabilities: ['read-personal'],
   },
 
   /* ------------------------------------------------------------------ *
@@ -337,6 +383,9 @@ export const CAMPUS_SERVICES = [
       '`schedule.today/week` 的 `simulated` 取的是**当前全局模式**（`schedule.service.ts:170,200`），不是行的来源；mock→live 切换后，旧 mock 行会被标成真实数据。',
     ],
     userFacingNote: '演示期课表来自本地模拟/缓存；真实教务同步未接通。',
+    // 无可信授权 → unverified；声明需要读个人数据，但**没有** credential-access
+    trust: 'unverified',
+    declaredCapabilities: ['read-personal'],
   },
 
   /* ------------------------------------------------------------------ *
@@ -386,6 +435,9 @@ export const CAMPUS_SERVICES = [
     ],
     userFacingNote:
       '演示期：绑定可用，但余额/流水来自本地记录（不是上游），付款码不可用且不会给假码。',
+    // 无可信授权 → unverified；声明需要读个人数据，但**没有** credential-access
+    trust: 'unverified',
+    declaredCapabilities: ['read-personal'],
   },
 
   /* ------------------------------------------------------------------ *
@@ -429,6 +481,9 @@ export const CAMPUS_SERVICES = [
     ],
     userFacingNote:
       '本地绑定与能力清单；没有从 TechPie 上游同步任何数据（不是「已接通」）。',
+    // 无可信授权 → unverified；声明需要读个人数据，但**没有** credential-access
+    trust: 'unverified',
+    declaredCapabilities: ['read-personal'],
   },
 ] as const satisfies readonly CampusServiceDescriptor[];
 
@@ -502,4 +557,77 @@ export function simulatedNotice(platform: CampusPlatform): string {
 /** 按接线程度筛选（运营 / 文档用：`end-to-end` 才是真正「已接通」） */
 export function campusServicesByWiring(wiring: CampusWiring): readonly CampusServiceDescriptor[] {
   return CAMPUS_SERVICES.filter((service) => service.wiring === wiring);
+}
+
+/* ------------------------------------------------------------------ *
+ * 信任 / 能力审计
+ * ------------------------------------------------------------------ */
+
+/** 一条服务的信任-能力审计结果 */
+export interface CampusServiceCapabilityAudit {
+  readonly platform: CampusPlatform;
+  readonly trust: TrustLevel;
+  /** 声明需要、但**当前 trust 不允许**的能力 */
+  readonly blockedCapabilities: readonly CapabilityScope[];
+  /** 是否声明了 `credential-access`（**任何** trust 都不允许） */
+  readonly declaresCredentialAccess: boolean;
+  /** 给用户看的一句话 */
+  readonly note: string;
+}
+
+/**
+ * 对全部校园服务跑一遍「信任 × 能力」矩阵。
+ *
+ * ## 为什么需要它
+ *
+ * 加了 `trust` / `declaredCapabilities` 两个字段之后，最容易发生的事是
+ * **字段填了但没人检查**. 一个服务可以声明需要 `read-personal`、
+ * 同时 trust 是 `unverified` —— 这在类型上完全合法，在语义上却是矛盾的。
+ *
+ * 这个函数把矛盾**显式列出来**，而不是靠人去读 6 个条目。
+ *
+ * ## 它不 block 任何东西
+ *
+ * 返回的是**审计结论**，不是闸门 —— 当前 6 个服务全部 `unverified`，
+ * 所以全部都会报"需要 read-personal 但未获准"。这是**正确的现状**：
+ * 它们确实都还没接通，也都没有书面授权。
+ *
+ * 等某个服务真实对接并审过之后，把它的 `trust` 升到 `audited-third-party`
+ * 或 `first-party`，这条审计里它就会自然消失 —— 不需要改这个函数。
+ */
+export function campusServiceCapabilityAudit(): readonly CampusServiceCapabilityAudit[] {
+  return CAMPUS_SERVICES.map((service) => {
+    const blocked = service.declaredCapabilities.filter(
+      (capability) => !isCapabilityAllowed(service.trust, capability),
+    );
+    // ⚠️ 必须显式收窄：6 个服务当前都只声明 `['read-personal']`，
+    // 于是 `declaredCapabilities` 被推断成 `readonly 'read-personal'[]`，
+    // 直接 `.includes('credential-access')` 会报「不可赋值」。
+    // 这是好事 —— 它说明**现在没有任何服务声明 credential-access**。
+    const declaresCredentialAccess = (
+      service.declaredCapabilities as readonly CapabilityScope[]
+    ).includes('credential-access');
+
+    const note =
+      declaresCredentialAccess
+        ? '⚠️ 声明了 credential-access —— 这条能力对任何 trust 都不允许（凭据只能留在用户设备上）'
+        : blocked.length === 0
+          ? '声明的能力与 trust 一致'
+          : `需要 ${blocked.map((c) => CAPABILITY_SCOPE_LABELS[c]).join('、')}，但当前 trust「${TRUST_LEVEL_LABELS[service.trust]}」不允许`;
+
+    return {
+      platform: service.platform,
+      trust: service.trust,
+      blockedCapabilities: blocked,
+      declaresCredentialAccess,
+      note,
+    };
+  });
+}
+
+/** 全部服务是否都通过了矩阵（当前必然为 `false` —— 6 个都是 unverified） */
+export function allCampusServicesCapabilityClean(): boolean {
+  return campusServiceCapabilityAudit().every(
+    (row) => row.blockedCapabilities.length === 0 && !row.declaresCredentialAccess,
+  );
 }
