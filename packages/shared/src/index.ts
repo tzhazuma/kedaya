@@ -30,5 +30,6 @@ export * from './deadline-nextddl-week';
 export * from './deadline-parse-gradescope';
 export * from './deadline-parse-blackboard';
 export * from './deadline-parse-eams';
+export * from './deadline-parse-generic-list';
 export * from './deadline-section';
 export * from './deadline-source-url';

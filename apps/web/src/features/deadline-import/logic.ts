@@ -25,9 +25,12 @@ import {
   buildDeadlineIcs,
   parseBlackboardAssignmentPage,
   parseBlackboardCourseLinks,
+  parseDueText,
   parseEamsTimetable,
+  parseEcourseAssignments,
   parseGradescopeAssignments,
   parseGradescopeCourseList,
+  parsePiazzaDeadlines,
   sanitizeSourceUrl,
   type BlackboardAssignment,
   type BlackboardCourse,
@@ -43,7 +46,7 @@ import {
  */
 export const SCHOOL_TIME_ZONE = 'Asia/Shanghai';
 
-export type ImportPlatform = 'gradescope' | 'blackboard' | 'eams';
+export type ImportPlatform = 'gradescope' | 'blackboard' | 'eams' | 'piazza' | 'ecourse';
 
 export const IMPORT_PLATFORMS: readonly { id: ImportPlatform; label: string; hint: string }[] = [
   {
@@ -55,6 +58,20 @@ export const IMPORT_PLATFORMS: readonly { id: ImportPlatform; label: string; hin
     id: 'blackboard',
     label: 'Blackboard',
     hint: '先打开课程列表另存为网页，再打开某门课的作业内容区另存',
+  },
+  {
+    id: 'piazza',
+    label: 'Piazza',
+    // ⚠️ Piazza 本身**没有**原生截止日期功能 —— 日期写在 Instructor Note /
+    // Resources 的说明文本里，课程首页通常一个日期都没有。所以提示要指到具体页面。
+    hint: 'Piazza 的截止日期不在课程首页，而在 Instructor Note 或 Resources 的详情页 —— 打开那一页再另存',
+  },
+  {
+    id: 'ecourse',
+    label: 'e云平台',
+    // ⚠️ 我们对 e云平台的 DOM **没有真实样本**，所以只给「进到具体页面」的指引，
+    // 不承诺能读出什么。诚实比乐观有用。
+    hint: '点进具体课程的「作业」列表页再另存（课程首页通常只有入口，没有日期）',
   },
   {
     id: 'eams',
@@ -258,4 +275,62 @@ function failureOf(code: DeadlineParseFailure['code']): DeadlineParseFailure {
     message:
       code === 'empty-page' ? '内容为空，请先粘贴或选择网页文件' : '解析失败，请确认选对了页面',
   } as DeadlineParseFailure;
+}
+
+/**
+ * 第 1 步（Piazza / e云平台版）：解析**作业列表页**，切出「标题 + 日期原文」。
+ *
+ * ## 为什么这两个平台走的是另一条路
+ *
+ * Gradescope / Blackboard / EAMS 都有确定的 DOM 结构，我们为它们各写了一个
+ * 专用解析器。但：
+ *
+ * - **Piazza 没有原生的截止日期功能**，日期散在说明文本里；
+ * - **e云平台我们连 DOM 样本都没有**（`ecourse.shanghaitech.edu.cn` 对裸请求
+ *   返回 400，同校 SPOC 用的还是私有 `.mooc` 后缀系统）。
+ *
+ * 给这两个写「专用解析器」只会得到两个没有样本支撑的猜测，还会被当成
+ * 「已支持」写进 UI。所以改用通用列表解析：只依赖「同一行/相邻行里出现
+ * 标题 + 日期」这个所有列表都有的特征。
+ *
+ * ## ⚠️ 这条路径只切分，**不解释**
+ *
+ * `dueText` 是页面原文（`2026年10月25日 23:59`）。绝对时刻必须由
+ * `parseDueText(raw, now, timeZone)` 产出 —— 本函数不猜。
+ * 这也是为什么返回值叫「候选」而不是「截止日期」。
+ */
+export function readGenericAssignmentList(
+  platform: 'piazza' | 'ecourse',
+  html: string,
+  pageUrl: string,
+): ParseStepResult<readonly ImportedDeadline[]> {
+  if (html.trim() === '') {
+    return { ok: false, failure: failureOf('empty-page') };
+  }
+
+  const result =
+    platform === 'piazza'
+      ? parsePiazzaDeadlines(html, pageUrl)
+      : parseEcourseAssignments(html, pageUrl);
+  if (!result.ok) return { ok: false, failure: result.error };
+
+  // 逐条把日期原文交给唯一的时间入口。解析不出来的保留 `dueAt: null`
+  // 并原样展示 `dueText` —— 让用户自己判断，比丢掉更好。
+  const now = new Date();
+  const items: ImportedDeadline[] = result.value.candidates.map((candidate, index) => {
+    const parsedAt = parseDueText(candidate.dueText, now, SCHOOL_TIME_ZONE);
+    return {
+      id: `${platform}-${index}-${candidate.title.slice(0, 20)}`,
+      title: candidate.title,
+      courseName: '',
+      // `parseDueText` 直接返回 ISO 字符串（不是 Date）—— 它内部已经把
+      // 时区处理完了，这里不能再 toISOString 一次。
+      dueAt: parsedAt,
+      dueText: candidate.dueText,
+      sourceUrl: '',
+      submitted: false,
+    };
+  });
+
+  return { ok: true, value: items };
 }

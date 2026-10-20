@@ -125,11 +125,20 @@ describe('toIcs', () => {
 });
 
 describe('平台清单', () => {
-  it('三个平台的 hint 都说明了"先另存网页"这个前提', () => {
-    expect(IMPORT_PLATFORMS).toHaveLength(3);
+  it('五个平台的 hint 都有可操作的指引（不是空话）', () => {
+    expect(IMPORT_PLATFORMS).toHaveLength(5);
     for (const platform of IMPORT_PLATFORMS) {
-      expect(platform.hint.length).toBeGreaterThan(5);
+      // 每条 hint 都得说清「去哪一页保存」——只说「另存为网页」不够，
+      // 因为 Piazza / e云平台在课程首页根本读不到日期
+      expect(platform.hint.length).toBeGreaterThan(10);
     }
+  });
+
+  it('⚠️ Piazza / e云平台的 hint 指向**具体页面**，不是「另存为网页」了事', () => {
+    const piazza = IMPORT_PLATFORMS.find((p) => p.id === 'piazza');
+    const ecourse = IMPORT_PLATFORMS.find((p) => p.id === 'ecourse');
+    expect(piazza?.hint).toContain('Instructor Note');
+    expect(ecourse?.hint).toContain('作业');
   });
 
   it('学校时区是 Asia/Shanghai（不用浏览器本地时区）', () => {

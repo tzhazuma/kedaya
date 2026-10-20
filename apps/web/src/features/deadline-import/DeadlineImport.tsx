@@ -10,6 +10,7 @@ import {
   readAssignments,
   readCourseList,
   readEamsTimetable,
+  readGenericAssignmentList,
   toIcs,
   type ImportCourse,
   type ImportedDeadline,
@@ -74,6 +75,27 @@ export function DeadlineImport(): React.ReactElement {
   }
 
   function handleParseCourses(): void {
+    // Piazza / e云平台：一步完成，没有「先课程列表再作业页」这两段
+    // —— 它们没有可枚举的课程列表页，用户直接给作业页。
+    if (platform === 'piazza' || platform === 'ecourse') {
+      const result = readGenericAssignmentList(platform, courseHtml, courseUrl);
+      if (!result.ok) {
+        setError(describeFailure(result.failure));
+        return;
+      }
+      setItems(result.value);
+      setCourses([]);
+      const undated = result.value.filter((item) => item.dueAt === null).length;
+      setMessage(
+        `解析到 ${result.value.length} 条。`
+          + (undated > 0
+            ? `其中 ${undated} 条没读明确切时刻，会原样保留日期文本、不进日历。`
+            : ''),
+      );
+      setError(null);
+      return;
+    }
+
     if (platform === 'eams') {
       const result = readEamsTimetable(courseHtml, semester || 'unknown');
       if (!result.ok) {
@@ -159,7 +181,7 @@ export function DeadlineImport(): React.ReactElement {
           2. {platform === 'eams' ? '粘贴课表页' : '粘贴课程列表页'}
         </h2>
 
-        {platform !== 'eams' && (
+        {(platform === 'gradescope' || platform === 'blackboard') && (
           <input
             className="rounded border px-2 py-1 text-sm"
             placeholder="页面地址（如 https://www.gradescope.com/）"
@@ -203,7 +225,7 @@ export function DeadlineImport(): React.ReactElement {
       </section>
 
       {/* ---- 选课 + 作业页 ---- */}
-      {platform !== 'eams' && courses.length > 0 && (
+      {(platform === 'gradescope' || platform === 'blackboard') && courses.length > 0 && (
         <section className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold">3. 选课并导入作业页</h2>
           <select
