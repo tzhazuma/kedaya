@@ -84,6 +84,35 @@ const subPackages = [
   { root: 'presentation/pages/wellbeing', pages: ['list/index', 'create/index', 'detail/index'] },
   { root: 'presentation/pages/aiPortrait', pages: ['index/index', 'sources/index'] },
   { root: 'presentation/pages/dormHarmony', pages: ['index/index'] },
+  /**
+   * 校园地点（2026-10-20 从主包移出）。
+   *
+   * 理由是**实测体积**：这个页面连带 `campusPoiLocalRepository` →
+   * `campusPoiNiyiwei.ts`（22 KB，28 个 POI）+ `campusPoiPhotos.ts`（23 KB，
+   * 54 张照片清单），是主包里最大的一块**非首屏**依赖。
+   *
+   * 主包当时已到 1.71 MiB / 限 2 MiB，余量只剩约 290 KiB —— 再往主包加东西
+   * 就会上传失败。移出后主包回落到 1.6x MiB。
+   *
+   * ⚠️ **页面路径没有变**：Taro 的 `subPackages[].root` + `pages` 拼出来的
+   * 路径与原来完全一致（`presentation/pages/campusMap/index`），
+   * 所以 `PAGE_PATHS.campusMap`、分享路径、`navigateTo` 都不用改。
+   *
+   * 代价：第一次点「校园地点」要多一次分包下载（约 50 KB）。
+   * 这个取舍是对的 —— 它是"用户主动点进去才需要"的垂直业务，
+   * 与文档里已经移出的六个生活模块同类。
+   */
+  { root: 'presentation/pages/campusMap', pages: ['index'] },
+  /**
+   * DDL 聚合（同批移出）。
+   *
+   * 连带 `parsePastedDeadlines`（36 KB）+ `parseDueText`（30 KB）+
+   * `deadline-html`（23 KB）+ `deadline-ics`（6 KB）—— 约 95 KB 的
+   * 解析代码。这些只在用户**主动粘贴/导出**时才用到，首屏完全不需要。
+   *
+   * 页面路径同样没变。
+   */
+  { root: 'presentation/pages/deadlines', pages: ['index'] },
 ]
 
 export default {
@@ -109,10 +138,8 @@ export default {
     'presentation/pages/campusCard/index',
     // 校园地点（POI 补充层）：与 `src/app/routes.ts` 的 `PAGE_PATHS.campusMap` 成对登记。
     // 放主包 —— 本页只有列表与「下一站」，没有底图 / 地图 SDK，体积很小。
-    'presentation/pages/campusMap/index',
     // 课程 DDL 聚合：与 `src/app/routes.ts` 的 `PAGE_PATHS.deadlines` 成对登记。
     // 放主包而不是分包 —— 它是核心模块的下一跳，点开要立刻出来（体积由 verify:weapp 守着）。
-    'presentation/pages/deadlines/index',
     'presentation/pages/agent/index',
     'presentation/pages/legal/terms/index',
     'presentation/pages/legal/privacy/index',
