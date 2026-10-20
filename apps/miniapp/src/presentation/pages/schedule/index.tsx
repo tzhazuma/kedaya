@@ -1,6 +1,7 @@
 import { Text, View } from '@tarojs/components'
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import { useState } from 'react'
+import { parseEamsTimetable } from '@kedaya/shared'
 
 import { getContainer } from '../../../app/container'
 import { PAGE_PATHS } from '../../../app/routes'
@@ -18,6 +19,7 @@ import {
 } from '../../components'
 import { KdyHeading } from '../../components/KdyHeading'
 import { useStore } from '../../hooks'
+import { eamsLessonsToCourses } from '../../../application/schedule/eamsImport'
 import { TodayPanel } from './TodayPanel'
 import { WeekPanel } from './WeekPanel'
 import './index.scss'
@@ -78,6 +80,15 @@ export default function SchedulePage() {
   const [draft, setDraft] = useState<CourseDraft>(EMPTY_DRAFT)
   const [formError, setFormError] = useState<string | null>(null)
 
+  // ---- 从教务导入课表 ----
+  // ⚠️ 这是「更优化的课程表」的入口：用户在自己浏览器里打开教务课表页、
+  // 另存为网页、把 HTML 粘进来。**不联网、不登录、不碰他的教务账号。**
+  const [showImport, setShowImport] = useState(false)
+  const [importHtml, setImportHtml] = useState('')
+  const [importTerm, setImportTerm] = useState('')
+  const [importNote, setImportNote] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
+
   useDidShow(() => {
     schedule.hydrate()
     void schedule.load()
@@ -118,6 +129,55 @@ export default function SchedulePage() {
 
   function pickEnd(value: number): void {
     setDraft((prev) => ({ ...prev, endSlot: Math.max(value, prev.startSlot) }))
+  }
+
+  /**
+   * 解析教务课表页并逐条加课。
+   *
+   * ⚠️ 三条如实报告，不粉饰：
+   * 1. 解析失败 → 说清原因（哪个 code），不是干巴巴「导入失败」
+   * 2. 跳过几条 → 说清跳过的原因（节次超范围 / 作息表没时刻）
+   * 3. 加课失败也要计数 —— 不能因为前 3 条成功就说"全部导入"
+   */
+  async function handleImport(): Promise<void> {
+    const parsed = parseEamsTimetable(importHtml, importTerm.trim() || 'unknown')
+    if (!parsed.ok) {
+      setImportNote(`解析失败：${parsed.error.message}（${parsed.error.code}）`)
+      return
+    }
+
+    const { courses, skipped } = eamsLessonsToCourses(parsed.value.lessons)
+    if (courses.length === 0) {
+      setImportNote(
+        skipped.length === 0
+          ? '这份课表里没有读到任何课程。请确认选的是「课表查询」结果页，不是登录页。'
+          : `读到 ${skipped.length} 条但全部无法换算时刻：${skipped[0]?.reason ?? ''}`,
+      )
+      return
+    }
+
+    setImporting(true)
+    let added = 0
+    let failed = 0
+    for (const course of courses) {
+      const result = await schedule.addCourse({
+        courseName: course.courseName,
+        teacher: course.teacher ?? '',
+        location: course.location ?? '',
+        weekday: course.weekday,
+        startSlot: course.startSlot,
+        endSlot: course.endSlot,
+      })
+      if (result.ok) added += 1
+      else failed += 1
+    }
+    setImporting(false)
+
+    const parts = [`已导入 ${added} 门课`]
+    if (failed > 0) parts.push(`${failed} 门加课失败`)
+    if (skipped.length > 0) parts.push(`${skipped.length} 条因「${skipped[0]?.reason ?? ''}」跳过`)
+    setImportNote(parts.join('；'))
+    setImportHtml('')
   }
 
   async function handleAddCourse(): Promise<void> {
@@ -257,10 +317,59 @@ export default function SchedulePage() {
               >
                 {showAddForm ? '收起手动添加' : '手动添加课程'}
               </KdyButton>
+              <KdyButton
+                size='sm'
+                variant='ghost'
+                onClick={() => setShowImport((value) => !value)}
+              >
+                {showImport ? '收起教务导入' : '从教务导入'}
+              </KdyButton>
             </View>
 
             {state.error !== null && <Text className='kdy-schedule__error'>{state.error}</Text>}
           </KdyCard>
+
+          {showImport && (
+            <KdyCard title='从教务导入课表'>
+              <Text className='kdy-schedule__form-hint'>
+                在浏览器里打开教务课表查询页，选好学期让课表显示出来，
+                然后「另存为 → 网页，仅 HTML」。把那个文件用文本编辑器打开，
+                全选粘贴到下面。**可达鸭不联网、不登录，也不碰你的教务账号。**
+              </Text>
+              <KdyField
+                label='学期'
+                value={importTerm}
+                onChange={setImportTerm}
+                placeholder='如 2026-2027-1（可留空）'
+                hint='留空也能导入，但缺学期的日期可能归错学年'
+              />
+              <KdyField
+                label='课表页 HTML'
+                multiline
+                value={importHtml}
+                onChange={setImportHtml}
+                placeholder='粘贴「另存为网页」得到的 HTML 全文'
+                hint='读不出来的条目会告诉你原因，不会静默丢掉'
+              />
+              <View className='kdy-schedule__actions'>
+                <KdyButton size='sm' loading={importing} onClick={() => void handleImport()}>
+                  解析并导入
+                </KdyButton>
+                <KdyButton
+                  size='sm'
+                  variant='ghost'
+                  onClick={() => {
+                    setShowImport(false)
+                    setImportHtml('')
+                    setImportNote(null)
+                  }}
+                >
+                  取消
+                </KdyButton>
+              </View>
+              {importNote !== null && <Text className='kdy-schedule__form-hint'>{importNote}</Text>}
+            </KdyCard>
+          )}
 
           {showAddForm && (
             <KdyCard title='手动添加课程'>
