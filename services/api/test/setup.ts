@@ -17,7 +17,11 @@ process.env.JWT_SECRET ??= 'test-secret-please-change-me-32-chars';
 process.env.JWT_ACCESS_TTL ??= '900';
 process.env.JWT_REFRESH_TTL ??= '2592000';
 process.env.CAMPUS_SESSION_ENC_KEY ??= '0'.repeat(64);
-process.env.CAMPUS_CAS_URL ??= 'https://cas.shanghaitech.edu.cn/cas';
+// ⚠️ 2026-10-20：真实 IDS 地址已确认，旧的
+// `https://cas.shanghaitech.edu.cn/cas` 是**错的**。
+// 单测默认用真实地址 —— 若哪天有人不小心让测试真的发出请求，
+// 至少打的是对的地方，而不是一个不存在的域名。
+process.env.CAMPUS_CAS_URL ??= 'https://ids.shanghaitech.edu.cn/authserver';
 process.env.CAMPUS_SSO_CLIENT_ID ??= 'kedaya-test';
 process.env.DATABASE_URL ??= 'postgresql://kedaya:kedaya@localhost:5432/kedaya';
 process.env.WELLBEING_CRISIS_HOTLINE ??= '021-12320-5';

@@ -34,7 +34,7 @@
 | 校园邮箱验证码（免密） | `POST /auth/account/login/code`（发码）<br>`POST /auth/account/login/code/verify`（登录） | ✅ 代码完整 | 同上的 SMTP 配置；不需要第三方。首次登录自动建号且**不设密码**（`NO_PASSWORD_SENTINEL`） |
 | 微信小程序 | `POST /auth/wechat/login`<br>`GET /auth/wechat/config`<br>`GET/POST/DELETE /auth/wechat/binding` | ✅（配密钥后可用） | `WECHAT_MINIAPP_APPID` + `WECHAT_MINIAPP_SECRET`；一个已注册的小程序；生产会**拒绝** `dev:` 模拟 code |
 | 手机号 | **无** | ❌ | 见 §4：数据库列、短信服务商、签名/模板报备、频控、校方与隐私合规、三端 UI，一个都还没有 |
-| 校园 CAS | `POST /auth/login` | ⚠️ 仅 Mock（P0-3 已修） | 见 §5：真实 `HttpCampusAuthProvider`、校方注册 `service` 回调、客户端跳转链路、provider 切换开关；仓库既有 `CAMPUS_CAS_URL` **未经校方确认** |
+| 校园 CAS | `POST /auth/login` | ✅ **真实 provider 已实现**（`HttpCampusAuthProvider`，2026-10-20） | 见 §5。真实 IDS 地址 `https://ids.shanghaitech.edu.cn/authserver`（Apereo CAS）已由项目负责人确认；**仍缺校方注册的 `service` 回调** |
 | 绑定已有账号 | `POST /auth/wechat/binding`<br>`POST /auth/account/bind-email`（+ `/bind-email/code`） | ⚠️ 仅微信 ↔ 邮箱 | 见 §6：CAS 身份绑定、账号合并、跨表邮箱唯一性都没有；冲突一律报错，不合并 |
 
 ---
@@ -219,8 +219,12 @@ if (!isTruthy(CAMPUS_CAS_MOCK_ALLOWED)) throw ...
    （由部署域名决定，形如 `https://<你的 API 域名>/api/v1/auth/cas/callback`；
    **具体地址必须由校方确认，仓库里没有可信值**）。
 4. **凭据**：`CAMPUS_CAS_URL`、`CAMPUS_SSO_CLIENT_ID`、`CAMPUS_SSO_CLIENT_SECRET`。
-   ⚠️ `.env.example` 与 `test/setup.ts` 里的 `https://cas.shanghaitech.edu.cn/cas` 是**仓库既有值，
-   未经校方确认**，不能当官方地址使用，也不要在文档/客户端里把它写成「官方地址」。
+   ✅ **2026-10-20 更新**：真实地址已确认 —— `https://ids.shanghaitech.edu.cn/authserver`
+   （Apereo CAS，实测 `/p3/serviceValidate` 与 `/oauth2.0/authorize` 都可用）。
+   `.env.example` 已改为该地址，并新增 `CAMPUS_CAS_SERVICE`（我们的回调，
+   **必须校方注册后才生效**）。
+
+   ⚠️ 旧的 `https://cas.shanghaitech.edu.cn/cas` 是**错的**，不要再引用。
 5. **客户端跳转链路**：`GET /auth/login-url`（生成授权地址 + `state` 防 CSRF）在
    `docs/architecture/02-domain-model.md` 被提到，但**当前没有实现**（全仓 grep 无该端点）。
    三端需要接入「跳转 → 回调 → 把 ticket 交给 `POST /auth/login`」的流程。

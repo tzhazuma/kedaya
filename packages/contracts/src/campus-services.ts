@@ -260,7 +260,8 @@ export const CAMPUS_SERVICES = [
     caveats: [
       '`POST /auth/login` 的响应**没有** `simulated` 标记（`AccountSession` 的 `simulated` 只给微信登录用），开发期的假身份在响应里与真实身份不可区分。',
       'Mock 直接采信 `mock-<8 位学号>` 形式的票据：`NODE_ENV` 未设/拼错时，任何人都能冒充任意学号。',
-      '`.env.example` 与 `test/setup.ts` 里有一个 `https://cas.shanghaitech.edu.cn/cas`；它是仓库既有值，**未经校方确认**，不能当作真实地址使用。',
+      '真实 IDS 地址已于 2026-10-20 确认：`https://ids.shanghaitech.edu.cn/authserver`（Apereo CAS）。旧的 `https://cas.shanghaitech.edu.cn/cas` 是**错的**，已从 `.env.example` 与 `test/setup.ts` 移除。',
+      '⚠️ 仍缺**校方注册的 `service` 回调地址**（`CAMPUS_CAS_SERVICE`）。未注册的 service 会被 CAS 拒绝 —— 这是校方的安全策略，不是本服务的 bug。在拿到注册之前，真实登录链路走不通。',
     ],
     userFacingNote: '演示期：CAS 登录为模拟身份（响应带 simulated: true），不是真实学号',
     // 无可信授权 → unverified；声明需要读个人数据，但**没有** credential-access

@@ -1,5 +1,21 @@
 # 06 · 先例调研与可复用性裁决
 
+
+> ## ⚠️ 本文部分结论已被 `12-merged-from-classmates.md` 取代
+>
+> 本文写于 **2026-10-19**，当时三个参考项目都是 `license: NONE`，结论是
+> 「只学架构，不复制代码」。
+>
+> **2026-10-20 授权状态改变**：项目负责人唐志昊确认
+> `AgenticCampus` / `Shanghaitech-2026-Hackthon`(campusMate) / `秦QIN`
+> 三方同学**已同意合并**。实际合并了什么、怎么保留出处、什么仍然不合并，
+> 见 **`12-merged-from-classmates.md`**。
+>
+> 本文保留原样，作为**当时**的判断记录 —— 不要按本文的"不可复制"结论
+> 去否决已经合并进来的代码。仍未授权的是 **`NextDDL`**
+>（自称 MIT 但**无 LICENSE 文件**，且不在三个授权项目内）。
+
+
 > 调研对象：
 > `sagiridsg/AgenticCampus`（下称 **AC**）、
 > `David-goldenman/Shanghaitech-2026-Hackthon` / campusMate（下称 **CM**）、

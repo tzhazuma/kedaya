@@ -50,7 +50,8 @@
 - **「已接线」**：本文只认**端到端**（绑定 → 取数 → 投影）。
   「有适配器」「有端点」都不算。
 - **行号**：均以审计基线 `d8979d4` 为准。行号会漂，优先按文中给出的符号名搜索。
-- **URL**：凡是仓库里已有的地址，本文都标注「仓库既有值，未经校方确认」；
+- **URL**：2026-10-20 起，统一身份认证的真实地址已由项目负责人确认
+  （`https://ids.shanghaitech.edu.cn/authserver`）；其余校园系统地址仍未确认。
   查不到的写「未确认，需要校方提供」，**不编地址**。
 
 ---
@@ -188,8 +189,11 @@ npm test -w @kedaya/contracts
 - **P0-3**：Mock 登录响应**没有 `simulated` 标记**。`AccountSession.simulated`
   只给微信登录用（`account-session.ts:27-31`）；`LoginResult` 里没有它。
   开发期用户看到「同学1234 / 1234@shanghaitech.edu.cn」，无法从响应判断是假身份。
-- `.env.example:17` 与 `test/setup.ts:20` 的 `https://cas.shanghaitech.edu.cn/cas`
-  是仓库既有值，**未经校方确认**；不能当成真实地址。
+- ~~`.env.example:17` 与 `test/setup.ts:20` 的 `https://cas.shanghaitech.edu.cn/cas`~~
+  **已废弃**。2026-10-20 确认真实 IDS 为 `https://ids.shanghaitech.edu.cn/authserver`
+  （Apereo CAS）。真实 provider 见 `data/http-campus-auth.provider.ts`，
+  走 `p3/serviceValidate?format=JSON`，**永远不接触用户密码**。
+  仍缺的是**校方注册的 `service` 回调地址**（`CAMPUS_CAS_SERVICE`）。
 
 ---
 
@@ -1184,7 +1188,7 @@ export function campusServicesByWiring(wiring: CampusWiring): readonly CampusSer
 | 8 | 校园域名白名单的真实 host/port 列表 | 阻塞 WebView 直连（U11） | 信息化办 / 技术调研 |
 
 > 以上 **全部未确认**。本文不提供猜测地址；仓库里已有的
-> `https://cas.shanghaitech.edu.cn/cas`、`https://ecard.shanghaitech.edu.cn`、
+> `https://ids.shanghaitech.edu.cn/authserver`（**已确认**）、`https://ecard.shanghaitech.edu.cn`、
 > `https://ecourse.shanghaitech.edu.cn[:8080]` 等是**既有占位/参考值**，
 > 不构成授权或确认。
 
