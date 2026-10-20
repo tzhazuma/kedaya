@@ -152,11 +152,42 @@ const candidates = pickEventCandidateLines(article.bodyLines);
 
 ---
 
-## 6. 待办
+## 6. ✅ 服务端端点已实现（2026-10-20）
+
+`POST /api/v1/wechat/article`（`services/api/src/modules/wechat/`）
+
+```jsonc
+// 请求
+{ "url": "https://mp.weixin.qq.com/s/xxxxx" }
+
+// 成功
+{ "ok": true, "article": { "title", "accountName", "publishedAt", "bodyLines", "images", "sourceUrl" } }
+
+// 业务性失败（仍然是 HTTP 200，用 ok 区分）
+{ "ok": false, "code": "login-required", "message": "正文容器是空的 —— …" }
+```
+
+### ⚠️ 三条安全边界（这个端点接受用户给的 URL，必须有）
+
+| 边界 | 为什么 |
+| --- | --- |
+| **域名白名单：只认 `https://mp.weixin.qq.com/s/`** | 不做的话它就是一个**内网 SSRF 跳板** —— 攻击者可以让服务器去请求 `169.254.169.254`（云元数据）或 `localhost:3100`（我们自己的 API） |
+| **不跟随跳转**（`redirect: 'manual'`） | 跳转是绕过域名白名单的常见手法 |
+| **限制体积与超时** | 12 MB / 12 s。否则一个超大响应能把进程拖死 |
+
+有 33 条测试锁着，其中 8 条专门验证**被拒绝的 URL 根本不会发出请求**
+（`expect(fetchMock).not.toHaveBeenCalled()`）。
+
+### 为什么失败返回 200 而不是 4xx
+
+「文章要求关注后查看」是**业务结果**，不是客户端错误。
+用 4xx 会让前端把它渲染成「请求失败」，**盖掉那句有用的解释** ——
+和付款码那次「POST 得到 405、405 盖掉 503」是同一类错误。
+
+## 7. 待办
 
 | # | 事项 | 阻塞 |
 | --- | --- | --- |
-| 1 | 服务端加 `POST /wechat/article` 端点（取 HTML → 调 `parseWechatArticle`） | 无 |
-| 2 | 小程序加「分享给可达鸭」接收页 | 需要服务端 #1 |
-| 3 | 粗筛结果接 `parseDueText`，落到 DDL/日程 | 无 |
-| 4 | 图片防盗链处理（`mmbiz.qpic.cn` 有 referer 检查） | 需要图片代理 |
+| 1 | 小程序加「分享给可达鸭」接收页（调上面的端点） | 无 |
+| 2 | 粗筛结果接 `parseDueText`，落到 DDL/日程 | 无 |
+| 3 | 图片防盗链处理（`mmbiz.qpic.cn` 有 referer 检查） | 需要图片代理 |
