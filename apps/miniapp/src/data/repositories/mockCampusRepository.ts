@@ -1,3 +1,4 @@
+import { slotTimeLabel, slotTimeRange } from '../../domain/models/schedule'
 import { err, ok, type Result } from '@kedaya/shared'
 
 import type { CardLostReport, CardOverview, CardTransactionView } from '../../domain/models/campusCard'
@@ -26,19 +27,6 @@ import { StorageKeys } from '../storage/keys'
  * ⚠️ 这里的时间文案（`timeLabel`）在真实后端由服务端下发；
  * mock 里复制一份最简作息表，仅用于离线演示，不参与任何业务判定。
  */
-
-const SLOT_TIMES: readonly { slot: number; start: string; end: string }[] = [
-  { slot: 1, start: '08:15', end: '09:05' },
-  { slot: 2, start: '09:15', end: '10:05' },
-  { slot: 3, start: '10:25', end: '11:15' },
-  { slot: 4, start: '11:25', end: '12:15' },
-  { slot: 5, start: '13:00', end: '13:50' },
-  { slot: 6, start: '14:00', end: '14:50' },
-  { slot: 7, start: '15:10', end: '16:00' },
-  { slot: 8, start: '16:10', end: '17:00' },
-  { slot: 9, start: '18:00', end: '18:50' },
-  { slot: 10, start: '19:00', end: '19:50' },
-]
 
 const COURSE_POOL: readonly {
   courseName: string
@@ -76,16 +64,6 @@ function hashOf(input: string): number {
     hash = Math.imul(hash, 0x01000193) >>> 0
   }
   return hash >>> 0
-}
-
-function slotTime(slot: number, edge: 'start' | 'end'): string {
-  const found = SLOT_TIMES.find((item) => item.slot === slot)
-  if (found === undefined) return '--:--'
-  return edge === 'start' ? found.start : found.end
-}
-
-function timeLabel(startSlot: number, endSlot: number): string {
-  return `${slotTime(startSlot, 'start')}–${slotTime(endSlot, 'end')}`
 }
 
 function termOf(date: Date): string {
@@ -229,7 +207,11 @@ export function createMockCampusRepositories(options: MockCampusOptions): MockCa
       const nowMinutes = now().getHours() * 60 + now().getMinutes()
 
       const toMinutes = (slot: number, edge: 'start' | 'end'): number => {
-        const [hour, minute] = slotTime(slot, edge).split(':').map(Number) as [number, number]
+        const range = slotTimeRange(slot)
+        if (range === null) return Number.NaN
+        const [hour, minute] = (edge === 'start' ? range.start : range.end)
+          .split(':')
+          .map(Number) as [number, number]
         return hour * 60 + minute
       }
 
@@ -241,7 +223,7 @@ export function createMockCampusRepositories(options: MockCampusOptions): MockCa
         weekday: course.weekday,
         startSlot: course.startSlot,
         endSlot: course.endSlot,
-        timeLabel: timeLabel(course.startSlot, course.endSlot),
+        timeLabel: slotTimeLabel(course.startSlot, course.endSlot) ?? '--:--',
         slotLabel: `第 ${course.startSlot}-${course.endSlot} 节`,
       }))
 
@@ -296,7 +278,7 @@ export function createMockCampusRepositories(options: MockCampusOptions): MockCa
               weekday: course.weekday,
               startSlot: course.startSlot,
               endSlot: course.endSlot,
-              timeLabel: timeLabel(course.startSlot, course.endSlot),
+              timeLabel: slotTimeLabel(course.startSlot, course.endSlot) ?? '--:--',
               slotLabel: `第 ${course.startSlot}-${course.endSlot} 节`,
             })),
         })),

@@ -119,3 +119,61 @@ export function conflictLabel(conflict: ScheduleConflict): string {
 export function courseSubtitle(course: ScheduleCourseView): string {
   return [course.location, course.teacher].filter((item) => item !== null && item !== '').join(' · ')
 }
+
+/**
+ * 学校作息表：第 N 节 → 起止时刻。
+ *
+ * ## ⚠️ 这是**真实数据**，不是 mock 数据
+ *
+ * 它原来只存在于 `data/repositories/mockCampusRepository.ts` 里（一个私有
+ * const），但作息表跟"演示数据"完全不是一回事：它决定了课表格子的实际时刻，
+ * 也决定了从教务导入的节次能不能换算成 `timeLabel`。
+ *
+ * 藏在 mock 里的后果是：真实数据流（从 EAMS 导入）反而拿不到它 ——
+ * 于是只能猜、或者干脆放弃换算。所以挪到 domain。
+ *
+ * ## ⚠️ 不完整是可接受的状态
+ *
+ * 这张表来自学校公开的作息安排，**可能随学期调整**。调用方必须处理
+ * "节次不在表里"的情况（`eamsLessonsToCourses` 会把这类课放进 `skipped`
+ * 并说明原因，而不是硬塞一个假时刻）。
+ */
+export const SLOT_TIMES: readonly { slot: number; start: string; end: string }[] = [
+  { slot: 1, start: '08:15', end: '09:05' },
+  { slot: 2, start: '09:15', end: '10:05' },
+  { slot: 3, start: '10:25', end: '11:15' },
+  { slot: 4, start: '11:25', end: '12:15' },
+  { slot: 5, start: '13:00', end: '13:50' },
+  { slot: 6, start: '14:00', end: '14:50' },
+  { slot: 7, start: '15:10', end: '16:00' },
+  { slot: 8, start: '16:10', end: '17:00' },
+  { slot: 9, start: '18:00', end: '18:50' },
+  { slot: 10, start: '19:00', end: '19:50' },
+]
+
+/**
+ * ⚠️ **已知不一致**：`MAX_SLOT = 12` 但 `SLOT_TIMES` 只有 10 节。
+ *
+ * 后果：加课表单允许选第 11-12 节，但**算不出时刻**（`slotTimeRange` 返回
+ * `null`，`timeLabel` 退化成 `--:--`）。从教务导入的课如果落在 11-12 节，
+ * 会被放进 `skipped` 并说明原因 —— 不会硬塞一个假时刻。
+ *
+ * 为什么没直接改 `MAX_SLOT = 10`：那会缩小加课表单的可选范围，
+ * 而学校确实有第 11-12 节（晚间）的安排，只是我们**没拿到那两节的准确时刻**。
+ * 宁可保留"能选但填不出时间"，也不假装它们不存在。
+ */
+
+/** 第 `slot` 节的起止时刻；不在作息表里返回 `null`（**不猜**） */
+export function slotTimeRange(slot: number): { start: string; end: string } | null {
+  const found = SLOT_TIMES.find((item) => item.slot === slot)
+  if (found === undefined) return null
+  return { start: found.start, end: found.end }
+}
+
+/** 起止节次 → `08:15–10:05`；任一端不在作息表里返回 `null` */
+export function slotTimeLabel(startSlot: number, endSlot: number): string | null {
+  const start = slotTimeRange(startSlot)
+  const end = slotTimeRange(endSlot)
+  if (start === null || end === null) return null
+  return `${start.start}–${end.end}`
+}
