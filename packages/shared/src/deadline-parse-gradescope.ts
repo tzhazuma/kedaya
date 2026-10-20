@@ -138,11 +138,17 @@ function findTermHeadings(html: string): Array<{ at: number; term: string }> {
 const CARD_HEADING_RE = /<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i;
 const CARD_NAME_RE = /<[a-z][^>]*class\s*=\s*["'][^"']*(?:courseName|course-name)[^"']*["'][^>]*>([\s\S]*?)<\//i;
 
-function readCourseName(anchorHtml: string, anchorText: string): string {
+function readCourseName(
+  anchorHtml: string,
+  anchorText: string,
+): { readonly name: string; readonly fromCard: boolean } {
   const heading = CARD_HEADING_RE.exec(anchorHtml)?.[1];
   const named = CARD_NAME_RE.exec(anchorHtml)?.[1];
-  const name = htmlText(heading ?? named ?? '') || anchorText;
-  return name.slice(0, MAX_TITLE_LENGTH);
+  const inner = htmlText(heading ?? named ?? '');
+  return {
+    name: (inner || anchorText).slice(0, MAX_TITLE_LENGTH),
+    fromCard: inner.length > 0,
+  };
 }
 
 /**
@@ -166,7 +172,7 @@ export function parseGradescopeCourseList(
   }
 
   const termHeadings = findTermHeadings(html);
-  const courses = new Map<string, GradescopeCourse>();
+  const courses = new Map<string, { readonly course: GradescopeCourse; readonly rank: number }>();
 
   for (const anchor of collectAnchors(html, baseUrl)) {
     if (new URL(anchor.url).origin !== origin) continue;
@@ -175,14 +181,16 @@ export function parseGradescopeCourseList(
     if (nativeId === undefined) continue;
 
     const id = `gradescope:${nativeId}`;
-    const name = readCourseName(anchor.html, anchor.text);
+    const { name, fromCard } = readCourseName(anchor.html, anchor.text);
     const term = readTerm(anchor, termHeadings);
+    // 同一个课程会被渲染两次：Dashboard 卡片（有标题元素 + 学期）和侧栏纯文本链接
+    // （没有标题元素，学期是从上一个小标题「继承」来的）。按信息量打分，高的留下：
+    //   学期 2 分 + 卡片结构 1 分。同分保留先出现的，保证解析幂等。
+    const rank = (term.length > 0 ? 2 : 0) + (fromCard ? 1 : 0);
     const existing = courses.get(id);
+    if (existing !== undefined && existing.rank >= rank) continue;
 
-    // 已有学期、这次没有 → 保留（侧栏卡片不应把 Dashboard 的学期覆盖成空）
-    if (existing !== undefined && existing.term.length > 0 && term.length === 0) continue;
-
-    courses.set(id, { id, nativeId, name, term, url: anchor.url });
+    courses.set(id, { course: { id, nativeId, name, term, url: anchor.url }, rank });
   }
 
   if (courses.size === 0) {
@@ -197,7 +205,7 @@ export function parseGradescopeCourseList(
     };
   }
 
-  return { ok: true, value: [...courses.values()] };
+  return { ok: true, value: [...courses.values()].map((entry) => entry.course) };
 }
 
 /** 学期：先看链接之前最近的分组标题，再看链接自己的文本 */

@@ -13,3 +13,4 @@ export * from './types';
 export * from './gcj02';
 export * from './local';
 export * from './grid';
+export * from './bd09';

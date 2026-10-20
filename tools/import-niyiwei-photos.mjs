@@ -142,7 +142,7 @@ function printHelp() {
   console.log(`用法：node tools/import-niyiwei-photos.mjs [选项]
 
   （无参数）        从 map.niyiwei.com 拉取照片清单并生成 campusPoiPhotos.ts
-  --check          只探测 54 张图的可访问性与总体积，不写文件
+  --check          只探测全部照片的可访问性与总体积，不写文件
   --dry-run        打印将写入的条目，不落盘
   --download       额外下载原图（默认 apps/miniapp/src/assets/niyiwei/）
   --out <dir>      指定下载目录（配合 --download）
@@ -303,7 +303,7 @@ function renderManifest({ entries, enabled, revoked }) {
   lines.push(' *');
   lines.push(' * ## 体积');
   lines.push(' *');
-  lines.push(' * 照片**不打包**，只用远程 URL。实测 54 张原图共约 31.41 MiB，而微信主包上限');
+  lines.push(' * 照片**不打包**，只用远程 URL。2026-10-20 实测 54 张原图共约 31.41 MiB，而微信主包上限');
   lines.push(' * 2 MiB —— 打进包会直接上传失败。部署时需把 `map.niyiwei.com` 加入小程序');
   lines.push(' * 后台的「downloadFile 合法域名」，否则真机不显示（远程图仍需要域名白名单）。');
   lines.push(' *');
