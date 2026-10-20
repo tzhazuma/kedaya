@@ -88,8 +88,19 @@ describe('校园 POI · 本机仓储', () => {
     //
     // 这条断言刻意写成「等于 OSM 种子」而不是「非空」：
     // 如果哪天有人把回退改成返回演示数据，这里会红。
-    expect(repository.readPois()).toHaveLength(7)
-    expect(repository.readPois().every((poi) => poi.source === 'osm')).toBe(true)
+    // 现在是**两套真实来源**：OSM 7 个 + 一图通授权 28 个 = 35 个
+    expect(repository.readPois()).toHaveLength(35)
+    const sources = new Set(repository.readPois().map((poi) => poi.source))
+    expect(sources.has('osm')).toBe(true)
+    // 一图通如实归到 `community`（不是 `official` —— 校方没有背书）
+    expect(sources.has('community')).toBe(true)
+    // 所有条目都必须是校园范围内的 WGS84 坐标
+    for (const poi of repository.readPois()) {
+      expect(poi.lat).toBeGreaterThan(31.17)
+      expect(poi.lat).toBeLessThan(31.19)
+      expect(poi.lng).toBeGreaterThan(121.58)
+      expect(poi.lng).toBeLessThan(121.61)
+    }
     // 但 storage 里的两个 key 必须真的被清掉（回退是读时行为，不落盘）
     expect(Object.keys(cache.dump())).toEqual([])
     expect(repository.readSlots()).toEqual([])

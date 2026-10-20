@@ -1,3 +1,5 @@
+import { NIYIWEI_CAMPUS_POIS } from '../../application/campusPoi/campusPoiNiyiwei'
+import { niyiweiPhotosForPoi } from '../../application/campusPoi/campusPoiPhotos'
 import { OSM_CAMPUS_POIS } from '../../application/campusPoi/campusPoiOsm'
 import {
   POI_TIME_SLOT_KINDS,
@@ -62,7 +64,14 @@ export function createCampusPoiLocalRepository(
       //
       // 用户一旦写入了自己的条目，storage 优先，不再回退 —— 否则
       // "删掉某条 OSM 地点"这个动作会无效（下次读又冒出来）。
-      if (stored.length === 0) return [...OSM_CAMPUS_POIS]
+      if (stored.length === 0) {
+        // 本机无数据时给**两套真实来源**：
+        //   · OSM（ODbL）：图书馆、餐厅、便利店等 7 个
+        //   · 一图通（已获对方参赛组口头授权）：28 个食堂摊位 + 地库
+        // 坐标都已统一到 WGS84（一图通那套是 BD-09 转换来的，见
+        // `packages/shared/src/geo/bd09.ts`）。
+        return withNiyiweiPhotos([...OSM_CAMPUS_POIS, ...NIYIWEI_CAMPUS_POIS])
+      }
       return stored
     },
     readSlots(): PoiTimeSlot[] {
@@ -131,4 +140,35 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim() !== ''
+}
+
+/**
+ * 把一图通的照片挂到 POI 上。
+ *
+ * ## 为什么挂在这里而不是写在数据文件里
+ *
+ * 一图通的 POI（`campusPoiNiyiwei.ts`）只存**地点**，照片在
+ * `campusPoiPhotos.ts` 里按 `poiId` 关联。这样两条授权可以独立变化：
+ * 撤回照片（`--revoke`）时 POI 保留，因为地点是公开信息。
+ *
+ * 挂接放在仓储的读边界上，好处是**页面不用改** —— 它一直读
+ * `poi.photoUrls[0]`，这里把照片填进去就行，不用在 UI 里写 if。
+ *
+ * ⚠️ 撤回后 `niyiweiPhotosForPoi` 返回空数组，于是 `photoUrls` 保持 `[]`、
+ * `photoCredit` 保持 `null` —— 页面自动回落到「暂无照片」占位，
+ * **不会出现"有图无署名"或"署名指向已撤下的图"**。
+ */
+function withNiyiweiPhotos(
+  pois: readonly CampusPoiSupplement[],
+): CampusPoiSupplement[] {
+  return pois.map((poi) => {
+    const photos = niyiweiPhotosForPoi(poi.id);
+    if (photos.length === 0) return poi;
+    return {
+      ...poi,
+      photoUrls: photos.map((photo) => photo.url),
+      // 多张照片取第一条署名 —— 它们来自同一个授权方，文案相同
+      photoCredit: photos[0]?.credit ?? null,
+    };
+  });
 }
