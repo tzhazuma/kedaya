@@ -264,19 +264,54 @@ describe('domain · techpie（观看者构造：两级身份的汇合点）', ()
 })
 
 describe('domain · techpie（WebView 目标：契约 §11.10-F / §11.18-B）', () => {
-  it('四个校园系统入口都存在，且**全部是 https**', () => {
+  it('五个校园系统入口都存在，且**全部是 https**', () => {
     for (const target of CAMPUS_WEBVIEW_TARGETS) {
       expect(target.url.startsWith('https://')).toBe(true)
       expect(isHttpsCampusUrl(target.url)).toBe(true)
     }
-    expect(CAMPUS_WEBVIEW_TARGETS.map((t) => t.id).sort()).toEqual(['ecourse', 'egate', 'elrc'])
+    // 2026-10-20 实测校订：新增真实的 eams / oa，删除不存在的 student
+    expect(CAMPUS_WEBVIEW_TARGETS.map((t) => t.id).sort()).toEqual([
+      'eams',
+      'ecourse',
+      'egate',
+      'elrc',
+      'oa',
+    ])
     expect(campusWebviewTarget('ecourse')?.nameZh).toBe('E云课堂')
     expect(campusWebviewTarget('nope')).toBeNull()
   })
 
-  it('域名当前是**占位**（U11 未决），必须机器可见', () => {
-    // 这条断言的意义：域名一旦被确认，必须显式改成 true，而不是悄悄继续用占位值
-    expect(CAMPUS_WEBVIEW_TARGETS.every((target) => target.domainVerified === false)).toBe(true)
+  it('⭐ 每个入口都有「统一身份认证跳板」，且**指向学校 IDS + 官方 service**', () => {
+    for (const target of CAMPUS_WEBVIEW_TARGETS) {
+      // 必须跳到学校 IDS，而不是我们自己的站点
+      expect(target.ssoUrl.startsWith('https://ids.shanghaitech.edu.cn/authserver/login?service=')).toBe(true)
+
+      // ⚠️ 关键：service 必须是**官方站点自己**的地址，不是可达鸭的回调。
+      // 这是「不注册 CAS」的全部合法性来源 —— 票根送不到我们这边。
+      const service = decodeURIComponent(target.ssoUrl.split('service=')[1] ?? '')
+      expect(service.startsWith('https://')).toBe(true)
+      expect(service).not.toContain('kedaya')
+      expect(service).toContain(target.id === 'egate' ? 'egate-new' : target.id)
+    }
+  })
+
+  it('⚠️ ecourse 如实标注「web-view 打不开」（它跳 8600 端口）', () => {
+    const ecourse = campusWebviewTarget('ecourse')
+    expect(ecourse?.webviewBlockedReason).not.toBeNull()
+    expect(ecourse?.webviewBlockedReason).toContain('8600')
+    // 其他入口不该被误标
+    for (const target of CAMPUS_WEBVIEW_TARGETS) {
+      if (target.id === 'ecourse') continue
+      expect(target.webviewBlockedReason).toBeNull()
+    }
+  })
+
+  it('域名已实测（2026-10-20），不再是占位', () => {
+    // 这条断言反转了。原来是「必须是占位」，现在域名已逐个实测：
+    //   eams / egate-new / oa / elrc → HTTP 200；ecourse → 302 到 :8600
+    //   student.shanghaitech.edu.cn → 域名不存在，已删除
+    // 若将来发现某个域名失效，必须把它的 domainVerified 改回 false —— 不要静默留着。
+    expect(CAMPUS_WEBVIEW_TARGETS.every((target) => target.domainVerified === true)).toBe(true)
   })
 
   it('isHttpsCampusUrl 拒绝 http / IP 字面量 / userinfo（契约 §11.18-B）', () => {

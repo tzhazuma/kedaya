@@ -99,7 +99,11 @@ export default function TechpieWebviewPage() {
 
   if (phase === 'webview') {
     // ⚠️ 只有 `src`。没有 header、没有 cookie、没有注入 —— 平台也不支持。
-    return <WebView src={target.url} />
+    //
+    // 用 `ssoUrl`（带官方 service 的 IDS 登录页）而不是 `url`：
+    // 用户在这里登录完，CAS 会把他送回**官方站点**，我们从头到尾看不到票根。
+    // service 是官方站点自己已注册的地址，所以不需要信息办为我们开白名单。
+    return <WebView src={target.ssoUrl} />
   }
 
   return (
@@ -130,12 +134,32 @@ export default function TechpieWebviewPage() {
         </Text>
       </KdyCard>
 
+      {target.webviewBlockedReason !== null && (
+        <KdyCard title='⚠️ 这个系统在小程序里打不开'>
+          <Text className='kdy-techpie-webview__notice'>{target.webviewBlockedReason}</Text>
+        </KdyCard>
+      )}
+
+      {/*
+        ⭐ 「不注册 CAS」的正式解法：带官方站点自己的 service 跳到学校 IDS。
+
+        用户在学校页面上登录 → 票根送回官方站点 → 用户落在官方网站里。
+        可达鸭**不接收、不存储、不代理**任何 ticket 或 cookie。
+        因为 service 用的是官方站点自己已注册的地址，所以不需要信息办为我们注册。
+      */}
       <View className='kdy-techpie-webview__actions'>
-        <KdyButton onClick={() => setPhase('webview')}>我已了解，打开学校系统</KdyButton>
+        <KdyButton onClick={() => setPhase('webview')}>用学校账号登录后打开</KdyButton>
+        <KdyButton variant='ghost' onClick={() => setPhase('webview')}>
+          直接打开首页
+        </KdyButton>
         <KdyButton variant='ghost' onClick={() => void navigateBack()}>
           返回
         </KdyButton>
       </View>
+
+      <Text className='kdy-techpie-webview__sso-hint'>
+        {`登录页由学校统一身份认证提供（ids.shanghaitech.edu.cn）。可达鸭不接收、也不存储你的登录票根。`}
+      </Text>
 
       <Text className='kdy-techpie-webview__all'>可达鸭接入的校园系统入口：</Text>
       <View className='kdy-techpie-webview__list'>

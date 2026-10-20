@@ -58,3 +58,16 @@
   gap: $kdy-space-2;
   padding: 0 $kdy-space-4;
 }
+
+  /**
+   * 「登录页由学校统一身份认证提供」这句说明。
+   *
+   * 用 muted 且跟在按钮组后面：它是**告知**，不是警告 ——
+   * 用 warning 色会让人以为出了问题。
+   */
+.kdy-techpie-webview__sso-hint {
+  margin-top: $kdy-space-6;
+  color: $kdy-color-campus-muted;
+  font-size: $kdy-font-size-xs;
+  line-height: 1.5;
+}

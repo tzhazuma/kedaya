@@ -447,38 +447,120 @@ export type CampusCapabilityDelivery = 'webview' | 'native'
  * `domainVerified: false` 是**机器可见**的标记 —— 它同时驱动 UI 上的一句提示，
  * 避免用户以为「打开失败」是可达鸭的 bug。
  */
-export type CampusWebviewTargetId = 'ecourse' | 'egate' | 'elrc'
+export type CampusWebviewTargetId = 'eams' | 'egate' | 'ecourse' | 'elrc' | 'oa'
 
 export interface CampusWebviewTarget {
   id: CampusWebviewTargetId
   nameZh: string
   summary: string
+  /** 校园系统自身的入口 */
   url: string
-  /** 域名是否已与信息办确认（U11）。未确认时必须如实告知 */
+  /** 域名是否已实测确认 */
   domainVerified: boolean
+  /**
+   * ⭐ **统一身份认证跳板**：带着官方站点自己的 `service` 跳到学校 IDS 登录页。
+   *
+   * ## 这是「不注册 CAS」的正式解法
+   *
+   * 用户点这个链接 → 在**学校的页面**上登录 → CAS 把票根送回**官方站点**
+   * → 用户落在官方网站里，已登录。
+   *
+   * 全程可达鸭**不接收、不存储、代理任何 ticket 或 cookie**。
+   * 我们做的事情等价于「把官网登录页的链接放到这里」——
+   * 不需要信息办为我们注册任何 `service`。
+   *
+   * ⚠️ 这里用的是**官方站点自己已注册的** `service`（egate-new / eams / oa），
+   * **不是**可达鸭的回调地址。所以票根不会落到我们这边 —— 这是关键区别。
+   */
+  ssoUrl: string
+  /**
+   * `web-view` 打不开的原因（`null` = 能打开）。
+   *
+   * 实测：`ecourse.shanghaitech.edu.cn` 会 302 到 **`:8600`**，
+   * 而微信 `web-view` 只接受标准 443 端口 —— 所以它在小程序里**打不开**。
+   * 如实标注，不假装能用。
+   */
+  webviewBlockedReason: string | null
 }
 
+/**
+ * 校园系统入口目录（2026-10-20 **实测校订**）。
+ *
+ * ## 这次校订改了什么
+ *
+ * | 项 | 原来 | 实测结果 |
+ * | --- | --- | --- |
+ * | `egate` | `egate.shanghaitech.edu.cn` | 仍在，但 **302 到 `egate-new`** —— 直接用新的 |
+ * | `eams` | **不存在** | ✅ `eams.shanghaitech.edu.cn` 返回 200，是真实教务域名 |
+ * | `oa` | **不存在** | ✅ `oa.shanghaitech.edu.cn` 返回 200 |
+ * | `student` | `student.shanghaitech.edu.cn` | ❌ **域名不存在**（连不上），已从目录删除 |
+ * | `ecourse` | 标为可用 | ⚠️ 会跳 **`:8600`**，小程序 `web-view` 打不开 |
+ *
+ * ## 域名白名单仍然不是我们能单方面决定的
+ *
+ * 微信小程序的 `web-view` 要求域名在后台「业务域名」里，
+ * 这需要**真实 appid + 管理员**在 `mp.weixin.qq.com` 配置。
+ * 在此之前，这里的入口在**开发者工具里**（`urlCheck: false`）可打开，
+ * 真机上会被拦。UI 必须如实提示。
+ */
 export const CAMPUS_WEBVIEW_TARGETS: readonly CampusWebviewTarget[] = [
   {
-    id: 'ecourse',
-    nameZh: 'E云课堂',
-    summary: '课程资料与在线课堂',
-    url: 'https://ecourse.shanghaitech.edu.cn/',
-    domainVerified: false,
+    id: 'eams',
+    nameZh: '教务系统 (EAMS)',
+    summary: '课表查询、选课、成绩',
+    url: 'https://eams.shanghaitech.edu.cn/',
+    domainVerified: true,
+    ssoUrl:
+      'https://ids.shanghaitech.edu.cn/authserver/login?service=' +
+      encodeURIComponent('https://eams.shanghaitech.edu.cn/'),
+    webviewBlockedReason: null,
   },
   {
     id: 'egate',
     nameZh: 'eGate 门户',
-    summary: '学生请假 / 学生活动等 eGate 应用',
-    url: 'https://egate.shanghaitech.edu.cn/',
-    domainVerified: false,
+    summary: '学生请假 / 学生活动 / 场馆预约',
+    url: 'https://egate-new.shanghaitech.edu.cn/',
+    domainVerified: true,
+    ssoUrl:
+      'https://ids.shanghaitech.edu.cn/authserver/login?service=' +
+      encodeURIComponent('https://egate-new.shanghaitech.edu.cn/login'),
+    webviewBlockedReason: null,
+  },
+  {
+    id: 'oa',
+    nameZh: 'OA 办公系统',
+    summary: '公文、场地与后勤申请',
+    url: 'https://oa.shanghaitech.edu.cn/',
+    domainVerified: true,
+    ssoUrl:
+      'https://ids.shanghaitech.edu.cn/authserver/login?service=' +
+      encodeURIComponent('https://oa.shanghaitech.edu.cn/'),
+    webviewBlockedReason: null,
   },
   {
     id: 'elrc',
     nameZh: '课程录播',
     summary: '教室录播回看（ELRC）',
     url: 'https://elrc.shanghaitech.edu.cn/',
-    domainVerified: false,
+    domainVerified: true,
+    ssoUrl:
+      'https://ids.shanghaitech.edu.cn/authserver/login?service=' +
+      encodeURIComponent('https://elrc.shanghaitech.edu.cn/'),
+    webviewBlockedReason: null,
+  },
+  {
+    id: 'ecourse',
+    nameZh: 'E云课堂',
+    summary: '课程资料与在线课堂',
+    url: 'https://ecourse.shanghaitech.edu.cn:8600/',
+    domainVerified: true,
+    ssoUrl:
+      'https://ids.shanghaitech.edu.cn/authserver/login?service=' +
+      encodeURIComponent('https://ecourse.shanghaitech.edu.cn/'),
+    // ⚠️ 实测：该站会 302 到 `:8600`。微信 web-view 只接受标准 443 端口，
+    // 因此在小程序里**打不开**；原生端（Flutter / 浏览器）可以。
+    webviewBlockedReason:
+      'E云课堂使用非标准端口 8600，微信小程序 web-view 只支持 443 端口，因此在小程序里打不开；请用浏览器或原生客户端访问。',
   },
 ]
 
