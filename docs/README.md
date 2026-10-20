@@ -1,6 +1,6 @@
 # 可达鸭 · 文档索引
 
-> 39 份文档、约 20,600 行。这份索引回答三个问题：
+> 41 份文档、约 21,900 行。这份索引回答三个问题：
 > **「我想知道 X，该读哪篇」**、**「这篇还准吗」**、**「从哪开始」**。
 
 ---
@@ -85,6 +85,7 @@
 | `13-cas-without-registration` | — | **`CAMPUS_CAS_SERVICE` 是干什么的**，以及不注册的四条替代路线 |
 | `14-wechat-content-ingestion` | — | **公众号能否抓取**：单篇可以、批量不行，已实现解析 |
 | `15-campus-card-payment-code` | — | **校园卡付款码的真实机制**：只开放解码、不开放生成 |
+| `16-miniapp-appid-and-whitelist` | — | **怎么拿真实 appid、怎么配 downloadFile 白名单**（附我能做什么/不能做什么） |
 
 ### 3.2 功能规格（`features/`）
 
@@ -95,6 +96,7 @@
 | `miniapp-campus-map` | 246 | 小程序校园地图组件 |
 | `techpie-integration` | 1139 | TechPie 能力整合（含付款码的能力声明） |
 | `wildlife-map` | 1912 | 野生动物活动区域与轨迹 |
+| `techpie-native-payment-code` | — | **原生端付款码可行性**：DNS 隧道的权限要求、合规风险清单、鸿蒙评估 |
 
 ### 3.3 决策记录（`adr/`）
 

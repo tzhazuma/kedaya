@@ -188,3 +188,52 @@ describe('WechatArticleService · HTTP 失败与解析委托', () => {
     expect(result.article.images).toHaveLength(1);
   });
 });
+
+/**
+ * 批量入口的**编排**测试。
+ *
+ * 直接测控制器不方便（要起 Nest），所以这里测服务层被逐篇调用时的行为契约：
+ * 单篇失败**不能**让整批失败 —— 用户复制了 10 个链接，其中 1 个是别人的号，
+ * 那 9 个该给结果。
+ */
+describe('批量语义（由控制器编排，服务层保证单篇独立）', () => {
+  const service = new WechatArticleService();
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('一篇失败不影响其他篇：服务层每次调用互相独立', async () => {
+    const goodHtml = `<!DOCTYPE html><html><body>
+      <div id="js_content"><p>讲座时间：10月25日 14:00 地点：1-101</p></div>
+      <div class="rich_media_area_extra"></div>
+      <script>var msg_title = "讲座通知".html(false); var nickname = htmlDecode("上科大");</script>
+    </body></html>`;
+
+    let call = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async () => {
+        call += 1;
+        // 第一次成功，第二次返回「请在微信客户端打开」
+        if (call === 1) {
+          return { status: 200, ok: true, headers: new Map(), text: async () => goodHtml };
+        }
+        return {
+          status: 200,
+          ok: true,
+          headers: new Map(),
+          text: async () => '<html><body><p>请在微信客户端打开链接</p></body></html>',
+        };
+      }),
+    );
+
+    const first = await service.fetchAndParse('https://mp.weixin.qq.com/s/aaa');
+    const second = await service.fetchAndParse('https://mp.weixin.qq.com/s/bbb');
+
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(false);
+    if (second.ok) throw new Error('unreachable');
+    expect(second.code).toBe('login-required');
+  });
+});

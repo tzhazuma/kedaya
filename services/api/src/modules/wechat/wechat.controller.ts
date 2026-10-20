@@ -2,6 +2,8 @@ import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 
+import type { WechatArticle } from '@kedaya/shared';
+
 import { WechatArticleService } from './application/wechat-article.service';
 
 /**
@@ -10,16 +12,44 @@ import { WechatArticleService } from './application/wechat-article.service';
  * `.strict()`：客户端多塞 `cookie` / `headers` 之类会被结构性拒绝 ——
  * 否则会让人以为那些字段起了作用。
  */
+const singleUrl = z
+  .string()
+  .trim()
+  .min(10)
+  .max(2048)
+  .url('必须是合法 URL');
+
+/**
+ * 入参：**单条 `url` 或批量 `urls`**（二选一）。
+ *
+ * ## 为什么需要批量
+ *
+ * 微信**没有**公开的「公众号历史文章」API —— 实测：
+ * - `profile_ext?action=home` 无登录态返回 2 KB 的「请在微信客户端打开」墙
+ * - `getmsg` 返回 111 B 的错误 JSON
+ * - 搜狗微信搜索结果里**零个**文章链接（已失效）
+ * - 文章页里的「相关文章」来自**别的号**，不是该号历史
+ *
+ * 所以唯一可行的「拿到多篇文章」的路是：**用户自己在微信里逐篇复制链接**，
+ * 一次性交给我们批量解析。这不是爬虫，是「把用户已经打开的东西读出来」。
+ */
 const articleRequestSchema = z
   .object({
-    url: z
-      .string()
-      .trim()
-      .min(10)
-      .max(2048)
-      .url('必须是合法 URL'),
+    url: singleUrl.optional(),
+    urls: z.array(singleUrl).min(1).max(20).optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (value) => value.url !== undefined || value.urls !== undefined,
+    '必须给 `url` 或 `urls` 之一',
+  )
+  .refine(
+    (value) => !(value.url !== undefined && value.urls !== undefined),
+    '`url` 与 `urls` 只能给一个',
+  );
+
+/** 批量上限：超过这个数就拒绝 —— 20 篇已经是一次「整理几周通知」的量了 */
+const MAX_BATCH = 20;
 
 @ApiTags('wechat')
 @Controller('wechat')
@@ -49,7 +79,28 @@ export class WechatController {
       };
     }
 
-    const outcome = await this.service.fetchAndParse(parsed.data.url);
+    // 批量：逐篇串行取（对微信的请求要克制，不做并发轰炸）
+    if (parsed.data.urls !== undefined) {
+      const results = [];
+      for (const url of parsed.data.urls) {
+        const outcome = await this.service.fetchAndParse(url);
+        results.push(
+          outcome.ok
+            ? { url, ok: true as const, article: this.toArticleView(outcome.article) }
+            : { url, ok: false as const, code: outcome.code, message: outcome.message },
+        );
+      }
+      const succeeded = results.filter((item) => item.ok).length;
+      return {
+        ok: succeeded > 0,
+        total: results.length,
+        succeeded,
+        failed: results.length - succeeded,
+        items: results,
+      };
+    }
+
+    const outcome = await this.service.fetchAndParse(parsed.data.url ?? '');
     if (!outcome.ok) {
       // ⚠️ 用 200 返回结构化的失败，而不是 4xx：
       // 「文章要求关注后查看」是**业务结果**，不是客户端错误。
@@ -58,17 +109,19 @@ export class WechatController {
       return { ok: false, code: outcome.code, message: outcome.message };
     }
 
+    return { ok: true, article: this.toArticleView(outcome.article) };
+  }
+
+  /** 把领域对象转成对外视图（单条与批量共用，避免两处漂移） */
+  private toArticleView(article: WechatArticle) {
     return {
-      ok: true,
-      article: {
-        title: outcome.article.title,
-        accountName: outcome.article.accountName,
-        publishedAt: outcome.article.publishedAt,
-        // 正文行数可能很大（实测 30–80 行），但不含图片二进制，可以全量返回
-        bodyLines: outcome.article.bodyLines,
-        images: outcome.article.images,
-        sourceUrl: outcome.article.sourceUrl,
-      },
+      title: article.title,
+      accountName: article.accountName,
+      publishedAt: article.publishedAt,
+      // 正文行数可能很大（实测 30–80 行），但不含图片二进制，可以全量返回
+      bodyLines: article.bodyLines,
+      images: article.images,
+      sourceUrl: article.sourceUrl,
     };
   }
 }
