@@ -1,3 +1,4 @@
+import { sanitizeSourceUrl } from '@kedaya/shared'
 import {
   DEADLINE_KINDS,
   DEADLINE_SOURCES,
@@ -47,10 +48,31 @@ export function createDeadlineLocalRepository(
     read(): DeadlineItem[] {
       const value = cache.read<unknown>(DEADLINE_LOCAL_STORAGE_KEY)
       if (!Array.isArray(value)) return []
-      return value.filter(isDeadlineItem)
+      // 读时再清洗一次：storage 里可能躺着本次改动**之前**写入的带令牌 URL。
+      // 这是防御性的第二道，不是冗余 —— 旧数据的清除只能靠读路径。
+      return value.filter(isDeadlineItem).map((item) => {
+        const sanitized = sanitizeSourceUrl(item.sourceUrl)
+        return sanitized === item.sourceUrl ? item : { ...item, sourceUrl: sanitized ?? '' }
+      })
     },
     write(items: readonly DeadlineItem[]): void {
-      cache.write(DEADLINE_LOCAL_STORAGE_KEY, [...items])
+      // ⚠️ **落盘前必须清洗 `sourceUrl`**。
+      //
+      // 回源链接可能是用户从浏览器复制的，形如
+      // `https://courses.example.edu/assignments?ticket=ST-…&session=…`。
+      // 把这种 URL 存进本机、再渲染到页面上，等于把会话令牌写进了设备存储。
+      //
+      // `sanitizeSourceUrl`（从 AgenticCampus 合并，见
+      // `docs/architecture/12-merged-from-classmates.md`）会剥掉
+      // ticket / session / token 等参数，保留可点开的回源地址。
+      cache.write(
+        DEADLINE_LOCAL_STORAGE_KEY,
+        items.map((item) => {
+          const sanitized = sanitizeSourceUrl(item.sourceUrl)
+          // 清洗后为空（比如整条 URL 只有令牌）→ 存空串，不存原始值。
+          return sanitized === item.sourceUrl ? item : { ...item, sourceUrl: sanitized ?? '' }
+        }),
+      )
     },
     clear(): void {
       cache.remove(DEADLINE_LOCAL_STORAGE_KEY)
