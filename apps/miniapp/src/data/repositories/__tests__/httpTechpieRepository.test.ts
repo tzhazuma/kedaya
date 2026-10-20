@@ -170,7 +170,7 @@ describe('http · techpie repository（路径与契约 §11.2 的动作名）', 
     if (result.ok) expect(result.value.items[0]?.balanceFen).toBe(58_750)
   })
 
-  it('paymentCode → POST /campus-card/payment-code（⚠️ 尚未登记进冻结契约）', async () => {
+  it('paymentCode → **GET** /campus-card/payment-code（2026-10-20 修正）', async () => {
     const client = createFakeApiClient(() =>
       ok({ code: 'C1', issuedAt: '2026-10-17T03:00:00.000Z', expiresAt: '2026-10-17T03:01:00.000Z' }),
     )
@@ -178,11 +178,20 @@ describe('http · techpie repository（路径与契约 §11.2 的动作名）', 
 
     const result = await repository.paymentCode('idem-4')
 
-    expect(client.calls[0]?.method).toBe('POST')
-    // 这个常量是**契约路径**（带前导斜杠，与 `modulePath()` 的段式输出不同），
-    // 因为付款码端点尚未登记进冻结 OpenAPI，它目前只是一个占位常量
+    // ⚠️ 这里是 **GET**，不是 POST。
+    //
+    // 服务端只注册了 `@Get('payment-code')`。此前客户端用 POST 会得到 **405**，
+    // 而 405 在 UI 上被渲染成「未知错误」—— 用户根本看不到那句本该出现的
+    // 「真实通道未打通（503）」。方法不匹配比 503 更糟：它把有用的信息盖掉了。
+    //
+    // 为什么是 GET 而不是「服务端补一个 POST」：付款码是**取一个短时效凭证**，
+    // 不是创建持久资源。响应带 `Cache-Control: no-store`，每次取都得到新码，
+    // 重复取无副作用 —— 没有理由要 POST，也没有理由要 idempotency-key。
+    expect(client.calls[0]?.method).toBe('GET')
     expect(client.calls[0]?.path).toBe('/campus-card/payment-code')
-    expect(client.calls[0]?.extras?.idempotencyKey).toBe('idem-4')
+    // 形参保留（不改用例层签名），但**不再发送**：服务端不认这个头，
+    // 发了只会让抓包的人以为它在起作用。
+    expect(client.calls[0]?.extras?.idempotencyKey).toBeUndefined()
     expect(result.ok).toBe(true)
   })
 })

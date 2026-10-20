@@ -1,6 +1,6 @@
 # 可达鸭 · 文档索引
 
-> 36 份文档、约 19,800 行。这份索引回答三个问题：
+> 39 份文档、约 20,600 行。这份索引回答三个问题：
 > **「我想知道 X，该读哪篇」**、**「这篇还准吗」**、**「从哪开始」**。
 
 ---
@@ -82,6 +82,9 @@
 | `09-qin-apk-analysis` | 199 | 「秦QIN」APK 逆向分析（⚠️ 代码已获授权合并） |
 | `11-geekpie-repos-analysis` | 188 | GeekPie 的 EAMS 抓取脚本 + NextDDL 分析 |
 | `12-merged-from-classmates` | 465 | **合并记录**：文件级出处、没合并的部分及理由 |
+| `13-cas-without-registration` | — | **`CAMPUS_CAS_SERVICE` 是干什么的**，以及不注册的四条替代路线 |
+| `14-wechat-content-ingestion` | — | **公众号能否抓取**：单篇可以、批量不行，已实现解析 |
+| `15-campus-card-payment-code` | — | **校园卡付款码的真实机制**：只开放解码、不开放生成 |
 
 ### 3.2 功能规格（`features/`）
 

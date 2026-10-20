@@ -20,7 +20,7 @@ import '../api/request_ids.dart';
 /// | `disconnect()` | `DELETE campus-card/link` |
 /// | `account()` | `GET campus-card/account` |
 /// | `listTransactions()` | `GET campus-card/transactions`（游标分页） |
-/// | `paymentCode()` | `POST campus-card/payment-code` |
+/// | `paymentCode()` | `GET campus-card/payment-code` |
 ///
 /// 需要后端确认后才能定稿；在此之前 mock 适配器是唯一被验证过的实现。
 final class RemoteCampusCardRepository implements CampusCardPort {
@@ -99,8 +99,11 @@ final class RemoteCampusCardRepository implements CampusCardPort {
         // 付款码是"现场签发一个短时效凭据"，因此是 POST（契约 §11.3：POST 必须带幂等键）。
         // 幂等键让"重试同一次取码"不会产生两个不同的码。
         ApiRequest(
+          // ⚠️ 服务端只注册了 GET（`@Get('payment-code')`）。用 POST 会 405，
+          // 405 在 UI 上会变成「未知错误」，用户看不到「真实通道未打通」那句解释。
+          // 付款码是短时效凭证（响应带 no-store），GET 语义正确且无副作用。
           path: '$_base/payment-code',
-          method: ApiMethod.post,
+          method: ApiMethod.get,
           idempotencyKey: newIdempotencyKey(),
         ),
         (Object? data) => CampusPaymentCode.fromJson(

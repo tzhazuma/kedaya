@@ -426,12 +426,12 @@ export const CAMPUS_SERVICES = [
       '实现 eCard OPENID 客户端（余额 / 流水），地址与字段**未确认，需要校方提供**；仓库里的 `https://ecard.shanghaitech.edu.cn` 只是占位白名单条目，未经确认。',
       '把 `CampusDataPort.fetchCard` 接进写入路径：同步上游快照 → 落 `CampusCardTransaction`（或新增独立的余额端点，但要先登记契约）。',
       '给 `GET /campus-card/account` 与 `/transactions` 加 `simulated` / `dataAsOf`（当前响应没有这两个字段，客户端无法判断数据新旧与真假）。',
-      '付款码：先统一 HTTP 方法。契约登记的是 `GET /campus-card/payment-code`（`00-FROZEN-CONTRACT.md:1185`），三端却都调 `POST`；在真实通道打通前，服务端应继续返回 503，而不是假码。',
+      '付款码：三端已统一到 `GET /campus-card/payment-code`（2026-10-20 修正，此前小程序与 Flutter 用 POST 会得到 405，405 被 UI 渲染成「未知错误」，盖掉了本该出现的 503 解释）；在真实通道打通前，服务端继续返回 503，而不是假码。',
     ],
     caveats: [
       '`CampusCardService` 不注入 `CAMPUS_DATA_PORT`，所以 `fetchCard`（mock/live 校园卡快照）**没有任何调用点**；`account` 永远从本地流水推导，没有流水时是 0（`docs/local-development.md:250` 已承认）。',
       '`CampusSessionService.bind` 把 `authCode` 同时存进加密密文和 **明文** `TechpieLink.externalUserId` / `CampusSession.externalUserId`（`:154-157,169,189`），违反 §11.19-B「立即用掉并丢弃」。',
-      '付款码 503 的语义是对的（不给假码），但客户端方法不匹配会先得到 404；用户根本看不到那句「不会返回假付款码」。',
+      '付款码 503 的语义是对的（不给假码）。此前客户端方法不匹配会先得到 405，用户看不到那句「不会返回假付款码」——2026-10-20 已把三端统一为 GET，现在用户能直接看到 503 的原因。',
       '`CAMPUS_CARD_DATA_URL` 的 `CARD` 与统一枚举 `ecard` 不一致；按枚举配 `CAMPUS_ECARD_DATA_URL` 不会生效。',
     ],
     userFacingNote:

@@ -187,12 +187,23 @@ export function createHttpTechpieRepository(
       return ok({ items, nextCursor: result.value.nextCursor, total: result.value.total })
     },
 
-    async paymentCode(idempotencyKey?: string): Promise<Result<CampusCardPaymentCode, RepositoryError>> {
-      const result = await client.post<unknown, undefined>(
-        CAMPUS_CARD_PAYMENT_CODE_PATH,
-        undefined,
-        idempotencyKey === undefined ? {} : { idempotencyKey },
-      )
+    /**
+     * 取付款码。
+     *
+     * ⚠️ 服务端是 **GET**，不是 POST。
+     *
+     * 之前用 POST，而服务端只注册了 `@Get('payment-code')`，结果是 **405**。
+     * 405 在 UI 上会变成「未知错误」—— 用户根本看不到本该出现的
+     * 「真实通道未打通」那句解释。这比直接 503 更糟。
+     *
+     * 为什么是 GET：它是「取一个短时效凭证」，不是创建持久资源。
+     * 响应带 `Cache-Control: no-store`；每次取都会得到新码，
+     * 重复取无副作用，因此也不需要 idempotency-key。
+     *
+     * 保留 `idempotencyKey` 形参只为不改动用例层签名，但**不再发送**。
+     */
+    async paymentCode(_idempotencyKey?: string): Promise<Result<CampusCardPaymentCode, RepositoryError>> {
+      const result = await client.get<unknown>(CAMPUS_CARD_PAYMENT_CODE_PATH)
       if (!result.ok) return err(toRepositoryError(result.error))
 
       const normalized = normalizeCampusCardPaymentCode(result.value)
