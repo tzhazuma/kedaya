@@ -21,6 +21,7 @@ import { readAuthContext } from './request-context';
 import { toCampusBindingSummary } from './campus-binding-summary';
 import { AuthService } from './auth.service';
 import { AccountDeletionService } from './application/account-deletion.service';
+import { LocalAuthService } from './local-auth.service';
 
 const loginSchema = z.object({
   /** 上科大 CAS 回调拿到的 ticket（真实实现里服务端校验后立即丢弃） */
@@ -28,7 +29,14 @@ const loginSchema = z.object({
 });
 
 const deleteAccountSchema = z.object({
-  password: z.string().min(1, 'password 不能为空').max(256),
+  /**
+   * 身份再确认，二者之一：
+   * - `password`：有密码的账号
+   * - `code`：免密账号（用邮箱验证码登录自动建的号，`passwordHash` 是哨兵值，
+   *   永远无法通过密码校验）
+   */
+  password: z.string().min(1).max(256).optional(),
+  code: z.string().min(1).max(16).optional(),
   /** 必须是字面量 DELETE —— 防误触，写错就整单拒绝（不删任何东西） */
   confirm: z.string(),
 });
@@ -69,6 +77,7 @@ const updateProfileSchema = z
 export class AuthController {
   constructor(
     @Inject(AccountDeletionService) private readonly accountDeletion: AccountDeletionService,
+    @Inject(LocalAuthService) private readonly localAuth: LocalAuthService,
     private readonly authService: AuthService,
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     /**
@@ -241,6 +250,26 @@ export class AuthController {
    * 3. **不物理删除业务内容** —— 帖子/拼单还挂在别人页面上，删掉会变孤儿；
    *    改为撤销身份 + 匿名化。详情见 `AccountDeletionService` 的注释。
    */
+  /**
+   * 发送「注销账号」确认码（免密账号专用）。
+   *
+   * ⚠️ 与其他发码端点的关键区别：**不接受调用方指定邮箱** ——
+   * 码只发给 token 对应的那个账号自己的邮箱。否则这就会变成
+   * 「给任意邮箱发码」的开放接口。
+   */
+  @Post('account/deletion-code')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: '发送注销确认码（免密账号用；码只发到本账号自己的邮箱）',
+  })
+  sendDeletionCode(
+    @CurrentUser() userId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>,
+  ) {
+    return this.localAuth.sendDeletionCode(userId, readAuthContext(headers));
+  }
+
   @Delete('account')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()

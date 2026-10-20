@@ -134,6 +134,9 @@ function createFakeRepository(overrides: Partial<AuthRepository> = {}): {
     async passwordStatus() {
       return ok<PasswordStatusDto>({ hasPassword: true })
     },
+    async sendDeletionCode() {
+      return ok({ sent: true, email: 'a@b.c', purpose: 'delete-account', expiresInSeconds: 600 })
+    },
     async deleteAccount(input) {
       // mock 如实模拟后端防误触：confirm 不对时**零副作用**。
       if (input.confirm !== 'DELETE') {

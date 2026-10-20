@@ -18,7 +18,18 @@ export type VerificationPurpose =
   | 'login'
   | 'reset-password'
   | 'change-password'
-  | 'bind-email';
+  | 'bind-email'
+  /**
+   * 注销账号的确认码。
+   *
+   * 为什么需要它：免密账号（用验证码登录自动建的号）的 `passwordHash`
+   * 是不可验证的哨兵值，`verifyPassword` 永远返回 false。这类账号
+   * 如果只能用密码注销，就**永远无法自助注销** —— 而 PIPL 要求可自助注销。
+   *
+   * 单独一个 purpose 而不复用 `'login'`：审计时能区分
+   * 「这个码是用来登录的」和「这个码是用来销毁账号的」。
+   */
+  | 'delete-account';
 
 export const VERIFICATION_PURPOSES: readonly VerificationPurpose[] = [
   'register',
@@ -26,6 +37,7 @@ export const VERIFICATION_PURPOSES: readonly VerificationPurpose[] = [
   'reset-password',
   'change-password',
   'bind-email',
+  'delete-account',
 ];
 
 /** 验证码位数 */

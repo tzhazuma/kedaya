@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { UnauthenticatedError, ValidationError, ConflictError } from '../../../common/errors/app-error';
 import { LocalAccountRepository, LOCAL_ACCOUNT_REPOSITORY } from '../domain/local-account.domain';
+import { LocalAuthService } from '../local-auth.service';
 import { verifyPassword } from '../domain/password';
 import {
   ACCOUNT_DELETION_REPOSITORY,
@@ -39,6 +40,8 @@ export class AccountDeletionService {
     private readonly repository: AccountDeletionRepository,
     @Inject(LOCAL_ACCOUNT_REPOSITORY)
     private readonly accounts: LocalAccountRepository,
+    @Inject(LocalAuthService)
+    private readonly localAuth: LocalAuthService,
   ) {}
 
   /**
@@ -50,7 +53,7 @@ export class AccountDeletionService {
    */
   async deleteAccount(
     userId: string,
-    input: { password: string; confirm: string },
+    input: { password?: string; code?: string; confirm: string },
   ): Promise<{ deletedAt: string }> {
     // 1) 防误触必须**先于**任何写操作 —— 否则 `confirm` 写错也会开始删。
     if (input.confirm !== 'DELETE') {
@@ -68,11 +71,35 @@ export class AccountDeletionService {
       throw new ConflictError('该账号已注销');
     }
 
-    // 3) 密码校验。账号不存在与密码错误走同一个分支 —— 不能让这个端点
-    //    回答"这个邮箱注册过没有"。
+    // 3) 身份再确认：**密码 或 邮箱验证码**，二者之一。
+    //
+    //    为什么需要验证码这条路：免密账号（用邮箱验证码登录自动建的号）
+    //    的 `passwordHash` 是不可验证的哨兵值，`verifyPassword` 永远 false。
+    //    如果只认密码，这类账号就**永远无法自助注销** —— PIPL 要求可自助注销。
+    //
+    //    ⚠️ 两条路都只能由**本人**触发：`userId` 来自 token，
+    //    验证码只发给这个账号自己的邮箱（见 `sendDeletionCode`）。
     const account = await this.accounts.findByUserId(userId);
-    if (account === null || !verifyPassword(input.password, account.passwordHash)) {
-      throw new UnauthenticatedError('密码不正确，账号未注销');
+
+    if (typeof input.password === 'string' && input.password.length > 0) {
+      // 密码错与账号不存在走同一条文案 —— 不能让这个端点回答
+      // "这个邮箱注册过没有"。
+      if (account === null || !verifyPassword(input.password, account.passwordHash)) {
+        throw new UnauthenticatedError('密码不正确，账号未注销');
+      }
+    } else if (typeof input.code === 'string' && input.code.length > 0) {
+      if (account === null) {
+        throw new UnauthenticatedError('密码不正确，账号未注销');
+      }
+      // ⚠️ 文案与密码错**完全一致**：否则"这个账号是免密的"这件事会泄露出去。
+      //    `verifyDeletionCode` 内部会消耗码（一次性 + TTL + 尝试次数）。
+      try {
+        await this.localAuth.verifyDeletionCode(account.email, input.code);
+      } catch {
+        throw new UnauthenticatedError('密码不正确，账号未注销');
+      }
+    } else {
+      throw new ValidationError('注销需要提供登录密码，或先获取邮箱验证码');
     }
 
     // 4) 事务里撤销身份 + 匿名化。并发抢锁在 repository 内完成。

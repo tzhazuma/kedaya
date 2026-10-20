@@ -21,6 +21,7 @@ import type {
 } from '../domain/local-account.domain';
 import { hashPassword } from '../domain/password';
 import { AccountDeletionService } from './account-deletion.service';
+import type { LocalAuthService } from '../local-auth.service';
 
 /**
  * 账号注销。
@@ -64,6 +65,21 @@ function makeRepo(outcome: 'ok' | 'already' = 'ok'): AccountDeletionRepository &
   };
 }
 
+/**
+ * `LocalAuthService` 的替身：只实现注销用到的 `verifyDeletionCode`。
+ * `acceptCode` 用于让某条用例决定"这个码对不对"。
+ */
+function makeLocalAuth(acceptCode = '123456') {
+  const calls: { email: string; code: string }[] = [];
+  return {
+    calls,
+    async verifyDeletionCode(email: string, code: string) {
+      calls.push({ email, code });
+      if (code !== acceptCode) throw new Error('验证码不正确');
+    },
+  } as unknown as LocalAuthService & { calls: { email: string; code: string }[] };
+}
+
 function makeAccounts(found = true): LocalAccountRepository {
   return {
     async findByUserId() {
@@ -91,7 +107,7 @@ function makeAccounts(found = true): LocalAccountRepository {
 describe('AccountDeletionService', () => {
   it('⚠️ confirm 不是 DELETE → 400，且**不碰仓储**', async () => {
     const repo = makeRepo();
-    const service = new AccountDeletionService(repo, makeAccounts());
+    const service = new AccountDeletionService(repo, makeAccounts(), makeLocalAuth());
 
     const error = await service
       .deleteAccount('u1', { password: PASSWORD, confirm: 'delete' })
@@ -107,7 +123,7 @@ describe('AccountDeletionService', () => {
 
   it('confirm 完全缺失也拒绝', async () => {
     const repo = makeRepo();
-    const service = new AccountDeletionService(repo, makeAccounts());
+    const service = new AccountDeletionService(repo, makeAccounts(), makeLocalAuth());
     await expect(
       service.deleteAccount('u1', { password: PASSWORD, confirm: '' }),
     ).rejects.toBeInstanceOf(ValidationError);
@@ -116,7 +132,7 @@ describe('AccountDeletionService', () => {
 
   it('密码错 → 401，且不碰仓储', async () => {
     const repo = makeRepo();
-    const service = new AccountDeletionService(repo, makeAccounts());
+    const service = new AccountDeletionService(repo, makeAccounts(), makeLocalAuth());
 
     const error = await service
       .deleteAccount('u1', { password: 'wrong', confirm: 'DELETE' })
@@ -129,8 +145,8 @@ describe('AccountDeletionService', () => {
 
   it('⚠️ 账号不存在与密码错是**同一类错误**（防账号枚举）', async () => {
     const repo = makeRepo();
-    const noAccount = new AccountDeletionService(repo, makeAccounts(false));
-    const wrongPassword = new AccountDeletionService(repo, makeAccounts(true));
+    const noAccount = new AccountDeletionService(repo, makeAccounts(false), makeLocalAuth());
+    const wrongPassword = new AccountDeletionService(repo, makeAccounts(true), makeLocalAuth());
 
     const e1 = await noAccount
       .deleteAccount('u1', { password: PASSWORD, confirm: 'DELETE' })
@@ -148,7 +164,7 @@ describe('AccountDeletionService', () => {
   it('已注销过 → 409，且**先于密码校验**（凭据已被删除也要回 409 而不是 401）', async () => {
     const repo = makeRepo('already');
     // 已注销账号的凭据行已经没了 → accounts 返回 null；若顺序写反会得到 401
-    const service = new AccountDeletionService(repo, makeAccounts(false));
+    const service = new AccountDeletionService(repo, makeAccounts(false), makeLocalAuth());
 
     const error = await service
       .deleteAccount('u1', { password: PASSWORD, confirm: 'DELETE' })
@@ -162,7 +178,7 @@ describe('AccountDeletionService', () => {
 
   it('正常注销 → 返回 deletedAt', async () => {
     const repo = makeRepo();
-    const service = new AccountDeletionService(repo, makeAccounts());
+    const service = new AccountDeletionService(repo, makeAccounts(), makeLocalAuth());
     const result = await service.deleteAccount('u1', { password: PASSWORD, confirm: 'DELETE' });
     expect(result.deletedAt).toBe('2026-10-20T00:00:00.000Z');
     expect(repo.calls).toEqual(['u1']);
@@ -437,7 +453,9 @@ function liveAccounts(): LocalAccountRepository {
 
 function buildService(fake: FakePrisma): AccountDeletionService {
   const repository = new AccountDeletionPrismaRepository(fake as unknown as PrismaService);
-  return new AccountDeletionService(repository, liveAccounts());
+  // 真实 Prisma 仓储 + 内存账号表 + LocalAuthService 替身。
+  // ⚠️ 第三个参数是免密账号走验证码注销所需的校验器（见「免密账号」那组用例）。
+  return new AccountDeletionService(repository, liveAccounts(), makeLocalAuth());
 }
 
 /** 走真实的 `AuthController` → `AuthService` → `UserPrismaRepository`（只把 Prisma 换成内存） */
@@ -461,8 +479,10 @@ function buildAuthController(fake: FakePrisma, service: AccountDeletionService):
       revokeAllForUser: async () => 0,
     } as unknown as RefreshSessionRepository,
   );
-  // 第 4 个参数是校园绑定端口：本组测试不碰绑定列表之外的能力
-  return new AuthController(service, authService, users, {} as never);
+  // 构造参数顺序：accountDeletion → localAuth → authService → users → campusLinks
+  // 第 2 个（LocalAuthService）本组不测（发码路径由 service 层用例覆盖），
+  // 第 5 个（校园绑定端口）本组不碰绑定列表之外的能力。
+  return new AuthController(service, {} as never, authService, users, {} as never);
 }
 
 describe('账号注销 · 真实仓储行为', () => {
@@ -615,5 +635,82 @@ describe('账号注销 · 真实仓储行为', () => {
     const error = await controller.me(USER).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(UnauthenticatedError);
     expect((error as UnauthenticatedError).status).toBe(401);
+  });
+});
+
+describe('AccountDeletionService · 免密账号走邮箱验证码', () => {
+  /**
+   * 免密账号（用邮箱验证码登录自动建的号）的 `passwordHash` 是哨兵值，
+   * `verifyPassword` 永远 false。如果只认密码，这类账号**永远无法自助注销**。
+   */
+  it('⚠️ 免密账号（哨兵密码）用验证码可以注销', async () => {
+    const repo = makeRepo();
+    const localAuth = makeLocalAuth('123456');
+    const accounts = {
+      async findByUserId() {
+        return {
+          userId: 'u1',
+          email: 'a@b.c',
+          // 与 local-auth.service 里的 NO_PASSWORD_SENTINEL 同值
+          passwordHash: '!no-password:sign-in-with-email-code',
+          status: 'active',
+        } as never;
+      },
+      async findByEmail() {
+        return null;
+      },
+    } as unknown as LocalAccountRepository;
+
+    const service = new AccountDeletionService(repo, accounts, localAuth);
+    const result = await service.deleteAccount('u1', { code: '123456', confirm: 'DELETE' });
+
+    expect(result.deletedAt).toBe('2026-10-20T00:00:00.000Z');
+    // 码只发到**这个账号自己的邮箱**
+    expect(localAuth.calls).toEqual([{ email: 'a@b.c', code: '123456' }]);
+  });
+
+  it('⚠️ 验证码错误 → 401，文案与"密码错误"**完全一致**', async () => {
+    const repo = makeRepo();
+    const localAuth = makeLocalAuth('123456');
+    const service = new AccountDeletionService(repo, makeAccounts(), localAuth);
+
+    const e1: Error = await service
+      .deleteAccount('u1', { code: '000000', confirm: 'DELETE' })
+      .then(
+        () => new Error('不该成功'),
+        (e: Error) => e,
+      );
+    const e2: Error = await service
+      .deleteAccount('u1', { password: 'wrong', confirm: 'DELETE' })
+      .then(
+        () => new Error('不该成功'),
+        (e: Error) => e,
+      );
+
+    expect(e1).toBeInstanceOf(UnauthenticatedError);
+    // 文案一致才不会泄露"这个账号是免密的"
+    expect(e1.message).toBe(e2.message);
+    // 校验失败**不能**触发删除
+    expect(repo.calls).toEqual([]);
+  });
+
+  it('密码和验证码都没给 → 400（不是 401）', async () => {
+    const repo = makeRepo();
+    const service = new AccountDeletionService(repo, makeAccounts(), makeLocalAuth());
+    await expect(
+      service.deleteAccount('u1', { confirm: 'DELETE' }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    expect(repo.calls).toEqual([]);
+  });
+
+  it('⚠️ confirm 错时连验证码都不校验（防误触优先）', async () => {
+    const repo = makeRepo();
+    const localAuth = makeLocalAuth('123456');
+    const service = new AccountDeletionService(repo, makeAccounts(), localAuth);
+    await expect(
+      service.deleteAccount('u1', { code: '123456', confirm: 'delete' }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    // 码没有被消耗 —— 用户改对 confirm 后还能继续用
+    expect(localAuth.calls).toEqual([]);
   });
 });

@@ -45,7 +45,10 @@ export interface PasswordStatusDto {
 
 /** 注销账号的入参。`confirm` 必须是字面量 'DELETE'（后端会校验，写错则零写入） */
 export interface DeleteAccountInput {
-  password: string
+  /** 有密码的账号用这个 */
+  password?: string
+  /** 免密账号用这个（先调 `sendDeletionCode()`） */
+  code?: string
   confirm: string
 }
 
@@ -162,6 +165,12 @@ export interface AuthRepository {
    * 且确认字段不对时**不会删除任何数据**。
    */
   deleteAccount(input: DeleteAccountInput): Promise<Result<DeleteAccountResultDto, RepositoryError>>
+  /**
+   * 发送注销确认码（**免密账号**专用）。
+   *
+   * 码只发到本账号自己的邮箱，不接受调用方指定邮箱。
+   */
+  sendDeletionCode(): Promise<Result<CodeReceiptDto, RepositoryError>>
 
   /* ---------------- 微信（第一级身份层的第三条入口） ---------------- */
 

@@ -293,6 +293,37 @@ export class LocalAuthService {
   }
 
   /**
+   * 发送「注销账号」确认码。
+   *
+   * ⚠️ 与登录发码的三个不同：
+   * 1. **必须已登录**（`userId` 来自 token），码只发给**这个账号自己的邮箱**，
+   *    不接受调用方指定邮箱 —— 否则就成了「给任意邮箱发码」的开放接口。
+   * 2. 只给**免密账号**发码。有密码的账号走密码校验，不必额外发信。
+   * 3. 账号已注销 → 直接报错，不发码。
+   */
+  async sendDeletionCode(userId: string, context: AuthRequestContext = {}): Promise<CodeReceipt> {
+    const account = await this.accounts.findByUserId(userId);
+    if (account === null) {
+      throw new UnauthenticatedError('账号不存在');
+    }
+    if (account.passwordHash !== NO_PASSWORD_SENTINEL && account.passwordHash.includes('$')) {
+      // 有密码的账号不需要走验证码 —— 直接告诉调用方用密码，而不是默默发一封无用的信。
+      throw new ValidationError('该账号已设置密码，请用密码注销（不需要验证码）');
+    }
+    return this.sendCode(account.email, 'delete-account', context);
+  }
+
+  /**
+   * 校验「注销账号」确认码。
+   *
+   * 由 `AccountDeletionService` 在免密账号注销时调用。
+   * `consumeCode` 负责一次性、TTL、尝试次数上限。
+   */
+  async verifyDeletionCode(email: string, code: string): Promise<void> {
+    await this.consumeCode(this.normalizeTarget(email), 'delete-account', code);
+  }
+
+  /**
    * 用验证码登录。首次登录自动建号。
    *
    * 验证码校验走 `consumeCode`（一次性 + 尝试次数 + TTL 都在那里强制）。
@@ -534,6 +565,8 @@ function purposeSubject(purpose: VerificationPurpose): string {
       return '登录';
     case 'reset-password':
       return '找回密码';
+    case 'delete-account':
+      return '注销账号';
     case 'change-password':
       return '修改密码';
     case 'bind-email':

@@ -140,6 +140,10 @@ export function createHttpAuthRepository(api: ApiClient): AuthRepository {
       return api.del<DeleteAccountResultDto>(ACCOUNT_PATH)
     },
 
+    async sendDeletionCode() {
+      return api.post<CodeReceiptDto>(`${ACCOUNT_PATH}/deletion-code`)
+    },
+
     async passwordStatus() {
       return api.get<PasswordStatusDto>(`${AUTH_BASE}/password/status`)
     },

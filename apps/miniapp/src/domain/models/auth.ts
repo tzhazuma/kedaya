@@ -89,7 +89,17 @@ export interface CodeReceiptDto {
    * `login` 是**免密登录**（`POST /auth/account/login/code`）：与注册码分开存放，
    * 注册码不能拿来登录，登录码也不能拿来注册（服务端按 purpose 分别校验）。
    */
-  purpose: 'register' | 'reset-password' | 'change-password' | 'bind-email' | 'login'
+  purpose:
+    | 'register'
+    | 'reset-password'
+    | 'change-password'
+    | 'bind-email'
+    | 'login'
+    /**
+     * 注销确认码。与 `login` 分开存放 —— 一个登录码不能拿来注销账号，
+     * 否则「我想登进来」和「我想销毁这个号」会共用同一个凭据。
+     */
+    | 'delete-account'
   expiresInSeconds: number
   /**
    * **仅开发环境**后端回带的验证码（`AUTH_DEV_EXPOSE_CODES=true`）。
