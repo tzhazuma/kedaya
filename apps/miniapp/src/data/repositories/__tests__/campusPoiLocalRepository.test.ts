@@ -99,7 +99,34 @@ describe('校园 POI · 本机仓储', () => {
    * 版权红线：即使有人把另一参赛组手拍照片的地址写进 storage，
    * 读取时也必须被契约的 `forbiddenOrigins` 拒收（整条丢弃）。
    */
-  it('拒收 map.niyiwei.com 的照片（不抓取、不镜像、不渲染）', () => {
+  /**
+   * ⚠️ 策略在 2026-10-20 变了 —— 这条测试跟着改，不是"放宽标准"。
+   *
+   * **变更前**：`map.niyiwei.com` 在 `forbiddenOrigins` 里，任何该域名的照片
+   * 整条丢弃（因为照片著作权归拍摄者、我们没授权）。
+   *
+   * **变更后**：项目负责人已获得对方参赛组**口头**授权，允许合并其地库与
+   * 食堂菜单照片。于是策略从「禁止该域名」改为「**允许，但必须有署名**」。
+   *
+   * 所以现在真正要守的规则变了：不再是"拒收某个域名"，
+   * 而是"**没有署名的照片一律不许进**" —— 无论它来自哪个域名。
+   */
+  it('⚠️ 有署名的授权照片可以保留（含 map.niyiwei.com）', () => {
+    const cache = createMemoryCache()
+    const repository = createCampusPoiLocalRepository(cache)
+
+    const authorized = {
+      ...VALID_POI,
+      id: 'poi-authorized-photo',
+      photoUrls: ['https://map.niyiwei.com/garage/b1.jpg'],
+      photoCredit: '一图通参赛组（授权合并，2026-10-20）',
+    }
+
+    repository.writePois([VALID_POI, authorized])
+    expect(repository.readPois().map((poi) => poi.id)).toEqual([VALID_POI.id, authorized.id])
+  })
+
+  it('⚠️ 没有署名的照片一律拒收（任何域名）', () => {
     const cache = createMemoryCache()
     const repository = createCampusPoiLocalRepository(cache)
 
@@ -107,17 +134,13 @@ describe('校园 POI · 本机仓储', () => {
       VALID_POI,
       {
         ...VALID_POI,
-        id: 'poi-forbidden-photo',
-        photoUrls: ['https://map.niyiwei.com/garage/b1.jpg'],
-        photoCredit: '另一位同学',
-      },
-      {
-        ...VALID_POI,
         id: 'poi-photo-without-credit',
         photoUrls: ['https://example.com/authorized.jpg'],
+        // 故意不给 photoCredit
       },
     ])
 
+    // 只有无照片的那条活下来
     expect(repository.readPois().map((poi) => poi.id)).toEqual([VALID_POI.id])
   })
 

@@ -257,27 +257,41 @@ describe('validatePoiSupplement', () => {
     expect(validatePoiSupplement(poi).map((item) => item.code)).toContain('photo-url-empty');
   });
 
-  it('明令禁止的来源即使写了署名也拒收（版权不在录入者手里）', () => {
-    const scraped: CampusPoiSupplement = {
+  it('map.niyiwei.com 已获授权：写了署名就放行，不再整体拒收', () => {
+    const authorized: CampusPoiSupplement = {
       ...STUDY,
-      photoUrls: ['https://map.niyiwei.com/uploads/garage-1.jpg'],
-      photoCredit: '某同学（未获授权）',
+      photoUrls: ['https://map.niyiwei.com/photos/menus/c1-1f-beefnoodle-1.jpg'],
+      photoCredit: '上科大一图通参赛组（口头授权）',
     };
-    expect(validatePoiSupplement(scraped).map((item) => item.code)).toContain(
-      'photo-url-forbidden-origin',
-    );
-    expect(importPoiSupplement(scraped).ok).toBe(false);
+    expect(validatePoiSupplement(authorized)).toEqual([]);
+    expect(importPoiSupplement(authorized)).toEqual({ ok: true, poi: authorized });
   });
 
-  it('禁止来源的子域 / userinfo 变体也被识别；相似域名与相对路径放行', () => {
+  it('⚠️ 授权来源没有署名同样拒收：口头授权不等于可以匿名转载', () => {
+    const url = 'https://map.niyiwei.com/data/underground/garage-traffic-overview.jpg';
+
+    for (const credit of [null, '', '   ']) {
+      const withoutCredit: CampusPoiSupplement = {
+        ...STUDY,
+        photoUrls: [url],
+        photoCredit: credit,
+      };
+      expect(
+        validatePoiSupplement(withoutCredit).map((item) => item.code),
+        `photoCredit=${JSON.stringify(credit)} 应被拒`,
+      ).toContain('photo-credit-required');
+      expect(importPoiSupplement(withoutCredit).ok).toBe(false);
+    }
+  });
+
+  it('授权域名的子域 / userinfo 变体也放行；相对路径与相似域名不受影响', () => {
     const codes = (url: string): string[] =>
       validatePoiSupplement({ ...STUDY, photoUrls: [url] }).map((item) => item.code);
 
-    expect(codes('https://sub.map.niyiwei.com/a.jpg')).toContain('photo-url-forbidden-origin');
-    expect(codes('https://evil.com@map.niyiwei.com/a.jpg')).toContain(
+    expect(codes('https://sub.map.niyiwei.com/a.jpg')).not.toContain(
       'photo-url-forbidden-origin',
     );
-    expect(codes('https://map.niyiwei.com.evil.com/a.jpg')).not.toContain(
+    expect(codes('https://evil.com@map.niyiwei.com/a.jpg')).not.toContain(
       'photo-url-forbidden-origin',
     );
     expect(codes('/uploads/local-study-room.jpg')).not.toContain('photo-url-forbidden-origin');
@@ -342,9 +356,18 @@ describe('validatePoiSupplement', () => {
     }
   });
 
-  it('照片版权策略常量锁死「有图必署名」并点名禁止抓取的来源', () => {
+  it('照片版权策略：有图必署名、niyiwei 移出黑名单、且可一键撤回', () => {
     expect(CAMPUS_POI_PHOTO_POLICY.creditRequired).toBe(true);
-    expect(CAMPUS_POI_PHOTO_POLICY.forbiddenOrigins).toContain('https://map.niyiwei.com');
+
+    // 2026-10-20 起，niyiwei 已获口头授权并移出黑名单
+    expect(CAMPUS_POI_PHOTO_POLICY.forbiddenOrigins).toEqual([]);
+    expect(CAMPUS_POI_PHOTO_POLICY.forbiddenOrigins).not.toContain('https://map.niyiwei.com');
+
+    // 但授权可撤回：保留一键下架入口
+    expect(CAMPUS_POI_PHOTO_POLICY.photosRevocable).toBe(true);
+    expect(CAMPUS_POI_PHOTO_POLICY.revokeCommand).toBe(
+      'node tools/import-niyiwei-photos.mjs --revoke',
+    );
   });
 });
 

@@ -36,7 +36,8 @@ import './index.scss'
  *
  * 本页**不内置任何图片**。`photoUrls` 为空时画「分类文字 + 暂无照片」的占位；
  * 只有通过契约 `validatePoiSupplement()` 的**已授权** URL 才会渲染（且必须带
- * `photoCredit`）。`map.niyiwei.com` 的图片在仓储层就被拒收 —— 不抓取、不镜像。
+ * `photoCredit`）。`map.niyiwei.com` 的授权照片（2026-10-20 获对方参赛组口头同意）
+ * 只在**带署名**时保留；没有署名的照片不论来自哪个域名都会被仓储层丢弃。
  *
  * ## 状态机
  *

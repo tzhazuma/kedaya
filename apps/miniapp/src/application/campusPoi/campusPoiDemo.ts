@@ -9,7 +9,7 @@ import type { CampusPoiSupplement, PoiTimeSlot } from '@kedaya/contracts'
  * - 坐标只是**落在 `CAMPUS_POI_BOUNDS`（WGS84）范围内的随手点**，不对应任何
  *   真实的快递站 / 车库入口 —— 详见 `packages/contracts/src/campus-poi.ts` 文件头。
  * - `photoUrls` 恒为空、`photoCredit` 为 `null`：本仓库**不内置**任何照片，
- *   也绝不从 `map.niyiwei.com` 抓取（那里是另一参赛组同学手拍的，著作权归拍摄者）。
+ *   演示数据**不带任何照片**；授权照片在 `campusPoiPhotos.ts` 里单独维护。
  * - `source` 是 `unknown`（「还没核实」的契约语义），不冒充 OSM / 校方数据。
  *
  * ## 为什么下一站时间相对 `now` 生成

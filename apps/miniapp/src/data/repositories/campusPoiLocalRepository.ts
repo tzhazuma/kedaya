@@ -24,7 +24,9 @@ import { createTaroStorage } from '../storage/taroStorage'
  * storage 是跨版本共享的：旧字段、用户手改、别的页面误写到同一个 key 的
  * 数据都可能存在。这里把每条候选丢进 `validatePoiSupplement()`：
  *   · 越界坐标 / 非法楼层 / 未知分类 → 丢弃；
- *   · **照片 URL 指向 `map.niyiwei.com`（`forbiddenOrigins`）→ 整条丢弃**；
+ *   · **没有 `photoCredit` 的照片 → 整条丢弃**（任何域名，含 `map.niyiwei.com`）。
+ *     2026-10-20 起该域名**已获授权**从 `forbiddenOrigins` 移出，
+ *     但「必须有署名」这条要求反而更硬了 —— 授权的前提就是署名。
  *   · 有照片但没 `photoCredit` → 丢弃。
  *
  * 也就是说：即使有人把另一参赛组手拍的照片地址写进了 storage，页面也**不会**

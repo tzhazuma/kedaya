@@ -10,26 +10,32 @@
  * 只描述**OSM 没覆盖或需要运营补充**的点位与它们的附加信息：
  * 快递站在哪、车库入口在哪、哪个食堂有菜单展示、哪个空间能自习。
  *
- * ## ⚠️ 照片版权：本文件**不**提供任何可抓取的图片
+ * ## 照片版权：只收「有署名 + 可撤回」的授权照片
  *
  * `https://map.niyiwei.com`（上科大一图通）是**另一个参赛组**的作品，
  * 不是校方数据源。其中：
  *   · **地下车库照片是他们同学手动拍摄的**；
  *   · **食堂菜单照片是他们拍照采集的**。
  *
- * 这些照片的**著作权归拍摄者**。抓取、镜像、二次分发都属于侵权，也会把学校
- * 和比赛置于风险中。因此本契约：
+ * 这些照片的**著作权归拍摄者**。2026-10-20，项目负责人唐志昊已**口头**获得
+ * 对方参赛组授权，允许合并其地库照片与食堂菜单照片；**没有书面文件**。
+ * 因此本契约把该域名从「禁止抓取」改为「可引用但必须署名、且可一键撤回」：
  *
- *   1. **不内置任何照片**，也**不提供**从对方站点抓取 / 镜像的入口；
+ *   1. **不内置任何照片**：清单在 `apps/miniapp/.../campusPoiPhotos.ts`，
+ *      只存远程 URL，不把原图打进小程序包（实测 31.41 MiB，主包上限 2 MiB）；
  *   2. `photoUrls` 默认是空数组 —— POI 先建模、后录入，不假装已有图片；
- *   3. `photoUrls` 非空时 **`photoCredit` 必填**（拍摄者署名），由
+ *   3. `photoUrls` 非空时 **`photoCredit` 必填**（拍摄者 / 授权方署名），由
  *      [validatePoiSupplement] 强制、由测试锁死；多张照片时必须列出**全部**
- *      拍摄者 / 授权方；
- *   4. 食堂菜单优先走我们已有的 `canteen` 菜品库，不依赖任何菜单照片；
- *   5. 合法照片只能来自：管理员/用户**自己上传并声明已获授权**，或明确
- *      公有领域且留证的素材。没有第三条路。
+ *      权利方。**口头授权不改变这一条**：没有署名就拒收；
+ *   4. 授权可撤回：`node tools/import-niyiwei-photos.mjs --revoke`
+ *      会清空照片清单并关闭开关；本契约的 `forbiddenOrigins` 留空数组 +
+ *      校验逻辑，日后对方要求下架时把域名填回去即可再次拦截；
+ *   5. **只借照片**：不抓取对方站点的菜品、价格、评论或任何用户数据；
+ *   6. 食堂菜单优先走我们已有的 `canteen` 菜品库，不依赖任何菜单照片；
+ *   7. 除已获授权的 niyiwei 外，其他第三方站点的照片仍不得抓取；合法来源只有
+ *      管理员/用户**自己上传并声明已获授权**，或明确公有领域且留证的素材。
  *
- * 以后谁想「顺手把 niyiwei 的图扒下来」，先读这段。
+ * 以后谁想「顺手把别组的图扒下来」，先读这段。
  *
  * ## 坐标系：WGS84，且**不要**和 `CAMPUS_BOUNDS` 混用
  *
@@ -105,8 +111,9 @@ export interface CampusPoiSupplement {
   /**
    * 已获授权的照片 URL。
    *
-   * ⚠️ **默认必须为空数组**。只有拍摄者本人或已获书面授权的素材才能进来；
-   * 严禁填 `map.niyiwei.com` 或任何第三方站点的图片地址。
+   * ⚠️ **默认必须为空数组**。只有拍摄者本人或已获授权的素材才能进来。
+   * `map.niyiwei.com` 已获口头授权（见文件头），**可以**引用，但必须同时填写
+   * `photoCredit`；其他第三方站点仍然不得抓取。
    */
   readonly photoUrls: readonly string[];
   /**
@@ -201,15 +208,32 @@ export const CAMPUS_POI_CATEGORY_TONES: Readonly<Record<CampusPoiCategory, Campu
  * 照片录入的合规声明。
  *
  * 这是一份**策略常量**，不是授权本身：真正的授权凭证（聊天记录 / 邮件 /
- * 书面许可）仍需由录入方保管。`forbiddenOrigins` 里的站点**一律不得抓取**。
+ * 书面许可）仍需由录入方保管。
+ *
+ * ⚠️ 2026-10-20 变更：`https://map.niyiwei.com` 已从 `forbiddenOrigins` **移出** ——
+ * 项目负责人唐志昊已口头获得对方参赛组授权，允许借用其地库照片与食堂菜单照片。
+ * 授权是**口头的、可撤回的**，所以：
+ *   · 每条照片仍必须有 `photoCredit`（来源方署名），由 [validatePoiSupplement] 强制；
+ *   · `photosRevocable` 标记 + `revokeCommand` 提供一键下架；
+ *   · `forbiddenOrigins` 保留为空数组（而不是删掉字段）：若对方日后要求下架，
+ *     把域名填回来即可在本层重新拦截。
  */
 export const CAMPUS_POI_PHOTO_POLICY = {
-  /** 有照片就必须有署名（validatePoiSupplement 强制） */
+  /** 有照片就必须有署名（validatePoiSupplement 强制，授权来源也不例外） */
   creditRequired: true,
   /** 允许的录入方式 */
   allowedUploadMethods: ['owner-upload', 'admin-upload-with-authorization', 'public-domain-with-proof'],
-  /** 明令禁止抓取的来源：另一个参赛组的照片版权归拍摄者 */
-  forbiddenOrigins: ['https://map.niyiwei.com'],
+  /**
+   * 当前**没有**整体禁用的来源。
+   *
+   * niyiwei 已获口头授权（见上），故不在此列；保留该字段与对应校验，
+   * 供授权撤回时把域名填回来即刻生效。
+   */
+  forbiddenOrigins: [] as readonly string[],
+  /** 照片是「借用」的，授权可撤回 */
+  photosRevocable: true,
+  /** 一条命令清空照片清单并关闭开关（断网可执行） */
+  revokeCommand: 'node tools/import-niyiwei-photos.mjs --revoke',
 } as const;
 
 /* ------------------------------------------------------------------ *
@@ -248,7 +272,8 @@ function issue(
 /**
  * 照片 URL 是否指向**明令禁止抓取**的站点（含其子域）。
  *
- * 用户名写、署名写得再漂亮也不行：著作权不在录入者手里。相对路径不受影响。
+ * 当前列表为空（niyiwei 已获授权），但保留这段逻辑：授权撤回时把域名填回
+ * `forbiddenOrigins` 即可重新拦截。相对路径不受影响。
  *
  * 刻意**不用 `new URL()`**：本契约会被小程序打包运行，而微信小程序的 JS
  * 运行时不保证有完整的 `URL` 全局；用正则解析只依赖字符串能力。
@@ -278,7 +303,8 @@ function hostnameOf(url: string): string | null {
  * 2. `lat` / `lng` 必须是有限值，且落在 [CAMPUS_POI_BOUNDS]（WGS84）内；
  * 3. `floor` 必须是整数；**负数只允许出现在地下车库**；
  * 4. **`photoUrls` 非空时 `photoCredit` 必填** —— 版权合规，测试锁死；
- * 5. 照片 URL 不能是空串、不得指向明令禁止的来源；`verifiedAt` 若存在必须可解析为时间。
+ * 5. 照片 URL 不能是空串、不得指向当前仍在 `forbiddenOrigins` 里的来源；
+ *    `verifiedAt` 若存在必须可解析为时间。
  *
  * 注意：本函数只做**单条**校验。id 在集合内是否唯一、同一 POI 是否时间冲突
  * 属于集合级问题，分别由调用方 / [findPoiSlotConflicts] 处理。

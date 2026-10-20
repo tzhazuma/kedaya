@@ -185,12 +185,30 @@ export const TECHPIE_CAPABILITIES: readonly TechpieCapabilityDefinition[] = [
     key: 'ecard.payment_code',
     moduleId: 'campus-card',
     nameZh: '校园卡付款码',
-    summary: '付款码（60 秒 TTL、一次性、不进日志）。走 eCard 的 OPENID 通道。',
+    summary:
+      '付款码（60 秒 TTL、一次性、不进日志）。走 eCard 的 OPENID 通道。'
+      + '⚠️ 当前**不可用**：缺 eCard 的 OPENID 授权与出码接口。',
     phase: 'phase0',
     access: 'openid',
     requiredProvider: 'ecard',
     targetUrl: null,
-    blockedReason: null,
+    /**
+     * ⚠️ 这里原本是 `null`，等于在说「没被卡住」—— 那是**不诚实的**。
+     *
+     * 出码需要的东西我们一样都没有：
+     *   1. `WECHAT_MINIAPP_APPID` / `SECRET`（`code2session` 换 OPENID 用）
+     *   2. eCard 侧的 OPENID 授权与出码接口地址（**校方未提供**）
+     *   3. 校方/银行侧对「第三方小程序展示付款码」的书面同意
+     *
+     * **我们绝不会自己生成一个"看起来像"的码** —— 付款码是资金凭据，
+     * 假码会把用户的钱包置于风险中，且可能被用于欺诈。宁可 503 说不可用。
+     *
+     * 若日后拿到上面三项，实现路径是：调用 eCard 官方出码接口，
+     * 码只在内存中活 60 秒、一次性消费、**不进日志、不落库、不回放**。
+     */
+    blockedReason:
+      '出码需要：eCard OPENID 授权 + 官方出码接口地址 + 校方/银行对第三方展示付款码的书面同意，'
+      + '当前三项均未取得。本服务不会生成任何假付款码。',
   },
 
   /* ---------------- Phase 0 · WebView 直连（W4：用户自登录，我们不接触 cookie） ---------------- */
