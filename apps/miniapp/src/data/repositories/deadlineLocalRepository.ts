@@ -1,4 +1,4 @@
-import { sanitizeSourceUrl } from '@kedaya/shared'
+import { sanitizeSourceUrl, type SemesterWeekCalendar } from '@kedaya/shared'
 import {
   DEADLINE_KINDS,
   DEADLINE_SOURCES,
@@ -35,10 +35,27 @@ import { createTaroStorage } from '../storage/taroStorage'
 /** 存储 key（带 schema 版本前缀，与其他本机缓存同一套命名） */
 export const DEADLINE_LOCAL_STORAGE_KEY = `${STORAGE_PREFIX}deadlines:items`
 
+/**
+ * 学期日历的存储键（第一周从哪天开始）。
+ *
+ * ⚠️ 这是**独立于条目的一份设置**，不是 deadline 的一部分：
+ * 换学期时用户只改这个日期，所有条目的「第 N 周」会自动跟着重算。
+ * 存在条目里会导致改一次学期要写全部条目。
+ */
+export const DEADLINE_LOCAL_SEMESTER_KEY = `${STORAGE_PREFIX}deadlines:semester`
+
 export interface DeadlineLocalRepository {
   read(): DeadlineItem[]
   write(items: readonly DeadlineItem[]): void
   clear(): void
+  /**
+   * 学期日历（第一周从哪天开始）。
+   *
+   * ⚠️ **可选方法**：不实现也能用，页面就只是不显示「第 N 周」。
+   * 这样不用为了一个附加信息去改所有测试里的假 store。
+   */
+  readSemesterCalendar?(): SemesterWeekCalendar | null
+  writeSemesterCalendar?(calendar: SemesterWeekCalendar | null): void
 }
 
 export function createDeadlineLocalRepository(
@@ -76,6 +93,43 @@ export function createDeadlineLocalRepository(
     },
     clear(): void {
       cache.remove(DEADLINE_LOCAL_STORAGE_KEY)
+    },
+
+    /**
+     * 读学期日历。
+     *
+     * ⚠️ 三条失败路径都返回 `null`，不抛错：
+     * 1. 没存过
+     * 2. 形状不对（用户手改过 storage，或旧版本遗留）
+     * 3. `firstWeekStart` 不是 `YYYY-MM-DD`
+     *
+     * 理由：「第 N 周」是**附加信息**。为了它让整个 DDL 页面打不开是荒谬的。
+     */
+    readSemesterCalendar(): { firstWeekStart: string; weekStartsOn?: 1 | 2 | 3 | 4 | 5 | 6 | 7 } | null {
+      const raw = cache.read<unknown>(DEADLINE_LOCAL_SEMESTER_KEY)
+      if (raw === null || typeof raw !== 'object') return null
+      const value = raw as { firstWeekStart?: unknown; weekStartsOn?: unknown }
+      if (typeof value.firstWeekStart !== 'string') return null
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value.firstWeekStart)) return null
+      const startsOn = value.weekStartsOn
+      const valid =
+        typeof startsOn === 'number' && startsOn >= 1 && startsOn <= 7
+          ? (startsOn as 1 | 2 | 3 | 4 | 5 | 6 | 7)
+          : undefined
+      return valid === undefined
+        ? { firstWeekStart: value.firstWeekStart }
+        : { firstWeekStart: value.firstWeekStart, weekStartsOn: valid }
+    },
+
+    /** 写学期日历；`null` 表示清除（回到「不显示第 N 周」） */
+    writeSemesterCalendar(
+      calendar: { firstWeekStart: string; weekStartsOn?: 1 | 2 | 3 | 4 | 5 | 6 | 7 } | null,
+    ): void {
+      if (calendar === null) {
+        cache.remove(DEADLINE_LOCAL_SEMESTER_KEY)
+        return
+      }
+      cache.write(DEADLINE_LOCAL_SEMESTER_KEY, calendar)
     },
   }
 }

@@ -56,9 +56,15 @@ import './index.scss'
  * 并且常驻「演示数据」标签、不可标记已交 / 删除 —— 它不是用户的数据。
  */
 
+/** 仓储是页面级单例：board 与学期日历共用同一个 storage 视图 */
+const repository = createDeadlineLocalRepository()
+
 /** 用例是页面级单例：切页返回时 useDidShow 会重新 hydrate，storage 是唯一真相 */
 const board = createDeadlineBoardUseCase({
-  store: createDeadlineLocalRepository(),
+  store: repository,
+  // ⚠️ 不在这里传 semesterCalendar：它是**用户设置**，页面挂载后才读得到。
+  // 传进来会变成「模块加载时定死的值」，改设置后不生效。
+  // 视图构建时由页面把当前值传进去。
 })
 
 /** 相对时间每 30 秒刷新一次（分钟级文案不需要更密） */
@@ -69,6 +75,13 @@ export default function DeadlinesPage() {
 
   const [now, setNow] = useState<Date>(() => new Date())
   const [filter, setFilter] = useState<DeadlineBoardFilter>('all')
+  /**
+   * 学期第一周的开始日期（`YYYY-MM-DD`）。
+   *
+   * 空串 = 用户还没设 → 不显示「第 N 周」。
+   * ⚠️ 这是**独立于条目**的一条设置：换学期只改它，所有条目的周次自动重算。
+   */
+  const [semesterStart, setSemesterStart] = useState('')
   const [showDemo, setShowDemo] = useState(false)
   const [showForm, setShowForm] = useState(false)
 
@@ -90,6 +103,9 @@ export default function DeadlinesPage() {
   // 从粘贴页 / 手动添加返回时立刻反映 storage 的最新内容
   useDidShow(() => {
     board.hydrate()
+    // 学期日历是独立设置，跟条目一起在 useDidShow 里读（storage 是唯一真相）
+    const savedCalendar = repository.readSemesterCalendar?.()
+    setSemesterStart(savedCalendar?.firstWeekStart ?? '')
     setNow(new Date())
   })
 
@@ -102,7 +118,9 @@ export default function DeadlinesPage() {
   const loading = state.status === 'idle'
   const isDemo = state.items.length === 0 && showDemo
   const items = isDemo ? buildDemoDeadlineItems(now) : state.items
-  const view = buildDeadlineBoardView(items, now, filter)
+  const semesterCalendar =
+    /^\d{4}-\d{2}-\d{2}$/.test(semesterStart) ? { firstWeekStart: semesterStart } : undefined
+  const view = buildDeadlineBoardView(items, now, filter, undefined, semesterCalendar)
   const summary = view.summary
 
   const filters: ReadonlyArray<{ id: DeadlineBoardFilter; label: string }> = [
@@ -293,7 +311,14 @@ export default function DeadlinesPage() {
 
         <View className='kdy-ddl__item-foot'>
           <View className='kdy-ddl__item-time'>
-            <Text className='kdy-ddl__item-due'>{row.dueLabel}</Text>
+            <Text className='kdy-ddl__item-due'>
+              {row.dueLabel}
+              {/* 「第 8 周 周二」——把截止日期放回学期节奏里。
+                  没设学期开始日期时为空，不显示占位。 */}
+              {row.semesterWeekLabel !== null && (
+                <Text className='kdy-ddl__item-week'>{` · ${row.semesterWeekLabel}`}</Text>
+              )}
+            </Text>
             <Text className={relativeClass}>{row.relativeLabel}</Text>
           </View>
 
@@ -340,6 +365,28 @@ export default function DeadlinesPage() {
       ) : (
         <>
           {/* ---- 粘贴导入（主要入口）---- */}
+          <KdyCard title='学期设置' className='kdy-ddl__form'>
+            <Text className='kdy-ddl__hint'>
+              填学期第一周的周一，每条 DDL 就会显示「第 N 周 周X」。
+              留空则不显示 —— 这只是附加信息，不影响截止日期本身。
+            </Text>
+            <KdyField
+              label='第一周周一'
+              value={semesterStart}
+              onChange={(value) => {
+                setSemesterStart(value)
+                // 只在格式合法时落盘，避免把半截输入（`2026-09`）存进去
+                if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                  repository.writeSemesterCalendar?.({ firstWeekStart: value })
+                } else if (value === '') {
+                  repository.writeSemesterCalendar?.(null)
+                }
+              }}
+              placeholder='2026-09-07'
+              hint='格式 YYYY-MM-DD'
+            />
+          </KdyCard>
+
           {showPaste && (
             <KdyCard title='粘贴导入' className='kdy-ddl__form'>
               <Text className='kdy-ddl__form-hint'>

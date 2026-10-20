@@ -231,6 +231,18 @@
     line-height: 1.4;
   }
 
+  /**
+   * 「第 8 周 周二」——截止日期的学期坐标。
+   *
+   * 用 muted 而不是 ink：它是**附加信息**，不该和后边的日期抢注意力。
+   * 字号比日期小一档，跟着父级行内排版走。
+   */
+  &__item-week {
+    color: $kdy-color-campus-muted;
+    font-size: 0.9em;
+    font-weight: 400;
+  }
+
   &__relative {
     color: $kdy-color-campus-muted;
     font-size: $kdy-font-size-xs;

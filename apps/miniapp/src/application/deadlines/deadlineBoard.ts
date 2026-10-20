@@ -9,10 +9,12 @@ import {
   DEFAULT_SCHOOL_TIME_ZONE,
   deadlineUrgency,
   normalizeDeadlineTitle,
+  semesterWeekOf,
   sortByUrgency,
   summarizeDeadlines,
   type DeadlineSummary,
   type DeadlineUrgency,
+  type SemesterWeekCalendar,
 } from '@kedaya/shared'
 
 /**
@@ -50,6 +52,14 @@ export interface DeadlineLocalStore {
   read(): DeadlineItem[]
   write(items: readonly DeadlineItem[]): void
   clear(): void
+  /**
+   * 学期日历（第一周从哪天开始）。
+   *
+   * ⚠️ **可选方法**：不实现也能用，页面就只是不显示「第 N 周」。
+   * 这样不用为了一个附加信息去改所有测试里的假 store。
+   */
+  readSemesterCalendar?(): SemesterWeekCalendar | null
+  writeSemesterCalendar?(calendar: SemesterWeekCalendar | null): void
 }
 
 export interface DeadlineBoardState {
@@ -85,6 +95,14 @@ export interface DeadlineBoardUseCase {
 
 export interface DeadlineBoardDeps {
   store: DeadlineLocalStore
+  /**
+   * 学期日历（第一周从哪天开始）。
+   *
+   * ⚠️ **可选且必须可选**：没配学期开始日期时，页面照常显示 DDL，
+   * 只是不显示「第 N 周」。这不是降级 —— 「第 8 周 周二」是**附加信息**，
+   * 缺了不影响「这个作业 10 月 20 日截止」这个核心事实。
+   */
+  semesterCalendar?: SemesterWeekCalendar
 }
 
 const INITIAL_STATE: DeadlineBoardState = { status: 'idle', items: [] }
@@ -195,6 +213,13 @@ export interface DeadlineRowView {
   readonly dueLabel: string
   /** 「还有 3 小时」/「已逾期 2 天」/「已提交」 */
   readonly relativeLabel: string
+  /**
+   * 「第 8 周 周二」——把截止日期放回学期的节奏里。
+   *
+   * `null` 表示没配置学期开始日期（不是错误，只是没有附加信息）。
+   * 学期开始前/结束后的日期也会是 `null` —— `semesterWeekOf` 不编「第 0 周」。
+   */
+  readonly semesterWeekLabel: string | null
   readonly urgency: DeadlineUrgency
   readonly submitted: boolean
   /** 上一次采集失败、保留的旧数据（契约语义，不是「过期很久」） */
@@ -281,18 +306,28 @@ export function buildDeadlineBoardView(
   now: Date,
   filter: DeadlineBoardFilter = 'all',
   timeZone: string = SCHOOL_TIME_ZONE,
+  /**
+   * 学期日历。**可选且必须可选** —— 没配时页面照常显示 DDL，
+   * 只是不显示「第 N 周」。它是附加信息，不是核心事实。
+   */
+  semesterCalendar?: SemesterWeekCalendar,
 ): DeadlineBoardView {
   const summary = summarizeDeadlines(items, now, timeZone)
 
   // 排序交给 shared：已逾期 → 今天 → 本周 → 更远 → 已提交 → 时间未知
   const rows = sortByUrgency(items, now, timeZone)
-    .map((item) => toRow(item, now, timeZone))
+    .map((item) => toRow(item, now, timeZone, semesterCalendar))
     .filter((row) => matchesFilter(row, filter))
 
   return { summary, rows, hint: buildHint(summary) }
 }
 
-function toRow(item: DeadlineItem, now: Date, timeZone: string): DeadlineRowView {
+function toRow(
+  item: DeadlineItem,
+  now: Date,
+  timeZone: string,
+  semesterCalendar: SemesterWeekCalendar | undefined,
+): DeadlineRowView {
   const urgency: DeadlineUrgency = item.submitted
     ? 'done'
     : deadlineUrgency(item.dueAt, now, timeZone)
@@ -305,6 +340,7 @@ function toRow(item: DeadlineItem, now: Date, timeZone: string): DeadlineRowView
     kindLabel: DEADLINE_KIND_LABELS[item.kind] ?? item.kind,
     dueLabel: formatDueAt(item.dueAt, now, timeZone),
     relativeLabel: item.submitted ? '已提交' : formatRelativeDue(item.dueAt, now),
+    semesterWeekLabel: buildSemesterWeekLabel(item.dueAt, semesterCalendar, timeZone),
     urgency,
     submitted: item.submitted,
     stale: item.stale === true,
@@ -322,4 +358,37 @@ function buildHint(summary: DeadlineSummary): string {
   if (summary.dueThisWeek > 0) return `本周还有 ${summary.dueThisWeek} 条，别等到周末。`
   if (summary.total === 0) return '还没有记录，先粘贴或手动加一条。'
   return '没有临期的 DDL，喘口气。'
+}
+
+/** 星期的中文短名，索引 0 = 周一 */
+const WEEKDAY_SHORT = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+
+/**
+ * 「第 8 周 周二」。
+ *
+ * ⚠️ 三条不编：
+ * 1. 没配学期日历 → `null`（不是「第 0 周」）
+ * 2. `dueAt` 认不出来 → `null`
+ * 3. 日期在学期范围外（`semesterWeekOf` 返回 `null`）→ `null`
+ *
+ * 第 3 条尤其重要：开学前的作业、期末之后的补交日期，
+ * 硬算会得到「第 -2 周」或「第 25 周」这种没人看得懂的东西。
+ */
+function buildSemesterWeekLabel(
+  dueAt: string | null,
+  calendar: SemesterWeekCalendar | undefined,
+  timeZone: string,
+): string | null {
+  if (calendar === undefined) return null
+  if (dueAt === null) return null
+  let position
+  try {
+    position = semesterWeekOf(dueAt, calendar, timeZone)
+  } catch {
+    // 日历本身配置非法（如 firstWeekStart 格式错）—— 不因为一个附加信息抛错
+    return null
+  }
+  if (position === null) return null
+  const weekday = WEEKDAY_SHORT[position.weekday - 1]
+  return weekday === undefined ? null : `第 ${position.week} 周 ${weekday}`
 }
