@@ -264,7 +264,7 @@ describe('domain · techpie（观看者构造：两级身份的汇合点）', ()
 })
 
 describe('domain · techpie（WebView 目标：契约 §11.10-F / §11.18-B）', () => {
-  it('五个校园系统入口都存在，且**全部是 https**', () => {
+  it('六个校园系统入口都存在，且**全部是 https**', () => {
     for (const target of CAMPUS_WEBVIEW_TARGETS) {
       expect(target.url.startsWith('https://')).toBe(true)
       expect(isHttpsCampusUrl(target.url)).toBe(true)
@@ -272,6 +272,7 @@ describe('domain · techpie（WebView 目标：契约 §11.10-F / §11.18-B）',
     // 2026-10-20 实测校订：新增真实的 eams / oa，删除不存在的 student
     expect(CAMPUS_WEBVIEW_TARGETS.map((t) => t.id).sort()).toEqual([
       'eams',
+      'ecard',
       'ecourse',
       'egate',
       'elrc',
@@ -283,7 +284,13 @@ describe('domain · techpie（WebView 目标：契约 §11.10-F / §11.18-B）',
 
   it('⭐ 每个入口都有「统一身份认证跳板」，且**指向学校 IDS + 官方 service**', () => {
     for (const target of CAMPUS_WEBVIEW_TARGETS) {
-      // 必须跳到学校 IDS，而不是我们自己的站点
+      // ⚠️ ecard 是例外：它的登录是「微信 OAuth + 校园卡账号」，
+      // 不走学校 IDS，所以 ssoUrl 就是它自己的地址。这里显式放过并断言原因。
+      if (target.id === 'ecard') {
+        expect(target.ssoUrl).toBe(target.url)
+        continue
+      }
+      // 其余必须跳到学校 IDS，而不是我们自己的站点
       expect(target.ssoUrl.startsWith('https://ids.shanghaitech.edu.cn/authserver/login?service=')).toBe(true)
 
       // ⚠️ 关键：service 必须是**官方站点自己**的地址，不是可达鸭的回调。
@@ -299,11 +306,13 @@ describe('domain · techpie（WebView 目标：契约 §11.10-F / §11.18-B）',
     const ecourse = campusWebviewTarget('ecourse')
     expect(ecourse?.webviewBlockedReason).not.toBeNull()
     expect(ecourse?.webviewBlockedReason).toContain('8600')
-    // 其他入口不该被误标
+    // ⚠️ ecard 也有 blockedReason，但原因不同（公网不可达，不是端口问题）。
+    // 两个都要如实标注，其余的必须为 null —— 不许顺手给别的入口也标上。
     for (const target of CAMPUS_WEBVIEW_TARGETS) {
-      if (target.id === 'ecourse') continue
+      if (target.id === 'ecourse' || target.id === 'ecard') continue
       expect(target.webviewBlockedReason).toBeNull()
     }
+    expect(campusWebviewTarget('ecard')?.webviewBlockedReason).toContain('校内网络')
   })
 
   it('域名已实测（2026-10-20），不再是占位', () => {
@@ -311,7 +320,15 @@ describe('domain · techpie（WebView 目标：契约 §11.10-F / §11.18-B）',
     //   eams / egate-new / oa / elrc → HTTP 200；ecourse → 302 到 :8600
     //   student.shanghaitech.edu.cn → 域名不存在，已删除
     // 若将来发现某个域名失效，必须把它的 domainVerified 改回 false —— 不要静默留着。
-    expect(CAMPUS_WEBVIEW_TARGETS.every((target) => target.domainVerified === true)).toBe(true)
+    // ⚠️ 除 ecard 外全部 true。ecard 实测公网不可达（302 到厂商错误页），
+    // 所以它必须是 false —— 这正是「未确认就标未确认」的规则在起作用。
+    for (const target of CAMPUS_WEBVIEW_TARGETS) {
+      if (target.id === 'ecard') {
+        expect(target.domainVerified).toBe(false)
+        continue
+      }
+      expect(target.domainVerified).toBe(true)
+    }
   })
 
   it('isHttpsCampusUrl 拒绝 http / IP 字面量 / userinfo（契约 §11.18-B）', () => {

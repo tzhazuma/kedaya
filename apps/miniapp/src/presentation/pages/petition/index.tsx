@@ -243,6 +243,13 @@ export default function PetitionPage() {
           <Text className='kdy-petition__hint'>
             {`将发送给：${PETITION_DEPARTMENTS[category].name}（${PETITION_DEPARTMENTS[category].email}）`}
           </Text>
+          {!PETITION_DEPARTMENTS[category].emailConfirmed && (
+            <Text className='kdy-petition__error'>
+              该类别**没有**找到学校公布的收件邮箱，上面这个地址属于
+              {PETITION_DEPARTMENTS[category].name}
+              ，不一定能受理你的诉求 —— 发送前请自行核实。
+            </Text>
+          )}
 
           {formError !== null && <Text className='kdy-petition__error'>{formError}</Text>}
 

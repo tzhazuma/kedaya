@@ -447,7 +447,7 @@ export type CampusCapabilityDelivery = 'webview' | 'native'
  * `domainVerified: false` 是**机器可见**的标记 —— 它同时驱动 UI 上的一句提示，
  * 避免用户以为「打开失败」是可达鸭的 bug。
  */
-export type CampusWebviewTargetId = 'eams' | 'egate' | 'ecourse' | 'elrc' | 'oa'
+export type CampusWebviewTargetId = 'eams' | 'egate' | 'ecard' | 'ecourse' | 'elrc' | 'oa'
 
 export interface CampusWebviewTarget {
   id: CampusWebviewTargetId
@@ -547,6 +547,21 @@ export const CAMPUS_WEBVIEW_TARGETS: readonly CampusWebviewTarget[] = [
       'https://ids.shanghaitech.edu.cn/authserver/login?service=' +
       encodeURIComponent('https://elrc.shanghaitech.edu.cn/'),
     webviewBlockedReason: null,
+  },
+  {
+    id: 'ecard',
+    nameZh: '校园卡',
+    summary: '余额、流水、付款码（在微信内打开）',
+    url: 'https://ecard.shanghaitech.edu.cn/',
+    // ⚠️ 这个域名从公网**到不了真实服务**（2026-10-22 实测）：
+    //   无条件 302 → `http://ecard.bda.edu.cn/errorPage`（北京舞蹈学院的厂商错误页），
+    //   所有路径一律 403。对比同期 `eams` 200 / `ids` 302，说明不是我们网络的问题。
+    //   所以这里标 false —— 学校还没确认这个入口对公网开放。
+    domainVerified: false,
+    ssoUrl: 'https://ecard.shanghaitech.edu.cn/',
+    webviewBlockedReason:
+      '校园卡系统目前只能在校内网络访问（2026-10-22 实测：公网访问会被转发到厂商错误页）。'
+      + '请连接校园网或学校 VPN 后再打开；付款码需要登录你自己的校园卡账号。',
   },
   {
     id: 'ecourse',

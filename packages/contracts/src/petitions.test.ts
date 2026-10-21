@@ -295,4 +295,34 @@ describe('类别与部门绑定', () => {
       expect(PETITION_DEPARTMENTS[category].email.endsWith('@shanghaitech.edu.cn')).toBe(true);
     }
   });
+
+  it('⚠️ 未核实的部门必须显式标记，不允许静默发到猜测地址', () => {
+    // 2026-10-22 从学校官网实测：6 个类别里只有 canteen（后勤/食堂）找不到公开邮箱
+    // （hq./logistics./canteen./houqin./service.shanghaitech.edu.cn 全部域名不存在）。
+    // 所以它必须是 emailConfirmed: false —— UI 会据此提示用户自行确认收件人。
+    expect(PETITION_DEPARTMENTS.canteen.emailConfirmed).toBe(false);
+
+    // 其余全部已核实
+    for (const category of PETITION_CATEGORIES) {
+      if (category === 'canteen') continue;
+      expect(PETITION_DEPARTMENTS[category].emailConfirmed, `${category} 应已核实`).toBe(true);
+    }
+  });
+
+  it('每个部门都有名称、电话与出处（发信前要能核对）', () => {
+    for (const category of PETITION_CATEGORIES) {
+      const dept = PETITION_DEPARTMENTS[category];
+      expect(dept.name.length).toBeGreaterThan(1);
+      expect(dept.phone).toMatch(/[0-9]/);
+      expect(dept.source.length).toBeGreaterThan(5);
+    }
+  });
+
+  it('⚠️ 教务处的邮箱是 student@（反直觉但实测如此）', () => {
+    // 这条断言存在的原因：`student@` 看起来像「学生事务」，直觉会猜错。
+    // 官网「联系我们」明确把 `student@` 列在**教务处**名下（86-21-20685313）。
+    // 如果有人「顺手改回」 academics@ 或 studentaffairs@，这条会红。
+    expect(PETITION_DEPARTMENTS.teaching.email).toBe('student@shanghaitech.edu.cn');
+    expect(PETITION_DEPARTMENTS.dorm.email).toBe('studentaffairs@shanghaitech.edu.cn');
+  });
 });

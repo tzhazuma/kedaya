@@ -56,16 +56,94 @@ export const PETITION_CATEGORY_LABELS: Readonly<Record<PetitionCategory, string>
  * ⚠️ 邮箱是**建议值**，不是官方确认的。UI 必须让发起人在发送前核对 ——
  * 发错部门的后果比不发更糟（部门会当成垃圾邮件）。
  */
-export const PETITION_DEPARTMENTS: Readonly<
-  Record<PetitionCategory, { readonly name: string; readonly email: string }>
-> = Object.freeze({
-  canteen: { name: '后勤服务中心', email: 'logistics@shanghaitech.edu.cn' },
-  facility: { name: '后勤服务中心', email: 'logistics@shanghaitech.edu.cn' },
-  teaching: { name: '教务处', email: 'academics@shanghaitech.edu.cn' },
-  dorm: { name: '学生事务处', email: 'student@shanghaitech.edu.cn' },
-  it: { name: '信息化办公室', email: 'it@shanghaitech.edu.cn' },
-  other: { name: '校长办公室', email: 'office@shanghaitech.edu.cn' },
-});
+export interface PetitionDepartment {
+  readonly name: string;
+  readonly email: string;
+  /** 联系电话（学校官网公布的值） */
+  readonly phone: string;
+  /**
+   * 邮箱是否**已从学校官网核实**。
+   *
+   * ⚠️ `false` 时 UI **必须**提示「请自行确认收件人」，
+   * 不允许静默发到一个没核实的地址 —— 发错部门比不发更糟。
+   */
+  readonly emailConfirmed: boolean;
+  /** 出处（便于下次复核） */
+  readonly source: string;
+}
+
+/**
+ * 默认对接部门（2026-10-22 从学校官网实测抓取）。
+ *
+ * ## 这次把猜测换成了实测值 —— 原来 6 个里错了 4 个
+ *
+ * | 类别 | 原来（猜的） | 实测真实值 |
+ * | --- | --- | --- |
+ * | teaching | `academics@` | **`student@`**（教务处！反直觉） |
+ * | dorm | `student@` | **`studentaffairs@`**（学生事务处） |
+ * | it | `it@` | **`it-support@`**（信息化服务网站） |
+ * | canteen | `logistics@` | ❌ **没找到**（学校没有后勤域名） |
+ *
+ * 数据来源：
+ * - <https://www.shanghaitech.edu.cn/1488/list.htm>（联系我们，32 个部门邮箱 + 电话）
+ * - <https://it.shanghaitech.edu.cn/>（信息化服务网站）
+ *
+ * ## 为什么 canteen 没有邮箱却仍然留着
+ *
+ * 试过 `hq.` / `logistics.` / `canteen.` / `houqin.` / `service.shanghaitech.edu.cn`，
+ * 全部**域名不存在**（000）。学校官网的部门表里也**没有「后勤」**这一栏。
+ *
+ * 所以 `canteen` 用 `emailConfirmed: false` 标记，UI 会提示用户自己确认收件人。
+ * **宁可不给地址，也不编一个。**
+ */
+export const PETITION_DEPARTMENTS: Readonly<Record<PetitionCategory, PetitionDepartment>> =
+  Object.freeze({
+    // ⚠️ 没找到后勤/食堂的公开邮箱。指到「设备与资产处」是错的（那是管设备的）。
+    // 保留一个显式的未确认状态，让 UI 去提示，而不是塞一个假地址。
+    canteen: {
+      name: '后勤服务中心',
+      email: 'facility@shanghaitech.edu.cn',
+      phone: '86-21-20685211',
+      emailConfirmed: false,
+      source: '未找到后勤专属邮箱；此地址属「设备与资产处」，需用户自行改投',
+    },
+    facility: {
+      name: '设备与资产处',
+      email: 'facility@shanghaitech.edu.cn',
+      phone: '86-21-20685211',
+      emailConfirmed: true,
+      source: 'https://www.shanghaitech.edu.cn/1488/list.htm',
+    },
+    teaching: {
+      // ⚠️ 反直觉但是实测：教务处公布的是 `student@`
+      name: '教务处',
+      email: 'student@shanghaitech.edu.cn',
+      phone: '86-21-20685313',
+      emailConfirmed: true,
+      source: 'https://www.shanghaitech.edu.cn/1488/list.htm',
+    },
+    dorm: {
+      name: '学生事务处',
+      email: 'studentaffairs@shanghaitech.edu.cn',
+      phone: '86-21-20685643',
+      emailConfirmed: true,
+      source: 'https://www.shanghaitech.edu.cn/1488/list.htm',
+    },
+    it: {
+      name: '信息化服务',
+      email: 'it-support@shanghaitech.edu.cn',
+      phone: '86-21-20685191',
+      emailConfirmed: true,
+      source: 'https://it.shanghaitech.edu.cn/',
+    },
+    other: {
+      name: '综合办公室（党务）',
+      email: 'ucoffice@shanghaitech.edu.cn',
+      phone: '86-21-20685319',
+      emailConfirmed: true,
+      source: 'https://www.shanghaitech.edu.cn/1488/list.htm',
+    },
+  });
 
 /* ------------------------------------------------------------------ *
  * 2. 阈值：分档 + 理由
