@@ -14,6 +14,7 @@ import {
   Home,
   KeyRound,
   MapPin,
+  Megaphone,
   MessagesSquare,
   Plug,
   Search,
@@ -59,6 +60,8 @@ export const MODULE_ICONS: Record<ModuleIconKey, KdyIcon> = {
   bell: Bell,
   dumbbell: Dumbbell,
   'map-pin': MapPin,
+  // 第 23 个模块 petition（众筹诉求）
+  megaphone: Megaphone,
 };
 
 export function moduleIcon(key: ModuleIconKey): KdyIcon {

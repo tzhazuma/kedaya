@@ -1,0 +1,109 @@
+.kdy-petition {
+  &__intro {
+    display: block;
+    margin-bottom: $kdy-space-2;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+
+    &--muted {
+      color: $kdy-color-campus-muted;
+      font-size: $kdy-font-size-xs;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    margin: $kdy-space-3 0;
+  }
+
+  &__label {
+    display: block;
+    margin: $kdy-space-3 0 $kdy-space-1;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    font-weight: $kdy-font-weight-medium;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $kdy-space-1;
+    margin-bottom: $kdy-space-2;
+  }
+
+  &__hint {
+    display: block;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+  }
+
+  &__error {
+    display: block;
+    margin: $kdy-space-1 0;
+    color: $kdy-color-danger;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__meta {
+    display: flex;
+    gap: $kdy-space-1;
+    margin-bottom: $kdy-space-1;
+  }
+
+  &__meta-text {
+    display: block;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__body {
+    display: block;
+    margin: $kdy-space-2 0;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+  }
+
+  &__progress {
+    margin: $kdy-space-2 0;
+  }
+
+  &__progress-text {
+    display: block;
+    margin-bottom: $kdy-space-1;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    font-weight: $kdy-font-weight-medium;
+  }
+
+  &__bar {
+    height: 6rpx;
+    border-radius: 3rpx;
+    /* 用 border 色而不是 muted：muted 是文字色，做底条会太深、抢注意力 */
+    background: $kdy-color-campus-border;
+    overflow: hidden;
+  }
+
+  &__bar-fill {
+    height: 100%;
+    background: $kdy-color-success;
+    border-radius: 3rpx;
+  }
+
+  &__mail {
+    display: block;
+    margin: $kdy-space-2 0;
+    padding: $kdy-space-2;
+    border-radius: $kdy-radius-sm;
+    background: $kdy-color-campus-milk;
+    color: $kdy-color-campus-ink;
+    font-family: monospace;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+}

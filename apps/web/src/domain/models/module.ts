@@ -38,7 +38,9 @@ export type ModuleIconKey =
   /** 契约 §11.10 C：第 20 个模块 `facility`（场馆预约） */
   | 'dumbbell'
   /** 第 22 个模块 `campus-map`（校园地点） */
-  | 'map-pin';
+  | 'map-pin'
+  /** 第 23 个模块 `petition`（众筹诉求）—— 喇叭＝把诉求喊给部门听 */
+  | 'megaphone';
 
 /** 门户里的模块条目 = 冻结契约条目 + 展示装饰 */
 export interface PortalModule extends KedayaModule {

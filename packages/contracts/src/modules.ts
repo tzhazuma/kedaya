@@ -197,6 +197,17 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
     requiresConsent: false,
     route: 'facility',
   },
+  {
+    id: 'petition',
+    nameZh: '众筹诉求',
+    nameEn: 'Petitions',
+    // ⚠️ 措辞要准确：这里**不筹钱**，筹的是「有多少人真的需要」
+    summary: '把共同需求汇总成一份可核对的诉求，达到门槛后发信给对应部门',
+    category: 'business',
+    sensitivity: 'low',
+    requiresConsent: false,
+    route: 'petition',
+  },
 ] as const;
 
 /* ------------------------------------------------------------------ *

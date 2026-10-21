@@ -25,3 +25,4 @@ export * from './campus-poi';
 export * from './group-bot';
 export * from './deadlines';
 export * from './deadline-collect';
+export * from './petitions';

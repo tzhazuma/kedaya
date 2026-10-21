@@ -12,12 +12,13 @@ import {
 } from './modules';
 
 describe('模块注册表', () => {
-  it('共 22 个模块（15 业务 + 7 基础）', () => {
-    // 第 21 个是 2026-10-19 新增的 `deadlines`（DDL 聚合）。它归入基础模块：
-    // 与课表同属学业基础设施，不占用需求图里的 14 个业务模块名额。
-    // 本轮只有小程序端（数据存本机），服务端尚未有对应模块。
-    expect(MODULES).toHaveLength(22);
-    expect(BUSINESS_MODULES).toHaveLength(15);
+  it('共 23 个模块（16 业务 + 7 基础）', () => {
+    // 第 21 个是 `deadlines`（DDL 聚合），第 22 个是 `campus-map`，都归基础模块。
+    // 第 23 个是 2026-10-20 新增的 `petition`（众筹诉求）—— 它是**业务模块**，
+    // 因为它是面向学生需求的完整业务闭环（提诉求 → 附议 → 发信 → 追回复），
+    // 不属于学业/身份基础设施。
+    expect(MODULES).toHaveLength(23);
+    expect(BUSINESS_MODULES).toHaveLength(16);
     expect(CORE_MODULES).toHaveLength(7);
   });
 
@@ -39,6 +40,7 @@ describe('模块注册表', () => {
       'techpie',
       'wildlife',
       'facility',
+      'petition',
     ]);
   });
 

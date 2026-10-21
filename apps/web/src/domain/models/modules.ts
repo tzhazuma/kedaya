@@ -52,6 +52,9 @@ const DECORATION: Readonly<Record<string, ModuleDecoration>> = {
   wildlife: { icon: 'bird', accent: 'success' },
   // 第 20 个模块（契约 §11.10-C 裁决 v1.2）：场馆预约，medium 敏感、无同意门
   facility: { icon: 'dumbbell', accent: 'success' },
+  // 第 23 个模块（2026-10-20）：众筹诉求。用 warning 色 —— 它涉及「向部门提要求」，
+  // 不是日常顺手点开的功能，视觉上该和其它模块区分开。
+  petition: { icon: 'megaphone', accent: 'warning' },
 };
 
 /** 22 个模块，顺序 = 契约顺序（基础在前，业务在后） */

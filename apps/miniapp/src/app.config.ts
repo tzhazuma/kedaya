@@ -49,6 +49,8 @@ const subPackages = [
     pages: ['list/index', 'create/index', 'detail/index', 'profile/index', 'recommendations/index'],
   },
   { root: 'presentation/pages/lostFound', pages: ['list/index', 'create/index', 'detail/index'] },
+  // 众筹诉求：低频、非首屏，放分包（主包余量只剩 ~360 KiB）
+  { root: 'presentation/pages/petition', pages: ['index'] },
   { root: 'presentation/pages/facility', pages: ['list/index', 'create/index', 'detail/index'] },
   {
     root: 'presentation/pages/forum',

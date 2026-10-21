@@ -24,7 +24,9 @@ describe('模块注册表（契约 §4 数据驱动）', () => {
   it('注册表与契约模块表一一对应', () => {
     // 契约 v1.2 §11.10-C 新增第 20 个模块 facility（场馆预约）
     // 之后新增第 21 个 deadlines（DDL 聚合），与 schedule 同属核心学业基础设施
-    expect(PORTAL_MODULE_COUNT).toBe(22);
+    // 第 21 个 deadlines、第 22 个 campus-map 归核心模块；
+    // 第 23 个 petition（众筹诉求）是业务模块。
+    expect(PORTAL_MODULE_COUNT).toBe(23);
     expect(PORTAL_MODULES).toHaveLength(MODULES.length);
     expect(PORTAL_MODULES.map((m) => m.id)).toEqual(MODULES.map((m) => m.id));
   });
@@ -33,7 +35,7 @@ describe('模块注册表（契约 §4 数据驱动）', () => {
     expect(validateModuleRegistry(PORTAL_MODULES, MODULES)).toEqual([]);
   });
 
-  it('模块 id 唯一，且覆盖全部 6 基础 + 15 业务', () => {
+  it('模块 id 唯一，且覆盖全部 7 基础 + 16 业务', () => {
     const ids = PORTAL_MODULES.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const mod of [...CORE_MODULES, ...BUSINESS_MODULES]) {
@@ -41,10 +43,10 @@ describe('模块注册表（契约 §4 数据驱动）', () => {
     }
   });
 
-  it('分类分组：7 基础 + 15 业务', () => {
+  it('分类分组：7 基础 + 16 业务', () => {
     expect(PORTAL_MODULE_GROUPS.core).toHaveLength(7);
-    expect(PORTAL_MODULE_GROUPS.business).toHaveLength(15);
-    expect(groupModulesByCategory(PORTAL_MODULES).business).toHaveLength(15);
+    expect(PORTAL_MODULE_GROUPS.business).toHaveLength(16);
+    expect(groupModulesByCategory(PORTAL_MODULES).business).toHaveLength(16);
   });
 
   it('每个模块都有可用的门户路由与图标', () => {
