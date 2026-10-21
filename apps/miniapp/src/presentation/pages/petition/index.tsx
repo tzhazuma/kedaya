@@ -245,9 +245,14 @@ export default function PetitionPage() {
           </Text>
           {!PETITION_DEPARTMENTS[category].emailConfirmed && (
             <Text className='kdy-petition__error'>
-              该类别**没有**找到学校公布的收件邮箱，上面这个地址属于
-              {PETITION_DEPARTMENTS[category].name}
-              ，不一定能受理你的诉求 —— 发送前请自行核实。
+              {`该类别没有找到学校公布的收件邮箱，上面这个地址属于${PETITION_DEPARTMENTS[category].name}，不一定能受理你的诉求 —— 发送前请自行核实。`}
+            </Text>
+          )}
+          {/* 有 note 说明「这是部门总邮箱 / 该走别的渠道」时必须显示 —— 
+              不说清楚用户会以为投给了具体窗口，等不到回复也不知道为什么 */}
+          {PETITION_DEPARTMENTS[category].note !== null && (
+            <Text className='kdy-petition__hint'>
+              {PETITION_DEPARTMENTS[category].note}
             </Text>
           )}
 

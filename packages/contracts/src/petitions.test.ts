@@ -296,17 +296,52 @@ describe('类别与部门绑定', () => {
     }
   });
 
-  it('⚠️ 未核实的部门必须显式标记，不允许静默发到猜测地址', () => {
-    // 2026-10-22 从学校官网实测：6 个类别里只有 canteen（后勤/食堂）找不到公开邮箱
-    // （hq./logistics./canteen./houqin./service.shanghaitech.edu.cn 全部域名不存在）。
-    // 所以它必须是 emailConfirmed: false —— UI 会据此提示用户自行确认收件人。
-    expect(PETITION_DEPARTMENTS.canteen.emailConfirmed).toBe(false);
-
-    // 其余全部已核实
+  it('⚠️ 六个类别全部已核实（2026-10-22 官网实测）', () => {
+    // 演进过程值得记下来，因为它两次推翻了直觉：
+    //   第 1 版：6 个邮箱**全是我猜的**（logistics@ / academics@ / it@ / …）
+    //   第 2 版：抓官网后发现 4 个猜错；「后勤」没找到 → canteen 标 false
+    //   第 3 版：**「后勤无邮箱」本身是漏查** —— 学校没有「后勤服务中心」，
+    //           管餐饮/物业的是【公共服务处 OGS】`ogs@shanghaitech.edu.cn`。
+    // 所以现在全部为 true。若将来某个变成 false，必须是真的查不到，
+    // 而不是「懒得查」。
     for (const category of PETITION_CATEGORIES) {
-      if (category === 'canteen') continue;
       expect(PETITION_DEPARTMENTS[category].emailConfirmed, `${category} 应已核实`).toBe(true);
     }
+  });
+
+  it('⚠️ 没有专属邮箱的类别必须写清楚（不许让用户以为投给了具体窗口）', () => {
+    // 食堂/物业/宿舍**都没有专属邮箱**，用的是部门总邮箱。
+    // 不说清楚的话用户会以为投给了具体窗口，等不到回复也不知道为什么。
+    expect(PETITION_DEPARTMENTS.canteen.note).not.toBeNull();
+    expect(PETITION_DEPARTMENTS.facility.note).not.toBeNull();
+    expect(PETITION_DEPARTMENTS.dorm.note).not.toBeNull();
+    // 提示要真的说明「这是总邮箱 / 该走别的渠道」
+    expect(PETITION_DEPARTMENTS.canteen.note).toContain('总邮箱');
+    expect(PETITION_DEPARTMENTS.facility.note).toContain('报修');
+
+    // 有专属渠道的不该乱加提示
+    expect(PETITION_DEPARTMENTS.teaching.note).toBeNull();
+    expect(PETITION_DEPARTMENTS.it.note).toBeNull();
+  });
+
+  it('⚠️ 公共服务处（OGS）才是管食堂/物业的，不是「设备与资产处」', () => {
+    // 这条断言防的是我自己犯过的错：把 canteen 指到 facility@（设备与资产处）。
+    // OGS 职责含「餐饮住宿、楼宇物业、能源中心、体育设施」；
+    // facility@ 管的是设备/资产**采购**，不管食堂也不管报修。
+    expect(PETITION_DEPARTMENTS.canteen.email).toBe('ogs@shanghaitech.edu.cn');
+    expect(PETITION_DEPARTMENTS.facility.email).toBe('ogs@shanghaitech.edu.cn');
+    expect(PETITION_DEPARTMENTS.canteen.email).not.toBe('facility@shanghaitech.edu.cn');
+  });
+
+  it('⚠️ IT 的电话不是图书馆的（20685191 是 library@ 的）', () => {
+    expect(PETITION_DEPARTMENTS.it.phone).toContain('20685566');
+    expect(PETITION_DEPARTMENTS.it.phone).not.toContain('20685191');
+  });
+
+  it('⚠️ 通用诉求投行政综合办公室，不投党务', () => {
+    // ucoffice@ 是「综合办公室（党务）」，通用诉求不该投那里。
+    expect(PETITION_DEPARTMENTS.other.email).toBe('office@shanghaitech.edu.cn');
+    expect(PETITION_DEPARTMENTS.other.email).not.toBe('ucoffice@shanghaitech.edu.cn');
   });
 
   it('每个部门都有名称、电话与出处（发信前要能核对）', () => {

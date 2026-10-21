@@ -70,6 +70,13 @@ export interface PetitionDepartment {
   readonly emailConfirmed: boolean;
   /** 出处（便于下次复核） */
   readonly source: string;
+  /**
+   * 给用户的额外提示（`null` = 无需提示）。
+   *
+   * 用于「这是部门总邮箱，不是专线」这类**必须说出来**的事 ——
+   * 不说的话用户会以为投给了具体窗口。
+   */
+  readonly note: string | null;
 }
 
 /**
@@ -98,50 +105,62 @@ export interface PetitionDepartment {
  */
 export const PETITION_DEPARTMENTS: Readonly<Record<PetitionCategory, PetitionDepartment>> =
   Object.freeze({
-    // ⚠️ 没找到后勤/食堂的公开邮箱。指到「设备与资产处」是错的（那是管设备的）。
-    // 保留一个显式的未确认状态，让 UI 去提示，而不是塞一个假地址。
+    // ⚠️ 关键修正：学校**没有**「后勤服务中心」。
+    // 管餐饮住宿/楼宇物业/能源/体育设施的是【公共服务处 Office of General Services】，
+    // 公开邮箱 `ogs@shanghaitech.edu.cn`。
+    // 我最初填的 `logistics@` 是编的，`facility@` 是「设备与资产处」（管设备采购，不管食堂）。
     canteen: {
-      name: '后勤服务中心',
-      email: 'facility@shanghaitech.edu.cn',
-      phone: '86-21-20685211',
-      emailConfirmed: false,
-      source: '未找到后勤专属邮箱；此地址属「设备与资产处」，需用户自行改投',
-    },
-    facility: {
-      name: '设备与资产处',
-      email: 'facility@shanghaitech.edu.cn',
-      phone: '86-21-20685211',
+      name: '公共服务处',
+      email: 'ogs@shanghaitech.edu.cn',
+      phone: '86-21-20684567',
       emailConfirmed: true,
-      source: 'https://www.shanghaitech.edu.cn/1488/list.htm',
+      source: 'www.shanghaitech.edu.cn/1003/list.htm + /en/administrative/list.htm（3 页）',
+      note: '这是公共服务处的**部门总邮箱**，不是食堂专线。请在邮件里写明具体食堂与档口。',
+    },
+    // 公共设施（楼宇物业/体育设施/能源）同属公共服务处
+    facility: {
+      name: '公共服务处',
+      email: 'ogs@shanghaitech.edu.cn',
+      phone: '86-21-20684567',
+      emailConfirmed: true,
+      source: 'www.shanghaitech.edu.cn/1003/list.htm（3 页）',
+      note: '报修走校园服务中心或电话更快；公开渠道没有报修专属邮箱。',
     },
     teaching: {
-      // ⚠️ 反直觉但是实测：教务处公布的是 `student@`
+      // ⚠️ 反直觉但是实测：教务处公布的是 `student@`（3 个来源交叉确认）
       name: '教务处',
       email: 'student@shanghaitech.edu.cn',
       phone: '86-21-20685313',
       emailConfirmed: true,
-      source: 'https://www.shanghaitech.edu.cn/1488/list.htm',
+      source: 'www.shanghaitech.edu.cn/1488/list.htm + 教务处「联系我们」+ 英文页（3 源）',
+      note: null,
     },
     dorm: {
       name: '学生事务处',
       email: 'studentaffairs@shanghaitech.edu.cn',
       phone: '86-21-20685643',
       emailConfirmed: true,
-      source: 'https://www.shanghaitech.edu.cn/1488/list.htm',
+      source: '官网正文；电话与 xsc 人员表交叉一致',
+      note: '宿舍/公寓没有专属邮箱，这是学生事务处总邮箱。',
     },
     it: {
-      name: '信息化服务',
+      name: '图书信息中心',
       email: 'it-support@shanghaitech.edu.cn',
-      phone: '86-21-20685191',
+      // ⚠️ 修正：原来填的 20685191 是**图书馆**的电话（library@），不是 IT 的
+      phone: '86-21-20685566',
       emailConfirmed: true,
-      source: 'https://it.shanghaitech.edu.cn/',
+      source: 'it.shanghaitech.edu.cn + 迎新手册 PDF（3 源）',
+      note: null,
     },
     other: {
-      name: '综合办公室（党务）',
-      email: 'ucoffice@shanghaitech.edu.cn',
-      phone: '86-21-20685319',
+      // ⚠️ 修正：`ucoffice@` 是**党务**综合办公室，通用诉求不该投那里。
+      // 行政的是 `office@`。
+      name: '综合办公室',
+      email: 'office@shanghaitech.edu.cn',
+      phone: '86-21-20685160',
       emailConfirmed: true,
-      source: 'https://www.shanghaitech.edu.cn/1488/list.htm',
+      source: 'www.shanghaitech.edu.cn/1488/list.htm（2 源）',
+      note: '学校没有公开的校长信箱；通用诉求走综合办公室。',
     },
   });
 
