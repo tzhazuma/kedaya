@@ -1,0 +1,97 @@
+.kdy-teabreak {
+  &__intro {
+    display: block;
+    margin-bottom: $kdy-space-2;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+
+    &--muted {
+      color: $kdy-color-campus-muted;
+      font-size: $kdy-font-size-xs;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    margin: $kdy-space-3 0;
+  }
+
+  &__label {
+    display: block;
+    margin: $kdy-space-3 0 $kdy-space-1;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    font-weight: $kdy-font-weight-medium;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $kdy-space-1;
+    margin-bottom: $kdy-space-2;
+  }
+
+  &__hint {
+    display: block;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+  }
+
+  &__error {
+    display: block;
+    margin: $kdy-space-1 0;
+    color: $kdy-color-danger;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__venue {
+    display: block;
+    margin-bottom: $kdy-space-1;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    font-weight: $kdy-font-weight-medium;
+  }
+
+  /* 茶歇时间窗 —— 这是用户最关心的一行，给足视觉重量 */
+  &__window {
+    display: block;
+    margin: $kdy-space-1 0 $kdy-space-2;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-md;
+    font-weight: $kdy-font-weight-bold;
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $kdy-space-1;
+    margin-bottom: $kdy-space-2;
+  }
+
+  &__meta-text {
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__note {
+    display: block;
+    margin: $kdy-space-2 0;
+    padding: $kdy-space-2;
+    border-radius: $kdy-radius-sm;
+    background: $kdy-color-campus-milk;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+  }
+
+  &__by {
+    display: block;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+  }
+}

@@ -88,6 +88,7 @@ export const PAGE_PATHS = {
   nutritionDishes: '/presentation/pages/nutrition/dishes/index',
   // 常见问题（问答库）：折叠首页 + 我的工单
   petition: '/presentation/pages/petition/index',
+  teabreak: '/presentation/pages/teabreak/index',
   faq: '/presentation/pages/faq/index/index',
   faqTickets: '/presentation/pages/faq/tickets/index',
   // 偷外卖（本人可见的报备记录，不是公开举报墙）
@@ -181,6 +182,8 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   'dorm-harmony': PAGE_PATHS.dormHarmonyHome,
   /** 众筹诉求：共同需求汇总成可核对的诉求，达标后发信给部门 */
   petition: PAGE_PATHS.petition,
+  /** 会议茶歇：把校内学术会议的茶歇时报上来 */
+  teabreak: PAGE_PATHS.teabreak,
   // 站内通知：就是 tabBar 上的「消息」页（用 switchTab 跳，navigateTo 会失败）
   notifications: PAGE_PATHS.messages,
   // 四个核心模块（身份 / 课表 / 校园卡 / 我的）

@@ -116,7 +116,7 @@ export const HOME_SECTIONS: readonly HomeSection[] = [
   {
     id: 'community',
     title: '交流与互助',
-    entryIds: ['forum', 'faq', 'petition', 'dorm-harmony', 'takeout-guard', 'techpie'],
+    entryIds: ['forum', 'faq', 'petition', 'teabreak', 'dorm-harmony', 'takeout-guard', 'techpie'],
   },
   {
     id: 'care',

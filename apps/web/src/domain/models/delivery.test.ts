@@ -29,7 +29,7 @@ describe('模块交付状态', () => {
     }
   });
 
-  it('小程序已上线的模块 = 23 个契约模块里除 groupbuy（走 Web）之外的 22 个', () => {
+  it('小程序已上线的模块 = 24 个契约模块里除 groupbuy（走 Web）之外的 23 个', () => {
     // 这份清单必须与小程序 `MODULE_ENTRY_PATHS`（真实有页面的模块）逐条对齐：
     // 端上真的做了才列进来，没做就老实留在 api-only —— 端上页面数对不上这里会红。
     expect(MINIAPP_MODULES.map((m) => m.id).sort()).toEqual([
@@ -55,6 +55,8 @@ describe('模块交付状态', () => {
       'profile',
       'schedule',
       'takeout-guard',
+        // 第 24 个模块：会议茶歇（契约规则层 + 小程序页面；服务端还没有接口）
+        'teabreak',
       'techpie',
       'wellbeing',
       'wildlife',

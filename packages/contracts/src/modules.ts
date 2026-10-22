@@ -208,6 +208,16 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
     requiresConsent: false,
     route: 'petition',
   },
+  {
+    id: 'teabreak',
+    nameZh: '会议茶歇',
+    nameEn: 'Conference Tea Breaks',
+    summary: '把手边学术会议的时间地点和茶歇时报上来，别让点心凉在会议室里',
+    category: 'business',
+    sensitivity: 'low',
+    requiresConsent: false,
+    route: 'teabreak',
+  },
 ] as const;
 
 /* ------------------------------------------------------------------ *

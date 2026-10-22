@@ -236,6 +236,18 @@ const List<KedayaModule> businessModules = <KedayaModule>[
     requiresConsent: false,
     route: 'facility',
   ),
+  // 第 17 个业务模块（契约 `businessModules` 的最后一条；Dart 镜像目前还不含
+  // `petition` 与 `campus-map`，因此 teabreak 在这里落在 `facility` 之后）。
+  KedayaModule(
+    id: 'teabreak',
+    nameZh: '会议茶歇',
+    nameEn: 'Conference Tea Breaks',
+    summary: '把手边学术会议的时间地点和茶歇时报上来，别让点心凉在会议室里',
+    category: ModuleCategory.business,
+    sensitivity: ModuleSensitivity.low,
+    requiresConsent: false,
+    route: 'teabreak',
+  ),
 ];
 
 /* ------------------------------------------------------------------ *

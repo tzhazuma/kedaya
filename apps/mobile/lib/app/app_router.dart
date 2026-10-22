@@ -14,6 +14,8 @@ import '../features/forum/presentation/pages/forum_compose_page.dart';
 import '../features/forum/presentation/pages/forum_post_detail_page.dart';
 import '../features/groupbuy/presentation/pages/groupbuy_detail_page.dart';
 import '../features/groupbuy/presentation/pages/groupbuy_list_page.dart';
+import '../features/teabreak/presentation/pages/teabreak_compose_page.dart';
+import '../features/teabreak/presentation/pages/teabreak_list_page.dart';
 import '../features/techpie/presentation/pages/campus_card_page.dart';
 import '../features/techpie/presentation/pages/techpie_bindings_page.dart';
 import '../features/techpie/presentation/pages/techpie_capabilities_page.dart';
@@ -54,6 +56,7 @@ final GlobalKey<NavigatorState> kedaYaRootNavigatorKey =
 ///   - `/techpie`（入口）、`/techpie/bindings`（绑定管理）、
 ///     `/techpie/capabilities`（能力清单）、`/techpie/webview`（校园系统直连）：
 ///     TechPie 整合 Phase 0
+///   - `/teabreak`（列表）、`/teabreak/compose`（报一个茶歇）：学术会议茶歇分享
 ///   - `/campus-card`：校园卡（**独立 OPENID 通道**，与校园会话代持解耦）
 ///   - `/module/:moduleId`：**注册表驱动**的模块落地页（未实现的模块在此如实说明）
 GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
@@ -276,6 +279,21 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
               name: 'techpie-webview',
               builder: (BuildContext context, GoRouterState state) =>
                   const TechpieWebViewPage(),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/teabreak',
+          name: 'teabreak',
+          builder: (BuildContext context, GoRouterState state) =>
+              const TeabreakListPage(),
+          routes: <RouteBase>[
+            // 静态段必须声明在其它子段之前（go_router 同级按声明顺序匹配）。
+            GoRoute(
+              path: 'compose',
+              name: 'teabreak-compose',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const TeabreakComposePage(),
             ),
           ],
         ),

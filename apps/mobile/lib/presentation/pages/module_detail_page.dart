@@ -20,6 +20,7 @@ const Map<String, String> implementedModuleRoutes = <String, String>{
   'wildlife': '/wildlife',
   'techpie': '/techpie',
   'campus-card': '/campus-card',
+  'teabreak': '/teabreak',
 };
 
 /// 模块落地页 —— **注册表驱动**，不含任何伪造的业务数据。
@@ -156,6 +157,11 @@ class ModuleDetailPage extends ConsumerWidget {
                         '**未实现**：Phase 1（结构化校园数据，阻塞于信息办书面回复）、'
                         'Phase 2（场馆预约 / 会话注入）、Phase 3（自动续期）。'
                         '**不做**：任何校园会话落库路径。',
+                    'teabreak' => '本模块已实现：列表（按 worthGoing → freshness → '
+                        '结束时间排序）+「确认还有」+ 新建表单 + 三态与空态，'
+                        '走 TeabreakPort。时效规则（20 分钟）与校验规则全部来自'
+                        '契约的纯函数镜像，**页面里没有规则副本**。'
+                        '**不做**：会议室实时人数、预约茶歇（契约开头第 3 条）。',
                     'campus-card' => '本模块已实现：余额 / 流水 / 付款码，走 CampusCardPort ——'
                         '**独立 OPENID 通道**（规格 §2.5），与校园会话代持完全解耦，'
                         '因此不产生任何 CASTGC。未开通时接口返回 409 '

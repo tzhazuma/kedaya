@@ -12,13 +12,13 @@ import {
 } from './modules';
 
 describe('模块注册表', () => {
-  it('共 23 个模块（16 业务 + 7 基础）', () => {
+  it('共 24 个模块（17 业务 + 7 基础）', () => {
     // 第 21 个是 `deadlines`（DDL 聚合），第 22 个是 `campus-map`，都归基础模块。
     // 第 23 个是 2026-10-20 新增的 `petition`（众筹诉求）—— 它是**业务模块**，
     // 因为它是面向学生需求的完整业务闭环（提诉求 → 附议 → 发信 → 追回复），
     // 不属于学业/身份基础设施。
-    expect(MODULES).toHaveLength(23);
-    expect(BUSINESS_MODULES).toHaveLength(16);
+    expect(MODULES).toHaveLength(24);
+    expect(BUSINESS_MODULES).toHaveLength(17);
     expect(CORE_MODULES).toHaveLength(7);
   });
 
@@ -41,6 +41,7 @@ describe('模块注册表', () => {
       'wildlife',
       'facility',
       'petition',
+      'teabreak',
     ]);
   });
 

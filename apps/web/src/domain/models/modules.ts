@@ -55,6 +55,9 @@ const DECORATION: Readonly<Record<string, ModuleDecoration>> = {
   // 第 23 个模块（2026-10-20）：众筹诉求。用 warning 色 —— 它涉及「向部门提要求」，
   // 不是日常顺手点开的功能，视觉上该和其它模块区分开。
   petition: { icon: 'megaphone', accent: 'warning' },
+  // 第 24 个模块（2026-10-22）：学术会议茶歇。用 success 色 ——
+  // 这是「有好东西」的信号，不是警告。
+  teabreak: { icon: 'coffee', accent: 'success' },
 };
 
 /** 22 个模块，顺序 = 契约顺序（基础在前，业务在后） */

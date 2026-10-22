@@ -21,6 +21,7 @@ import '../domain/ports/techpie_port.dart';
 import '../domain/ports/theme_mode_port.dart';
 import '../domain/ports/webview_port.dart';
 import '../domain/ports/wellbeing_port.dart';
+import '../domain/ports/teabreak_port.dart';
 import '../domain/ports/wildlife_port.dart';
 import '../presentation/theme/kedaya_theme.dart';
 import 'app_environment.dart';
@@ -95,6 +96,14 @@ final buddyRepositoryProvider = Provider<BuddyPort>(
 /// 校园动物（契约 §4.1 `wildlife`；敏感级低、**无同意门**）。
 final wildlifeRepositoryProvider = Provider<WildlifePort>(
   (ref) => ref.watch(appRuntimeProvider).wildlife,
+);
+
+/// 学术会议茶歇（契约 `teabreak`；敏感级低、**无同意门**）。
+///
+/// 与其他 repository provider 同构：只做「runtime → 端口」的取值，
+/// 不含任何缓存或状态。
+final teabreakRepositoryProvider = Provider<TeabreakPort>(
+  (ref) => ref.watch(appRuntimeProvider).teabreak,
 );
 
 /// TechPie 整合（契约 §4.1 `techpie`；敏感级中、**无同意门**）。

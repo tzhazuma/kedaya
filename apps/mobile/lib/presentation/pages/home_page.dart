@@ -51,6 +51,14 @@ class HomePage extends ConsumerWidget {
           ),
           const SizedBox(height: KedaYaTokens.space3),
           _FeatureEntryCard(
+            icon: Icons.local_cafe_outlined,
+            title: '学术会议茶歇',
+            description: '现在哪栋楼有点心？按「值不值得现在跑一趟」排序，'
+                '20 分钟内没人确认就只说「可能还有」',
+            onTap: () => context.push('/teabreak'),
+          ),
+          const SizedBox(height: KedaYaTokens.space3),
+          _FeatureEntryCard(
             icon: Icons.help_outline,
             title: '常见问题',
             description: '分类导航 + 搜索 + 手风琴展开 +「有用」（幂等）+ 我的工单',
@@ -74,7 +82,8 @@ class HomePage extends ConsumerWidget {
           Center(
             child: TextButton(
               onPressed: () => context.go('/modules'),
-              child: const Text('查看全部 20 个模块'),
+              // 不写死数字：注册表加了模块而这里忘了改，是最容易发生的"文案说谎"。
+              child: Text('查看全部 ${kedayaModules.length} 个模块'),
             ),
           ),
         ],

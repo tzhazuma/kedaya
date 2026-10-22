@@ -13,6 +13,7 @@ import {
   HeartPulse,
   Home,
   KeyRound,
+  Coffee,
   MapPin,
   Megaphone,
   MessagesSquare,
@@ -62,6 +63,8 @@ export const MODULE_ICONS: Record<ModuleIconKey, KdyIcon> = {
   'map-pin': MapPin,
   // 第 23 个模块 petition（众筹诉求）
   megaphone: Megaphone,
+  // 第 24 个模块 teabreak（会议茶歇）
+  coffee: Coffee,
 };
 
 export function moduleIcon(key: ModuleIconKey): KdyIcon {

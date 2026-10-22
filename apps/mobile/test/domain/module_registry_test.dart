@@ -4,10 +4,27 @@ import 'package:kedaya/domain/models/kedaya_module.dart';
 /// 模块注册表是契约 §4 的冻结项，Dart 侧只是镜像 —— 因此这里断言镜像没走样。
 /// 对应用例见 `packages/contracts/src/modules.test.ts`。
 void main() {
-  test('注册表共 21 个模块：15 业务 + 6 基础', () {
-    expect(kedayaModules, hasLength(21));
-    expect(businessModules, hasLength(15));
+  // 2026-10-22 契约新增 `teabreak`（学术会议茶歇）。Dart 镜像同步了这一条，
+  // 但**仍未同步** `petition` 与 `campus-map`（`modules.ts` 现有 24 条）——
+  // 那两条不在本轮范围内，已登记进交付说明。
+  test('注册表共 22 个模块：16 业务 + 6 基础', () {
+    expect(kedayaModules, hasLength(22));
+    expect(businessModules, hasLength(16));
     expect(coreModules, hasLength(6));
+  });
+
+  test('teabreak 已注册：business / low / 无同意门 / route == id', () {
+    final KedayaModule? module = moduleById('teabreak');
+    expect(module, isNotNull, reason: 'contracts 的 modules.ts 已有 teabreak');
+    expect(module!.nameZh, '会议茶歇');
+    expect(module.nameEn, 'Conference Tea Breaks');
+    expect(module.category, ModuleCategory.business);
+    expect(module.sensitivity, ModuleSensitivity.low);
+    expect(module.requiresConsent, isFalse);
+    expect(module.route, 'teabreak');
+    expect(module.summary, contains('茶歇'));
+    expect(moduleRequiresConsent('teabreak'), isFalse);
+    expect(moduleIsSensitive('teabreak'), isFalse);
   });
 
   // 2026-10-19 契约新增第 21 个模块 `deadlines`（DDL 聚合），Dart 侧必须同步。

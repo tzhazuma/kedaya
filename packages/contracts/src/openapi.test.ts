@@ -45,7 +45,7 @@ describe('OpenAPI 契约文件', () => {
     // 不要为了变绿把断言放宽成 `> 0`。
     // 第 23 个 `petition`（众筹诉求）本轮也只有契约与规则层，
     // `services/` 里还没有对应接口 —— 与 deadlines / campus-map 同样排除。
-    const withoutApi = new Set(['deadlines', 'campus-map', 'petition']);
+    const withoutApi = new Set(['deadlines', 'campus-map', 'petition', 'teabreak']);
     const withApi = MODULES.filter((module) => !withoutApi.has(module.id));
     const tagNames = (spec.tags ?? []).map((t: any) => t.name);
     expect(tagNames).toHaveLength(withApi.length);
