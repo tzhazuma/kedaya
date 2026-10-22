@@ -31,11 +31,29 @@ const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
 /** 本地时间构造（测试传固定 now 即可确定性） */
+/** 北京时间偏移（UTC+8）。**固定值，不跟随运行时 TZ** */
+const CN_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+/**
+ * 生成「北京时间某天某时」的时间戳。
+ *
+ * ## 为什么不用 `setHours`
+ *
+ * 原来的实现用 `setDate` / `setHours` —— 那是**运行时本地时区**语义。
+ * 于是同一份 fixture 在 `TZ=Asia/Shanghai` 和 `TZ=UTC` 下产出**相差 16 小时**
+ * 的时间戳，而测试断言的是精确 ID 列表 → CI（UTC）全红、本机（UTC+8）全绿。
+ *
+ * 本函数的契约是「演示数据里说的 18:30 就是北京时间 18:30」，
+ * 与跑在哪台机器上无关。所以显式用 UTC 算术 + 固定偏移，
+ * **不读取系统时区**。
+ *
+ * 目标校在上海，用户的「今天 18:30」就是 +08:00，这个语义是对的。
+ */
 function localAt(base: Date, dayOffset: number, hour: number, minute = 0): string {
-  const d = new Date(base.getTime());
-  d.setDate(d.getDate() + dayOffset);
-  d.setHours(hour, minute, 0, 0);
-  return d.toISOString();
+  const shifted = new Date(base.getTime() + CN_OFFSET_MS);
+  shifted.setUTCDate(shifted.getUTCDate() + dayOffset);
+  shifted.setUTCHours(hour, minute, 0, 0);
+  return new Date(shifted.getTime() - CN_OFFSET_MS).toISOString();
 }
 
 function iso(base: Date, deltaMs: number): string {

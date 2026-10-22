@@ -18,6 +18,7 @@
     "lint": "eslint src test vitest.config.ts",
     "clean": "rm -rf dist coverage",
     "prisma:generate": "prisma generate",
+    "postinstall": "prisma generate",
     "prisma:validate": "prisma validate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",

@@ -451,8 +451,19 @@ describe('发布：封闭标签与联系方式都在提交前拦下', () => {
   it('datetime-local ↔ ISO 互转；非法值返回空串（不猜）', () => {
     const date = new Date('2026-10-24T14:00:00+08:00');
     const local = toDatetimeLocalValue(date);
-    expect(local).toBe('2026-10-24T14:00');
+
+    // ⚠️ 这里**不能**断言 `'2026-10-24T14:00'`。
+    //
+    // `<input type="datetime-local">` 的语义是**本地墙面时间**，
+    // 所以 `toDatetimeLocalValue` 正确地用 `getHours()` 等本地取值 ——
+    // 同一个瞬刻在 UTC+8 得到 `14:00`、在 UTC 得到 `06:00`。
+    // 断言具体字面量等于要求「运行时必须是 +08:00」，CI（UTC）必红。
+    //
+    // 该函数的真正契约是**往返保真 + 格式正确**，与时区无关：
+    expect(local).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
     expect(fromDatetimeLocalValue(local)).toBe(date.toISOString());
+
+    // 非法值返回空串（不猜当前时间）
     expect(fromDatetimeLocalValue('')).toBe('');
     expect(fromDatetimeLocalValue('不是时间')).toBe('');
   });
