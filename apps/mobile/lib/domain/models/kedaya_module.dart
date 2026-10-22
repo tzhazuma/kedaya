@@ -236,8 +236,21 @@ const List<KedayaModule> businessModules = <KedayaModule>[
     requiresConsent: false,
     route: 'facility',
   ),
-  // 第 17 个业务模块（契约 `businessModules` 的最后一条；Dart 镜像目前还不含
-  // `petition` 与 `campus-map`，因此 teabreak 在这里落在 `facility` 之后）。
+  // 第 16 个业务模块 `petition`（众筹诉求，2026-10-20 加入契约）。
+  // ⚠️ 措辞要准确：这里**不筹钱**，筹的是「有多少人真的需要」——
+  // 达到门槛后由发起人把一封正式邮件发给对应部门。
+  // sensitivity low：附议匿名（`PetitionEndorsement` 不存 userId），只有发起人实名。
+  KedayaModule(
+    id: 'petition',
+    nameZh: '众筹诉求',
+    nameEn: 'Petitions',
+    summary: '把共同需求汇总成一份可核对的诉求，达到门槛后发信给对应部门',
+    category: ModuleCategory.business,
+    sensitivity: ModuleSensitivity.low,
+    requiresConsent: false,
+    route: 'petition',
+  ),
+  // 第 17 个业务模块 `teabreak`（2026-10-22）。
   KedayaModule(
     id: 'teabreak',
     nameZh: '会议茶歇',
@@ -273,6 +286,19 @@ const List<KedayaModule> coreModules = <KedayaModule>[
     sensitivity: ModuleSensitivity.medium,
     requiresConsent: false,
     route: 'schedule',
+  ),
+  // 第 22 个核心模块 `campus-map`（校园地点，逐字镜像契约 `modules.ts`）。
+  // 快递站 / 地下车库 / 食堂菜单 / 活动场地 / 自习空间的位置与「下一站」。
+  // sensitivity low：全是公开地点信息；照片另有 photoCredit 约束（见契约）。
+  KedayaModule(
+    id: 'campus-map',
+    nameZh: '校园地点',
+    nameEn: 'Campus Map',
+    summary: '快递站、地下车库、食堂菜单、活动场地与自习空间的位置与「下一站」安排',
+    category: ModuleCategory.core,
+    sensitivity: ModuleSensitivity.low,
+    requiresConsent: false,
+    route: 'campus-map',
   ),
   // DDL 聚合（第 21 个模块，2026-10-19 加入，逐字镜像契约 `modules.ts`）。
   // 归入 core：与 `schedule` 同属学业基础设施；medium 因为条目能反推在修哪些课，
