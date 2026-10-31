@@ -67,3 +67,6 @@ apps/mobile/.idea/
 apps/mobile/android/.gradle/
 apps/mobile/android/local.properties
 apps/mobile/**/GeneratedPluginRegistrant.*
+
+# 朗读模型（60 MB，部署产物不是源码；用 tools/fetch-tts-model.mjs 拉取）
+services/api/models/

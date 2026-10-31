@@ -1,0 +1,42 @@
+.kdy-read-aloud {
+  margin: $kdy-space-2 0;
+
+  &__button {
+    display: inline-flex;
+    align-items: center;
+    gap: $kdy-space-1;
+    padding: $kdy-space-1 $kdy-space-3;
+    border: 1rpx solid $kdy-color-campus-border;
+    border-radius: $kdy-radius-sm;
+    background: $kdy-color-campus-white;
+    color: $kdy-color-campus-ink;
+
+    /* 正在朗读时给一点视觉反馈，让人知道点了会有用（停止） */
+    &--busy {
+      border-color: $kdy-color-success;
+      color: $kdy-color-success;
+    }
+
+    &--error {
+      border-color: $kdy-color-danger;
+      color: $kdy-color-danger;
+    }
+  }
+
+  &__icon {
+    font-size: $kdy-font-size-sm;
+    line-height: 1;
+  }
+
+  &__label {
+    font-size: $kdy-font-size-sm;
+  }
+
+  &__error {
+    display: block;
+    margin-top: $kdy-space-1;
+    color: $kdy-color-danger;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+  }
+}

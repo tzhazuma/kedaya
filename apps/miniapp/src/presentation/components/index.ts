@@ -45,6 +45,9 @@ export type { KdyEthicsNoticeProps } from './KdyEthicsNotice'
 export { KdyPrivacyNotice } from './KdyPrivacyNotice'
 export type { KdyPrivacyNoticeProps } from './KdyPrivacyNotice'
 
+export { KdyReadAloud } from './KdyReadAloud'
+export type { KdyReadAloudProps } from './KdyReadAloud'
+
 export { KdySearchBar } from './KdySearchBar'
 export type { KdySearchBarProps } from './KdySearchBar'
 

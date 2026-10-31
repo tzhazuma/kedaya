@@ -6,7 +6,7 @@ import { getContainer } from '../../../../app/container'
 import { PAGE_PATHS } from '../../../../app/routes'
 import { FAQ_CATEGORY_ALL } from '../../../../domain/models/faq'
 import { navigateTo, toast } from '../../../../platform/navigation'
-import { KdyAccordion, KdyButton, KdyCard, KdyChip, KdyEmpty, KdySearchBar, KdyTag } from '../../../components'
+import { KdyAccordion, KdyButton, KdyCard, KdyChip, KdyEmpty, KdySearchBar, KdyTag, KdyReadAloud } from '../../../components'
 import { useStore } from '../../../hooks'
 import './index.scss'
 
@@ -182,6 +182,10 @@ export default function FaqPage() {
                 meta={<KdyTag tone='neutral'>{article.category}</KdyTag>}
               >
                 <Text className='kdy-faq__answer'>{article.excerpt}</Text>
+
+                {/* 朗读：问答是本站最长的文本，也是最适合「听」的内容
+                    （通勤路上、做饭时）。文本超长时组件内部会按句子切段。 */}
+                <KdyReadAloud text={article.excerpt} />
 
                 <View className='kdy-faq__vote'>
                   <KdyButton

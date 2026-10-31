@@ -36,6 +36,7 @@ import { ForumModule } from './modules/forum/forum.module';
 import { AiPortraitModule } from './modules/ai-portrait/ai-portrait.module';
 import { WellbeingModule } from './modules/wellbeing/wellbeing.module';
 import { FaqModule } from './modules/faq/faq.module';
+import { TtsModule } from './modules/tts/tts.module';
 import { TechpieModule } from './modules/techpie/techpie.module';
 import { WildlifeModule } from './modules/wildlife/wildlife.module';
 // 跨模块隐私基础设施（不是契约 §4 的用户可见模块）：U8 联系方式交换
@@ -97,6 +98,7 @@ import { AgentModule } from './modules/agent/agent.module';
     AiPortraitModule,
     WellbeingModule,
     FaqModule,
+    TtsModule,
     TechpieModule,
     WildlifeModule,
     // 联系方式交换（U8）：跨模块隐私基础设施，路由 /contact-exchange

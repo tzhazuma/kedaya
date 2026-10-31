@@ -29,6 +29,21 @@ import {
  * 这一层**不起 Nest、不连数据库** —— 状态机与隐私判定必须能独立钉死。
  */
 
+/**
+ * 测试用的固定「现在」。
+ *
+ * ⚠️ 这个常量是**必须的**，不是洁癖：
+ *
+ * fixture 的 `expiresAt` 是 `2026-10-24`（绝对日期）。如果测试传 `new Date()`
+ * 当 `now`，那么从 2026-10-24 起这条 `PENDING` 请求会被 `effectiveStatus()`
+ * 惰性判成 `EXPIRED`，于是 `decideReject()` 返回 `allowed: false` ——
+ * 测试从那天起**永远失败**，而代码一行没改。
+ *
+ * 这正是「定时炸弹 fixture」：写的时候能过，一周后必挂。
+ * 本文件其它用例（第 145 / 171 行）已经在用固定 `now`，这里统一成同一个约定。
+ */
+const NOW = new Date('2026-10-18T00:00:00.000Z');
+
 function request(overrides: Partial<ContactExchangeRequestRecord> = {}): ContactExchangeRequestRecord {
   return {
     id: 'req-1',
@@ -123,19 +138,19 @@ describe('状态机', () => {
 
   it('非 PENDING 不能同意 / 拒绝（CONFLICT）', () => {
     const accepted = request({ status: 'ACCEPTED' });
-    expect(decideApprove(accepted, 'bob', new Date()).allowed).toBe(false);
-    expect(decideReject(accepted, 'bob', new Date())).toMatchObject({
+    expect(decideApprove(accepted, 'bob', NOW).allowed).toBe(false);
+    expect(decideReject(accepted, 'bob', NOW)).toMatchObject({
       allowed: false,
       code: 'CONFLICT',
     });
   });
 
   it('拒绝由被申请人执行，状态变 REJECTED', () => {
-    expect(decideReject(request(), 'bob', new Date())).toMatchObject({
+    expect(decideReject(request(), 'bob', NOW)).toMatchObject({
       allowed: true,
       nextStatus: 'REJECTED',
     });
-    expect(decideReject(request(), 'alice', new Date())).toMatchObject({
+    expect(decideReject(request(), 'alice', NOW)).toMatchObject({
       allowed: false,
       code: 'FORBIDDEN',
     });
@@ -156,8 +171,8 @@ describe('状态机', () => {
   });
 
   it('已拒绝 / 已撤销 / 已过期不能撤销', () => {
-    expect(decideRevoke(request({ status: 'REJECTED' }), 'alice', new Date()).allowed).toBe(false);
-    expect(decideRevoke(request({ status: 'REVOKED' }), 'alice', new Date()).allowed).toBe(false);
+    expect(decideRevoke(request({ status: 'REJECTED' }), 'alice', NOW).allowed).toBe(false);
+    expect(decideRevoke(request({ status: 'REVOKED' }), 'alice', NOW).allowed).toBe(false);
     expect(
       decideRevoke(
         request({ expiresAt: new Date('2026-10-17T00:00:00Z') }),
