@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../tts/presentation/components/read_aloud_button.dart';
+
 import '../../../../domain/models/teabreak.dart';
 import '../../../../domain/models/time_text.dart';
 import '../../../../presentation/theme/kedaya_theme_extension.dart';
@@ -151,6 +153,10 @@ class TeabreakCard extends StatelessWidget {
                 ),
               ),
             ],
+            const SizedBox(height: KedaYaTokens.space2),
+            // 朗读：在走廊里听比盯着屏幕看快 —— 这正是这个场景的用法。
+            // 文本是「会议名 + 地点 + 茶歇时段 + 备注」拼成的一句，不是简单复述数据。
+            ReadAloudButton(text: _spokenText(teabreak)),
             const SizedBox(height: KedaYaTokens.space3),
             Row(
               children: <Widget>[
@@ -254,6 +260,21 @@ String _hhmm(DateTime value) {
   final String hour = local.hour.toString().padLeft(2, '0');
   final String minute = local.minute.toString().padLeft(2, '0');
   return '$hour:$minute';
+}
+
+/// 拼出给 TTS 的一句话。
+///
+/// 不是把字段逐个读出来，而是按「你在走廊里想知道什么」排序：
+/// 哪个会 → 在哪 → 还有多久 → 有什么。
+String _spokenText(Teabreak teabreak) {
+  final bool over =
+      teabreakStatus(teabreak, DateTime.now()).freshness == TeabreakFreshness.over;
+  return <String>[
+    teabreak.conferenceName,
+    '地点：${teabreak.venue}',
+    over ? '茶歇已结束' : '茶歇正在进行',
+    if (teabreak.note != null) teabreak.note!,
+  ].join('。');
 }
 
 Color _freshnessTone(TeabreakFreshness freshness, KedaYaColors colors) =>

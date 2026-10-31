@@ -22,6 +22,7 @@ import '../domain/ports/theme_mode_port.dart';
 import '../domain/ports/webview_port.dart';
 import '../domain/ports/wellbeing_port.dart';
 import '../domain/ports/teabreak_port.dart';
+import '../domain/ports/tts_port.dart';
 import '../domain/ports/wildlife_port.dart';
 import '../presentation/theme/kedaya_theme.dart';
 import 'app_environment.dart';
@@ -104,6 +105,14 @@ final wildlifeRepositoryProvider = Provider<WildlifePort>(
 /// 不含任何缓存或状态。
 final teabreakRepositoryProvider = Provider<TeabreakPort>(
   (ref) => ref.watch(appRuntimeProvider).teabreak,
+);
+
+/// 朗读（TTS）。
+///
+/// 注意：这是**能力**不是业务模块 —— 没有 mock 实现，
+/// 因为「假朗读」等于没朗读。模型没装时服务端返回 503，UI 如实告知。
+final ttsRepositoryProvider = Provider<TtsPort>(
+  (ref) => ref.watch(appRuntimeProvider).tts,
 );
 
 /// TechPie 整合（契约 §4.1 `techpie`；敏感级中、**无同意门**）。

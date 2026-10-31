@@ -19,6 +19,7 @@ import '../data/mock/mock_location_port.dart';
 import '../data/mock/mock_lost_found_repository.dart';
 import '../data/mock/mock_media_picker.dart';
 import '../data/mock/mock_teabreak_repository.dart';
+import '../data/mock/mock_tts_repository.dart';
 import '../data/mock/mock_techpie_repository.dart';
 import '../data/mock/mock_webview_port.dart';
 import '../data/mock/mock_wellbeing_repository.dart';
@@ -34,6 +35,7 @@ import '../data/repositories/remote_forum_repository.dart';
 import '../data/repositories/remote_groupbuy_repository.dart';
 import '../data/repositories/remote_lost_found_repository.dart';
 import '../data/repositories/remote_teabreak_repository.dart';
+import '../data/repositories/remote_tts_repository.dart';
 import '../data/repositories/remote_techpie_repository.dart';
 import '../data/repositories/remote_wellbeing_repository.dart';
 import '../data/repositories/remote_wildlife_repository.dart';
@@ -57,6 +59,7 @@ import '../domain/ports/lost_found_port.dart';
 import '../domain/ports/media_picker_port.dart';
 import '../domain/ports/platform_ports.dart';
 import '../domain/ports/teabreak_port.dart';
+import '../domain/ports/tts_port.dart';
 import '../domain/ports/techpie_port.dart';
 import '../domain/ports/theme_mode_port.dart';
 import '../domain/ports/webview_port.dart';
@@ -92,6 +95,7 @@ final class AppRuntime {
     required this.wellbeing,
     required this.wildlife,
     required this.teabreak,
+    required this.tts,
     required this.techpie,
     required this.campusCard,
     required this.webView,
@@ -157,6 +161,9 @@ final class AppRuntime {
   /// （契约开头第 3 条），因此这里也没有对应方法。
   final TeabreakPort teabreak;
 
+  /// 朗读（TTS）：服务端合成，端上只播 URL。
+  final TtsPort tts;
+
   /// 校园卡（契约 §4.2 `campus-card`）—— **独立 OPENID 通道**（规格 §2.5）。
   ///
   /// 与 [campusSessions] 分开：校园卡不依赖校园会话代持，因此它的开通流程、
@@ -216,6 +223,7 @@ final class AppRuntime {
       wellbeing: MockWellbeingRepository(),
       wildlife: MockWildlifeRepository(controls: controls),
       teabreak: MockTeabreakRepository(controls: controls),
+      tts: const MockTtsRepository(),
       techpie: MockTechpieRepository(controls: controls),
       campusCard: MockCampusCardRepository(controls: controls),
       webView: InMemoryWebViewPort(),
@@ -303,6 +311,7 @@ final class AppRuntime {
       // ⚠️ `services/api` 尚无 `teabreak` 模块（2026-10-22）；端点按既有约定
       // 假设，形状登记在 `remote_teabreak_repository.dart` 的注释与交付说明里。
       teabreak: RemoteTeabreakRepository(api),
+      tts: RemoteTtsRepository(api),
       campusCard: RemoteCampusCardRepository(api),
       webView: const MethodChannelWebView(),
       mediaPicker: ImagePickerMediaPicker(),

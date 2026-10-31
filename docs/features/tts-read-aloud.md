@@ -149,6 +149,10 @@ node tools/fetch-tts-model.mjs --force    # 重新下载
 | --- | --- | --- |
 | 契约 | `packages/contracts/src/tts.ts` | 限制、错误码、wire 类型、`splitForTts`、`validateTtsRequest` |
 | 契约测试 | `packages/contracts/src/tts.test.ts` | **17 条** |
+| Flutter 模型 | `apps/mobile/lib/domain/models/tts.dart` | 镜像 + `splitForTts` |
+| Flutter 测试 | `apps/mobile/test/domain/tts_test.dart` | **18 条** |
+| Flutter 模型 | `apps/mobile/lib/domain/models/tts.dart` | 镜像 + `splitForTts` |
+| Flutter 测试 | `apps/mobile/test/domain/tts_test.dart` | **18 条** |
 | 服务 | `services/api/src/modules/tts/application/tts.service.ts` | 懒加载、缓存、WAV 编码 |
 | 服务测试 | `.../tts.service.spec.ts` | **18 条**（无模型也能跑） |
 | 集成测试 | `.../tts.integration.spec.ts` | **6 条**（有模型才跑，CI 自动跳过） |
@@ -174,16 +178,58 @@ node tools/fetch-tts-model.mjs --force    # 重新下载
 
 ---
 
-## 11. 已知空缺
+## 11. 三端接入现状
+
+| 端 | 内容 | 组件 |
+| --- | --- | --- |
+| 小程序 | FAQ 答案 / 众筹诉求正文 / 会议茶歇说明 | `KdyReadAloud` |
+| Web | FAQ 答案 | `KdyReadAloud.tsx` |
+| Flutter | 会议茶歇卡片 | `ReadAloudButton` |
+
+### 为什么茶歇那处的朗读文本是「拼」出来的
+
+不是把备注单独读，而是按「你在走廊里想知道什么」排序：
+
+```
+第七届信息科学前沿论坛。地点：信息学院 1-101。
+茶歇正在进行。有咖啡和可颂，在二楼走廊
+```
+
+**这正是这个功能的场景**：在嘈杂的走廊里，你想知道「哪间、还有多久、有什么」，
+耳朵比眼睛快。所以朗读文本是**为场景拼的**，不是简单复述数据。
+
+### Web 端为什么用 `answerParagraphs` 而不是重新解析
+
+FAQ 的答案在 `answerSegments` 里是结构化片段（bold / code / text）。
+本来想写个 `plainAnswer()` 拍平，但发现 `listFaqArticles` **已经**提供了
+`answerParagraphs: string[]` —— 纯文本、已去掉 `**` 与 `` ` `` 标记。
+直接用它，少一个函数、少一处可能出错的地方。
+
+### Flutter 端为什么新增 `audioplayers`
+
+Flutter 没有内置的 URL 音频播放。`audioplayers` 是体积最小、API 最直接的选择
+（`just_audio` 功能更多但我们用不上）。加了 `^6.7.1`。
+
+### ⚠️ Mock 模式下的朗读是「明确失败」而不是「假装成功」
+
+`MockTtsRepository` 永远返回 `UPSTREAM_UNAVAILABLE`，文案说
+「当前是演示模式（无后端），朗读需要连接服务器」。
+
+**为什么不 mock 一个音频**：朗读的产物是声音。mock 一个等于让 UI 显示
+「正在播放」但什么声音都没有 —— 那比明确说「当前模式不支持」更糟，
+用户会以为手机坏了。
+
+---
+
+## 12. 已知空缺
 
 | 项 | 状态 |
 | --- | --- |
-| Web 端朗读按钮 | ❌ 未接（API 已就绪，`<audio>` 直接播 `url`） |
-| Flutter 端朗读 | ❌ 未接（同上，`audioplayers` 播 URL） |
 | 流式合成（边说边出） | ❌ 未做（现在整段合成完才播） |
 | 多音色 / 多语言 | ❌ 只有 1 个中文女声 |
 | 音频持久化 | ❌ 只在内存缓存，进程重启即失效 |
 | 端上离线合成 | ❌ 见 §1 |
+| Flutter 端接更多内容 | ⚠️ 只接了茶歇卡片（其余页面同理可加） |
 
 ---
 
