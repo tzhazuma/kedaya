@@ -11,6 +11,13 @@ pluginManagement {
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
     repositories {
+        // ⚠️ 国内镜像**放在最前**：Maven Central 在本机（Clash 路由下）
+        // 实测 2.1s，阿里云 0.16s —— 差 13 倍。Gradle 默认超时会直接报
+        // "Could not download kotlin-build-statistics"（2026-10-31 实测，
+        // 编译 31 分钟后失败，白等）。
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
         google()
         mavenCentral()
         gradlePluginPortal()

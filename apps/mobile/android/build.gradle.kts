@@ -1,5 +1,8 @@
 allprojects {
     repositories {
+        // 同 settings.gradle.kts：国内镜像放最前，避免 Clash 路由下超时
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
         google()
         mavenCentral()
     }
