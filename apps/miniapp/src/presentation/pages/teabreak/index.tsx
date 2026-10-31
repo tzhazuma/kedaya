@@ -15,7 +15,7 @@ import {
 } from '@kedaya/contracts'
 import type { Teabreak, TeabreakAccess } from '@kedaya/contracts'
 
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyTag } from '../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyReadAloud, KdyTag } from '../../components'
 import { KdyHeading } from '../../components/KdyHeading'
 import { toast } from '../../../platform/navigation'
 import './index.scss'
@@ -314,6 +314,19 @@ export default function TeabreakPage() {
               <Text className='kdy-teabreak__hint'>{TEABREAK_ACCESS_HINTS[item.access]}</Text>
 
               {item.note !== null && <Text className='kdy-teabreak__note'>{item.note}</Text>}
+
+              {/* 朗读：把「会议名 + 地点 + 茶歇时段 + 备注」连成一句读出来，
+                  比在嘈杂的走廊里盯着屏幕看快得多 —— 这正是这个场景的用法 */}
+              <KdyReadAloud
+                text={[
+                  item.conferenceName,
+                  `地点：${item.venue}`,
+                  `茶歇：${describeRemaining(item.teaEndsAt, now) === '已结束' ? '已结束' : `正在进行，${describeRemaining(item.teaEndsAt, now)}`}`,
+                  item.note ?? '',
+                ]
+                  .filter((line) => line.length > 0)
+                  .join('。')}
+              />
 
               <Text className='kdy-teabreak__by'>{`${item.postedBy} 发布`}</Text>
 

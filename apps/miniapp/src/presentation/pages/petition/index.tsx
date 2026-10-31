@@ -17,7 +17,7 @@ import {
 } from '@kedaya/contracts'
 import type { Petition, PetitionCategory, PetitionScope } from '@kedaya/contracts'
 
-import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyTag } from '../../components'
+import { KdyButton, KdyCard, KdyChip, KdyEmpty, KdyField, KdyReadAloud, KdyTag } from '../../components'
 import { KdyHeading } from '../../components/KdyHeading'
 import { toast } from '../../../platform/navigation'
 import './index.scss'
@@ -294,6 +294,9 @@ export default function PetitionPage() {
               </View>
 
               <Text className='kdy-petition__body'>{item.body}</Text>
+
+              {/* 朗读：诉求正文往往几百字，听一遍比读一遍省力 */}
+              <KdyReadAloud text={`${item.title}。${item.body}`} />
 
               {/* 进度条：用数字而不是纯图形 —— 无障碍与截图可读性都更好 */}
               <View className='kdy-petition__progress'>

@@ -21,6 +21,7 @@ import { cn } from '../../theme/cn';
 import { KdyAlert } from '../KdyAlert';
 import { KdyBadge } from '../KdyBadge';
 import { KdyButton } from '../KdyButton';
+import { KdyReadAloud } from '../KdyReadAloud';
 import { KdyCard } from '../KdyCard';
 import { KdyEmpty } from '../KdyEmpty';
 import { KdyCardSkeleton } from '../KdySkeleton';
@@ -324,6 +325,10 @@ export function FaqBrowser() {
                             )}
                           </p>
                         ))}
+
+                        {/* 朗读：问答是本站最长的文本，也最适合「听」。
+                            长文由组件内部按句子切段。 */}
+                        <KdyReadAloud text={article.answerParagraphs.join('\n')} />
 
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs text-muted">这条对你有帮助吗？</span>
