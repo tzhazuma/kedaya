@@ -216,3 +216,11 @@ test('Windows ARM64 实验流水线允许为 Flutter 3.50.1 重新解析 SDK 固
   assert.match(source, /flutter pub get\s*$/m);
   assert.doesNotMatch(source, /flutter pub get --enforce-lockfile/);
 });
+
+
+test('Windows ARM64 关闭 VS 2026 实验 coroutine 头的 STL1011 硬错误', () => {
+  assert.match(
+    windowsArm64.env?.CL ?? '',
+    /_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS/,
+  );
+});

@@ -30,6 +30,7 @@ env:
   # x64 SDK 在 ARM64 Windows 上仿真运行，Dart 的 Abi.current() 仍是 windowsX64；
   # 必须显式覆盖，否则 flutter build windows 会默认产出 x64。
   FLUTTER_HOST_ARCH: "arm64"
+  CL: "/D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
   KEDAYA_FLAVOR: ${{ vars.KEDAYA_FLAVOR || 'mock' }}
   KEDAYA_API_BASE_URL: ${{ vars.KEDAYA_API_BASE_URL || 'https://api.kedaya.local' }}
 
