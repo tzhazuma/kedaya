@@ -143,18 +143,18 @@ test('Windows ARM64 是实验能力：手动、不发布、强制 ARM64 宿主�
   assert.equal(windowsArm64.jobs.release, undefined, 'ARM64 实验产物不进入 release');
 });
 
-test('Linux ARM64 走 x64 交叉编译，并用 qemu binfmt 跑 arm64 gen_snapshot', () => {
+test('Linux ARM64 用原生 arm64 runner，并自举 arm64 Dart SDK', () => {
   const job = build.jobs['linux-arm64'];
   assert.ok(job, '必须新增 linux-arm64 job');
-  assert.equal(job['runs-on'], 'ubuntu-24.04');
+  assert.equal(job['runs-on'], 'ubuntu-24.04-arm');
 
   const runs = runBlocks(job);
-  assert.match(runs, /--target-platform=linux-arm64/);
-  assert.match(runs, /qemu-user-static/);
-  assert.match(runs, /binfmt_misc\/qemu-aarch64/);
-  assert.match(runs, /libgtk-3-dev:arm64/);
-  assert.match(runs, /package-deb\.sh[\s\S]*arm64/);
+  assert.match(runs, /rm -rf "\$HOME\/flutter\/bin\/cache"/);
+  assert.match(runs, /dart-sdk\/bin\/dart/);
   assert.match(runs, /ARM aarch64/);
+  assert.match(runs, /package-deb\.sh[\s\S]*arm64/);
+  assert.doesNotMatch(runs, /qemu-user-static/, '原生 arm64 runner 不需要 qemu');
+  assert.doesNotMatch(runs, /dpkg --add-architecture/, '原生 arm64 runner 不需要 multiarch');
   assert.equal(build.on.workflow_dispatch.inputs.build_linux_arm64.default, true);
 });
 

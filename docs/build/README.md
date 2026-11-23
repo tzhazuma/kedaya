@@ -28,7 +28,7 @@
 | macOS arm64 | `mobile-build.yml` / `macos` | **`macos-15`** | ad-hoc 签名 zip/dmg，**未 notarize** | 已配置；**未在 CI 实跑** |
 | iOS | `mobile-build.yml` / `ios` | **`macos-15`** | 未签名 `Runner.app` zip（不是 `.ipa`） | 已配置；**未在 CI 实跑** |
 | Windows ARM64 | `mobile-windows-arm64.yml` | `windows-11-vs2026-arm` | 便携 zip（实验性） | **实验**；仅手动、不进入 Release；**未实跑** |
-| Linux ARM64 | `mobile-build.yml` / `linux-arm64` | `ubuntu-24.04`（x64 交叉编译 + qemu） | tar.gz + `_arm64.deb` | 已配置：3.35.1 支持 `--target-platform=linux-arm64`；**待 CI 实跑** |
+| Linux ARM64 | `mobile-build.yml` / `linux-arm64` | **`ubuntu-24.04-arm`**（原生 arm64） | tar.gz + `_arm64.deb` | 已配置：删 `bin/cache` 自举 arm64 Dart SDK；**待 CI 实跑** |
 | HarmonyOS | `mobile-harmonyos.yml` | 自托管 `self-hosted, ohos`（Linux / Windows+DevEco） | `.hap`（签名取决于构建机） | 已固定 Flutter-OH **3.35.7** 路径；**本机下载受限，未产出 HAP** |
 | 微信小程序 | 现有 `.github/workflows/ci.yml` | `ubuntu-latest` | `apps/miniapp/dist`（当前不上传 artifact） | **已存在**；本目录不重复实现 |
 
@@ -51,12 +51,12 @@
   且 windows-arm64 engine 产物存在；但 `flutter build windows` **没有**
   `--target-platform` 选项。该路径未在 GitHub runner 实跑，只能算实验，
   不进入 Release。详见 [windows.md](windows.md)。
-- **Linux ARM64**：官方仍不发布 Linux ARM64 的 Flutter **SDK**（`releases_linux.json` 只有 x64），
-  但 3.35.1 的 `build_linux.dart` 已支持 **x64 主机交叉编译 arm64 目标**
-  （`--target-platform=linux-arm64 --target-sysroot=...`）。AOT 用的 `gen_snapshot`
-  来自 `linux-arm64/artifacts.zip`，是 arm64 二进制，所以 job 里装 `qemu-user-static`
-  并断言 `/proc/sys/fs/binfmt_misc/qemu-aarch64` 存在；GTK/libsecret 等走 Ubuntu
-  ports 的 `:arm64` 包。详见 [linux.md](linux.md) 第 4 节。
+- **Linux ARM64**：官方仍不发布 Linux ARM64 的 Flutter **SDK 归档**，但
+  `bin/internal/update_dart_sdk.sh` 会按 `uname -m=aarch64` 拉
+  `dart-sdk-linux-arm64.zip`（该产物存在）。因此 job 跑在 **`ubuntu-24.04-arm`**
+  上：解包官方 SDK → 删 `bin/cache` → 首次 `flutter` 自举成 arm64 工具链 →
+  `flutter build linux --release`（默认目标就是 `linux-arm64`）。
+  不再需要 multiarch、交叉 sysroot 或 qemu。详见 [linux.md](linux.md) 第 4 节。
 - **HarmonyOS**：stock Flutter 没有 OHOS engine，必须 Flutter-OH（`oh-3.35.7-release`）
   + DevEco + 签名材料。SDK/engine 走华为 OBS 镜像 `FLUTTER_STORAGE_BASE_URL`。
   仓库没有自托管 runner，插件 OHOS 端口也还没落 `pubspec_overrides.yaml`，

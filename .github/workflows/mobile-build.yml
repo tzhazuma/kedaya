@@ -379,16 +379,17 @@ jobs:
           overwrite: true
 
   # ------------------------------------------------------------------
-  # Linux ARM64：x64 主机交叉编译。Flutter 3.35 起 `flutter build linux`
-  # 支持 `--target-platform linux-arm64`（build_linux.dart 的
-  # "Support cross-building for arm64 targets on x64 hosts"）。
-  # AOT 用的 gen_snapshot 是 arm64 二进制，因此在 x64 runner 上装
-  # qemu-user-static + binfmt，让它透明执行；GTK 等依赖走 Ubuntu multiarch。
+  # Linux ARM64：原生 arm64 托管 runner。
+  # 官方仍不发布 Linux ARM64 的 Flutter SDK 归档（只有 x64），但
+  # bin/internal/update_dart_sdk.sh 会按 `uname -m` 选择 dart-sdk-linux-arm64.zip；
+  # 所以解包官方 SDK 后删掉 bin/cache，让它在 arm64 宿主上自举成原生工具链。
+  # 这样不需要 multiarch / 交叉 sysroot，也不需要 qemu 跑 gen_snapshot。
   # ------------------------------------------------------------------
   linux-arm64:
-    name: Linux arm64（交叉编译 tar.gz + deb）
+    name: Linux arm64（原生 arm64 runner）
     if: github.event_name == 'push' || inputs.build_linux_arm64
-    runs-on: ubuntu-24.04
+    # ubuntu-24.04-arm 是 GitHub 公共仓库的 arm64 托管 runner（2025 起 GA）。
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 120
     defaults:
       run:
@@ -397,74 +398,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: true
-
-      - name: 配置 amd64 / arm64 apt 源
+      - name: 安装宿主架构 Flutter（arm64 自举）
         run: |
-          set -euxo pipefail
-          sudo dpkg --add-architecture arm64
-          . /etc/os-release
-          # amd64 留在 archive，arm64 走 ports；两边都显式标注 Architectures，
-          # 否则 apt 会把 arm64 包当成“同一份源里可选”的架构而报 hash 不匹配。
-          sudo tee /etc/apt/sources.list.d/ubuntu.sources >/dev/null <<EOF
-          Types: deb
-          URIs: http://azure.archive.ubuntu.com/ubuntu/
-          Suites: ${VERSION_CODENAME} ${VERSION_CODENAME}-updates
-          Components: main restricted universe multiverse
-          Architectures: amd64
-          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+          set -euo pipefail
+          curl -fL --retry 5 --retry-delay 3             -o /tmp/flutter.tar.xz             "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz"
+          tar -xJf /tmp/flutter.tar.xz -C "$HOME"
+          # 归档里的 bin/cache 是 x64 Dart SDK；删掉后首次运行会按 aarch64 拉 arm64 版本。
+          rm -rf "$HOME/flutter/bin/cache"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
 
-          Types: deb
-          URIs: http://ports.ubuntu.com/ubuntu-ports/
-          Suites: ${VERSION_CODENAME} ${VERSION_CODENAME}-updates
-          Components: main restricted universe multiverse
-          Architectures: arm64
-          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
-          EOF
-          # azure.archive.ubuntu.com 是 Azure 内网镜像；archive.ubuntu.com 在
-          # GitHub runner 上此前出现过 60s 级别的 Ign/重试，直接把 420s 超时吃满。
-          sudo DEBIAN_FRONTEND=noninteractive timeout 900 apt-get \
-            -o Acquire::Retries=3 \
-            -o Acquire::http::Timeout=30 \
-            -o Acquire::https::Timeout=30 \
-            -o Acquire::Languages=none \
-            update
-
-      - name: 安装 aarch64 交叉工具链
+      - name: 安装 Linux 桌面构建依赖
         run: |
-          set -euxo pipefail
-          sudo DEBIAN_FRONTEND=noninteractive timeout 900 apt-get install -y \
-            --no-install-recommends clang cmake ninja-build pkg-config \
-            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross \
-            librsvg2-bin
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends             clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev             libsecret-1-dev libjsoncpp-dev libgstreamer1.0-dev             libgstreamer-plugins-base1.0-dev librsvg2-bin
 
-      - name: 安装 arm64 图形依赖
+      - name: 校验宿主与工具链架构
         run: |
-          set -euxo pipefail
-          sudo DEBIAN_FRONTEND=noninteractive timeout 900 apt-get install -y \
-            --no-install-recommends \
-            libgtk-3-dev:arm64 liblzma-dev:arm64 libsecret-1-dev:arm64 \
-            libjsoncpp-dev:arm64 libgstreamer1.0-dev:arm64 \
-            libgstreamer-plugins-base1.0-dev:arm64
-
-      - name: 安装 qemu 并确认 aarch64 binfmt
-        run: |
-          set -euxo pipefail
-          # AOT 的 gen_snapshot 是 arm64 二进制，x64 runner 上必须靠 binfmt + qemu 透明执行。
-          sudo DEBIAN_FRONTEND=noninteractive timeout 300 apt-get install -y \
-            --no-install-recommends qemu-user-static binfmt-support || true
-          if [ ! -e /proc/sys/fs/binfmt_misc/qemu-aarch64 ]; then
-            sudo update-binfmts --enable qemu-aarch64 || true
-          fi
-          ls /proc/sys/fs/binfmt_misc/ || true
-          test -e /proc/sys/fs/binfmt_misc/qemu-aarch64 || {
-            echo "::error::qemu-aarch64 binfmt 未注册，arm64 gen_snapshot 无法在 x64 上执行"
+          set -euo pipefail
+          test "$(uname -m)" = "aarch64"
+          flutter --version
+          test -x "$HOME/flutter/bin/cache/dart-sdk/bin/dart"
+          file "$HOME/flutter/bin/cache/dart-sdk/bin/dart"
+          file "$HOME/flutter/bin/cache/dart-sdk/bin/dart" | grep -q 'ARM aarch64' || {
+            echo "::error::Dart SDK 不是 aarch64，自举失败"
             exit 1
           }
+          flutter doctor -v || true
 
       - name: 计算版本号
         shell: bash
@@ -485,22 +444,9 @@ jobs:
       - name: 解析依赖（锁定 pubspec.lock）
         run: flutter pub get --enforce-lockfile
 
-      - name: 构建 Linux arm64（交叉编译）
-        env:
-          # 只让 pkg-config 读 arm64 的 .pc，避免拿到主机 x64 的 gtk。
-          PKG_CONFIG_LIBDIR: /usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
-          PKG_CONFIG_PATH: ""
-          CFLAGS: "-isystem /usr/include/aarch64-linux-gnu"
-          CXXFLAGS: "-isystem /usr/include/aarch64-linux-gnu"
-          LDFLAGS: "-L/usr/lib/aarch64-linux-gnu -Wl,-rpath-link,/usr/lib/aarch64-linux-gnu"
+      - name: 构建 Linux arm64
         run: |
-          flutter build linux --release \
-            --target-platform=linux-arm64 \
-            --target-sysroot=/ \
-            --build-name="$VERSION" \
-            --build-number="$BUILD_NUMBER" \
-            --dart-define=KEDAYA_FLAVOR="$KEDAYA_FLAVOR" \
-            --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL"
+          flutter build linux --release             --build-name="$VERSION"             --build-number="$BUILD_NUMBER"             --dart-define=KEDAYA_FLAVOR="$KEDAYA_FLAVOR"             --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL"
 
       - name: 校验产物架构并打包 tar.gz 与 deb
         run: |
@@ -508,17 +454,14 @@ jobs:
           test -x "$bundle/kedaya"
           file "$bundle/kedaya"
           file "$bundle/kedaya" | grep -q 'ARM aarch64' || {
-            echo "::error::产物不是 aarch64，交叉编译没有生效"
+            echo "::error::产物不是 aarch64"
             exit 1
           }
           mkdir -p build/artifacts
           rm -rf "build/artifacts/kedaya-${VERSION}-linux-arm64"
           cp -a "$bundle" "build/artifacts/kedaya-${VERSION}-linux-arm64"
-          tar -C build/artifacts -czf \
-            "build/artifacts/kedaya-${VERSION}-linux-arm64.tar.gz" \
-            "kedaya-${VERSION}-linux-arm64"
-          bash "$GITHUB_WORKSPACE/docs/build/linux/package-deb.sh" \
-            "$VERSION" "$PWD/$bundle" "$PWD/build/artifacts" arm64
+          tar -C build/artifacts -czf             "build/artifacts/kedaya-${VERSION}-linux-arm64.tar.gz"             "kedaya-${VERSION}-linux-arm64"
+          bash "$GITHUB_WORKSPACE/docs/build/linux/package-deb.sh"             "$VERSION" "$PWD/$bundle" "$PWD/build/artifacts" arm64
           ls -lh build/artifacts
 
       - uses: actions/upload-artifact@v4

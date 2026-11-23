@@ -1,4 +1,4 @@
-# Linux 构建（x64 原生 / ARM64 交叉编译）
+# Linux 构建（x64 / ARM64 均原生）
 
 Workflow：`.github/workflows/mobile-build.yml` 的 `linux-x64` job
 Runner：`ubuntu-latest`（24.04）
@@ -125,60 +125,52 @@ sudo apt remove kedaya
 
 ---
 
-## 4. Linux ARM64：x64 主机交叉编译（3.35 起支持）
+## 4. Linux ARM64：原生 arm64 runner
 
-官方仍然**不发布 Linux ARM64 的 Flutter SDK**：`releases_linux.json` 里只有
-`stable/linux/flutter_linux_3.35.1-stable.tar.xz`（`dart_sdk_arch: x64`）。但有两条
-官方产物让交叉编译成立：
+官方仍然**不发布 Linux ARM64 的 Flutter SDK 归档**（`releases_linux.json` 里只有
+`flutter_linux_3.35.1-stable.tar.xz`，`dart_sdk_arch: x64`），但 Flutter 的引导脚本
+本身就支持 arm64 宿主：
 
-1. `packages/flutter_tools/lib/src/linux/build_linux.dart` 明确写着
-   “Support cross-building for arm64 targets on x64 hosts”，`flutter build linux`
-   接受 `--target-platform=linux-arm64` 与 `--target-sysroot`；
-2. 引擎仓库里有 `linux-arm64-release/linux-arm64-flutter-gtk.zip`（arm64 的
-   `libflutter_linux_gtk.so`）和 `linux-arm64/artifacts.zip`（arm64 的
-   `gen_snapshot`、`flutter_tester` 等）。
+- `bin/internal/update_dart_sdk.sh` 用 `uname -m` 判断架构，`aarch64` → `ARCH=arm64`，
+  下载 `dart-sdk-linux-arm64.zip`（该文件在 `flutter_infra_release/flutter/<engine>/`
+  下确实存在，HTTP 200 实测）；
+- `packages/flutter_tools/lib/src/commands/build_linux.dart` 在
+  `hostPlatform == linux_arm64` 时把 `--target-platform` 默认值设为 `linux-arm64`，
+  并且 `needCrossBuild` 为 false，不需要 sysroot。
 
-第 2 条同时是坑：AOT 阶段要**执行** `gen_snapshot`，而它是 arm64 二进制，在 x64
-runner 上会 `Exec format error`。所以 job 里装 `qemu-user-static`，并断言
-`/proc/sys/fs/binfmt_misc/qemu-aarch64` 已注册（没有就直接失败，不产出假包）。
+所以做法是：在 **`ubuntu-24.04-arm`** 托管 runner 上解包官方 x64 归档，删掉
+`bin/cache`（里面是 x64 的 Dart SDK 与主机工具），让首次 `flutter` 运行按 aarch64
+重新自举，然后正常 `flutter build linux --release`。
 
 ### 4.1 CI 做法（`mobile-build.yml` 的 `linux-arm64` job）
 
 ```text
-ubuntu-24.04
-├── dpkg --add-architecture arm64
-├── 源拆两段：archive=amd64，ports=arm64（都写 Architectures:，否则 apt hash 不匹配）
-├── clang/cmake/ninja + gcc-aarch64-linux-gnu + libc6-dev-arm64-cross
-├── libgtk-3-dev:arm64 / libsecret-1-dev:arm64 / libjsoncpp-dev:arm64 / gstreamer:arm64
-├── qemu-user-static + binfmt-support
-├── PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig（只读 arm64 的 .pc）
-└── flutter build linux --release --target-platform=linux-arm64 --target-sysroot=/
+ubuntu-24.04-arm                       # GitHub 公共仓库的 arm64 托管 runner（2025 GA）
+├── curl 官方 flutter_linux_3.35.1-stable.tar.xz
+├── tar 解包到 $HOME/flutter
+├── rm -rf $HOME/flutter/bin/cache      # 关键：清掉 x64 Dart SDK
+├── apt install clang cmake ninja libgtk-3-dev libsecret-1-dev ...
+├── 断言 uname -m = aarch64
+├── 断言 bin/cache/dart-sdk/bin/dart 是 ARM aarch64
+└── flutter build linux --release       # 默认 linux-arm64，无需 --target-sysroot
 ```
 
-产物路径是 `build/linux/arm64/release/bundle`。打包前会 `file` 校验 ELF 必须是
-`ARM aarch64`，然后：
+产物在 `build/linux/arm64/release/bundle`；打包前 `file` 校验 ELF 必须是
+`ARM aarch64`，然后 `package-deb.sh ... arm64` 出 `kedaya_<version>_arm64.deb`。
 
-```bash
-bash docs/build/linux/package-deb.sh   "$VERSION" apps/mobile/build/linux/arm64/release/bundle apps/mobile/build/artifacts arm64
-# -> kedaya_0.1.0_arm64.deb 与 kedaya-0.1.0-linux-arm64.tar.gz
-```
+### 4.2 为什么不用交叉编译
 
-`package-deb.sh` 早就接受第二个架构参数（`amd64|arm64`），本次只是把它接进 CI。
+3.35 的 `build_linux.dart` 确实支持 x64 主机交叉编译 arm64 目标，但实测有两个坑：
 
-### 4.2 本机复现（Linux x64 宿主）
+1. AOT 的 `gen_snapshot` 来自 `linux-arm64/artifacts.zip`，是 arm64 二进制，
+   x64 主机必须装 `qemu-user-static` + binfmt 才能执行；
+2. 交叉编译需要 arm64 的 GTK/libsecret 等开发包，只能走 Ubuntu ports 的
+   `:arm64` multiarch，`apt` 在 GitHub runner 上多次因为镜像超时失败。
 
-```bash
-sudo dpkg --add-architecture arm64
-# 按 4.1 配好 amd64/arm64 分离的 apt 源
-sudo apt install qemu-user-static binfmt-support gcc-aarch64-linux-gnu   libgtk-3-dev:arm64 libsecret-1-dev:arm64 libjsoncpp-dev:arm64
-export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
-cd apps/mobile
-flutter build linux --release --target-platform=linux-arm64 --target-sysroot=/
-```
+原生 arm64 runner 把这两件事都消掉了。交叉编译方案保留在历史记录里，
+只有拿不到 arm64 runner 时才考虑。
 
-**状态**：workflow 已写入并过了契约测试；首次 CI 实跑尚未完成，因此“产物可运行”
-仍待 `linux-arm64` job 绿灯后再确认。若 GTK 的 multiarch 头文件解析失败，下一步是
-用 `debootstrap` 生成独立的 arm64 sysroot，而不是放宽架构校验。
+**状态**：job 已改为原生 arm64 方案，等待首次 CI 实跑；产物可运行性以该 job 绿灯为准。
 
 ## 5. 已知限制
 
