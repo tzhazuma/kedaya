@@ -161,7 +161,7 @@ test('Linux ARM64 走 x64 交叉编译，并用 qemu binfmt 跑 arm64 gen_snapsh
 
 test('HarmonyOS 保持自托管、仅手动、未验证', () => {
   assert.deepEqual(Object.keys(harmony.on), ['workflow_dispatch']);
-  assert.deepEqual(harmony.jobs.harmonyos['runs-on'], ['self-hosted', 'linux', 'ohos']);
+  assert.deepEqual(harmony.jobs.harmonyos['runs-on'], ['self-hosted', 'ohos']);
   assert.equal(harmony.jobs.release, undefined);
 });
 
@@ -172,7 +172,7 @@ test('docs/build 反映新 runner、质量门禁与诚实状态', () => {
   assert.match(readme, /flutter analyze/);
   assert.match(readme, /flutter test/);
   assert.match(readme, /Linux ARM64/);
-  assert.match(readme, /未实现/);
+  assert.match(readme, /待 CI 实跑/);
   assert.match(readme, /Windows ARM64/);
   assert.match(readme, /实验/);
   assert.match(readme, /680/);

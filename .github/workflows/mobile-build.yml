@@ -403,9 +403,9 @@ jobs:
           channel: stable
           cache: true
 
-      - name: 安装 arm64 交叉工具链、qemu 与 multiarch GTK
+      - name: 配置 amd64 / arm64 apt 源
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           sudo dpkg --add-architecture arm64
           . /etc/os-release
           # amd64 留在 archive，arm64 走 ports；两边都显式标注 Architectures，
@@ -425,16 +425,39 @@ jobs:
           Architectures: arm64
           Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
           EOF
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            clang cmake ninja-build pkg-config qemu-user-static binfmt-support \
+          sudo DEBIAN_FRONTEND=noninteractive timeout 420 apt-get \
+            -o Acquire::Retries=3 \
+            -o Acquire::http::Timeout=30 \
+            -o Acquire::https::Timeout=30 \
+            update
+
+      - name: 安装 aarch64 交叉工具链
+        run: |
+          set -euxo pipefail
+          sudo DEBIAN_FRONTEND=noninteractive timeout 900 apt-get install -y \
+            --no-install-recommends clang cmake ninja-build pkg-config \
             gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross \
+            librsvg2-bin
+
+      - name: 安装 arm64 图形依赖
+        run: |
+          set -euxo pipefail
+          sudo DEBIAN_FRONTEND=noninteractive timeout 900 apt-get install -y \
+            --no-install-recommends \
             libgtk-3-dev:arm64 liblzma-dev:arm64 libsecret-1-dev:arm64 \
             libjsoncpp-dev:arm64 libgstreamer1.0-dev:arm64 \
-            libgstreamer-plugins-base1.0-dev:arm64 librsvg2-bin
+            libgstreamer-plugins-base1.0-dev:arm64
+
+      - name: 安装 qemu 并确认 aarch64 binfmt
+        run: |
+          set -euxo pipefail
+          # AOT 的 gen_snapshot 是 arm64 二进制，x64 runner 上必须靠 binfmt + qemu 透明执行。
+          sudo DEBIAN_FRONTEND=noninteractive timeout 300 apt-get install -y \
+            --no-install-recommends qemu-user-static binfmt-support || true
           if [ ! -e /proc/sys/fs/binfmt_misc/qemu-aarch64 ]; then
             sudo update-binfmts --enable qemu-aarch64 || true
           fi
+          ls /proc/sys/fs/binfmt_misc/ || true
           test -e /proc/sys/fs/binfmt_misc/qemu-aarch64 || {
             echo "::error::qemu-aarch64 binfmt 未注册，arm64 gen_snapshot 无法在 x64 上执行"
             exit 1

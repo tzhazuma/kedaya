@@ -29,7 +29,7 @@
 | iOS | `mobile-build.yml` / `ios` | **`macos-15`** | 未签名 `Runner.app` zip（不是 `.ipa`） | 已配置；**未在 CI 实跑** |
 | Windows ARM64 | `mobile-windows-arm64.yml` | `windows-11-vs2026-arm` | 便携 zip（实验性） | **实验**；仅手动、不进入 Release；**未实跑** |
 | Linux ARM64 | `mobile-build.yml` / `linux-arm64` | `ubuntu-24.04`（x64 交叉编译 + qemu） | tar.gz + `_arm64.deb` | 已配置：3.35.1 支持 `--target-platform=linux-arm64`；**待 CI 实跑** |
-| HarmonyOS | `mobile-harmonyos.yml` | 自托管 `self-hosted, linux, ohos` | `.hap`（签名取决于构建机） | 只提供自托管流水线；**GitHub 托管 runner 不可用**，未实跑 |
+| HarmonyOS | `mobile-harmonyos.yml` | 自托管 `self-hosted, ohos`（Linux / Windows+DevEco） | `.hap`（签名取决于构建机） | 已固定 Flutter-OH **3.35.7** 路径；**本机下载受限，未产出 HAP** |
 | 微信小程序 | 现有 `.github/workflows/ci.yml` | `ubuntu-latest` | `apps/miniapp/dist`（当前不上传 artifact） | **已存在**；本目录不重复实现 |
 
 ### 1.1 为什么是这些 runner
@@ -57,8 +57,10 @@
   来自 `linux-arm64/artifacts.zip`，是 arm64 二进制，所以 job 里装 `qemu-user-static`
   并断言 `/proc/sys/fs/binfmt_misc/qemu-aarch64` 存在；GTK/libsecret 等走 Ubuntu
   ports 的 `:arm64` 包。详见 [linux.md](linux.md) 第 4 节。
-- **HarmonyOS**：stock Flutter 没有 OHOS engine，必须 OHOS fork + DevEco + 签名材料；
-  仓库没有自托管 runner，也没有完成插件替换，保持“有流水线、未验证”。
+- **HarmonyOS**：stock Flutter 没有 OHOS engine，必须 Flutter-OH（`oh-3.35.7-release`）
+  + DevEco + 签名材料。SDK/engine 走华为 OBS 镜像 `FLUTTER_STORAGE_BASE_URL`。
+  仓库没有自托管 runner，插件 OHOS 端口也还没落 `pubspec_overrides.yaml`，
+  详见 [harmonyos.md](harmonyos.md)。
 
 平台细节：
 

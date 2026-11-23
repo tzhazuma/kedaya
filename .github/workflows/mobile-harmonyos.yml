@@ -38,11 +38,16 @@ env:
   KEDAYA_FLAVOR: ${{ vars.KEDAYA_FLAVOR || 'mock' }}
   KEDAYA_API_BASE_URL: ${{ vars.KEDAYA_API_BASE_URL || 'https://api.kedaya.local' }}
   BUILD_MODE: ${{ inputs.build_mode }}
+  # Flutter-OH 的 Dart SDK / engine 产物不在 Google 上，走华为 OBS 镜像。
+  # 参考 Flutter-OH 3.35.7 官方拉取指南（oh-3.35.7-dev / -release）。
+  FLUTTER_STORAGE_BASE_URL: ${{ vars.FLUTTER_OH_STORAGE_BASE_URL || 'https://flutter-ohos.obs.cn-south-1.myhuaweicloud.com' }}
 
 jobs:
   harmonyos:
     name: HarmonyOS HAP（self-hosted）
-    runs-on: [self-hosted, linux, ohos]
+    # Linux 或 Windows 构建机都可以：Windows 上 runner 用 Git Bash 执行这些步骤。
+    # 需要的 label 只有 self-hosted + ohos，避免把 Linux 写死。
+    runs-on: [self-hosted, ohos]
     timeout-minutes: 120
     defaults:
       run:
@@ -56,14 +61,15 @@ jobs:
         run: |
           set -euo pipefail
           command -v flutter || {
-            echo "::error::PATH 中没有 flutter；请安装 OHOS fork（flutter_flutter）"
+            echo "::error::PATH 中没有 flutter；请安装 Flutter-OH（oh-3.35.7-release）并把 bin 加进 PATH"
             exit 1
           }
           flutter --version
           if ! flutter --version 2>&1 | grep -qi 'ohos'; then
-            echo "::error::当前 flutter 不是 OHOS fork。stock Flutter 没有 OHOS engine，无法 build hap。"
+            echo "::error::当前 flutter 不是 Flutter-OH。stock Flutter 没有 OHOS engine，无法 build hap。"
             exit 1
           fi
+          echo "FLUTTER_STORAGE_BASE_URL=$FLUTTER_STORAGE_BASE_URL"
           if [ -z "${DEVECO_SDK_HOME:-}" ]; then
             echo "::warning::DEVECO_SDK_HOME 未设置；hvigor 可能找不到 HarmonyOS SDK"
           else
@@ -71,6 +77,7 @@ jobs:
           fi
           command -v hvigorw || command -v hvigor || echo "::warning::hvigor/hvigorw 不在 PATH"
           command -v ohpm || echo "::warning::ohpm 不在 PATH"
+          flutter doctor -v || true
 
       - name: 计算版本号
         shell: bash
