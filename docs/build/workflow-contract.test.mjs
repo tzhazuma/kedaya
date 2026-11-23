@@ -190,3 +190,13 @@ test('Linux Clang 不把旧 nlohmann/json 的 literal operator 警告升级为�
   const cmake = readFileSync(join(repoRoot, 'apps/mobile/linux/CMakeLists.txt'), 'utf8');
   assert.match(cmake, /-Wno-error=deprecated-literal-operator/);
 });
+
+
+test('Android release 使用 HMS 官方混淆保留规则且不禁用 R8', () => {
+  const gradle = readFileSync(join(repoRoot, 'apps/mobile/android/app/build.gradle.kts'), 'utf8');
+  const rules = readFileSync(join(repoRoot, 'apps/mobile/android/app/proguard-rules.pro'), 'utf8');
+  assert.match(gradle, /proguardFiles\(/);
+  assert.match(rules, /-keep class com\.huawei\.hms\.\*\*\{\*;\}/);
+  assert.match(rules, /-keepattributes \*Annotation\*/);
+  assert.doesNotMatch(gradle, /minifyEnabled\s*=\s*false/);
+});
