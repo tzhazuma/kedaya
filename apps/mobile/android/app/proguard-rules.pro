@@ -8,6 +8,7 @@
 -keep class com.huawei.updatesdk.**{*;}
 -keep class com.huawei.hms.**{*;}
 
+-dontwarn com.huawei.hianalytics.**
 -dontwarn com.huawei.android.os.**
 -dontwarn com.huawei.android.telephony.**
 -dontwarn com.huawei.libcore.io.**
