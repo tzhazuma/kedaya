@@ -10,7 +10,7 @@ iOS / Android / **鸿蒙** 三端原生客户端骨架。包名 `kedaya`，Dart 
 ## 0. 交付状态（如实声明）
 
 | 项 | 状态 |
-| --- | --- |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 代码 | 已写完（六边形分层 + 拼单/论坛/常见问题/校园动物/**找搭子**五个垂直切片 + 亮/暗主题 + 46 个测试文件） |
 | **本机编译验证** | ✅ **已验证（2026-10-19）** —— 本机已安装 **Flutter 3.35.1 stable / Dart 3.9.0**（SDK 位于 `~/toolchains/flutter`，未改 shell 配置文件）。`flutter pub get` 成功；`flutter analyze` **0 issue**；`flutter test` **680 例：679 通过 / 1 失败**（失败是既有的令牌镜像头 hash 断言，见 §8 第 8 条，与本次改动无关） |
 | 静态自检（补充验证） | ✅ 已实际执行（历史记录）：`/opt/homebrew/bin/python3 tool/selfcheck.py` —— 10 项文本检查全部通过（203 个 Dart 文件：lib 161 + test 42，0 处违规），见 §6.5 |
@@ -42,15 +42,10 @@ flutter run \
 默认 `AppFlavor.mock`：`git clone` 之后**不需要任何后端**就能看到完整 UI
 （契约 §7 硬规则 4 要求必须有 mock adapter）。
 
-原生工程目录（`android/` `ios/` `ohos/`）**没有提交**：它们是 `flutter create` 的产物，
-本工作流的写作用域只覆盖 Dart 侧骨架。首次运行前需要：
-
-```bash
-cd apps/mobile
-flutter create --org cn.shanghaitech.kedaya --project-name kedaya --platforms=android,ios .
-```
-
-（鸿蒙需要 OHOS fork 的 Flutter SDK，见第 7 节。）
+原生工程目录 `android/` `ios/` `windows/` `linux/` `macos/` 已提交，直接运行 `flutter pub get` 后即可构建。
+鸿蒙仍需要 OHOS fork 的 Flutter SDK 与自托管环境（见第 7 节），未纳入已验证平台。
+Android 的 FCM/HMS 推送代码是可选能力：`google-services.json`、`agconnect-services.json` 与
+`HMS_APP_ID` 不随仓库分发；iOS 的 APNs entitlement 已分 Debug/Release，仍需真机签名验证。
 
 > **改设计令牌时不要手改本端文件**：`lib/presentation/theme/kedaya_tokens.dart` 是
 > **生成物的副本**（带"勿手改"横幅）。在仓库根目录跑 `npm run tokens`
@@ -80,7 +75,7 @@ apps/mobile/
 │   │   ├── theme_controller.dart
 │   │   └── module_catalog.dart
 │   ├── domain/                       # 纯领域：零框架依赖（只 dart:core + 自有模型）
-│   │   ├── models/                   #   25 个模块注册表（含 activities 与 deadlines）/ 金额 / 结果 / 主题模式 / 模型
+│   │   ├── models/                   #   26 个模块注册表（含 activities 与 deadlines）/ 金额 / 结果 / 主题模式 / 模型
 │   │   └── ports/                    #   接口（依赖倒置的支点）
 │   ├── data/                         # adapters：实现 ports
 │   │   ├── api/                      #   Dio 装配 + 信封解包
@@ -131,7 +126,7 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 ### 3.2 契约 §5 两级身份模型
 
 | 层 | 端口 | 产物 | 边界 |
-| --- | --- | --- | --- |
+| ----------- | ------------------- | -------------------------------- | -------------------------------------------- |
 | 第一级 身份 | `AuthPort` | KedaYa 自有 JWT（`AuthSession`） | **绝不含**任何校园 cookie/session/tgc |
 | 第二级 能力 | `CampusSessionPort` | 各校园系统 session cookie | 只能经 `cookieHeaderFor()` 交给 WebView 注入 |
 
@@ -209,11 +204,11 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 ### ✅ 已实现（可运行、有测试）
 
 | 项 | 位置 |
-| --- | --- |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 契约 §8 启动时序 | `lib/app/bootstrap.dart` + `lib/main.dart` |
 | 六边形分层骨架（目录名严格按 §7） | `lib/{app,application,domain,data,platform,presentation}/` |
 | 13 个 domain port | `lib/domain/ports/`：`AuthPort`、`CampusSessionPort`、`KedayaApiPort`、`CredentialStorePort`、`LocalCachePort`、`ConsentPort`、`ThemeModePort`、`GroupbuyPort`、`ForumPort`、`FaqPort`、`ErrandPort`、`LostFoundPort`、`WellbeingPort` + `platform_ports.dart` |
-| 25 个模块注册表（镜像 `packages/contracts`，含 `activities` 与 `deadlines`） | `lib/domain/models/kedaya_module.dart` |
+| 26 个模块注册表（镜像 `packages/contracts`，含 `activities` 与 `deadlines`）                                                                                                                                                                                                                                                                                                                                                                                                                             | `lib/domain/models/kedaya_module.dart`                                                                                                                                                                                                                         |
 | 金额整数分（镜像 `packages/shared/money.ts`） | `lib/domain/models/money.dart` |
 | 统一信封 + Dio 装配（Bearer / Trace / 401 刷新重试） | `lib/data/api/{api_envelope,dio_client,kedaya_api_client}.dart` |
 | 远端 repositories（auth / campus / consent / groupbuy / **forum** / **faq** / errand / lost-found / wellbeing） | `lib/data/repositories/` |
@@ -236,8 +231,8 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 ### ❌ 未实现（如实列出，没有用 TODO 占位函数冒充）
 
 | 项 | 说明 |
-| --- | --- |
-| 原生工程目录 | `android/` `ios/` `ohos/` 未生成（用 `flutter create` 生成，见 §1） |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 鸿蒙原生工程目录                                                          | `ohos/` 未生成；Android / iOS / Windows / Linux / macOS 已提交（见 §1）                                                                                                                                                                                                                         |
 | 除 `groupbuy` / `forum` / `faq` / `wildlife` / `buddy` 外的 14 个模块页面 | 只有 `/module/:id` 落地页展示注册表信息并**明说"尚未实现"**；没有假数据、没有假成功 |
 | 论坛的版主治理界面 | 数据层已实现"3 个不同用户举报 → 自动隐藏"与 `LOCKED` 拒答，但**没有**版主 moderation / Lock / Hide 的 UI |
 | 发帖/回复频率限制、敏感词拦截 | ❌ 未实现（属于服务端限流与内容审核；客户端只做长度校验） |
@@ -246,7 +241,7 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | 校园系统绑定的 UI | `CampusSessionPort` 与 `CampusBindingsController` 已实现并可用（profile 页展示状态）；`techpie` 模块新增了绑定管理页（列表 / 解绑 / **手动**续期 / 发起绑定面板），但**刻意没有**"输入明文口令"的输入框 —— Phase 0 只提供免口令通道，明文口令绑定阻塞于信息办对 U12 的书面回复（契约 §11.18-D） |
 | 统一身份认证的原生侧 | `MethodChannelUnifiedIdentity` 已定义 channel 契约（`kedaya/unified_identity`），**原生侧实现未写**；mock 运行时用 `DevUnifiedIdentity` |
 | 本地化（i18n） | 未接 `flutter_localizations`（会与 `intl` 版本绑定冲突）；UI 文案直接写中文 |
-| 推送 | `LocalNotificationPort` 是内存实现；未接厂商推送 / `flutter_local_notifications` |
+| 推送                                                                      | 已有通知设置页、APNs/FCM/HMS 原生 token 通道和服务端发件箱；真实发送需厂商配置与真机验证，桌面端仍是站内信                                                                                                                                                                                      |
 | 系统分享面板 | `ClipboardSharePort` 落剪贴板（真实可用）；未接 `share_plus` |
 | 崩溃上报 / 埋点 | 未接 |
 | 鸿蒙构建 | 未验证（需要 OHOS fork，见 §7） |
@@ -269,9 +264,9 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 > 下表是"每个文件测什么"。
 
 | 文件 | 覆盖 |
-| --- | --- |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `test/domain/money_test.dart` | 整数分 ↔ 元、非法输入、往返一致、带符号展示 |
-| `test/domain/module_registry_test.dart` | 25 个模块（含 `activities` 与 `deadlines`）、id 唯一、route==id、**同意门规则**（`auth`/`campus-card` 不设门） |
+| `test/domain/module_registry_test.dart`                            | 26 个模块（含 `activities` 与 `deadlines`）、id 唯一、route==id、**同意门规则**（`auth`/`campus-card` 不设门）                                                                    |
 | `test/domain/result_and_api_error_test.dart` | `Result` 的 Ok/Err/map/flatMap/unwrap、错误码 wire 往返、未知码收敛 |
 | `test/domain/auth_session_boundary_test.dart` | **契约 §5 边界机械校验**：序列化键名不含校园凭据；未知校园系统抛错 |
 | `test/domain/groupbuy_order_test.dart` | 模型解析/序列化、未知状态收敛、进度收敛、查询参数收敛 |
@@ -312,7 +307,7 @@ mock repository 行为 2 个 + application 三态/幂等 2 个**。
 `buddy`（本次交付）追加 **10 个文件 / 199 个用例**：
 
 | 文件 | 覆盖 |
-| --- | --- |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `test/domain/buddy_matching_test.dart` | **规格 §3.3 系数逐字校验**、三板块上限、**§5.7 理由（文档示例逐字一致）**、**F7 跨零点 + 时区边界**、融合公式、反馈权重与 `buddyExpNeg` 精度、`matchMode` 诚实文案 |
 | `test/domain/buddy_post_test.dart` | `sectionOf` 全覆盖、**5×5 状态机矩阵**、`section: dating` 被忽略、敏感键不被读取、发布草稿逐条校验 |
 | `test/domain/buddy_profile_test.dart` | `AvailabilitySlot` 校验、**跨零点拆分**、本地时间文案、`matchEnabled` 默认 false、**封闭标签表完整性 + 别名搜索** |
@@ -329,7 +324,7 @@ mock repository 行为 2 个 + application 三态/幂等 2 个**。
 ## 6. 验证命令与结果（2026-10-19 已在 Flutter 3.35.1 上执行）
 
 | 命令 | 本机实际结果 |
-| --- | --- |
+| ------------------- | ------------------------------------------------------------------------------------ |
 | `flutter --version` | Flutter 3.35.1 • stable • Dart 3.9.0 |
 | `flutter pub get` | ✅ Got dependencies（riverpod 2.6.1 / go_router 14.8.1 / freezed 2.5.8，无版本冲突） |
 | `flutter analyze` | ✅ `No issues found!`（0 error / 0 warning / 0 info） |
@@ -483,7 +478,7 @@ cd apps/mobile
 
 9. **`FamilyAsyncNotifier`**：`forumRepliesProvider` 用的是
    `AsyncNotifierProvider.family<ForumReplyListController, ForumReplyListState, String>`
-   + `class ... extends FamilyAsyncNotifier<State, Arg>`，并按 riverpod **2.6.x** 的
+   - `class ... extends FamilyAsyncNotifier<State, Arg>`，并按 riverpod **2.6.x** 的
    `build(Arg arg)` / `arg` 语义书写。若解析到 3.x，这一处需要改写成新的 family 语法
    （这是本次交付里**唯一**新增的 Riverpod API 面）。
 10. **`ChoiceChip` / `ExpansionTile` / `showModalBottomSheet`**：均按 Flutter 3.27 的

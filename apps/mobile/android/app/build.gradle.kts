@@ -42,3 +42,9 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("com.google.firebase:firebase-messaging:24.1.0")
+    implementation("com.huawei.hms:push:6.12.0.300")
+}

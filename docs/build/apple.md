@@ -106,8 +106,9 @@ ditto -c -k --keepParent build/ios/iphoneos/Runner.app \
 
 - 不能直接安装到普通 iPhone；
 - 需要 Apple 开发者证书 + provisioning profile 重签；
-- 没有 `ios/` 原生目录入库，`flutter create` 生成的工程是模板默认
-  （Bundle ID `cn.shanghaitech.kedaya`、显示名 `kedaya`）。
+- `ios/` 原生目录已入库（Bundle ID `cn.shanghaitech.kedaya`、显示名 `kedaya`），
+  `AppDelegate.swift` 提供 `kedaya/push` APNs token 通道；Debug/Profile 使用
+  `Runner.entitlements`（development），Release 使用 `RunnerRelease.entitlements`（production）。
 
 ### 2.2 为什么不用 `flutter build ipa`
 
@@ -242,8 +243,8 @@ Flutter 的 macOS 模板默认在 `Release.entitlements` 里开启 App Sandbox�
 
 - `macos-14` 已于 2026-11-02 退役；当前用 `macos-15`。镜像默认 Xcode 16.4，
   workflow 会断言/切换到 16.x；Flutter 3.35.1 对 Xcode 26 的兼容性未验证。
-- 没有 `macos/` / `ios/` 原生目录；应用名、图标、URL Scheme、推送 entitlement、
-  Privacy Manifest 都是模板默认。
+- `macos/` / `ios/` 原生目录已入库；应用名与 Bundle ID 已设置。iOS 已配置 APNs entitlement，
+  但真机签名、推送送达和 Privacy Manifest 仍需在 Mac 上验证；图标与 URL Scheme 仍需产品确认。
 - iOS 没有 `Info.plist` 的 ATS 例外；API 必须是 HTTPS。
 - 没有做 App Store 截图/隐私标签/审核材料；本目录只覆盖构建。
 - macOS 只出 arm64，Intel 与 universal2 未实现。

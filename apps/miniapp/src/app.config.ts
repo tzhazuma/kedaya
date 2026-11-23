@@ -1,4 +1,4 @@
-import tokens from '@kedaya/design-tokens/tokens.json'
+import tokens from "@kedaya/design-tokens/tokens.json";
 
 /**
  * 小程序全局配置（app.json）。
@@ -11,7 +11,7 @@ import tokens from '@kedaya/design-tokens/tokens.json'
  * 因此不能引用运行时代码（store / 环境变量等）。
  */
 
-const color = tokens.color
+const color = tokens.color;
 
 /**
  * 分包（`subPackages`）—— 主包体积是**硬约束**（微信上限 2 MB，超了整个包不能上传）。
@@ -41,53 +41,86 @@ const color = tokens.color
  * （它把契约 / 路由表 / 构建配置三方锁在一起）。
  */
 const subPackages = [
-  { root: 'presentation/pages/groupbuy', pages: ['list/index', 'create/index', 'detail/index'] },
-  { root: 'presentation/pages/fleaMarket', pages: ['list/index', 'create/index', 'detail/index'] },
-  { root: 'presentation/pages/errand', pages: ['list/index', 'create/index', 'detail/index'] },
   {
-    root: 'presentation/pages/buddy',
-    pages: ['list/index', 'create/index', 'detail/index', 'profile/index', 'recommendations/index'],
+    root: "presentation/pages/groupbuy",
+    pages: ["list/index", "create/index", "detail/index"],
   },
-  { root: 'presentation/pages/lostFound', pages: ['list/index', 'create/index', 'detail/index'] },
+  {
+    root: "presentation/pages/fleaMarket",
+    pages: ["list/index", "create/index", "detail/index"],
+  },
+  {
+    root: "presentation/pages/errand",
+    pages: ["list/index", "create/index", "detail/index"],
+  },
+  {
+    root: "presentation/pages/buddy",
+    pages: [
+      "list/index",
+      "create/index",
+      "detail/index",
+      "profile/index",
+      "recommendations/index",
+    ],
+  },
+  {
+    root: "presentation/pages/lostFound",
+    pages: ["list/index", "create/index", "detail/index"],
+  },
   // 众筹诉求：低频、非首屏，放分包（主包余量只剩 ~360 KiB）
-  { root: 'presentation/pages/petition', pages: ['index'] },
+  { root: "presentation/pages/petition", pages: ["index"] },
   // 会议茶歇：低频、强时效，放分包
-  { root: 'presentation/pages/teabreak', pages: ['index'] },
-  { root: 'presentation/pages/facility', pages: ['list/index', 'create/index', 'detail/index'] },
+  { root: "presentation/pages/teabreak", pages: ["index"] },
   {
-    root: 'presentation/pages/forum',
-    pages: ['list/index', 'create/index', 'detail/index', 'report/index'],
+    root: "presentation/pages/facility",
+    pages: ["list/index", "create/index", "detail/index"],
   },
   {
-    root: 'presentation/pages/wildlife',
-    pages: ['archive/index', 'map/index', 'report/index', 'tracks/index'],
+    root: "presentation/pages/forum",
+    pages: ["list/index", "create/index", "detail/index", "report/index"],
   },
-  { root: 'presentation/pages/canteen', pages: ['list/index', 'create/index', 'detail/index'] },
+  {
+    root: "presentation/pages/wildlife",
+    pages: ["archive/index", "map/index", "report/index", "tracks/index"],
+  },
+  {
+    root: "presentation/pages/canteen",
+    pages: ["list/index", "create/index", "detail/index"],
+  },
   /**
    * 营养管家（模块 id 仍是 `canteen`）：今日营养是主界面，其余五页从它进入。
    * 与上面的 `canteen` 子包分开是为了**下载体积**：进营养管家不需要
    * 拉旧的共建菜品库三页（它们只在纠错/浏览时才用得到）。
    */
   {
-    root: 'presentation/pages/nutrition',
+    root: "presentation/pages/nutrition",
     pages: [
-      'index',
-      'log/index',
-      'history/index',
-      'targets/index',
-      'recommend/index',
-      'dishes/index',
+      "index",
+      "log/index",
+      "history/index",
+      "targets/index",
+      "recommend/index",
+      "dishes/index",
     ],
   },
-  { root: 'presentation/pages/faq', pages: ['index/index', 'tickets/index'] },
-  { root: 'presentation/pages/takeoutGuard', pages: ['list/index', 'create/index', 'detail/index'] },
+  { root: "presentation/pages/faq", pages: ["index/index", "tickets/index"] },
   {
-    root: 'presentation/pages/techpie',
-    pages: ['links/index', 'capabilities/index', 'webview/index'],
+    root: "presentation/pages/takeoutGuard",
+    pages: ["list/index", "create/index", "detail/index"],
   },
-  { root: 'presentation/pages/wellbeing', pages: ['list/index', 'create/index', 'detail/index'] },
-  { root: 'presentation/pages/aiPortrait', pages: ['index/index', 'sources/index'] },
-  { root: 'presentation/pages/dormHarmony', pages: ['index/index'] },
+  {
+    root: "presentation/pages/techpie",
+    pages: ["links/index", "capabilities/index", "webview/index"],
+  },
+  {
+    root: "presentation/pages/wellbeing",
+    pages: ["list/index", "create/index", "detail/index"],
+  },
+  {
+    root: "presentation/pages/aiPortrait",
+    pages: ["index/index", "sources/index"],
+  },
+  { root: "presentation/pages/dormHarmony", pages: ["index/index"] },
   /**
    * 校园地点（2026-10-20 从主包移出）。
    *
@@ -106,7 +139,7 @@ const subPackages = [
    * 这个取舍是对的 —— 它是"用户主动点进去才需要"的垂直业务，
    * 与文档里已经移出的六个生活模块同类。
    */
-  { root: 'presentation/pages/campusMap', pages: ['index'] },
+  { root: "presentation/pages/campusMap", pages: ["index"] },
   /**
    * DDL 聚合（同批移出）。
    *
@@ -116,7 +149,7 @@ const subPackages = [
    *
    * 页面路径同样没变。
    */
-  { root: 'presentation/pages/deadlines', pages: ['index'] },
+  { root: "presentation/pages/deadlines", pages: ["index"] },
   /**
    * 校园活动（独立域）：列表 / 详情 / 公众号导入 / 校园邮箱 / 提醒。
    *
@@ -124,39 +157,56 @@ const subPackages = [
    * 同时避免把新增的邮件与活动表单代码塞进已经接近 2 MiB 的主包。
    */
   {
-    root: 'presentation/pages/activities',
-    pages: ['list/index', 'detail/index', 'import/index', 'mail/index', 'reminders/index'],
+    root: "presentation/pages/activities",
+    pages: [
+      "list/index",
+      "detail/index",
+      "import/index",
+      "mail/index",
+      "reminders/index",
+    ],
   },
-]
+  {
+    root: "presentation/pages/zhishu",
+    pages: [
+      "index/index",
+      "daily/index",
+      "jarvis/index",
+      "materials/index",
+      "zhihu/index",
+      "qq/index",
+    ],
+  },
+];
 
 export default {
   pages: [
-    'presentation/pages/welcome/index',
-    'presentation/pages/home/index',
-    'presentation/pages/home/services/index',
-    'presentation/pages/discover/index',
-    'presentation/pages/messages/index',
-    'presentation/pages/profile/index',
-    'presentation/pages/profile/edit/index',
-    'presentation/pages/profile/settings/index',
-    'presentation/pages/profile/home/index',
-    'presentation/pages/profile/assets/index',
-    'presentation/pages/cou/index',
-    'presentation/pages/auth/login/index',
-    'presentation/pages/auth/register/index',
-    'presentation/pages/auth/forgot/index',
-    'presentation/pages/auth/change-password/index',
-    'presentation/pages/auth/bind-email/index',
-    'presentation/pages/identity/index',
-    'presentation/pages/schedule/index',
-    'presentation/pages/campusCard/index',
+    "presentation/pages/welcome/index",
+    "presentation/pages/home/index",
+    "presentation/pages/home/services/index",
+    "presentation/pages/discover/index",
+    "presentation/pages/messages/index",
+    "presentation/pages/profile/index",
+    "presentation/pages/profile/edit/index",
+    "presentation/pages/profile/settings/index",
+    "presentation/pages/profile/home/index",
+    "presentation/pages/profile/assets/index",
+    "presentation/pages/cou/index",
+    "presentation/pages/auth/login/index",
+    "presentation/pages/auth/register/index",
+    "presentation/pages/auth/forgot/index",
+    "presentation/pages/auth/change-password/index",
+    "presentation/pages/auth/bind-email/index",
+    "presentation/pages/identity/index",
+    "presentation/pages/schedule/index",
+    "presentation/pages/campusCard/index",
     // 校园地点（POI 补充层）：与 `src/app/routes.ts` 的 `PAGE_PATHS.campusMap` 成对登记。
     // 放主包 —— 本页只有列表与「下一站」，没有底图 / 地图 SDK，体积很小。
     // 课程 DDL 聚合：与 `src/app/routes.ts` 的 `PAGE_PATHS.deadlines` 成对登记。
     // 放主包而不是分包 —— 它是核心模块的下一跳，点开要立刻出来（体积由 verify:weapp 守着）。
-    'presentation/pages/agent/index',
-    'presentation/pages/legal/terms/index',
-    'presentation/pages/legal/privacy/index',
+    "presentation/pages/agent/index",
+    "presentation/pages/legal/terms/index",
+    "presentation/pages/legal/privacy/index",
   ],
   subPackages,
   /**
@@ -169,16 +219,16 @@ export default {
    * `network: 'wifi'` 让移动网络下仍然按需下载。
    */
   preloadRule: {
-    'presentation/pages/discover/index': {
-      network: 'wifi',
+    "presentation/pages/discover/index": {
+      network: "wifi",
       packages: subPackages.map((item) => item.root),
     },
   },
   window: {
-    backgroundTextStyle: 'light',
+    backgroundTextStyle: "light",
     navigationBarBackgroundColor: color.surface,
-    navigationBarTitleText: '可达鸭',
-    navigationBarTextStyle: 'black',
+    navigationBarTitleText: "可达鸭",
+    navigationBarTextStyle: "black",
     backgroundColor: color.surface,
     enablePullDownRefresh: false,
   },
@@ -197,7 +247,7 @@ export default {
    * 本模块不需要、也不应该持续追踪用户位置（数据最小化，契约 §9）。
    */
   permission: {
-    'scope.userLocation': {
+    "scope.userLocation": {
       /**
        * ⚠️ 微信硬限制：`desc` **不得超过 30 个字符**（中英文都按 1 个算），
        * 超了会在**上传**阶段直接失败，报
@@ -208,10 +258,10 @@ export default {
        * 文案要把三件事说完（少一件都可能过不了审核 / 用户不敢授权）：
        * 用途、采集时机（仅主动上报）、以及公开时的处理（模糊化）。
        */
-      desc: '用于上报你发现的动物，仅主动采集、公开位置模糊化',
+      desc: "用于上报你发现的动物，仅主动采集、公开位置模糊化",
     },
   },
-  requiredPrivateInfos: ['getLocation', 'chooseLocation'],
+  requiredPrivateInfos: ["getLocation", "chooseLocation"],
   tabBar: {
     /**
      * 自定义 tabBar（贴纸簿的手绘胶囊导航）。
@@ -229,32 +279,32 @@ export default {
     color: color.textMuted,
     selectedColor: color.ink,
     backgroundColor: color.surface,
-    borderStyle: 'white',
+    borderStyle: "white",
     list: [
       {
-        pagePath: 'presentation/pages/home/index',
-        text: '首页',
-        iconPath: 'assets/tabs/home.png',
-        selectedIconPath: 'assets/tabs/home-active.png',
+        pagePath: "presentation/pages/home/index",
+        text: "首页",
+        iconPath: "assets/tabs/home.png",
+        selectedIconPath: "assets/tabs/home-active.png",
       },
       {
-        pagePath: 'presentation/pages/discover/index',
-        text: '发现',
-        iconPath: 'assets/tabs/discover.png',
-        selectedIconPath: 'assets/tabs/discover-active.png',
+        pagePath: "presentation/pages/discover/index",
+        text: "发现",
+        iconPath: "assets/tabs/discover.png",
+        selectedIconPath: "assets/tabs/discover-active.png",
       },
       {
-        pagePath: 'presentation/pages/messages/index',
-        text: '消息',
-        iconPath: 'assets/tabs/messages.png',
-        selectedIconPath: 'assets/tabs/messages-active.png',
+        pagePath: "presentation/pages/messages/index",
+        text: "消息",
+        iconPath: "assets/tabs/messages.png",
+        selectedIconPath: "assets/tabs/messages-active.png",
       },
       {
-        pagePath: 'presentation/pages/profile/index',
-        text: '我的',
-        iconPath: 'assets/tabs/profile.png',
-        selectedIconPath: 'assets/tabs/profile-active.png',
+        pagePath: "presentation/pages/profile/index",
+        text: "我的",
+        iconPath: "assets/tabs/profile.png",
+        selectedIconPath: "assets/tabs/profile-active.png",
       },
     ],
   },
-}
+};

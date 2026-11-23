@@ -1,6 +1,6 @@
 # @kedaya/contracts
 
-可达鸭**三端共享契约** —— 响应信封、错误码、25 个模块注册表、OpenAPI 3.1。
+可达鸭**三端共享契约** —— 响应信封、错误码、26 个模块注册表、OpenAPI 3.1。
 
 ## 为什么需要它
 
@@ -13,7 +13,7 @@
 ### 1. 统一响应信封（`src/envelope.ts`）
 
 ```ts
-import { unwrap, toResult, type ApiEnvelope } from '@kedaya/contracts';
+import { unwrap, toResult, type ApiEnvelope } from "@kedaya/contracts";
 
 // 抛异常版本
 try {
@@ -33,7 +33,7 @@ if (!r.ok) console.warn(r.error.code, r.traceId);
 **错误码（冻结，与 OpenAPI 枚举一一对应）**
 
 | code | 含义 | 客户端应有反应 |
-| --- | --- | --- |
+| ------------------------- | -------------------- | -------------------------- |
 | `UNAUTHENTICATED` | 未登录 / token 失效 | 跳登录 |
 | `FORBIDDEN` | 无权限 | 提示 |
 | `NOT_FOUND` | 资源不存在 | 空态 |
@@ -51,19 +51,25 @@ if (!r.ok) console.warn(r.error.code, r.traceId);
 
 ### 2. 模块注册表（`src/modules.ts`）
 
-25 个模块的**唯一清单**。三端的导航、宫格、权限判定全部由它驱动。
+26 个模块的**唯一清单**。三端的导航、宫格、权限判定全部由它驱动。
 
 ```ts
-import { MODULES, BUSINESS_MODULES, CONSENT_MODULES, getModule, modulePath } from '@kedaya/contracts';
+import {
+  MODULES,
+  BUSINESS_MODULES,
+  CONSENT_MODULES,
+  getModule,
+  modulePath,
+} from "@kedaya/contracts";
 
 MODULES.map((m) => m.nameZh);              // 25 个中文名
 CONSENT_MODULES.map((m) => m.id);          // ['dorm-harmony','ai-portrait','wellbeing']
-getModule('wellbeing')?.sensitivity;       // 'critical'
-modulePath('groupbuy', 'items', 123);      // 'groupbuy/items/123'
+getModule("wellbeing")?.sensitivity; // 'critical'
+modulePath("groupbuy", "items", 123); // 'groupbuy/items/123'
 ```
 
 | 字段 | 说明 |
-| --- | --- |
+| ------------------- | ----------------------------------------- |
 | `id` | 冻结的 key，同时是 API 路由段 |
 | `nameZh` / `nameEn` | 中文名 / 英文标识 |
 | `summary` | 一句话定义 |
@@ -73,6 +79,7 @@ modulePath('groupbuy', 'items', 123);      // 'groupbuy/items/123'
 | `route` | API 路由前缀 |
 
 **敏感级与同意门是两件事**（契约 §9）：
+
 - `auth` / `campus-card` 是 `high`，但 `requiresConsent: false` —— 登录/开卡行为本身就是同意
 - `wellbeing` / `dorm-harmony` / `ai-portrait` 才需要显式二次同意
 
@@ -135,5 +142,9 @@ npm run test -w @kedaya/contracts
 由消费者的打包器编译。Next.js 需要在 `next.config.ts` 里加：
 
 ```ts
-transpilePackages: ['@kedaya/contracts', '@kedaya/design-tokens', '@kedaya/shared']
+transpilePackages: [
+  "@kedaya/contracts",
+  "@kedaya/design-tokens",
+  "@kedaya/shared",
+];
 ```

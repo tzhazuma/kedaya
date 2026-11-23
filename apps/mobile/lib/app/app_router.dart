@@ -18,6 +18,7 @@ import '../features/forum/presentation/pages/forum_compose_page.dart';
 import '../features/forum/presentation/pages/forum_post_detail_page.dart';
 import '../features/groupbuy/presentation/pages/groupbuy_detail_page.dart';
 import '../features/groupbuy/presentation/pages/groupbuy_list_page.dart';
+import '../features/notifications/presentation/pages/push_settings_page.dart';
 import '../features/teabreak/presentation/pages/teabreak_compose_page.dart';
 import '../features/teabreak/presentation/pages/teabreak_list_page.dart';
 import '../features/techpie/presentation/pages/campus_card_page.dart';
@@ -33,6 +34,7 @@ import '../features/wildlife/presentation/pages/wildlife_track_detail_page.dart'
 import '../features/wildlife/presentation/pages/wildlife_tracks_page.dart';
 import '../features/wildlife/presentation/pages/wildlife_zone_detail_page.dart';
 import '../features/wildlife/presentation/pages/wildlife_zones_page.dart';
+import '../features/zhishu/presentation/pages/zhishu_pages.dart';
 import '../presentation/components/kedaya_shell.dart';
 import '../presentation/pages/home_page.dart';
 import '../presentation/pages/module_detail_page.dart';
@@ -326,6 +328,50 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
               builder: (BuildContext context, GoRouterState state) =>
                   ActivityDetailPage(
                       activityId: state.pathParameters['id'] ?? ''),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/notifications',
+          name: 'notifications',
+          builder: (BuildContext context, GoRouterState state) =>
+              const PushSettingsPage(),
+        ),
+        GoRoute(
+          path: '/zhishu',
+          name: 'zhishu',
+          builder: (BuildContext context, GoRouterState state) =>
+              const ZhishuHomePage(),
+          routes: <RouteBase>[
+            GoRoute(
+              path: 'daily',
+              name: 'zhishu-daily',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const ZhishuDailyPage(),
+            ),
+            GoRoute(
+              path: 'jarvis',
+              name: 'zhishu-jarvis',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const ZhishuJarvisPage(),
+            ),
+            GoRoute(
+              path: 'materials',
+              name: 'zhishu-materials',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const ZhishuMaterialsPage(),
+            ),
+            GoRoute(
+              path: 'zhihu',
+              name: 'zhishu-zhihu',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const ZhishuZhihuPage(),
+            ),
+            GoRoute(
+              path: 'qq',
+              name: 'zhishu-qq',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const ZhishuQqPage(),
             ),
           ],
         ),

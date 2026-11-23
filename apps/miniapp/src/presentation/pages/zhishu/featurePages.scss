@@ -1,0 +1,47 @@
+.kdy-zhishu {
+  &__text {
+    display: block;
+    margin-bottom: $kdy-space-2;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  &__muted {
+    display: block;
+    margin: $kdy-space-1 0;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+  }
+
+  &__error {
+    display: block;
+    margin: $kdy-space-2 0;
+    color: $kdy-color-danger;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    margin-top: $kdy-space-3;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    margin-bottom: $kdy-space-3;
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $kdy-space-2;
+  }
+}

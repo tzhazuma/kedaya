@@ -13,105 +13,105 @@ export const PAGE_PATHS = {
    * 它只回答"这是哪儿、能干什么"，然后给一个「进入主页」；
    * 首页左上角保留「返回入口」，两边可以互跳（不是一个只闪一次的启动图）。
    */
-  welcome: '/presentation/pages/welcome/index',
-  home: '/presentation/pages/home/index',
+  welcome: "/presentation/pages/welcome/index",
+  home: "/presentation/pages/home/index",
   /** 服务大厅：首页「全部服务」格的落地页（分组 + 搜索） */
-  homeServices: '/presentation/pages/home/services/index',
-  discover: '/presentation/pages/discover/index',
-  messages: '/presentation/pages/messages/index',
-  profile: '/presentation/pages/profile/index',
+  homeServices: "/presentation/pages/home/services/index",
+  discover: "/presentation/pages/discover/index",
+  messages: "/presentation/pages/messages/index",
+  profile: "/presentation/pages/profile/index",
   /**
    * 凑凑 —— 产品一级入口，下设「拼单」与「找搭子」。
    *
    * ⚠️ 它不是契约模块（契约里 `groupbuy` / `buddy` 仍是两个独立模块）：
    * 这里只是一个**导航聚合页**，没有自己的 API 与数据。
    */
-  cou: '/presentation/pages/cou/index',
+  cou: "/presentation/pages/cou/index",
   // 拼单
-  groupBuyList: '/presentation/pages/groupbuy/list/index',
-  groupBuyCreate: '/presentation/pages/groupbuy/create/index',
-  groupBuyDetail: '/presentation/pages/groupbuy/detail/index',
+  groupBuyList: "/presentation/pages/groupbuy/list/index",
+  groupBuyCreate: "/presentation/pages/groupbuy/create/index",
+  groupBuyDetail: "/presentation/pages/groupbuy/detail/index",
   // 账号（自建账号体系：注册 / 登录 / 找回密码 / 修改密码）
-  authLogin: '/presentation/pages/auth/login/index',
-  authRegister: '/presentation/pages/auth/register/index',
-  authForgot: '/presentation/pages/auth/forgot/index',
-  authChangePassword: '/presentation/pages/auth/change-password/index',
-  authBindEmail: '/presentation/pages/auth/bind-email/index',
+  authLogin: "/presentation/pages/auth/login/index",
+  authRegister: "/presentation/pages/auth/register/index",
+  authForgot: "/presentation/pages/auth/forgot/index",
+  authChangePassword: "/presentation/pages/auth/change-password/index",
+  authBindEmail: "/presentation/pages/auth/bind-email/index",
   // 资料（昵称 / 头像：微信一键注册后会直接引到这里）
-  profileEdit: '/presentation/pages/profile/edit/index',
-  profileSettings: '/presentation/pages/profile/settings/index',
+  profileEdit: "/presentation/pages/profile/edit/index",
+  profileSettings: "/presentation/pages/profile/settings/index",
   /** 「首页管理」：选择首页展示哪些服务、排序、恢复默认 */
-  profileHome: '/presentation/pages/profile/home/index',
+  profileHome: "/presentation/pages/profile/home/index",
   /** 「我的资产」：我的拼单（发起/参与）+ 各模块入口 */
-  profileAssets: '/presentation/pages/profile/assets/index',
+  profileAssets: "/presentation/pages/profile/assets/index",
   // 跳蚤市场
-  fleaList: '/presentation/pages/fleaMarket/list/index',
-  fleaCreate: '/presentation/pages/fleaMarket/create/index',
-  fleaDetail: '/presentation/pages/fleaMarket/detail/index',
+  fleaList: "/presentation/pages/fleaMarket/list/index",
+  fleaCreate: "/presentation/pages/fleaMarket/create/index",
+  fleaDetail: "/presentation/pages/fleaMarket/detail/index",
   // 跑腿
-  errandList: '/presentation/pages/errand/list/index',
-  errandCreate: '/presentation/pages/errand/create/index',
-  errandDetail: '/presentation/pages/errand/detail/index',
+  errandList: "/presentation/pages/errand/list/index",
+  errandCreate: "/presentation/pages/errand/create/index",
+  errandDetail: "/presentation/pages/errand/detail/index",
   // 找搭子
-  buddyList: '/presentation/pages/buddy/list/index',
-  buddyCreate: '/presentation/pages/buddy/create/index',
-  buddyDetail: '/presentation/pages/buddy/detail/index',
-  buddyProfile: '/presentation/pages/buddy/profile/index',
-  buddyRecommendations: '/presentation/pages/buddy/recommendations/index',
+  buddyList: "/presentation/pages/buddy/list/index",
+  buddyCreate: "/presentation/pages/buddy/create/index",
+  buddyDetail: "/presentation/pages/buddy/detail/index",
+  buddyProfile: "/presentation/pages/buddy/profile/index",
+  buddyRecommendations: "/presentation/pages/buddy/recommendations/index",
   // 失物招领
-  lostFoundList: '/presentation/pages/lostFound/list/index',
-  lostFoundCreate: '/presentation/pages/lostFound/create/index',
-  lostFoundDetail: '/presentation/pages/lostFound/detail/index',
-  facilityList: '/presentation/pages/facility/list/index',
-  facilityCreate: '/presentation/pages/facility/create/index',
-  facilityDetail: '/presentation/pages/facility/detail/index',
+  lostFoundList: "/presentation/pages/lostFound/list/index",
+  lostFoundCreate: "/presentation/pages/lostFound/create/index",
+  lostFoundDetail: "/presentation/pages/lostFound/detail/index",
+  facilityList: "/presentation/pages/facility/list/index",
+  facilityCreate: "/presentation/pages/facility/create/index",
+  facilityDetail: "/presentation/pages/facility/detail/index",
   // 论坛
-  forumList: '/presentation/pages/forum/list/index',
-  forumCreate: '/presentation/pages/forum/create/index',
-  forumDetail: '/presentation/pages/forum/detail/index',
-  forumReport: '/presentation/pages/forum/report/index',
+  forumList: "/presentation/pages/forum/list/index",
+  forumCreate: "/presentation/pages/forum/create/index",
+  forumDetail: "/presentation/pages/forum/detail/index",
+  forumReport: "/presentation/pages/forum/report/index",
   // 野生动物（校园动物观察点）：档案（主界面）/ 地图 / 上报 / 轨迹
-  wildlifeArchive: '/presentation/pages/wildlife/archive/index',
-  wildlifeMap: '/presentation/pages/wildlife/map/index',
-  wildlifeReport: '/presentation/pages/wildlife/report/index',
-  wildlifeTracks: '/presentation/pages/wildlife/tracks/index',
+  wildlifeArchive: "/presentation/pages/wildlife/archive/index",
+  wildlifeMap: "/presentation/pages/wildlife/map/index",
+  wildlifeReport: "/presentation/pages/wildlife/report/index",
+  wildlifeTracks: "/presentation/pages/wildlife/tracks/index",
   // 食堂营养（同学共建菜品库）
-  canteenList: '/presentation/pages/canteen/list/index',
-  canteenCreate: '/presentation/pages/canteen/create/index',
-  canteenDetail: '/presentation/pages/canteen/detail/index',
+  canteenList: "/presentation/pages/canteen/list/index",
+  canteenCreate: "/presentation/pages/canteen/create/index",
+  canteenDetail: "/presentation/pages/canteen/detail/index",
   // 营养管家（模块 id 仍是 `canteen`，ADR 0006）：今日 / 记录 / 历史 / 需求 / 推荐 / 菜品库
-  nutritionHome: '/presentation/pages/nutrition/index',
-  nutritionLog: '/presentation/pages/nutrition/log/index',
-  nutritionHistory: '/presentation/pages/nutrition/history/index',
-  nutritionTargets: '/presentation/pages/nutrition/targets/index',
-  nutritionRecommend: '/presentation/pages/nutrition/recommend/index',
-  nutritionDishes: '/presentation/pages/nutrition/dishes/index',
+  nutritionHome: "/presentation/pages/nutrition/index",
+  nutritionLog: "/presentation/pages/nutrition/log/index",
+  nutritionHistory: "/presentation/pages/nutrition/history/index",
+  nutritionTargets: "/presentation/pages/nutrition/targets/index",
+  nutritionRecommend: "/presentation/pages/nutrition/recommend/index",
+  nutritionDishes: "/presentation/pages/nutrition/dishes/index",
   // 常见问题（问答库）：折叠首页 + 我的工单
-  petition: '/presentation/pages/petition/index',
-  teabreak: '/presentation/pages/teabreak/index',
-  faq: '/presentation/pages/faq/index/index',
-  faqTickets: '/presentation/pages/faq/tickets/index',
+  petition: "/presentation/pages/petition/index",
+  teabreak: "/presentation/pages/teabreak/index",
+  faq: "/presentation/pages/faq/index/index",
+  faqTickets: "/presentation/pages/faq/tickets/index",
   // 偷外卖（本人可见的报备记录，不是公开举报墙）
-  takeoutGuardList: '/presentation/pages/takeoutGuard/list/index',
-  takeoutGuardCreate: '/presentation/pages/takeoutGuard/create/index',
-  takeoutGuardDetail: '/presentation/pages/takeoutGuard/detail/index',
+  takeoutGuardList: "/presentation/pages/takeoutGuard/list/index",
+  takeoutGuardCreate: "/presentation/pages/takeoutGuard/create/index",
+  takeoutGuardDetail: "/presentation/pages/takeoutGuard/detail/index",
   // 校园技术服务目录（同学共建）+ TechPie 整合（绑定 / 能力 / WebView 直连）
-  techpieLinks: '/presentation/pages/techpie/links/index',
-  techpieCapabilities: '/presentation/pages/techpie/capabilities/index',
-  techpieWebview: '/presentation/pages/techpie/webview/index',
+  techpieLinks: "/presentation/pages/techpie/links/index",
+  techpieCapabilities: "/presentation/pages/techpie/capabilities/index",
+  techpieWebview: "/presentation/pages/techpie/webview/index",
   // 心理支持（倾听与预约入口；危机出口在首屏，来自 /wellbeing/crisis-line）
-  wellbeingList: '/presentation/pages/wellbeing/list/index',
-  wellbeingCreate: '/presentation/pages/wellbeing/create/index',
-  wellbeingDetail: '/presentation/pages/wellbeing/detail/index',
+  wellbeingList: "/presentation/pages/wellbeing/list/index",
+  wellbeingCreate: "/presentation/pages/wellbeing/create/index",
+  wellbeingDetail: "/presentation/pages/wellbeing/detail/index",
   // AI 校园画像（只读两页：画像首页 + 数据来源与开关；没有"列表/发布/详情"）
-  aiPortraitHome: '/presentation/pages/aiPortrait/index/index',
-  aiPortraitSources: '/presentation/pages/aiPortrait/sources/index',
+  aiPortraitHome: "/presentation/pages/aiPortrait/index/index",
+  aiPortraitSources: "/presentation/pages/aiPortrait/sources/index",
   // 宿舍矛盾（匿名，凭追踪码查看）
-  dormHarmonyHome: '/presentation/pages/dormHarmony/index/index',
+  dormHarmonyHome: "/presentation/pages/dormHarmony/index/index",
   // 四个核心模块：身份 / 课表 / 校园卡 / 我的（隐私与数据）
-  identity: '/presentation/pages/identity/index',
-  schedule: '/presentation/pages/schedule/index',
-  campusCard: '/presentation/pages/campusCard/index',
+  identity: "/presentation/pages/identity/index",
+  schedule: "/presentation/pages/schedule/index",
+  campusCard: "/presentation/pages/campusCard/index",
   /**
    * 校园地点（POI 补充层）—— 快递站 / 车库 / 食堂菜单 / 活动场地 / 自习空间。
    *
@@ -119,18 +119,24 @@ export const PAGE_PATHS = {
    * （5 条演示数据，名字带「【演示】」），没有后端接口。
    * 与 `app.config.ts` 的 `pages` 成对登记，否则点进去白屏。
    */
-  campusMap: '/presentation/pages/campusMap/index',
+  campusMap: "/presentation/pages/campusMap/index",
   /**
    * 校园活动（独立域，不并入课程 DDL）。
    *
    * 列表 / 详情 / 公众号单篇导入 / 校园邮箱 / 提醒五页。活动候选必须用户确认
    * 后才加入日程；提醒只发站内信（微信订阅消息没有真实模板 ID，不假装接通）。
    */
-  activitiesList: '/presentation/pages/activities/list/index',
-  activitiesDetail: '/presentation/pages/activities/detail/index',
-  activitiesImport: '/presentation/pages/activities/import/index',
-  activitiesMail: '/presentation/pages/activities/mail/index',
-  activitiesReminders: '/presentation/pages/activities/reminders/index',
+  activitiesList: "/presentation/pages/activities/list/index",
+  activitiesDetail: "/presentation/pages/activities/detail/index",
+  activitiesImport: "/presentation/pages/activities/import/index",
+  activitiesMail: "/presentation/pages/activities/mail/index",
+  activitiesReminders: "/presentation/pages/activities/reminders/index",
+  zhishu: "/presentation/pages/zhishu/index/index",
+  zhishuDaily: "/presentation/pages/zhishu/daily/index",
+  zhishuJarvis: "/presentation/pages/zhishu/jarvis/index",
+  zhishuMaterials: "/presentation/pages/zhishu/materials/index",
+  zhishuZhihu: "/presentation/pages/zhishu/zhihu/index",
+  zhishuQq: "/presentation/pages/zhishu/qq/index",
   /**
    * 课程 DDL 聚合（Blackboard / Gradescope / Piazza / e云平台）。
    *
@@ -138,15 +144,15 @@ export const PAGE_PATHS = {
    * `app/__tests__/routes.test.ts` 双向锁死（少一边就是「点得到但白屏」/「配了但点不到」）。
    * 这一轮还没有 DDL 后端模块，条目只存在本机（见 `data/repositories/deadlineLocalRepository.ts`）。
    */
-  deadlines: '/presentation/pages/deadlines/index',
+  deadlines: "/presentation/pages/deadlines/index",
   // 内置全局助手「可达鸭」
-  agent: '/presentation/pages/agent/index',
+  agent: "/presentation/pages/agent/index",
   // 法务页（微信审核必备；内容与 PRIVACY_RULES 同源，避免两处漂移）
-  legalTerms: '/presentation/pages/legal/terms/index',
-  legalPrivacy: '/presentation/pages/legal/privacy/index',
-} as const
+  legalTerms: "/presentation/pages/legal/terms/index",
+  legalPrivacy: "/presentation/pages/legal/privacy/index",
+} as const;
 
-export type PagePath = (typeof PAGE_PATHS)[keyof typeof PAGE_PATHS]
+export type PagePath = (typeof PAGE_PATHS)[keyof typeof PAGE_PATHS];
 
 /**
  * 已实现垂直切片的模块 → 入口页。
@@ -169,10 +175,10 @@ export type PagePath = (typeof PAGE_PATHS)[keyof typeof PAGE_PATHS]
  */
 export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   groupbuy: PAGE_PATHS.groupBuyList,
-  'flea-market': PAGE_PATHS.fleaList,
+  "flea-market": PAGE_PATHS.fleaList,
   errand: PAGE_PATHS.errandList,
   buddy: PAGE_PATHS.buddyList,
-  'lost-found': PAGE_PATHS.lostFoundList,
+  "lost-found": PAGE_PATHS.lostFoundList,
   forum: PAGE_PATHS.forumList,
   wildlife: PAGE_PATHS.wildlifeArchive,
   /**
@@ -185,12 +191,12 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
    */
   canteen: PAGE_PATHS.nutritionHome,
   faq: PAGE_PATHS.faq,
-  'takeout-guard': PAGE_PATHS.takeoutGuardList,
+  "takeout-guard": PAGE_PATHS.takeoutGuardList,
   facility: PAGE_PATHS.facilityList,
   techpie: PAGE_PATHS.techpieLinks,
   wellbeing: PAGE_PATHS.wellbeingList,
-  'ai-portrait': PAGE_PATHS.aiPortraitHome,
-  'dorm-harmony': PAGE_PATHS.dormHarmonyHome,
+  "ai-portrait": PAGE_PATHS.aiPortraitHome,
+  "dorm-harmony": PAGE_PATHS.dormHarmonyHome,
   /** 众筹诉求：共同需求汇总成可核对的诉求，达标后发信给部门 */
   petition: PAGE_PATHS.petition,
   /** 会议茶歇：把校内学术会议的茶歇时报上来 */
@@ -202,40 +208,41 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   schedule: PAGE_PATHS.schedule,
   /** 校园活动（独立域）：候选列表是模块主界面 */
   activities: PAGE_PATHS.activitiesList,
+  zhishu: PAGE_PATHS.zhishu,
   /** DDL 聚合：本轮条目只存本机（无后端），但页面与入口已真实可用 */
   deadlines: PAGE_PATHS.deadlines,
-  'campus-map': PAGE_PATHS.campusMap,
-  'campus-card': PAGE_PATHS.campusCard,
+  "campus-map": PAGE_PATHS.campusMap,
+  "campus-card": PAGE_PATHS.campusCard,
   profile: PAGE_PATHS.profile,
-}
+};
 
 export function activityListPath(): string {
-  return PAGE_PATHS.activitiesList
+  return PAGE_PATHS.activitiesList;
 }
 
 export function activityDetailPath(id: string): string {
-  return detailPath(PAGE_PATHS.activitiesDetail, id)
+  return detailPath(PAGE_PATHS.activitiesDetail, id);
 }
 
 export function activityImportPath(): string {
-  return PAGE_PATHS.activitiesImport
+  return PAGE_PATHS.activitiesImport;
 }
 
 export function activityMailPath(): string {
-  return PAGE_PATHS.activitiesMail
+  return PAGE_PATHS.activitiesMail;
 }
 
 export function activityRemindersPath(): string {
-  return PAGE_PATHS.activitiesReminders
+  return PAGE_PATHS.activitiesReminders;
 }
 
 /** 场馆预约详情路径 */
 export function facilityDetailPath(id: string): string {
-  return `${PAGE_PATHS.facilityDetail}?id=${encodeURIComponent(id)}`
+  return `${PAGE_PATHS.facilityDetail}?id=${encodeURIComponent(id)}`;
 }
 
 export function moduleEntryPath(moduleId: string): string | null {
-  return MODULE_ENTRY_PATHS[moduleId] ?? null
+  return MODULE_ENTRY_PATHS[moduleId] ?? null;
 }
 
 /**
@@ -250,23 +257,23 @@ export function moduleEntryPath(moduleId: string): string | null {
  * 而不是跳到一个不存在的页面（微信只会静默失败）。
  */
 export function homeEntryPath(entryId: string): string | null {
-  if (entryId === 'cou') return PAGE_PATHS.cou
-  return moduleEntryPath(entryId)
+  if (entryId === "cou") return PAGE_PATHS.cou;
+  return moduleEntryPath(entryId);
 }
 
 /** 首页管理（自定义首页展示哪些服务） */
 export function profileHomePath(): string {
-  return PAGE_PATHS.profileHome
+  return PAGE_PATHS.profileHome;
 }
 
 /** 服务大厅（全部服务，分组 + 搜索） */
 export function homeServicesPath(): string {
-  return PAGE_PATHS.homeServices
+  return PAGE_PATHS.homeServices;
 }
 
 /** 凑凑（拼单 + 找搭子） */
 export function couPath(): string {
-  return PAGE_PATHS.cou
+  return PAGE_PATHS.cou;
 }
 
 /** tabBar 上的四个主页面（必须与 app.config.ts 的 tabBar.list 完全一致） */
@@ -275,11 +282,11 @@ export const TAB_BAR_PATHS: readonly string[] = [
   PAGE_PATHS.discover,
   PAGE_PATHS.messages,
   PAGE_PATHS.profile,
-]
+];
 
 export function isTabBarPath(path: string): boolean {
-  const [base] = path.split('?')
-  return base !== undefined && TAB_BAR_PATHS.includes(base)
+  const [base] = path.split("?");
+  return base !== undefined && TAB_BAR_PATHS.includes(base);
 }
 
 /**
@@ -289,14 +296,16 @@ export function isTabBarPath(path: string): boolean {
  * 红点会跟着走，而不是悄悄挂到错误的 tab 上。
  */
 export function tabBarIndex(path: string): number {
-  const [base] = path.split('?')
-  return base === undefined ? -1 : TAB_BAR_PATHS.indexOf(base)
+  const [base] = path.split("?");
+  return base === undefined ? -1 : TAB_BAR_PATHS.indexOf(base);
 }
 
 /** 从页面参数里安全取 id（`useRouter().params.id` 可能是 string | undefined） */
-export function readIdParam(params: Record<string, string | undefined>): string | null {
-  const id = params.id
-  return id === undefined || id === '' ? null : id
+export function readIdParam(
+  params: Record<string, string | undefined>,
+): string | null {
+  const id = params.id;
+  return id === undefined || id === "" ? null : id;
 }
 
 /* ------------------------------------------------------------------ *
@@ -304,43 +313,43 @@ export function readIdParam(params: Record<string, string | undefined>): string 
  * ------------------------------------------------------------------ */
 
 function detailPath(base: string, id: string): string {
-  return `${base}?id=${encodeURIComponent(id)}`
+  return `${base}?id=${encodeURIComponent(id)}`;
 }
 
 export function groupBuyDetailPath(id: string): string {
-  return detailPath(PAGE_PATHS.groupBuyDetail, id)
+  return detailPath(PAGE_PATHS.groupBuyDetail, id);
 }
 
 export function fleaDetailPath(id: string): string {
-  return detailPath(PAGE_PATHS.fleaDetail, id)
+  return detailPath(PAGE_PATHS.fleaDetail, id);
 }
 
 export function errandDetailPath(id: string): string {
-  return detailPath(PAGE_PATHS.errandDetail, id)
+  return detailPath(PAGE_PATHS.errandDetail, id);
 }
 
 export function buddyDetailPath(id: string): string {
-  return detailPath(PAGE_PATHS.buddyDetail, id)
+  return detailPath(PAGE_PATHS.buddyDetail, id);
 }
 
 export function lostFoundDetailPath(id: string): string {
-  return detailPath(PAGE_PATHS.lostFoundDetail, id)
+  return detailPath(PAGE_PATHS.lostFoundDetail, id);
 }
 
 export function forumDetailPath(id: string): string {
-  return detailPath(PAGE_PATHS.forumDetail, id)
+  return detailPath(PAGE_PATHS.forumDetail, id);
 }
 
 export function canteenDetailPath(id: string): string {
-  return detailPath(PAGE_PATHS.canteenDetail, id)
+  return detailPath(PAGE_PATHS.canteenDetail, id);
 }
 
 export function takeoutGuardDetailPath(id: string): string {
-  return detailPath(PAGE_PATHS.takeoutGuardDetail, id)
+  return detailPath(PAGE_PATHS.takeoutGuardDetail, id);
 }
 
 export function wellbeingDetailPath(id: string): string {
-  return detailPath(PAGE_PATHS.wellbeingDetail, id)
+  return detailPath(PAGE_PATHS.wellbeingDetail, id);
 }
 
 /* ------------------------------------------------------------------ *
@@ -349,16 +358,16 @@ export function wellbeingDetailPath(id: string): string {
 
 /** 发帖页；可选带上当前版块，进入后默认选中 */
 export function forumCreatePath(boardId?: string | null): string {
-  return boardId === undefined || boardId === null || boardId === ''
+  return boardId === undefined || boardId === null || boardId === ""
     ? PAGE_PATHS.forumCreate
-    : `${PAGE_PATHS.forumCreate}?boardId=${encodeURIComponent(boardId)}`
+    : `${PAGE_PATHS.forumCreate}?boardId=${encodeURIComponent(boardId)}`;
 }
 
 /** 找搭子发布页；可选带上板块，进入后默认选中该板块的活动类型 */
 export function buddyCreatePath(section?: string | null): string {
-  return section == null || section === ''
+  return section == null || section === ""
     ? PAGE_PATHS.buddyCreate
-    : `${PAGE_PATHS.buddyCreate}?section=${encodeURIComponent(section)}`
+    : `${PAGE_PATHS.buddyCreate}?section=${encodeURIComponent(section)}`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -366,14 +375,14 @@ export function buddyCreatePath(section?: string | null): string {
  * ------------------------------------------------------------------ */
 
 export interface ForumReportParams {
-  targetType: 'POST' | 'REPLY'
-  targetId: string
+  targetType: "POST" | "REPLY";
+  targetId: string;
 }
 
 export function forumReportPath(params: ForumReportParams): string {
   return `${PAGE_PATHS.forumReport}?targetType=${encodeURIComponent(
     params.targetType,
-  )}&targetId=${encodeURIComponent(params.targetId)}`
+  )}&targetId=${encodeURIComponent(params.targetId)}`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -382,7 +391,7 @@ export function forumReportPath(params: ForumReportParams): string {
 
 /** 宿舍矛盾：详情靠追踪码而不是 id 寻址 */
 export function dormHarmonyDetailPath(trackCode: string): string {
-  return `${PAGE_PATHS.dormHarmonyHome}?trackCode=${encodeURIComponent(trackCode)}`
+  return `${PAGE_PATHS.dormHarmonyHome}?trackCode=${encodeURIComponent(trackCode)}`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -395,11 +404,13 @@ export function dormHarmonyDetailPath(trackCode: string): string {
  * 可选 `speciesId`：从服务大厅 / 档案卡的"看它的地图"进来时，
  * 地图页据此预选物种筛选（不带就展示全部）。
  */
-export function wildlifeArchivePath(params?: { speciesId?: string | null }): string {
-  const speciesId = params?.speciesId
-  return speciesId == null || speciesId === ''
+export function wildlifeArchivePath(params?: {
+  speciesId?: string | null;
+}): string {
+  const speciesId = params?.speciesId;
+  return speciesId == null || speciesId === ""
     ? PAGE_PATHS.wildlifeArchive
-    : `${PAGE_PATHS.wildlifeArchive}?speciesId=${encodeURIComponent(speciesId)}`
+    : `${PAGE_PATHS.wildlifeArchive}?speciesId=${encodeURIComponent(speciesId)}`;
 }
 
 /**
@@ -408,9 +419,9 @@ export function wildlifeArchivePath(params?: { speciesId?: string | null }): str
  * ⚠️ 只接受**物种 id**（契约数据），不接受坐标 —— 坐标一律由页面自己采集。
  */
 export function wildlifeMapWithSpeciesPath(speciesId?: string | null): string {
-  return speciesId == null || speciesId === ''
+  return speciesId == null || speciesId === ""
     ? PAGE_PATHS.wildlifeMap
-    : `${PAGE_PATHS.wildlifeMap}?speciesId=${encodeURIComponent(speciesId)}`
+    : `${PAGE_PATHS.wildlifeMap}?speciesId=${encodeURIComponent(speciesId)}`;
 }
 
 /**
@@ -421,27 +432,27 @@ export function wildlifeMapWithSpeciesPath(speciesId?: string | null): string {
  * 通过 URL 传坐标会让「这个点是什么坐标系」变得不可追溯（规格 §3.2 硬要求 5）。
  */
 export function wildlifeReportPath(params?: {
-  speciesId?: string | null
-  zoneId?: string | null
+  speciesId?: string | null;
+  zoneId?: string | null;
 }): string {
-  const query: string[] = []
-  if (params?.speciesId != null && params.speciesId !== '') {
-    query.push(`speciesId=${encodeURIComponent(params.speciesId)}`)
+  const query: string[] = [];
+  if (params?.speciesId != null && params.speciesId !== "") {
+    query.push(`speciesId=${encodeURIComponent(params.speciesId)}`);
   }
-  if (params?.zoneId != null && params.zoneId !== '') {
-    query.push(`zoneId=${encodeURIComponent(params.zoneId)}`)
+  if (params?.zoneId != null && params.zoneId !== "") {
+    query.push(`zoneId=${encodeURIComponent(params.zoneId)}`);
   }
   return query.length === 0
     ? PAGE_PATHS.wildlifeReport
-    : `${PAGE_PATHS.wildlifeReport}?${query.join('&')}`
+    : `${PAGE_PATHS.wildlifeReport}?${query.join("&")}`;
 }
 
 export function wildlifeTracksPath(): string {
-  return PAGE_PATHS.wildlifeTracks
+  return PAGE_PATHS.wildlifeTracks;
 }
 
 export function wildlifeMapPath(): string {
-  return PAGE_PATHS.wildlifeMap
+  return PAGE_PATHS.wildlifeMap;
 }
 
 /* ------------------------------------------------------------------ *
@@ -449,14 +460,14 @@ export function wildlifeMapPath(): string {
  * ------------------------------------------------------------------ */
 
 export function buddyProfilePath(): string {
-  return PAGE_PATHS.buddyProfile
+  return PAGE_PATHS.buddyProfile;
 }
 
 /** 推荐页；可选带上板块，进入后默认选中 */
 export function buddyRecommendationsPath(section?: string | null): string {
-  return section == null || section === ''
+  return section == null || section === ""
     ? PAGE_PATHS.buddyRecommendations
-    : `${PAGE_PATHS.buddyRecommendations}?section=${encodeURIComponent(section)}`
+    : `${PAGE_PATHS.buddyRecommendations}?section=${encodeURIComponent(section)}`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -472,17 +483,17 @@ export function buddyRecommendationsPath(section?: string | null): string {
  * 那是一个开放重定向面（契约 §11.18-B 对服务端 `targetUrl` 的要求同理）。
  */
 export function techpieWebviewPath(targetId: string): string {
-  return `${PAGE_PATHS.techpieWebview}?target=${encodeURIComponent(targetId)}`
+  return `${PAGE_PATHS.techpieWebview}?target=${encodeURIComponent(targetId)}`;
 }
 
 export function techpieLinksPath(): string {
-  return PAGE_PATHS.techpieLinks
+  return PAGE_PATHS.techpieLinks;
 }
 
 export function techpieCapabilitiesPath(): string {
-  return PAGE_PATHS.techpieCapabilities
+  return PAGE_PATHS.techpieCapabilities;
 }
 
 export function campusCardPath(): string {
-  return PAGE_PATHS.campusCard
+  return PAGE_PATHS.campusCard;
 }

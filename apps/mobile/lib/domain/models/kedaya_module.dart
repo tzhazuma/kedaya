@@ -328,6 +328,16 @@ const List<KedayaModule> coreModules = <KedayaModule>[
     route: 'activities',
   ),
   KedayaModule(
+    id: 'zhishu',
+    nameZh: '知枢工作台',
+    nameEn: 'Zhishu Workspace',
+    summary: '把知枢的日报、JARVIS、资料库、知乎与 QQ 聊天导入聚到一处；在线来源需授权，本地内容可检索与保存',
+    category: ModuleCategory.core,
+    sensitivity: ModuleSensitivity.medium,
+    requiresConsent: false,
+    route: 'zhishu',
+  ),
+  KedayaModule(
     id: 'campus-card',
     nameZh: '校园卡',
     nameEn: 'Campus Card',

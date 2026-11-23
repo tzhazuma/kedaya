@@ -5,6 +5,7 @@ allprojects {
         maven { url = uri("https://maven.aliyun.com/repository/google") }
         google()
         mavenCentral()
+        maven { url = uri("https://developer.huawei.com/repo/") }
     }
 }
 

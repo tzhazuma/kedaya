@@ -1,4 +1,4 @@
-import { MODULES } from '@kedaya/contracts'
+import { MODULES } from "@kedaya/contracts";
 
 /**
  * 首页 / 服务大厅的**入口目录**（纯数据 + 纯函数，可在测试里直接断言）。
@@ -22,22 +22,22 @@ import { MODULES } from '@kedaya/contracts'
 /** 单个入口（聚合入口或契约模块入口） */
 export interface HomeEntry {
   /** 入口 id：契约模块 id，或聚合入口 id（如 `cou`） */
-  id: string
+  id: string;
   /** 主标题 */
-  label: string
+  label: string;
   /** 一句话说明 */
-  hint: string
+  hint: string;
   /**
    * 图标 id（仅影响外观，`presentation/components/KdyModuleIcon` 解析）。
    *
    * 与 `id` 分开：聚合入口 `cou` 想复用一个已有图标的观感，
    * 而不必在图标组件里为它写一条 `cou` 分支之外的语义。
    */
-  icon: string
+  icon: string;
   /** 该入口覆盖的契约模块 id（聚合入口可覆盖多个） */
-  moduleIds: readonly string[]
+  moduleIds: readonly string[];
   /** 聚合入口的副标题（如「拼单 · 找搭子」）；普通入口为 null */
-  subLabel: string | null
+  subLabel: string | null;
   /**
    * 固定入口：**用户不能把它从首页移除**。
    *
@@ -48,16 +48,16 @@ export interface HomeEntry {
    *     就在首页上彻底消失（首页底部还有一条常驻热线行作为第二重兜底）。
    * 允许排序、不允许删除 —— 这是产品决定，不是权限。
    */
-  locked: boolean
+  locked: boolean;
   /** 固定入口的原因，用于「不能移除」的提示文案（非固定入口为 `null`） */
-  lockedReason: string | null
+  lockedReason: string | null;
 }
 
 /** 服务大厅的分组 */
 export interface HomeSection {
-  id: string
-  title: string
-  entryIds: readonly string[]
+  id: string;
+  title: string;
+  entryIds: readonly string[];
 }
 
 /**
@@ -69,19 +69,21 @@ export interface HomeSection {
  */
 const AGGREGATES: readonly HomeEntry[] = [
   {
-    id: 'cou',
-    label: '凑凑',
-    hint: '一个人凑不齐的，凑一凑就够了：拼单 + 找搭子。',
-    icon: 'cou',
-    moduleIds: ['groupbuy', 'buddy'],
-    subLabel: '拼单 · 找搭子',
+    id: "cou",
+    label: "凑凑",
+    hint: "一个人凑不齐的，凑一凑就够了：拼单 + 找搭子。",
+    icon: "cou",
+    moduleIds: ["groupbuy", "buddy"],
+    subLabel: "拼单 · 找搭子",
     locked: true,
-    lockedReason: '一级入口',
+    lockedReason: "一级入口",
   },
-]
+];
 
 /** 被聚合覆盖的模块 id（从「模块入口」里排除，避免重复入口） */
-const AGGREGATED_MODULE_IDS: readonly string[] = AGGREGATES.flatMap((entry) => entry.moduleIds)
+const AGGREGATED_MODULE_IDS: readonly string[] = AGGREGATES.flatMap(
+  (entry) => entry.moduleIds,
+);
 
 /**
  * 独立入口：活动域。
@@ -93,23 +95,27 @@ const AGGREGATED_MODULE_IDS: readonly string[] = AGGREGATES.flatMap((entry) => e
  */
 const APP_ENTRIES: readonly HomeEntry[] = [
   {
-    id: 'activities',
-    label: '校园活动',
-    hint: '从校园邮箱和公众号收集活动；确认后才加入日程与提醒。',
-    icon: 'activities',
-    moduleIds: MODULES.some((module) => module.id === 'activities') ? ['activities'] : [],
+    id: "activities",
+    label: "校园活动",
+    hint: "从校园邮箱和公众号收集活动；确认后才加入日程与提醒。",
+    icon: "activities",
+    moduleIds: MODULES.some((module) => module.id === "activities")
+      ? ["activities"]
+      : [],
     subLabel: null,
     locked: false,
     lockedReason: null,
   },
-]
+];
 
 /** 被独立入口覆盖的 id（从「模块入口」里排除，避免重复入口） */
-const APP_ENTRY_MODULE_IDS = new Set<string>(['activities'])
+const APP_ENTRY_MODULE_IDS = new Set<string>(["activities"]);
 
 /** 契约模块 → 入口（标签与说明直接取契约，避免两处文案漂移） */
 const MODULE_ENTRIES: readonly HomeEntry[] = MODULES.filter(
-  (module) => !AGGREGATED_MODULE_IDS.includes(module.id) && !APP_ENTRY_MODULE_IDS.has(module.id),
+  (module) =>
+    !AGGREGATED_MODULE_IDS.includes(module.id) &&
+    !APP_ENTRY_MODULE_IDS.has(module.id),
 ).map((module) => ({
   id: module.id,
   label: module.nameZh,
@@ -117,16 +123,16 @@ const MODULE_ENTRIES: readonly HomeEntry[] = MODULES.filter(
   icon: module.id,
   moduleIds: [module.id],
   subLabel: null,
-  locked: module.id === 'wellbeing',
-  lockedReason: module.id === 'wellbeing' ? '安全出口' : null,
-}))
+  locked: module.id === "wellbeing",
+  lockedReason: module.id === "wellbeing" ? "安全出口" : null,
+}));
 
 /** 全部入口（聚合入口在前，便于首页默认值里「凑凑」排在第一个） */
 export const HOME_ENTRIES: readonly HomeEntry[] = [
   ...AGGREGATES,
   ...APP_ENTRIES,
   ...MODULE_ENTRIES,
-]
+];
 
 /**
  * 服务大厅分组。
@@ -137,26 +143,48 @@ export const HOME_ENTRIES: readonly HomeEntry[] = [
  */
 export const HOME_SECTIONS: readonly HomeSection[] = [
   {
-    id: 'daily',
-    title: '校园日常',
-    entryIds: ['cou', 'flea-market', 'errand', 'lost-found', 'canteen', 'wildlife', 'facility', 'schedule', 'activities', 'deadlines', 'campus-map', 'campus-card'],
+    id: "daily",
+    title: "校园日常",
+    entryIds: [
+      "cou",
+      "flea-market",
+      "errand",
+      "lost-found",
+      "canteen",
+      "wildlife",
+      "facility",
+      "schedule",
+      "activities",
+      "zhishu",
+      "deadlines",
+      "campus-map",
+      "campus-card",
+    ],
   },
   {
-    id: 'community',
-    title: '交流与互助',
-    entryIds: ['forum', 'faq', 'petition', 'teabreak', 'dorm-harmony', 'takeout-guard', 'techpie'],
+    id: "community",
+    title: "交流与互助",
+    entryIds: [
+      "forum",
+      "faq",
+      "petition",
+      "teabreak",
+      "dorm-harmony",
+      "takeout-guard",
+      "techpie",
+    ],
   },
   {
-    id: 'care',
-    title: '关怀与成长',
-    entryIds: ['wellbeing', 'ai-portrait'],
+    id: "care",
+    title: "关怀与成长",
+    entryIds: ["wellbeing", "ai-portrait"],
   },
   {
-    id: 'account',
-    title: '账号与身份',
-    entryIds: ['auth', 'profile', 'notifications'],
+    id: "account",
+    title: "账号与身份",
+    entryIds: ["auth", "profile", "notifications"],
   },
-]
+];
 
 /**
  * 首页默认展示的入口。
@@ -173,39 +201,39 @@ export const HOME_SECTIONS: readonly HomeSection[] = [
  * 用户会觉得"一进首页顺序就自己变了一次"。
  */
 export const DEFAULT_HOME_ENTRY_IDS: readonly string[] = [
-  'cou',
-  'wellbeing',
-  'canteen',
-  'flea-market',
-  'errand',
-  'lost-found',
-  'wildlife',
-  'schedule',
-  'deadlines',
-  'campus-map',
-  'campus-card',
-]
+  "cou",
+  "wellbeing",
+  "canteen",
+  "flea-market",
+  "errand",
+  "lost-found",
+  "wildlife",
+  "schedule",
+  "deadlines",
+  "campus-map",
+  "campus-card",
+];
 
 /** 首页最多展示的入口数：再多就该去服务大厅了（4 列 × 3 行正好三屏内看完） */
-export const MAX_HOME_ENTRY_IDS = 12
+export const MAX_HOME_ENTRY_IDS = 12;
 
-const BY_ID = new Map(HOME_ENTRIES.map((entry) => [entry.id, entry]))
+const BY_ID = new Map(HOME_ENTRIES.map((entry) => [entry.id, entry]));
 
 export function homeEntryById(id: string): HomeEntry | undefined {
-  return BY_ID.get(id)
+  return BY_ID.get(id);
 }
 
 export function isHomeEntryId(id: string): boolean {
-  return BY_ID.has(id)
+  return BY_ID.has(id);
 }
 
 /** 固定入口 id（不可移除），顺序与目录一致 */
 export const LOCKED_HOME_ENTRY_IDS: readonly string[] = HOME_ENTRIES.filter(
   (entry) => entry.locked,
-).map((entry) => entry.id)
+).map((entry) => entry.id);
 
 export function isLockedHomeEntry(id: string): boolean {
-  return LOCKED_HOME_ENTRY_IDS.includes(id)
+  return LOCKED_HOME_ENTRY_IDS.includes(id);
 }
 
 /**
@@ -225,23 +253,27 @@ export function isLockedHomeEntry(id: string): boolean {
  * 服务大厅与「全部服务」格仍然进得去，不该被强行塞回默认值。
  */
 export function normalizeHomeEntryIds(raw: unknown): readonly string[] {
-  if (!Array.isArray(raw)) return DEFAULT_HOME_ENTRY_IDS
+  if (!Array.isArray(raw)) return DEFAULT_HOME_ENTRY_IDS;
 
   const picked = raw.filter(
-    (item): item is string => typeof item === 'string' && isHomeEntryId(item),
-  )
+    (item): item is string => typeof item === "string" && isHomeEntryId(item),
+  );
   const ordered = [
     ...LOCKED_HOME_ENTRY_IDS,
     ...picked.filter((id) => !isLockedHomeEntry(id)),
-  ]
+  ];
 
-  return [...new Set(ordered)].slice(0, MAX_HOME_ENTRY_IDS)
+  return [...new Set(ordered)].slice(0, MAX_HOME_ENTRY_IDS);
 }
 
 /** 尚未出现在首页的入口（按目录顺序），用于「首页管理」页的「可添加」列表 */
-export function addableHomeEntryIds(selected: readonly string[]): readonly string[] {
-  const chosen = new Set(selected)
-  return HOME_ENTRIES.filter((entry) => !chosen.has(entry.id)).map((entry) => entry.id)
+export function addableHomeEntryIds(
+  selected: readonly string[],
+): readonly string[] {
+  const chosen = new Set(selected);
+  return HOME_ENTRIES.filter((entry) => !chosen.has(entry.id)).map(
+    (entry) => entry.id,
+  );
 }
 
 /**
@@ -250,12 +282,12 @@ export function addableHomeEntryIds(selected: readonly string[]): readonly strin
  * 空串返回全部；大小写不敏感（`TechPie` 这类英文名也要能被小写命中）。
  */
 export function searchHomeEntryIds(keyword: string): readonly string[] {
-  const needle = keyword.trim().toLowerCase()
-  if (needle === '') return HOME_ENTRIES.map((entry) => entry.id)
+  const needle = keyword.trim().toLowerCase();
+  if (needle === "") return HOME_ENTRIES.map((entry) => entry.id);
 
   return HOME_ENTRIES.filter((entry) =>
-    [entry.label, entry.hint, entry.subLabel ?? ''].some((text) =>
+    [entry.label, entry.hint, entry.subLabel ?? ""].some((text) =>
       text.toLowerCase().includes(needle),
     ),
-  ).map((entry) => entry.id)
+  ).map((entry) => entry.id);
 }

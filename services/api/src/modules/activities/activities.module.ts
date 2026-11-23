@@ -12,31 +12,41 @@
  * 也避免把"定时"这件事藏进进程内。
  */
 
-import { Module } from '@nestjs/common';
+import { Module } from "@nestjs/common";
 
-import { IdempotencyModule } from '../../common/idempotency/idempotency.module';
-import { MailModule } from '../mail/mail.module';
-import { NotificationModule } from '../notifications/notifications.module';
-import { WechatModule } from '../wechat/wechat.module';
-import { ActivitiesController } from './activities.controller';
-import { ActivitiesService } from './application/activities.service';
-import { ActivityPrismaRepository } from './data/activity.prisma-repository';
-import { ActivityReminderPrismaRepository } from './data/activity-reminder.prisma-repository';
+import { IdempotencyModule } from "../../common/idempotency/idempotency.module";
+import { MailModule } from "../mail/mail.module";
+import { NotificationModule } from "../notifications/notifications.module";
+import { WechatModule } from "../wechat/wechat.module";
+import { ActivitiesController } from "./activities.controller";
+import { ActivitiesService } from "./application/activities.service";
+import { OfficialSyncService } from "./application/official-sync.service";
+import {
+  OfficialSyncAdminController,
+  OfficialSyncWorker,
+} from "./application/official-sync.worker";
+import { ActivityPrismaRepository } from "./data/activity.prisma-repository";
+import { ActivityReminderPrismaRepository } from "./data/activity-reminder.prisma-repository";
 import {
   ACTIVITY_CLOCK,
   ACTIVITY_REMINDER_REPOSITORY,
   ACTIVITY_REPOSITORY,
-} from './domain/activities.domain';
+} from "./domain/activities.domain";
 
 @Module({
   imports: [IdempotencyModule, MailModule, WechatModule, NotificationModule],
-  controllers: [ActivitiesController],
+  controllers: [ActivitiesController, OfficialSyncAdminController],
   providers: [
     ActivitiesService,
+    OfficialSyncService,
+    OfficialSyncWorker,
     ActivityPrismaRepository,
     { provide: ACTIVITY_REPOSITORY, useExisting: ActivityPrismaRepository },
     ActivityReminderPrismaRepository,
-    { provide: ACTIVITY_REMINDER_REPOSITORY, useExisting: ActivityReminderPrismaRepository },
+    {
+      provide: ACTIVITY_REMINDER_REPOSITORY,
+      useExisting: ActivityReminderPrismaRepository,
+    },
     { provide: ACTIVITY_CLOCK, useValue: { now: () => new Date() } },
   ],
   exports: [ActivitiesService],

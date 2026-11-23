@@ -22,6 +22,8 @@ const Map<String, String> implementedModuleRoutes = <String, String>{
   'campus-card': '/campus-card',
   'teabreak': '/teabreak',
   'activities': '/activities',
+  'zhishu': '/zhishu',
+  'notifications': '/notifications',
 };
 
 /// 模块落地页 —— **注册表驱动**，不含任何伪造的业务数据。
@@ -169,6 +171,10 @@ class ModuleDetailPage extends ConsumerWidget {
                         '走 ActivitiesPort。候选活动确认后才允许创建提醒；'
                         '无法确定的报名截止只保留原文，不补 23:59。'
                         '**不做**：公众号自动发现/批量抓取、反检测、系统推送。',
+                    'notifications' =>
+                      '本模块已实现：通知设置支持用户主动启用 APNs / FCM / HMS 原生设备登记与撤销，服务端按发件箱派发；未配置厂商时明确报错，桌面端保留站内信。',
+                    'zhishu' =>
+                      '本模块已实现：知枢工作台含日报、JARVIS 本地引用检索、资料库、知乎条目与 QQ 文本导入五页，共用本机持久化工作区。在线知乎、公众号与 QQ 同步需另行授权，不读取或结束其他应用进程。',
                     'campus-card' => '本模块已实现：余额 / 流水 / 付款码，走 CampusCardPort ——'
                         '**独立 OPENID 通道**（规格 §2.5），与校园会话代持完全解耦，'
                         '因此不产生任何 CASTGC。未开通时接口返回 409 '

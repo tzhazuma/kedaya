@@ -1,8 +1,8 @@
-import Taro from '@tarojs/taro'
-import { err, ok } from '@kedaya/shared'
+import Taro from "@tarojs/taro";
+import { err, ok } from "@kedaya/shared";
 
-import { isWeapp } from './env'
-import type { PlatformResult } from './failure'
+import { isWeapp } from "./env";
+import type { PlatformResult } from "./failure";
 
 /**
  * 订阅消息。
@@ -17,44 +17,54 @@ import type { PlatformResult } from './failure'
 /** 模板 ID 集中在此登记（真实项目应从后端配置下发，避免写死在端上） */
 export const SUBSCRIBE_TEMPLATES = {
   /** 拼单成团通知 */
-  groupBuyFull: 'TMPL_GROUPBUY_FULL_PLACEHOLDER',
+  groupBuyFull: "TMPL_GROUPBUY_FULL_PLACEHOLDER",
   /** 拼单即将截止 */
-  groupBuyDeadline: 'TMPL_GROUPBUY_DEADLINE_PLACEHOLDER',
-} as const
+  groupBuyDeadline: "TMPL_GROUPBUY_DEADLINE_PLACEHOLDER",
+  /** 校园活动报名与开始提醒 */
+  activityReminder: "TMPL_ACTIVITY_REMINDER_PLACEHOLDER",
+} as const;
 
 export async function requestSubscribeMessage(
   templateIds: readonly string[],
 ): Promise<PlatformResult<string[]>> {
-  if (templateIds.length === 0) {
-    return err({ code: 'FAILED', message: '没有配置订阅消息模板 ID' })
+  const configuredIds = templateIds.filter(
+    (id) => id.trim() !== "" && !id.includes("PLACEHOLDER"),
+  );
+  if (configuredIds.length === 0) {
+    return err({ code: "FAILED", message: "没有配置订阅消息模板 ID" });
   }
 
   if (!isWeapp()) {
     return err({
-      code: 'UNSUPPORTED',
-      message: '当前端不支持微信订阅消息，请在小程序内开启通知',
-    })
+      code: "UNSUPPORTED",
+      message: "当前端不支持微信订阅消息，请在小程序内开启通知",
+    });
   }
 
   try {
     // Taro 4.3 的 requestSubscribeMessage 类型把微信的 `tmplIds` 与支付宝的 `entityIds`
     // 合并成了「都必填」（多端类型生成所致）。weapp 只需要 tmplIds，
     // 这里显式收窄一次并注明原因，而不是用 `as any` 掩盖类型问题。
-    type SubscribeOption = Parameters<typeof Taro.requestSubscribeMessage>[0]
-    const option = { tmplIds: [...templateIds] } as unknown as SubscribeOption
+    type SubscribeOption = Parameters<typeof Taro.requestSubscribeMessage>[0];
+    const option = {
+      tmplIds: [...configuredIds],
+    } as unknown as SubscribeOption;
 
-    const result = await Taro.requestSubscribeMessage(option)
-    const decisions = result as unknown as Record<string, unknown>
-    const accepted = templateIds.filter((id) => decisions[id] === 'accept')
+    const result = await Taro.requestSubscribeMessage(option);
+    const decisions = result as unknown as Record<string, unknown>;
+    const accepted = configuredIds.filter((id) => decisions[id] === "accept");
 
     if (accepted.length === 0) {
-      return err({ code: 'REJECTED', message: '你拒绝了订阅消息，可在小程序设置里重新开启' })
+      return err({
+        code: "REJECTED",
+        message: "你拒绝了订阅消息，可在小程序设置里重新开启",
+      });
     }
-    return ok(accepted)
+    return ok(accepted);
   } catch (error) {
     return err({
-      code: 'FAILED',
-      message: error instanceof Error ? error.message : '订阅消息调用失败',
-    })
+      code: "FAILED",
+      message: error instanceof Error ? error.message : "订阅消息调用失败",
+    });
   }
 }

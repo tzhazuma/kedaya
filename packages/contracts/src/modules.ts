@@ -6,9 +6,9 @@
  */
 
 /** 敏感级：high / critical 必须走独立权限域 + 审计（契约 §9） */
-export type Sensitivity = 'low' | 'medium' | 'high' | 'critical';
+export type Sensitivity = "low" | "medium" | "high" | "critical";
 
-export type ModuleCategory = 'business' | 'core';
+export type ModuleCategory = "business" | "core";
 
 export interface KedayaModule {
   /** 冻结的模块 key，同时是 API 路由段 */
@@ -32,81 +32,81 @@ export interface KedayaModule {
  * ------------------------------------------------------------------ */
 export const BUSINESS_MODULES: readonly KedayaModule[] = [
   {
-    id: 'groupbuy',
-    nameZh: '拼单',
-    nameEn: 'Group Buy',
-    summary: '拼团凑单：发起、参团、成团、结算',
-    category: 'business',
-    sensitivity: 'low',
+    id: "groupbuy",
+    nameZh: "拼单",
+    nameEn: "Group Buy",
+    summary: "拼团凑单：发起、参团、成团、结算",
+    category: "business",
+    sensitivity: "low",
     requiresConsent: false,
-    route: 'groupbuy',
+    route: "groupbuy",
   },
   {
-    id: 'takeout-guard',
-    nameZh: '偷外卖',
-    nameEn: 'Takeout Guard',
-    summary: '外卖被拿错的举报、举证、协商与信用记录',
-    category: 'business',
-    sensitivity: 'medium',
+    id: "takeout-guard",
+    nameZh: "偷外卖",
+    nameEn: "Takeout Guard",
+    summary: "外卖被拿错的举报、举证、协商与信用记录",
+    category: "business",
+    sensitivity: "medium",
     requiresConsent: false,
-    route: 'takeout-guard',
+    route: "takeout-guard",
   },
   {
-    id: 'flea-market',
-    nameZh: '跳蚤',
-    nameEn: 'Flea Market',
-    summary: '二手闲置发布、搜索、议价与面交',
-    category: 'business',
-    sensitivity: 'low',
+    id: "flea-market",
+    nameZh: "跳蚤",
+    nameEn: "Flea Market",
+    summary: "二手闲置发布、搜索、议价与面交",
+    category: "business",
+    sensitivity: "low",
     requiresConsent: false,
-    route: 'flea-market',
+    route: "flea-market",
   },
   {
-    id: 'dorm-harmony',
-    nameZh: '宿舍矛盾',
-    nameEn: 'Dorm Harmony',
-    summary: '匿名调解申请、调解员介入与宿舍公约投票',
-    category: 'business',
-    sensitivity: 'high',
+    id: "dorm-harmony",
+    nameZh: "宿舍矛盾",
+    nameEn: "Dorm Harmony",
+    summary: "匿名调解申请、调解员介入与宿舍公约投票",
+    category: "business",
+    sensitivity: "high",
     requiresConsent: true,
-    route: 'dorm-harmony',
+    route: "dorm-harmony",
   },
   {
-    id: 'errand',
-    nameZh: '跑腿',
-    nameEn: 'Errand',
-    summary: '代取快递、买饭、送件，悬赏与接单',
-    category: 'business',
-    sensitivity: 'low',
+    id: "errand",
+    nameZh: "跑腿",
+    nameEn: "Errand",
+    summary: "代取快递、买饭、送件，悬赏与接单",
+    category: "business",
+    sensitivity: "low",
     requiresConsent: false,
-    route: 'errand',
+    route: "errand",
   },
   {
-    id: 'buddy',
-    nameZh: '找搭子',
-    nameEn: 'Buddy Finder',
-    summary: '运动、自习、吃饭、出行的组队匹配',
-    category: 'business',
-    sensitivity: 'low',
+    id: "buddy",
+    nameZh: "找搭子",
+    nameEn: "Buddy Finder",
+    summary: "运动、自习、吃饭、出行的组队匹配",
+    category: "business",
+    sensitivity: "low",
     requiresConsent: false,
-    route: 'buddy',
+    route: "buddy",
   },
   {
-    id: 'lost-found',
-    nameZh: '失物招领',
-    nameEn: 'Lost & Found',
-    summary: '丢失登记、拾获登记与双向匹配',
-    category: 'business',
-    sensitivity: 'low',
+    id: "lost-found",
+    nameZh: "失物招领",
+    nameEn: "Lost & Found",
+    summary: "丢失登记、拾获登记与双向匹配",
+    category: "business",
+    sensitivity: "low",
     requiresConsent: false,
-    route: 'lost-found',
+    route: "lost-found",
   },
   {
-    id: 'canteen',
-    nameZh: '营养管家',
-    nameEn: 'Nutrition Butler',
-    summary: '食堂菜品营养库、每餐记录、每日需求与缺口推荐',
-    category: 'business',
+    id: "canteen",
+    nameZh: "营养管家",
+    nameEn: "Nutrition Butler",
+    summary: "食堂菜品营养库、每餐记录、每日需求与缺口推荐",
+    category: "business",
     /**
      * 模块 id / route 仍是 `canteen`（营养管家建在食堂营养域上，ADR 0006 §2.3），
      * 但**对用户的名字已改成「营养管家」** —— 宫格、搜索、权限判定都读本注册表，
@@ -118,59 +118,59 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
      * 个人信息，比单纯的菜品营养表敏感得多。仍不设二次同意门（不做医学判断、
      * 不对外共享），但写操作落审计。
      */
-    sensitivity: 'medium',
+    sensitivity: "medium",
     requiresConsent: false,
-    route: 'canteen',
+    route: "canteen",
   },
   {
-    id: 'forum',
-    nameZh: '论坛',
-    nameEn: 'Forum',
-    summary: '版块、主题、回复、举报与治理',
-    category: 'business',
-    sensitivity: 'medium',
+    id: "forum",
+    nameZh: "论坛",
+    nameEn: "Forum",
+    summary: "版块、主题、回复、举报与治理",
+    category: "business",
+    sensitivity: "medium",
     requiresConsent: false,
-    route: 'forum',
+    route: "forum",
   },
   {
-    id: 'ai-portrait',
-    nameZh: 'AI 校园画像',
-    nameEn: 'AI Portrait',
-    summary: '基于用户行为的画像与推荐，可解释、可关闭',
-    category: 'business',
-    sensitivity: 'high',
+    id: "ai-portrait",
+    nameZh: "AI 校园画像",
+    nameEn: "AI Portrait",
+    summary: "基于用户行为的画像与推荐，可解释、可关闭",
+    category: "business",
+    sensitivity: "high",
     requiresConsent: true,
-    route: 'ai-portrait',
+    route: "ai-portrait",
   },
   {
-    id: 'wellbeing',
-    nameZh: '心理支持',
-    nameEn: 'Wellbeing',
-    summary: '倾听与预约入口，危机出口在首屏；不做诊断、不做治疗',
-    category: 'business',
-    sensitivity: 'critical',
+    id: "wellbeing",
+    nameZh: "心理支持",
+    nameEn: "Wellbeing",
+    summary: "倾听与预约入口，危机出口在首屏；不做诊断、不做治疗",
+    category: "business",
+    sensitivity: "critical",
     requiresConsent: true,
-    route: 'wellbeing',
+    route: "wellbeing",
   },
   {
-    id: 'faq',
-    nameZh: '常见问题',
-    nameEn: 'FAQ',
-    summary: '知识库与工单式自助答疑',
-    category: 'business',
-    sensitivity: 'low',
+    id: "faq",
+    nameZh: "常见问题",
+    nameEn: "FAQ",
+    summary: "知识库与工单式自助答疑",
+    category: "business",
+    sensitivity: "low",
     requiresConsent: false,
-    route: 'faq',
+    route: "faq",
   },
   {
-    id: 'techpie',
-    nameZh: 'TechPie 整合',
-    nameEn: 'TechPie Bridge',
-    summary: '与 TechPie / GeekPie 体系互联互通',
-    category: 'business',
-    sensitivity: 'medium',
+    id: "techpie",
+    nameZh: "TechPie 整合",
+    nameEn: "TechPie Bridge",
+    summary: "与 TechPie / GeekPie 体系互联互通",
+    category: "business",
+    sensitivity: "medium",
     requiresConsent: false,
-    route: 'techpie',
+    route: "techpie",
   },
   {
     /**
@@ -178,45 +178,45 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
      * `id` 是冻结契约的一部分（它同时是 API 路由段与落库字段），**不改** ——
      * 改名只发生在展示层，历史数据、审计与路由全都不受影响。
      */
-    id: 'wildlife',
-    nameZh: '野生动物',
-    nameEn: 'Campus Wildlife',
-    summary: '野生居民档案：物种与个体、校园活动地图、投喂规范与观测上报',
-    category: 'business',
-    sensitivity: 'low',
+    id: "wildlife",
+    nameZh: "野生动物",
+    nameEn: "Campus Wildlife",
+    summary: "野生居民档案：物种与个体、校园活动地图、投喂规范与观测上报",
+    category: "business",
+    sensitivity: "low",
     requiresConsent: false,
-    route: 'wildlife',
+    route: "wildlife",
   },
   {
-    id: 'facility',
-    nameZh: '场馆预约',
-    nameEn: 'Facility Booking',
-    summary: '体育场馆、健身房等校园场馆的预约与核销',
-    category: 'business',
-    sensitivity: 'medium',
+    id: "facility",
+    nameZh: "场馆预约",
+    nameEn: "Facility Booking",
+    summary: "体育场馆、健身房等校园场馆的预约与核销",
+    category: "business",
+    sensitivity: "medium",
     requiresConsent: false,
-    route: 'facility',
+    route: "facility",
   },
   {
-    id: 'petition',
-    nameZh: '众筹诉求',
-    nameEn: 'Petitions',
+    id: "petition",
+    nameZh: "众筹诉求",
+    nameEn: "Petitions",
     // ⚠️ 措辞要准确：这里**不筹钱**，筹的是「有多少人真的需要」
-    summary: '把共同需求汇总成一份可核对的诉求，达到门槛后发信给对应部门',
-    category: 'business',
-    sensitivity: 'low',
+    summary: "把共同需求汇总成一份可核对的诉求，达到门槛后发信给对应部门",
+    category: "business",
+    sensitivity: "low",
     requiresConsent: false,
-    route: 'petition',
+    route: "petition",
   },
   {
-    id: 'teabreak',
-    nameZh: '会议茶歇',
-    nameEn: 'Conference Tea Breaks',
-    summary: '把手边学术会议的时间地点和茶歇时报上来，别让点心凉在会议室里',
-    category: 'business',
-    sensitivity: 'low',
+    id: "teabreak",
+    nameZh: "会议茶歇",
+    nameEn: "Conference Tea Breaks",
+    summary: "把手边学术会议的时间地点和茶歇时报上来，别让点心凉在会议室里",
+    category: "business",
+    sensitivity: "low",
     requiresConsent: false,
-    route: 'teabreak',
+    route: "teabreak",
   },
 ] as const;
 
@@ -225,24 +225,24 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
  * ------------------------------------------------------------------ */
 export const CORE_MODULES: readonly KedayaModule[] = [
   {
-    id: 'auth',
-    nameZh: '身份',
-    nameEn: 'Auth',
-    summary: '上科大统一身份认证与第三方校园系统绑定',
-    category: 'core',
-    sensitivity: 'high',
+    id: "auth",
+    nameZh: "身份",
+    nameEn: "Auth",
+    summary: "上科大统一身份认证与第三方校园系统绑定",
+    category: "core",
+    sensitivity: "high",
     requiresConsent: false,
-    route: 'auth',
+    route: "auth",
   },
   {
-    id: 'schedule',
-    nameZh: '课表',
-    nameEn: 'Schedule',
-    summary: '学期、课程表与考试安排',
-    category: 'core',
-    sensitivity: 'medium',
+    id: "schedule",
+    nameZh: "课表",
+    nameEn: "Schedule",
+    summary: "学期、课程表与考试安排",
+    category: "core",
+    sensitivity: "medium",
     requiresConsent: false,
-    route: 'schedule',
+    route: "schedule",
   },
   /**
    * DDL 聚合（第 21 个模块，2026-10-19 加入）。
@@ -286,25 +286,26 @@ export const CORE_MODULES: readonly KedayaModule[] = [
    * 照片，且**有图必须署名**。演示数据不带任何照片。
    */
   {
-    id: 'campus-map',
-    nameZh: '校园地点',
-    nameEn: 'Campus Map',
-    summary: '快递站、地下车库、食堂菜单、活动场地与自习空间的位置与「下一站」安排',
-    category: 'core',
-    sensitivity: 'low',
+    id: "campus-map",
+    nameZh: "校园地点",
+    nameEn: "Campus Map",
+    summary:
+      "快递站、地下车库、食堂菜单、活动场地与自习空间的位置与「下一站」安排",
+    category: "core",
+    sensitivity: "low",
     requiresConsent: false,
-    route: 'campus-map',
+    route: "campus-map",
   },
   {
-    id: 'deadlines',
-    nameZh: 'DDL 聚合',
-    nameEn: 'Deadlines',
+    id: "deadlines",
+    nameZh: "DDL 聚合",
+    nameEn: "Deadlines",
     summary:
-      '把散在 Blackboard / Gradescope / Piazza / e云平台的作业与考试截止日期聚到一处，按紧迫度排序并保留回源链接',
-    category: 'core',
-    sensitivity: 'medium',
+      "把散在 Blackboard / Gradescope / Piazza / e云平台的作业与考试截止日期聚到一处，按紧迫度排序并保留回源链接",
+    category: "core",
+    sensitivity: "medium",
     requiresConsent: false,
-    route: 'deadlines',
+    route: "deadlines",
   },
   /**
    * 校园活动（第 25 个模块）。
@@ -329,45 +330,56 @@ export const CORE_MODULES: readonly KedayaModule[] = [
    * 不需要再叠一层同意门。将来若接入通讯录/画像推荐，必须重新评估敏感级。
    */
   {
-    id: 'activities',
-    nameZh: '校园活动',
-    nameEn: 'Campus Activities',
+    id: "activities",
+    nameZh: "校园活动",
+    nameEn: "Campus Activities",
     summary:
-      '把校园邮件、公众号单篇与手动录入的活动整理成候选，用户确认后进入活动日程视图（ICS / 系统日历）并生成提醒',
-    category: 'core',
-    sensitivity: 'medium',
+      "把校园邮件、公众号单篇与手动录入的活动整理成候选，用户确认后进入活动日程视图（ICS / 系统日历）并生成提醒",
+    category: "core",
+    sensitivity: "medium",
     requiresConsent: false,
-    route: 'activities',
+    route: "activities",
   },
   {
-    id: 'campus-card',
-    nameZh: '校园卡',
-    nameEn: 'Campus Card',
-    summary: '余额、流水与付款码',
-    category: 'core',
-    sensitivity: 'high',
+    id: "zhishu",
+    nameZh: "知枢工作台",
+    nameEn: "Zhishu Workspace",
+    summary:
+      "把知枢的日报、JARVIS、资料库、知乎与 QQ 聊天导入聚到一处；在线来源需授权，本地内容可检索与保存",
+    category: "core",
+    sensitivity: "medium",
     requiresConsent: false,
-    route: 'campus-card',
+    route: "zhishu",
   },
   {
-    id: 'profile',
-    nameZh: '我的',
-    nameEn: 'Profile',
-    summary: '资料、设置与隐私开关',
-    category: 'core',
-    sensitivity: 'medium',
+    id: "campus-card",
+    nameZh: "校园卡",
+    nameEn: "Campus Card",
+    summary: "余额、流水与付款码",
+    category: "core",
+    sensitivity: "high",
     requiresConsent: false,
-    route: 'profile',
+    route: "campus-card",
   },
   {
-    id: 'notifications',
-    nameZh: '通知',
-    nameEn: 'Notifications',
-    summary: '站内信、订阅消息（小程序）与推送',
-    category: 'core',
-    sensitivity: 'low',
+    id: "profile",
+    nameZh: "我的",
+    nameEn: "Profile",
+    summary: "资料、设置与隐私开关",
+    category: "core",
+    sensitivity: "medium",
     requiresConsent: false,
-    route: 'notifications',
+    route: "profile",
+  },
+  {
+    id: "notifications",
+    nameZh: "通知",
+    nameEn: "Notifications",
+    summary: "站内信、订阅消息（小程序）与推送",
+    category: "core",
+    sensitivity: "low",
+    requiresConsent: false,
+    route: "notifications",
   },
 ] as const;
 
@@ -375,14 +387,19 @@ export const CORE_MODULES: readonly KedayaModule[] = [
  * 派生
  * ------------------------------------------------------------------ */
 
-export const MODULES: readonly KedayaModule[] = [...CORE_MODULES, ...BUSINESS_MODULES];
+export const MODULES: readonly KedayaModule[] = [
+  ...CORE_MODULES,
+  ...BUSINESS_MODULES,
+];
 
 /** 需要二次同意的模块（契约 §9） */
-export const CONSENT_MODULES: readonly KedayaModule[] = MODULES.filter((m) => m.requiresConsent);
+export const CONSENT_MODULES: readonly KedayaModule[] = MODULES.filter(
+  (m) => m.requiresConsent,
+);
 
 /** 高敏感模块（high + critical） */
 export const SENSITIVE_MODULES: readonly KedayaModule[] = MODULES.filter(
-  (m) => m.sensitivity === 'high' || m.sensitivity === 'critical',
+  (m) => m.sensitivity === "high" || m.sensitivity === "critical",
 );
 
 const BY_ID = new Map<string, KedayaModule>(MODULES.map((m) => [m.id, m]));
@@ -397,12 +414,15 @@ export function requiresConsent(id: string): boolean {
 
 export function isSensitive(id: string): boolean {
   const m = BY_ID.get(id);
-  return m?.sensitivity === 'high' || m?.sensitivity === 'critical';
+  return m?.sensitivity === "high" || m?.sensitivity === "critical";
 }
 
 /** 生成 API 路径，例: modulePath('groupbuy', 'items', '123') -> '/groupbuy/items/123' */
-export function modulePath(id: string, ...segments: (string | number)[]): string {
+export function modulePath(
+  id: string,
+  ...segments: (string | number)[]
+): string {
   const m = BY_ID.get(id);
   const base = m ? m.route : id;
-  return [base, ...segments.map(String)].join('/');
+  return [base, ...segments.map(String)].join("/");
 }

@@ -52,12 +52,15 @@ model User {
   /// 校园活动（独立域，**不写进课表 deadlines**）：导入结果、确认与提醒
   activities        Activity[]
   activityReminders ActivityReminder[]
+  officialAccountSubscriptions OfficialAccountSubscription[]
   consents       Consent[]
   auditLogs      AuditLog[]
   profileSetting ProfileSetting?
   schedule       ScheduleCourse[]
   cardTxns       CampusCardTransaction[]
   notifications  Notification[]
+  pushTargets    PushTarget[]
+  pushDeliveries PushDelivery[]
   portrait       AiPortraitProfile?
   appointments   WellbeingAppointment[]
   /// 上报的动物观测（规格 §2.6 reporterId）。匿名上报时 API 层不得回传该关联
@@ -1345,6 +1348,19 @@ model ActivityReminder {
   @@map("ActivityReminder")
 }
 
+model OfficialAccountSubscription {
+  id         String   @id @default(cuid())
+  userId     String
+  accountKey String
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, accountKey])
+  @@index([accountKey])
+  @@map("OfficialAccountSubscription")
+}
+
 /* ================================================================== *
  * 2.10 wildlife 域（猫/鸟/黑天鹅活动区域与轨迹）—— 规格
  *      docs/features/wildlife-map.md §2 / §7 / §9
@@ -1734,6 +1750,49 @@ model Notification {
 
   @@index([userId, readAt, createdAt])
   @@index([userId, createdAt])
+}
+
+model PushTarget {
+  id         String    @id @default(cuid())
+  userId     String
+  channel    String
+  token      String
+  templateId String?
+  status     String    @default("active")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  lastSeenAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([channel, token])
+  @@index([userId, status])
+  @@map("PushTarget")
+}
+
+model PushDelivery {
+  id         String    @id @default(cuid())
+  userId     String
+  channel    String
+  token      String
+  templateId String?
+  title      String
+  body       String
+  link       String?
+  source     String
+  dedupeKey  String    @unique
+  status     String    @default("pending")
+  attempts   Int       @default(0)
+  lastError  String?
+  claimedAt  DateTime?
+  sentAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+  @@map("PushDelivery")
 }
 
 /// 运维 · 客户端遥测（**不存任何内容数据**；只存崩溃/服务端故障线索）

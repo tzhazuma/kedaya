@@ -1,8 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { InternalError, NotFoundError, ValidationError } from '../../common/errors/app-error';
-import type { NotifyInput } from '../../common/notifications/notification.port';
-import { NotificationService } from './notifications.service';
-import type { NotificationModel, NotificationRepository } from './domain/notifications.domain';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  InternalError,
+  NotFoundError,
+  ValidationError,
+} from "../../common/errors/app-error";
+import type { NotifyInput } from "../../common/notifications/notification.port";
+import { NotificationService } from "./notifications.service";
+import type {
+  NotificationModel,
+  NotificationRepository,
+} from "./domain/notifications.domain";
+import type { PushService } from "./push/push.service";
 
 /**
  * 站内信用例测试。
@@ -14,15 +22,15 @@ import type { NotificationModel, NotificationRepository } from './domain/notific
  */
 
 const BASE: NotificationModel = {
-  id: 'nt-1',
-  userId: 'user-A',
-  title: '标题',
-  body: '正文',
-  channel: 'inapp',
-  source: 'groupbuy',
-  link: '/presentation/pages/groupbuy/detail/index?id=x',
+  id: "nt-1",
+  userId: "user-A",
+  title: "标题",
+  body: "正文",
+  channel: "inapp",
+  source: "groupbuy",
+  link: "/presentation/pages/groupbuy/detail/index?id=x",
   readAt: null,
-  createdAt: new Date('2026-10-01T00:00:00.000Z'),
+  createdAt: new Date("2026-10-01T00:00:00.000Z"),
 };
 
 interface FakeRepo {
@@ -45,19 +53,25 @@ function makeRepo(): FakeRepo {
   };
 }
 
-function makeService(repo: FakeRepo): NotificationService {
-  return new NotificationService(repo as unknown as NotificationRepository);
+function makeService(
+  repo: FakeRepo,
+  push?: Pick<PushService, "enqueue">,
+): NotificationService {
+  return new NotificationService(
+    repo as unknown as NotificationRepository,
+    push as PushService | undefined,
+  );
 }
 
 const VALID: NotifyInput = {
-  userId: 'user-A',
-  title: '有人参团了你的拼单',
-  body: '「奶茶拼单」已有 2/4 份。',
-  source: 'groupbuy',
-  link: '/presentation/pages/groupbuy/detail/index?id=order-1',
+  userId: "user-A",
+  title: "有人参团了你的拼单",
+  body: "「奶茶拼单」已有 2/4 份。",
+  source: "groupbuy",
+  link: "/presentation/pages/groupbuy/detail/index?id=order-1",
 };
 
-describe('NotificationService', () => {
+describe("NotificationService", () => {
   let repo: FakeRepo;
   let service: NotificationService;
 
@@ -66,102 +80,133 @@ describe('NotificationService', () => {
     service = makeService(repo);
   });
 
-  describe('notify（写通知，best-effort）', () => {
-    it('单条走 create，多条走 createMany（成团通知要一次发给全部成员）', async () => {
+  describe("notify（写通知，best-effort）", () => {
+    it("单条走 create，多条走 createMany（成团通知要一次发给全部成员）", async () => {
       await service.notify(VALID);
       expect(repo.create).toHaveBeenCalledTimes(1);
 
-      await service.notify([VALID, { ...VALID, userId: 'user-B' }]);
+      await service.notify([VALID, { ...VALID, userId: "user-B" }]);
       expect(repo.createMany).toHaveBeenCalledTimes(1);
       expect(repo.createMany.mock.calls[0]?.[0]).toHaveLength(2);
     });
 
-    it('仓储报错时**不抛出**（主流程已成功，不能因为通知失败而 500）', async () => {
-      repo.create.mockRejectedValue(new Error('db down'));
+    it("仓储报错时**不抛出**（主流程已成功，不能因为通知失败而 500）", async () => {
+      repo.create.mockRejectedValue(new Error("db down"));
       await expect(service.notify(VALID)).resolves.toBeUndefined();
     });
 
-    it('缺字段或 source 未登记的通知被丢弃，不写库', async () => {
-      await service.notify({ ...VALID, userId: '  ' });
-      await service.notify({ ...VALID, title: '' });
-      await service.notify({ ...VALID, source: 'not-registered' });
+    it("缺字段或 source 未登记的通知被丢弃，不写库", async () => {
+      await service.notify({ ...VALID, userId: "  " });
+      await service.notify({ ...VALID, title: "" });
+      await service.notify({ ...VALID, source: "not-registered" });
       expect(repo.create).not.toHaveBeenCalled();
     });
 
-    it('全部被丢弃时不调用仓储（空写入没有意义）', async () => {
-      await service.notify([{ ...VALID, source: 'typo' }]);
+    it("全部被丢弃时不调用仓储（空写入没有意义）", async () => {
+      await service.notify([{ ...VALID, source: "typo" }]);
       expect(repo.create).not.toHaveBeenCalled();
       expect(repo.createMany).not.toHaveBeenCalled();
     });
 
-    it('标题/正文按码点截断，不把 emoji 截成半个', async () => {
-      const long = '🦆'.repeat(60);
+    it("标题/正文按码点截断，不把 emoji 截成半个", async () => {
+      const long = "🦆".repeat(60);
       await service.notify({ ...VALID, title: long, body: long });
 
-      const written = repo.create.mock.calls[0]?.[0] as { title: string; body: string };
+      const written = repo.create.mock.calls[0]?.[0] as {
+        title: string;
+        body: string;
+      };
       expect([...written.title].length).toBeLessThanOrEqual(40);
-      expect(written.title.endsWith('…')).toBe(true);
+      expect(written.title.endsWith("…")).toBe(true);
       // 截断后仍是合法字符串（没有落单的代理项）
-      expect(written.title.includes('\uFFFD')).toBe(false);
+      expect(written.title.includes("\uFFFD")).toBe(false);
     });
 
-    it('保留 link（前端据此决定是否可点）', async () => {
+    it("保留 link（前端据此决定是否可点）", async () => {
       await service.notify(VALID);
-      expect(repo.create.mock.calls[0]?.[0]).toMatchObject({ link: VALID.link, source: 'groupbuy' });
+      expect(repo.create.mock.calls[0]?.[0]).toMatchObject({
+        link: VALID.link,
+        source: "groupbuy",
+      });
+    });
+
+    it("站内信写入后按相同内容进入推送发件箱，推送失败不影响主流程", async () => {
+      const push = {
+        enqueue: vi.fn().mockRejectedValue(new Error("push down")),
+      };
+      service = makeService(repo, push);
+      await expect(service.notify(VALID)).resolves.toBeUndefined();
+      expect(push.enqueue).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: VALID.userId,
+          title: VALID.title,
+          body: VALID.body,
+          source: VALID.source,
+          link: VALID.link,
+        }),
+      );
     });
   });
 
-  describe('notifyStrict（提醒派发用：失败必须抛出）', () => {
-    it('接受 activities 来源并写入', async () => {
+  describe("notifyStrict（提醒派发用：失败必须抛出）", () => {
+    it("接受 activities 来源并写入", async () => {
       await expect(
         service.notifyStrict({
           ...VALID,
-          source: 'activities',
-          title: '活动开始提醒',
-          body: '「AI for Science」即将开始',
+          source: "activities",
+          title: "活动开始提醒",
+          body: "「AI for Science」即将开始",
         }),
       ).resolves.toBeUndefined();
       expect(repo.create).toHaveBeenCalledTimes(1);
-      expect(repo.create.mock.calls[0]?.[0]).toMatchObject({ source: 'activities' });
+      expect(repo.create.mock.calls[0]?.[0]).toMatchObject({
+        source: "activities",
+      });
     });
 
-    it('仓储失败时抛出 INTERNAL（调用方据此把提醒回退 pending）', async () => {
-      repo.create.mockRejectedValue(new Error('db down'));
-      await expect(service.notifyStrict({ ...VALID, source: 'activities' })).rejects.toBeInstanceOf(
-        InternalError,
-      );
-    });
-
-    it('source 未登记 / 字段缺失时抛出 VALIDATION，不静默丢弃', async () => {
+    it("仓储失败时抛出 INTERNAL（调用方据此把提醒回退 pending）", async () => {
+      repo.create.mockRejectedValue(new Error("db down"));
       await expect(
-        service.notifyStrict({ ...VALID, source: 'not-registered' }),
+        service.notifyStrict({ ...VALID, source: "activities" }),
+      ).rejects.toBeInstanceOf(InternalError);
+    });
+
+    it("source 未登记 / 字段缺失时抛出 VALIDATION，不静默丢弃", async () => {
+      await expect(
+        service.notifyStrict({ ...VALID, source: "not-registered" }),
       ).rejects.toBeInstanceOf(ValidationError);
-      await expect(service.notifyStrict({ ...VALID, userId: '  ' })).rejects.toBeInstanceOf(
-        ValidationError,
-      );
+      await expect(
+        service.notifyStrict({ ...VALID, userId: "  " }),
+      ).rejects.toBeInstanceOf(ValidationError);
       expect(repo.create).not.toHaveBeenCalled();
     });
   });
 
-  describe('读接口', () => {
-    it('list 恒按当前用户收窄，并透传 unreadOnly', async () => {
-      await service.list('user-A', { limit: 20, unreadOnly: true });
+  describe("读接口", () => {
+    it("list 恒按当前用户收窄，并透传 unreadOnly", async () => {
+      await service.list("user-A", { limit: 20, unreadOnly: true });
       expect(repo.list).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'user-A', unreadOnly: true, limit: 20 }),
+        expect.objectContaining({
+          userId: "user-A",
+          unreadOnly: true,
+          limit: 20,
+        }),
       );
     });
 
-    it('unreadCount 直接透传', async () => {
-      expect(await service.unreadCount('user-A')).toBe(3);
+    it("unreadCount 直接透传", async () => {
+      expect(await service.unreadCount("user-A")).toBe(3);
     });
 
     it('markRead 不属于自己时抛 NOT_FOUND（不透露"存在但不是你的"）', async () => {
       repo.markRead.mockResolvedValue(null);
-      await expect(service.markRead('user-A', 'nt-other')).rejects.toThrow(NotFoundError);
+      await expect(service.markRead("user-A", "nt-other")).rejects.toThrow(
+        NotFoundError,
+      );
     });
 
-    it('markAllRead 返回本次实际标记条数', async () => {
-      expect(await service.markAllRead('user-A')).toBe(2);
+    it("markAllRead 返回本次实际标记条数", async () => {
+      expect(await service.markAllRead("user-A")).toBe(2);
     });
   });
 });

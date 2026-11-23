@@ -1,15 +1,15 @@
-import { DEFAULT_PAGE_SIZE, modulePath } from '@kedaya/contracts'
-import { ok, type Result } from '@kedaya/shared'
+import { DEFAULT_PAGE_SIZE, modulePath } from "@kedaya/contracts";
+import { ok, type Result } from "@kedaya/shared";
 
-import type { NotificationItem } from '../../domain/models/notification'
-import type { RepositoryError } from '../../domain/ports/errors'
+import type { NotificationItem } from "../../domain/models/notification";
+import type { RepositoryError } from "../../domain/ports/errors";
 import type {
   ListNotificationsQuery,
   NotificationPage,
   NotificationRepository,
-} from '../../domain/ports/notificationRepository'
-import type { ApiClient } from '../api/request'
-import { toRepositoryError } from './toRepositoryError'
+} from "../../domain/ports/notificationRepository";
+import type { ApiClient } from "../api/request";
+import { toRepositoryError } from "./toRepositoryError";
 
 /**
  * 真后端站内信仓储 —— 契约 §6.1 的模块路由：
@@ -26,41 +26,70 @@ import { toRepositoryError } from './toRepositoryError'
  * 未登录时服务端返回 UNAUTHENTICATED，`ApiClient` 会按契约 §6.1 尝试刷新 token，
  * 刷新也失败才把它当错误抛上来 —— 页面据此提示"登录后查看消息"。
  */
-export function createHttpNotificationRepository(client: ApiClient): NotificationRepository {
+export function createHttpNotificationRepository(
+  client: ApiClient,
+): NotificationRepository {
   return {
-    async list(query: ListNotificationsQuery = {}): Promise<Result<NotificationPage, RepositoryError>> {
-      const result = await client.get<NotificationPage>(modulePath('notifications', 'items'), {
+    async list(
+      query: ListNotificationsQuery = {},
+    ): Promise<Result<NotificationPage, RepositoryError>> {
+      const result = await client.get<NotificationPage>(
+        modulePath("notifications", "items"),
+        {
         cursor: query.cursor ?? undefined,
         limit: query.limit ?? DEFAULT_PAGE_SIZE,
         // 服务端只认 `1` / `true`；这里显式传 1，避免 `false` 被当成真值
         unread: query.unreadOnly === true ? 1 : undefined,
-      })
-      if (!result.ok) return { ok: false, error: toRepositoryError(result.error) }
-      return ok({ items: result.value.items, nextCursor: result.value.nextCursor })
+        },
+      );
+      if (!result.ok)
+        return { ok: false, error: toRepositoryError(result.error) };
+      return ok({
+        items: result.value.items,
+        nextCursor: result.value.nextCursor,
+      });
     },
 
     async unreadCount(): Promise<Result<number, RepositoryError>> {
       const result = await client.get<{ count: number }>(
-        modulePath('notifications', 'unread-count'),
-      )
-      if (!result.ok) return { ok: false, error: toRepositoryError(result.error) }
-      return ok(result.value.count)
+        modulePath("notifications", "unread-count"),
+      );
+      if (!result.ok)
+        return { ok: false, error: toRepositoryError(result.error) };
+      return ok(result.value.count);
     },
 
-    async markRead(id: string): Promise<Result<NotificationItem, RepositoryError>> {
+    async markRead(
+      id: string,
+    ): Promise<Result<NotificationItem, RepositoryError>> {
       const result = await client.post<NotificationItem>(
-        modulePath('notifications', 'items', encodeURIComponent(id), 'read'),
-      )
-      if (!result.ok) return { ok: false, error: toRepositoryError(result.error) }
-      return ok(result.value)
+        modulePath("notifications", "items", encodeURIComponent(id), "read"),
+      );
+      if (!result.ok)
+        return { ok: false, error: toRepositoryError(result.error) };
+      return ok(result.value);
+    },
+
+    async subscribeWechat(templateId: string) {
+      const result = await client.post<{ templateId: string; status: string }>(
+        modulePath("notifications", "push", "wechat-subscriptions"),
+        { templateId },
+      );
+      if (!result.ok)
+        return { ok: false as const, error: toRepositoryError(result.error) };
+      return ok({
+        templateId: result.value.templateId,
+        status: result.value.status,
+      });
     },
 
     async markAllRead(): Promise<Result<number, RepositoryError>> {
       const result = await client.post<{ updated: number }>(
-        modulePath('notifications', 'read-all'),
-      )
-      if (!result.ok) return { ok: false, error: toRepositoryError(result.error) }
-      return ok(result.value.updated)
+        modulePath("notifications", "read-all"),
+      );
+      if (!result.ok)
+        return { ok: false, error: toRepositoryError(result.error) };
+      return ok(result.value.updated);
     },
-  }
+  };
 }

@@ -75,7 +75,7 @@
 本轮新增一个独立分包 `presentation/pages/activities/`，共五页：
 
 | 页面 | 路径 | 作用 |
-| --- | --- | --- |
+| ---------- | ----------------- | -------------------------------------- |
 | 列表 | `list/index` | 待确认 / 今天 / 本周 / 全部 + 来源筛选 |
 | 详情 | `detail/index` | 确认加入日程、忽略、设提醒、复制链接 |
 | 公众号导入 | `import/index` | 用户主动粘贴**单篇**链接或正文 |
@@ -94,13 +94,14 @@
   邮件提升是 `{eventIds: []}`（响应 `{items, created, skipped}`）；
   契约没有「按活动查提醒」端点，详情页拉 `GET /activities/reminders` 后按
   `activityId` 过滤。
-- **只建站内信**：没有真实模板 ID 时 `createReminder` 直接拒绝 `wechat-subscribe`，
-  页面也不把它画成可用渠道。管理员派发端点存在，但用户页不暴露。
+- 默认仍建站内信；微信订阅消息需要真实模板 ID 与已绑定微信身份。用户在消息页主动授权后，
+  小程序只回传 `templateId` 到 `/notifications/push/wechat-subscriptions`，openid 由服务端从绑定身份读取；
+  一次性授权成功后耗尽，占位模板不会被画成可用渠道。管理员派发端点存在，但用户页不暴露。
 - 时间存 UTC ISO，展示显式 `Asia/Shanghai`；只有日期没有时刻的原文留在
   `registrationDeadlineRaw`，**不补 23:59**。
 - 只存活动字段与 ≤200 字证据片段；邮件正文 / 附件 / 公众号全文不进入小程序。
-- 公众号只做用户主动单篇链接或正文：不做自动发现、批量历史抓取、反检测或绕过验证；
-  链接只复制，不用 `web-view`。
+- 单篇公众号仍只做用户主动链接或正文；自动同步仅走学校/学院认证服务号授权的
+  `freepublish/batchget`，按用户订阅运行，不使用私有 Cookie、反检测或绕过验证；链接只复制，不用 `web-view`。
 - 邮箱复用现成 `/mail` 端点（`POST/DELETE /mail/account`、`POST /mail/sync`、
   `GET /mail/events`）：只读 IMAP、AES-256-GCM 服务端加密、`*.shanghaitech.edu.cn`
   IMAP 白名单。密码表单提交后立即清空，绑定/同步失败不显示假成功。

@@ -1,12 +1,12 @@
 /**
  * 门户模块注册表 —— 首页宫格的**唯一数据源**。
  *
- * 契约 §4 + §11.10-C：**25** 个模块（8 基础 + 17 业务）由 `@kedaya/contracts` 的 `MODULES` 冻结。
+ * 契约 §4 + §11.10-C：**26** 个模块（9 基础 + 17 业务）由 `@kedaya/contracts` 的 `MODULES` 冻结。
  * 本文件只补 UI 装饰，**不复制、不改写**契约内容。
  *
  * 依赖方向：domain → @kedaya/contracts（纯类型/常量包，零框架）。
  */
-import { BUSINESS_MODULES, CORE_MODULES, MODULES } from '@kedaya/contracts';
+import { BUSINESS_MODULES, CORE_MODULES, MODULES } from "@kedaya/contracts";
 
 import {
   auditedModules,
@@ -16,8 +16,14 @@ import {
   type ModuleDecoration,
   type PortalFeatureEntry,
   type PortalModule,
-} from './module';
-import { deliveryOf, isDelivered, isMiniappDelivery, isWebDelivery, type ModuleDelivery } from './delivery';
+} from "./module";
+import {
+  deliveryOf,
+  isDelivered,
+  isMiniappDelivery,
+  isWebDelivery,
+  type ModuleDelivery,
+} from "./delivery";
 
 /**
  * UI 装饰表：key = 冻结模块 id。
@@ -25,46 +31,47 @@ import { deliveryOf, isDelivered, isMiniappDelivery, isWebDelivery, type ModuleD
  */
 const DECORATION: Readonly<Record<string, ModuleDecoration>> = {
   // ---- 基础模块 ----
-  auth: { icon: 'key-round', accent: 'brand' },
-  schedule: { icon: 'calendar-days', accent: 'info' },
+  auth: { icon: "key-round", accent: "brand" },
+  schedule: { icon: "calendar-days", accent: "info" },
   // 第 21 个模块：DDL 聚合。与 schedule 同属学业基础设施（core），
   // 但详情页在小程序（Web 暂无独立功能页），所以只剩装饰 + 交付状态两处需要登记。
-  deadlines: { icon: 'calendar-days', accent: 'warning' },
+  deadlines: { icon: "calendar-days", accent: "warning" },
   // 第 22 个模块：校园地点（POI 列表 + 下一站）。核心工具，公开数据。
-  'campus-map': { icon: 'map-pin', accent: 'success' },
-  'campus-card': { icon: 'credit-card', accent: 'warning' },
-  profile: { icon: 'user', accent: 'neutral' },
-  notifications: { icon: 'bell', accent: 'info' },
+  "campus-map": { icon: "map-pin", accent: "success" },
+  "campus-card": { icon: "credit-card", accent: "warning" },
+  profile: { icon: "user", accent: "neutral" },
+  notifications: { icon: "bell", accent: "info" },
 
   // ---- 业务模块 ----
-  groupbuy: { icon: 'users', accent: 'brand' },
-  'takeout-guard': { icon: 'shield-alert', accent: 'warning' },
-  'flea-market': { icon: 'shopping-bag', accent: 'success' },
-  'dorm-harmony': { icon: 'home', accent: 'danger' },
-  errand: { icon: 'bike', accent: 'info' },
-  buddy: { icon: 'user-search', accent: 'success' },
-  'lost-found': { icon: 'search', accent: 'info' },
-  canteen: { icon: 'utensils', accent: 'success' },
-  forum: { icon: 'messages-square', accent: 'info' },
-  'ai-portrait': { icon: 'sparkles', accent: 'danger' },
-  wellbeing: { icon: 'heart-pulse', accent: 'danger' },
-  faq: { icon: 'circle-help', accent: 'neutral' },
-  techpie: { icon: 'plug', accent: 'info' },
-  wildlife: { icon: 'bird', accent: 'success' },
+  groupbuy: { icon: "users", accent: "brand" },
+  "takeout-guard": { icon: "shield-alert", accent: "warning" },
+  "flea-market": { icon: "shopping-bag", accent: "success" },
+  "dorm-harmony": { icon: "home", accent: "danger" },
+  errand: { icon: "bike", accent: "info" },
+  buddy: { icon: "user-search", accent: "success" },
+  "lost-found": { icon: "search", accent: "info" },
+  canteen: { icon: "utensils", accent: "success" },
+  forum: { icon: "messages-square", accent: "info" },
+  "ai-portrait": { icon: "sparkles", accent: "danger" },
+  wellbeing: { icon: "heart-pulse", accent: "danger" },
+  faq: { icon: "circle-help", accent: "neutral" },
+  techpie: { icon: "plug", accent: "info" },
+  wildlife: { icon: "bird", accent: "success" },
   // 第 20 个模块（契约 §11.10-C 裁决 v1.2）：场馆预约，medium 敏感、无同意门
-  facility: { icon: 'dumbbell', accent: 'success' },
+  facility: { icon: "dumbbell", accent: "success" },
   // 第 23 个模块（2026-10-20）：众筹诉求。用 warning 色 —— 它涉及「向部门提要求」，
   // 不是日常顺手点开的功能，视觉上该和其它模块区分开。
-  petition: { icon: 'megaphone', accent: 'warning' },
+  petition: { icon: "megaphone", accent: "warning" },
   // 第 24 个模块（2026-10-22）：学术会议茶歇。用 success 色 ——
   // 这是「有好东西」的信号，不是警告。
-  teabreak: { icon: 'coffee', accent: 'success' },
+  teabreak: { icon: "coffee", accent: "success" },
   // 第 25 个模块（2026-11-22）：校园活动。与 DDL 分开，
   // 入口落在 /import 的活动区；复用日历图标与品牌色。
-  activities: { icon: 'calendar-days', accent: 'brand' },
+  activities: { icon: "calendar-days", accent: "brand" },
+  zhishu: { icon: "sparkles", accent: "brand" },
 };
 
-/** 25 个模块，顺序 = 契约顺序（基础在前，业务在后） */
+/** 26 个模块，顺序 = 契约顺序（基础在前，业务在后） */
 export const PORTAL_MODULES: readonly PortalModule[] = MODULES.map((m) =>
   decorateModule(m, DECORATION[m.id]),
 );
@@ -76,27 +83,31 @@ export const PORTAL_MODULES: readonly PortalModule[] = MODULES.map((m) =>
  * 不再自己复制一份标题 / 图标 / 落点。它仍然独立于 `deadlines`：活动有确认门、
  * 地点、主办与报名截止，不能塞进课程截止日期。
  */
-const ACTIVITY_MODULE = PORTAL_MODULES.find((module) => module.id === 'activities');
+const ACTIVITY_MODULE = PORTAL_MODULES.find(
+  (module) => module.id === "activities",
+);
 
 export const ACTIVITIES_PORTAL_ENTRY: PortalFeatureEntry = {
-  id: 'activities',
-  nameZh: ACTIVITY_MODULE?.nameZh ?? '校园活动',
-  href: ACTIVITY_MODULE?.href ?? '/m/activities',
-  icon: ACTIVITY_MODULE?.icon ?? 'calendar-days',
-  accent: ACTIVITY_MODULE?.accent ?? 'brand',
-  delivery: ACTIVITY_MODULE?.delivery ?? deliveryOf('activities'),
+  id: "activities",
+  nameZh: ACTIVITY_MODULE?.nameZh ?? "校园活动",
+  href: ACTIVITY_MODULE?.href ?? "/m/activities",
+  icon: ACTIVITY_MODULE?.icon ?? "calendar-days",
+  accent: ACTIVITY_MODULE?.accent ?? "brand",
+  delivery: ACTIVITY_MODULE?.delivery ?? deliveryOf("activities"),
 };
 
 /** 分组（首页宫格分区渲染） */
 export const PORTAL_MODULE_GROUPS = groupModulesByCategory(PORTAL_MODULES);
 
 /** 必须二次同意才能进入的模块（契约 §9：wellbeing / dorm-harmony / ai-portrait） */
-export const CONSENT_GATED_MODULES: readonly PortalModule[] = consentGatedModules(PORTAL_MODULES);
+export const CONSENT_GATED_MODULES: readonly PortalModule[] =
+  consentGatedModules(PORTAL_MODULES);
 
 /** 需要审计的模块（high + critical；注意 auth / campus-card 在列但**无同意门**） */
-export const AUDITED_MODULES: readonly PortalModule[] = auditedModules(PORTAL_MODULES);
+export const AUDITED_MODULES: readonly PortalModule[] =
+  auditedModules(PORTAL_MODULES);
 
-/** 模块总数 —— 与契约对齐（8 基础 + 17 业务 = 25） */
+/** 模块总数 —— 与契约对齐（9 基础 + 17 业务 = 26） */
 export const PORTAL_MODULE_COUNT = PORTAL_MODULES.length;
 
 /** 契约原始条目（测试用，避免测试自己再 import 一次） */

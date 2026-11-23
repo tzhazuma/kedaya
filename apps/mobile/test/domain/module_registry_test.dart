@@ -10,15 +10,15 @@ void main() {
   // 2026-11-22 新增独立 `activities` 域（活动不塞进课程 `deadlines`）。
   // 注意：`packages/contracts/src/modules.ts` 的 activities 条目由契约流同步，
   // 本端只做镜像与测试守卫。
-  test('注册表共 25 个模块：17 业务 + 8 基础（含新增 activities）', () {
+  test('注册表共 26 个模块：17 业务 + 9 基础（含知枢工作台）', () {
     // 2026-10-22 补齐：此前 Dart 镜像只有 22 条，缺 `petition`（业务）与
     // `campus-map`（核心）—— 契约早就有了，Dart 端漏了，导致真机首页
     // 显示「查看全部 22 个模块」而契约是 24。本轮一次补齐并对齐顺序。
     // 2026-11-22 独立 activities 域：契约把活动放在 core（与 deadlines 同组，
     // 但**不混进**课程 DDL）。
-    expect(kedayaModules, hasLength(25));
+    expect(kedayaModules, hasLength(26));
     expect(businessModules, hasLength(17));
-    expect(coreModules, hasLength(8));
+    expect(coreModules, hasLength(9));
   });
 
   test('petition 已注册（业务 / low / 无同意门）', () {
@@ -75,6 +75,7 @@ void main() {
       'campus-map',
       'deadlines',
       'activities',
+      'zhishu',
       'campus-card',
       'profile',
       'notifications',
@@ -123,6 +124,19 @@ void main() {
     expect(module.summary, contains('Gradescope'));
     expect(moduleIsSensitive('deadlines'), isFalse);
     expect(moduleRequiresConsent('deadlines'), isFalse);
+  });
+
+  test('知枢工作台已注册，并覆盖五个功能页', () {
+    final KedayaModule? module = moduleById('zhishu');
+    expect(module, isNotNull);
+    expect(module!.nameZh, '知枢工作台');
+    expect(module.category, ModuleCategory.core);
+    expect(module.sensitivity, ModuleSensitivity.medium);
+    expect(module.requiresConsent, isFalse);
+    expect(module.route, 'zhishu');
+    for (final String label in <String>['日报', 'JARVIS', '资料库', '知乎', 'QQ']) {
+      expect(module.summary, contains(label));
+    }
   });
 
   test('id 唯一，route 与 id 一致，中文名与一句话定义非空', () {
@@ -237,9 +251,9 @@ void main() {
       expect(RegExp(r'查看全部\s*\d+\s*个模块').hasMatch(src), isFalse);
     });
 
-    test('注册表计数与契约对齐（25 = 17 + 8）', () {
+    test('注册表计数与契约对齐（26 = 17 + 9）', () {
       // 这条是「数字对不对」的最终裁定；上面两条防的是「UI 不读它」。
-      expect(kedayaModules.length, 25);
+      expect(kedayaModules.length, 26);
       expect(businessModules.length + coreModules.length, kedayaModules.length);
     });
   });

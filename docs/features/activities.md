@@ -6,7 +6,7 @@
 代码入口：
 
 | 层 | 位置 |
-| --- | --- |
+| ---------- | -------------------------------------------------------------------------------------------------------------------- |
 | 契约 | `packages/contracts/src/activities.ts`、`packages/contracts/src/modules.ts` |
 | 共享纯函数 | `packages/shared/src/activities-extract.ts` / `activities-ics.ts` / `activities-reminders.ts` / `activities-time.ts` |
 | API | `services/api/src/modules/activities/`；校园邮箱在 `services/api/src/modules/mail/` |
@@ -22,14 +22,14 @@
 「什么时候上课」。三者都出现在日程里，但生命周期不同：
 
 | | 课程课表 `schedule` | DDL `deadlines` | 活动 `activities` |
-| --- | --- | --- | --- |
+| ------------ | ------------------- | ------------------------------------------ | ---------------------------------------- |
 | 来源 | 教务 | Blackboard / Gradescope / Piazza / e云平台 | 校园邮箱 / 单篇公众号 / 手动 |
 | 创建后 | 直接生效 | 直接生效 | 先落 `candidate`，**用户确认后**才进日程 |
 | 提醒 | 课程安排 | 截止时间 | 报名截止前 24h、开始前 1h（站内信） |
 | 写入课程课表 | — | 否 | **否** |
 
-活动**不做**自动发现、批量历史抓取、反检测或绕过微信验证；也不把公众号全文、
-邮件正文或附件落库。
+活动不做私有会话抓取、反检测或绕过微信验证；自动同步只走认证服务号的官方授权接口。
+公众号全文、邮件正文或附件均不落库。
 
 ---
 
@@ -64,6 +64,16 @@
 - 公开的 `POST /wechat/article` 支持一次解析用户主动给出的多篇链接（最多 20 篇），
   但那是「用户已经打开的文章」，不是抓历史；活动导入本身仍是单篇。
 - 正文只用于本次抽取，抽取后只保留活动字段与 ≤200 字证据片段。
+
+认证公众号自动同步走微信官方 `POST /cgi-bin/freepublish/batchget`（每页最多 20 条），
+支持 `authorizer_access_token`，仅用于学校/学院已授权的认证服务号。账号配置在服务端
+`WECHAT_OFFICIAL_ACCOUNTS` JSON 数组中（`key/name` 及 `authorizerAccessToken` 或
+`appId/appSecret`）；公开账号列表只返回 `key/name/subscribed`。用户通过
+`POST /activities/official/subscriptions` 订阅，`POST /activities/official/sync` 立即同步；
+`article_id` 去重，非活动文章记 skipped，候选仍须用户确认。管理员可调用
+`POST /activities/official/sync-all`，设置 `OFFICIAL_SYNC_ENABLED=true` 后 worker 按
+`OFFICIAL_SYNC_INTERVAL_MS` 周期同步（默认 15 分钟，最小 1 分钟）。正文仅在内存抽取，
+不把全文写入 Activity。微信内部历史页的私有 Cookie/appmsg_token 不作为实现路径。
 
 ### 2.3 手动 `manual`
 
@@ -106,15 +116,26 @@
 
 ## 5. 提醒
 
-- 提醒渠道枚举有 `inapp` 与 `wechat-subscribe`，但 **MVP 只实现 `inapp`（站内信）**。
-  `channel=wechat-subscribe` 会被 **422** 拒绝，不会假装已发送。
-- **微信订阅消息、APNs、FCM、HMS 均未接通**；当前没有系统推送依赖。
+- `ActivityReminder` 仍先写 `inapp` 站内信，保证主提醒可追溯；直接创建
+  `channel=wechat-subscribe` 的提醒仍会被 422 拒绝。站内信成功后按用户登记目标写入 PushDelivery 发件箱。
+- 微信订阅消息走 `requestSubscribeMessage` + `templateId` 回传，openid 只从服务端微信绑定读取，
+  一次性授权成功后耗尽；APNs / FCM / HMS 由原生通道取得真实设备 token 后登记。
+  服务端供应商分别为微信 `subscribe/send`、APNs HTTP/2 + ES256 JWT、FCM v1 OAuth、HMS Push OAuth。
+- 推送失败不回滚站内信；发件箱原子抢占、最多三次尝试，未配置厂商不伪报 sent。
+  `PUSH_WORKER_ENABLED=true` 可开启 worker，生产默认开启（显式 false 关闭），也可由管理员调用
+  `POST /notifications/push/dispatch`。真实发送仍需各自证书/模板/应用配置与真机验证。
 - 默认提醒：报名截止前 24 小时、活动开始前 1 小时；目标已过不建；
   计算时刻已过但目标还在未来 → `now + 5 分钟`（且不晚于目标）。
 - 派发由外部 cron 调 `POST /activities/reminders/dispatch`（`AdminGuard`，
   `x-admin-key` 或管理员 JWT）。`claimDue` 用 `FOR UPDATE SKIP LOCKED` 原子抢占，
   多副本不重复；单条失败回退 `pending` 重试，达到上限标 `failed`，**绝不标 `sent`**。
-- 小程序有独立的提醒页；Flutter 在详情页创建/删除站内信提醒；Web 不创建提醒。
+- 服务端配置：`WECHAT_ACTIVITY_TEMPLATE_ID`、`WECHAT_ACTIVITY_TITLE_KEY`、`WECHAT_ACTIVITY_BODY_KEY`；
+  `FCM_PROJECT_ID` / `FCM_CLIENT_EMAIL` / `FCM_PRIVATE_KEY`；`HMS_APP_ID` / `HMS_CLIENT_ID` /
+  `HMS_CLIENT_SECRET`；`APNS_TEAM_ID` / `APNS_KEY_ID` / `APNS_PRIVATE_KEY` / `APNS_TOPIC` /
+  `APNS_SANDBOX`。私钥可用 `\n` 转义，绝不进入客户端或仓库。
+- Android 分别放置 `google-services.json`（FCM）与 `agconnect-services.json`（HMS），构建 HMS 时传
+  `--dart-define=HMS_APP_ID=...`；iOS 使用 `Runner.entitlements` / `RunnerRelease.entitlements` 与真机签名。
+- 小程序有独立的提醒页；Flutter 在详情页创建/删除站内信提醒，并有「通知与推送」设置页；Web 不创建提醒。
 
 ---
 
@@ -134,7 +155,7 @@
 ## 7. 客户端能力矩阵
 
 | 能力 | 小程序 | Web | Flutter | API |
-| --- | --- | --- | --- | --- |
+| -------------------------- | ------------------------ | -------------------------------------------- | ------------------- | ------------------ |
 | 活动列表 / 详情 | ✅ | ❌（仅导入工作台） | ✅ | ✅ |
 | 手动创建 | ❌（无独立表单） | ✅（导入页内） | ✅ | ✅ |
 | 单篇公众号导入 | ✅ | ✅（链接走 `/wechat/article`，正文本地抽取） | ✅ | ✅ |
@@ -150,7 +171,7 @@
 ## 8. 跨平台状态
 
 | 平台 | 状态 |
-| --- | --- |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | 微信小程序 | 当前交付范围；活动五页已接，测试实跑通过 |
 | Web | 当前交付范围；`/import#campus-activities` 无状态导入，测试实跑通过 |
 | API | 当前交付范围；活动端点与邮件模块已接，测试实跑通过 |
@@ -169,7 +190,7 @@
 在 Windows 上跑全量门禁时，以下失败是既有问题，**不要算到 activities 头上**：
 
 | 位置 | 数量 | 原因 |
-| --- | ---: | --- |
+| ------------------------------------------------- | --------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | API `test/techpie-arch.spec.ts` | 3 项 | 断言用 `/` 比较路径，Windows 下 `path.relative` 产出 `\`，导致 `startsWith('services/api/')` / `includes('webview-session/')` 不匹配 |
 | Web `src/presentation/theme/buddy-tokens.test.ts` | 1 项 | 同一类 Windows 路径分隔符问题，扫描到的组件数为 0 |
 | API `npm run lint` | 5 项（4 error + 1 warning） | `auth.module.ts`、`tts.service.ts`、`tts.controller.spec.ts`、`wechat.controller.ts`、`test/tts-http.spec.ts` 的既有未使用变量 / 失效 eslint-disable |

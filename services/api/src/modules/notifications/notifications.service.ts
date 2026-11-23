@@ -1,11 +1,15 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { Page } from '@kedaya/contracts';
-import { InternalError, NotFoundError, ValidationError } from '../../common/errors/app-error';
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
+import type { Page } from "@kedaya/contracts";
+import {
+  InternalError,
+  NotFoundError,
+  ValidationError,
+} from "../../common/errors/app-error";
 import type {
   NotificationPort,
   NotificationStrictPort,
   NotifyInput,
-} from '../../common/notifications/notification.port';
+} from "../../common/notifications/notification.port";
 import {
   NOTIFICATION_BODY_MAX,
   NOTIFICATION_REPOSITORY,
@@ -14,7 +18,8 @@ import {
   type CreateNotificationInput,
   type NotificationModel,
   type NotificationRepository,
-} from './domain/notifications.domain';
+} from "./domain/notifications.domain";
+import { PushService, pushDedupeKey } from "./push/push.service";
 
 /**
  * 通知用例层（契约 §7：只编排，不含 IO）。
@@ -23,10 +28,16 @@ import {
  * 这样在 vitest 等不做 emitDecoratorMetadata 的转译器下 DI 依然成立。
  */
 @Injectable()
-export class NotificationService implements NotificationPort, NotificationStrictPort {
+export class NotificationService
+  implements NotificationPort, NotificationStrictPort
+{
   private readonly logger = new Logger(NotificationService.name);
 
-  constructor(@Inject(NOTIFICATION_REPOSITORY) private readonly repo: NotificationRepository) {}
+  constructor(
+    @Inject(NOTIFICATION_REPOSITORY)
+    private readonly repo: NotificationRepository,
+    @Optional() @Inject(PushService) private readonly push?: PushService,
+  ) {}
 
   /**
    * 写通知（`NotificationPort` 的实现）。
@@ -52,6 +63,7 @@ export class NotificationService implements NotificationPort, NotificationStrict
       } else {
         await this.repo.createMany(drafts);
       }
+      await this.enqueuePush(drafts);
     } catch (error) {
       this.logger.warn(
         `写站内信失败（已忽略，不影响主流程）：${error instanceof Error ? error.message : String(error)}`,
@@ -68,16 +80,17 @@ export class NotificationService implements NotificationPort, NotificationStrict
   async notifyStrict(input: NotifyInput): Promise<void> {
     const draft = this.toDraft(input);
     if (draft === null) {
-      throw new ValidationError('通知字段不完整或 source 未登记，拒绝写入', {
-        reason: 'NOTIFICATION_INVALID',
+      throw new ValidationError("通知字段不完整或 source 未登记，拒绝写入", {
+        reason: "NOTIFICATION_INVALID",
       });
     }
 
     try {
       await this.repo.create(draft);
+      await this.enqueuePush([draft]);
     } catch (error) {
-      throw new InternalError('站内信写入失败，提醒将在下次派发重试', {
-        reason: 'NOTIFICATION_WRITE_FAILED',
+      throw new InternalError("站内信写入失败，提醒将在下次派发重试", {
+        reason: "NOTIFICATION_WRITE_FAILED",
         cause: error instanceof Error ? error.message : String(error),
       });
     }
@@ -104,13 +117,41 @@ export class NotificationService implements NotificationPort, NotificationStrict
   /** 标记单条已读。不属于当前用户时按 404 处理（不透露"这条存在但不是你的"）。 */
   async markRead(userId: string, id: string): Promise<NotificationModel> {
     const updated = await this.repo.markRead(id, userId);
-    if (!updated) throw new NotFoundError('通知不存在');
+    if (!updated) throw new NotFoundError("通知不存在");
     return updated;
   }
 
   /** 全部已读，返回本次实际标记的条数（0 也是合法结果，前端无需特殊处理） */
   async markAllRead(userId: string): Promise<number> {
     return this.repo.markAllRead(userId);
+  }
+
+  private async enqueuePush(
+    drafts: readonly CreateNotificationInput[],
+  ): Promise<void> {
+    if (!this.push) return;
+    for (const draft of drafts) {
+      try {
+        await this.push.enqueue({
+          userId: draft.userId,
+          title: draft.title,
+          body: draft.body,
+          source: draft.source ?? "system",
+          link: draft.link ?? null,
+          dedupeKey: pushDedupeKey({
+            userId: draft.userId,
+            title: draft.title,
+            body: draft.body,
+            source: draft.source ?? "system",
+            link: draft.link,
+          }),
+        });
+      } catch (error) {
+        this.logger.warn(
+          `推送入队失败（站内信已保留）：${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
   }
 
   /**
@@ -147,5 +188,5 @@ export class NotificationService implements NotificationPort, NotificationStrict
 /** 按**码点**截断（避免把 emoji/中文代理对截成半个） */
 function truncate(value: string, max: number): string {
   const points = [...value];
-  return points.length <= max ? value : `${points.slice(0, max - 1).join('')}…`;
+  return points.length <= max ? value : `${points.slice(0, max - 1).join("")}…`;
 }
