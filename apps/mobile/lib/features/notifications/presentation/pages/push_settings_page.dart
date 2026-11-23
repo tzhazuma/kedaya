@@ -52,9 +52,10 @@ class _PushSettingsPageState extends ConsumerState<PushSettingsPage> {
       final token = await ref.read(pushTokenPortProvider).register(channel);
       await ref.read(pushPortProvider).register(channel, token);
       _tokens[channel] = token;
-      if (mounted)
+      if (mounted) {
         setState(() =>
             _message = '${channel.name.toUpperCase()} 已启用，设备 token 已安全登记');
+      }
       await _refresh();
     } on Object catch (error) {
       if (mounted) setState(() => _message = '启用失败：$error');
@@ -74,8 +75,9 @@ class _PushSettingsPageState extends ConsumerState<PushSettingsPage> {
       await ref.read(pushPortProvider).revoke(channel, token);
       await ref.read(pushTokenPortProvider).unregister(channel);
       _tokens.remove(channel);
-      if (mounted)
+      if (mounted) {
         setState(() => _message = '${channel.name.toUpperCase()} 已撤销');
+      }
       await _refresh();
     } on Object catch (error) {
       if (mounted) setState(() => _message = '撤销失败：$error');

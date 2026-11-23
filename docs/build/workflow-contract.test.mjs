@@ -176,3 +176,17 @@ test('docs/build 反映新 runner、质量门禁与诚实状态', () => {
   assert.match(mobile, /flutter test/);
   assert.match(mobile, /680/);
 });
+
+
+test('macOS/iOS 先捕获完整 xcodebuild 输出，避免 grep -q 造成 Broken pipe', () => {
+  for (const job of [build.jobs.macos, build.jobs.ios]) {
+    const source = runBlocks(job);
+    assert.doesNotMatch(source, /xcodebuild -version \| grep -q/);
+    assert.match(source, /xcode_version="\$\(xcodebuild -version\)"/);
+  }
+});
+
+test('Linux Clang 不把旧 nlohmann/json 的 literal operator 警告升级为错误', () => {
+  const cmake = readFileSync(join(repoRoot, 'apps/mobile/linux/CMakeLists.txt'), 'utf8');
+  assert.match(cmake, /-Wno-error=deprecated-literal-operator/);
+});

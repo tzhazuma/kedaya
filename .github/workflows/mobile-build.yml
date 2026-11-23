@@ -403,15 +403,17 @@ jobs:
           set -euo pipefail
           # macos-15 当前默认 Xcode 16.4；Flutter 3.35.1 的验证基线是 Xcode 16.x。
           # 镜像未来若把默认值升到 26，这里显式切回已安装的 16.x。
-          if ! xcodebuild -version | grep -q '^Xcode 16\.'; then
+          xcode_version="$(xcodebuild -version)"
+          if ! printf '%s\n' "$xcode_version" | grep -q '^Xcode 16\.'; then
             candidate="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort | tail -1 || true)"
             if [ -z "$candidate" ]; then
               echo "::error::macos-15 上没有 Xcode 16.x；Flutter 3.35.1 未验证 Xcode 26，请先升级 Flutter 或固定镜像。"
               exit 1
             fi
             sudo xcode-select -s "$candidate"
+            xcode_version="$(xcodebuild -version)"
           fi
-          xcodebuild -version | grep -q '^Xcode 16\.' || {
+          printf '%s\n' "$xcode_version" | grep -q '^Xcode 16\.' || {
             echo "::error::当前 Xcode 不是 16.x，Flutter 3.35.1 构建未验证。"
             exit 1
           }
@@ -504,15 +506,17 @@ jobs:
           set -euo pipefail
           # macos-15 当前默认 Xcode 16.4；Flutter 3.35.1 的验证基线是 Xcode 16.x。
           # 镜像未来若把默认值升到 26，这里显式切回已安装的 16.x。
-          if ! xcodebuild -version | grep -q '^Xcode 16\.'; then
+          xcode_version="$(xcodebuild -version)"
+          if ! printf '%s\n' "$xcode_version" | grep -q '^Xcode 16\.'; then
             candidate="$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort | tail -1 || true)"
             if [ -z "$candidate" ]; then
               echo "::error::macos-15 上没有 Xcode 16.x；Flutter 3.35.1 未验证 Xcode 26，请先升级 Flutter 或固定镜像。"
               exit 1
             fi
             sudo xcode-select -s "$candidate"
+            xcode_version="$(xcodebuild -version)"
           fi
-          xcodebuild -version | grep -q '^Xcode 16\.' || {
+          printf '%s\n' "$xcode_version" | grep -q '^Xcode 16\.' || {
             echo "::error::当前 Xcode 不是 16.x，Flutter 3.35.1 构建未验证。"
             exit 1
           }
