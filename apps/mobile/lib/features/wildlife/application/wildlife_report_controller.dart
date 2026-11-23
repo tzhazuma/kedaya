@@ -280,7 +280,7 @@ final class WildlifeReportController extends Notifier<WildlifeReportState> {
   /// 这样测试可以注入固定时刻。
   void ensureDefaults({DateTime? now}) {
     if (state.observedAt != null) return;
-    state = state.copyWith(observedAt: now ?? DateTime.now());
+    state = state.copyWith(observedAt: now ?? ref.read(clockProvider)());
   }
 
   // ------------------------------------------------------------- 照片
@@ -555,7 +555,7 @@ final class WildlifeReportController extends Notifier<WildlifeReportState> {
       await port.listSpecies(),
     );
     final WildlifeValidationResult validation = draft.validate(
-      now: DateTime.now(),
+      now: ref.read(clockProvider)(),
       knownSpeciesIds: species.map((WildlifeSpecies item) => item.id).toSet(),
     );
     if (validation.isInvalid) {

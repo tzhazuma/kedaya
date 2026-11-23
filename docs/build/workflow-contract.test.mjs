@@ -70,10 +70,10 @@ test('新增 Flutter analyze/test 质量门禁，并进入 release needs', () =>
 
 test('release 只依赖受支持平台，不被未实现平台阻断', () => {
   const needs = build.jobs.release.needs;
-  for (const required of ['android', 'windows-x64', 'linux-x64', 'macos', 'ios', 'quality']) {
+  for (const required of ['android', 'windows-x64', 'linux-x64', 'linux-arm64', 'macos', 'ios', 'quality']) {
     assert.ok(needs.includes(required), `release 应依赖 ${required}`);
   }
-  for (const unsupported of ['windows-arm64', 'harmonyos', 'linux-arm64']) {
+  for (const unsupported of ['windows-arm64', 'harmonyos']) {
     assert.ok(!needs.includes(unsupported), `release 不应依赖未支持的 ${unsupported}`);
   }
 
@@ -142,6 +142,22 @@ test('Windows ARM64 是实验能力：手动、不发布、强制 ARM64 宿主�
   assert.doesNotMatch(runs, /--target-platform/, 'flutter build windows 没有 --target-platform 选项');
   assert.equal(windowsArm64.jobs.release, undefined, 'ARM64 实验产物不进入 release');
 });
+
+test('Linux ARM64 走 x64 交叉编译，并用 qemu binfmt 跑 arm64 gen_snapshot', () => {
+  const job = build.jobs['linux-arm64'];
+  assert.ok(job, '必须新增 linux-arm64 job');
+  assert.equal(job['runs-on'], 'ubuntu-24.04');
+
+  const runs = runBlocks(job);
+  assert.match(runs, /--target-platform=linux-arm64/);
+  assert.match(runs, /qemu-user-static/);
+  assert.match(runs, /binfmt_misc\/qemu-aarch64/);
+  assert.match(runs, /libgtk-3-dev:arm64/);
+  assert.match(runs, /package-deb\.sh[\s\S]*arm64/);
+  assert.match(runs, /ARM aarch64/);
+  assert.equal(build.on.workflow_dispatch.inputs.build_linux_arm64.default, true);
+});
+
 
 test('HarmonyOS 保持自托管、仅手动、未验证', () => {
   assert.deepEqual(Object.keys(harmony.on), ['workflow_dispatch']);

@@ -42,6 +42,10 @@ final appEnvironmentProvider = Provider<AppEnvironment>(
   (ref) => ref.watch(appRuntimeProvider).environment,
 );
 
+/// 统一时钟。表单默认值、校验窗口这类"和现在比"的逻辑都从这里取时间，
+/// 测试注入固定时刻后不必再跟着真实日历漂移。
+final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
+
 /// 第一级身份层（契约 §5）。**不暴露任何校园系统凭据**。
 final authProvider =
     Provider<AuthPort>((ref) => ref.watch(appRuntimeProvider).auth);

@@ -39,6 +39,7 @@ void main() {
         ),
         mediaPickerProvider.overrideWithValue(picker ?? InMemoryMediaPicker()),
         locationProvider.overrideWithValue(location ?? InMemoryLocationPort()),
+        clockProvider.overrideWithValue(() => mockNow),
       ],
     );
     addTearDown(container.dispose);

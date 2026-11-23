@@ -23,6 +23,10 @@ on:
         description: "构建 Linux x64 tar.gz + deb"
         type: boolean
         default: true
+      build_linux_arm64:
+        description: "构建 Linux arm64 tar.gz + deb（x64 主机交叉编译 + qemu 跑 AOT）"
+        type: boolean
+        default: true
       build_macos:
         description: "构建 macOS arm64 未签名 zip/dmg（macOS runner，计费较高）"
         type: boolean
@@ -375,6 +379,133 @@ jobs:
           overwrite: true
 
   # ------------------------------------------------------------------
+  # Linux ARM64：x64 主机交叉编译。Flutter 3.35 起 `flutter build linux`
+  # 支持 `--target-platform linux-arm64`（build_linux.dart 的
+  # "Support cross-building for arm64 targets on x64 hosts"）。
+  # AOT 用的 gen_snapshot 是 arm64 二进制，因此在 x64 runner 上装
+  # qemu-user-static + binfmt，让它透明执行；GTK 等依赖走 Ubuntu multiarch。
+  # ------------------------------------------------------------------
+  linux-arm64:
+    name: Linux arm64（交叉编译 tar.gz + deb）
+    if: github.event_name == 'push' || inputs.build_linux_arm64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: apps/mobile
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装 arm64 交叉工具链、qemu 与 multiarch GTK
+        run: |
+          set -euo pipefail
+          sudo dpkg --add-architecture arm64
+          . /etc/os-release
+          # amd64 留在 archive，arm64 走 ports；两边都显式标注 Architectures，
+          # 否则 apt 会把 arm64 包当成“同一份源里可选”的架构而报 hash 不匹配。
+          sudo tee /etc/apt/sources.list.d/ubuntu.sources >/dev/null <<EOF
+          Types: deb
+          URIs: http://archive.ubuntu.com/ubuntu/
+          Suites: ${VERSION_CODENAME} ${VERSION_CODENAME}-updates
+          Components: main restricted universe multiverse
+          Architectures: amd64
+          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+          Types: deb
+          URIs: http://ports.ubuntu.com/ubuntu-ports/
+          Suites: ${VERSION_CODENAME} ${VERSION_CODENAME}-updates
+          Components: main restricted universe multiverse
+          Architectures: arm64
+          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+          EOF
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang cmake ninja-build pkg-config qemu-user-static binfmt-support \
+            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross \
+            libgtk-3-dev:arm64 liblzma-dev:arm64 libsecret-1-dev:arm64 \
+            libjsoncpp-dev:arm64 libgstreamer1.0-dev:arm64 \
+            libgstreamer-plugins-base1.0-dev:arm64 librsvg2-bin
+          if [ ! -e /proc/sys/fs/binfmt_misc/qemu-aarch64 ]; then
+            sudo update-binfmts --enable qemu-aarch64 || true
+          fi
+          test -e /proc/sys/fs/binfmt_misc/qemu-aarch64 || {
+            echo "::error::qemu-aarch64 binfmt 未注册，arm64 gen_snapshot 无法在 x64 上执行"
+            exit 1
+          }
+
+      - name: 计算版本号
+        shell: bash
+        run: |
+          version="$(awk '/^version:/{print $2; exit}' pubspec.yaml)"
+          version="${version%%+*}"
+          if [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
+            version="${GITHUB_REF_NAME#mobile-v}"
+          fi
+          version="$(printf '%s' "$version" | tr -c '0-9A-Za-z._-' '-')"
+          [ -n "$version" ] || version="0.0.0"
+          build_number=$(( GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT ))
+          {
+            echo "VERSION=$version"
+            echo "BUILD_NUMBER=$build_number"
+          } >> "$GITHUB_ENV"
+
+      - name: 解析依赖（锁定 pubspec.lock）
+        run: flutter pub get --enforce-lockfile
+
+      - name: 构建 Linux arm64（交叉编译）
+        env:
+          # 只让 pkg-config 读 arm64 的 .pc，避免拿到主机 x64 的 gtk。
+          PKG_CONFIG_LIBDIR: /usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+          PKG_CONFIG_PATH: ""
+          CFLAGS: "-isystem /usr/include/aarch64-linux-gnu"
+          CXXFLAGS: "-isystem /usr/include/aarch64-linux-gnu"
+          LDFLAGS: "-L/usr/lib/aarch64-linux-gnu -Wl,-rpath-link,/usr/lib/aarch64-linux-gnu"
+        run: |
+          flutter build linux --release \
+            --target-platform=linux-arm64 \
+            --target-sysroot=/ \
+            --build-name="$VERSION" \
+            --build-number="$BUILD_NUMBER" \
+            --dart-define=KEDAYA_FLAVOR="$KEDAYA_FLAVOR" \
+            --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL"
+
+      - name: 校验产物架构并打包 tar.gz 与 deb
+        run: |
+          bundle="build/linux/arm64/release/bundle"
+          test -x "$bundle/kedaya"
+          file "$bundle/kedaya"
+          file "$bundle/kedaya" | grep -q 'ARM aarch64' || {
+            echo "::error::产物不是 aarch64，交叉编译没有生效"
+            exit 1
+          }
+          mkdir -p build/artifacts
+          rm -rf "build/artifacts/kedaya-${VERSION}-linux-arm64"
+          cp -a "$bundle" "build/artifacts/kedaya-${VERSION}-linux-arm64"
+          tar -C build/artifacts -czf \
+            "build/artifacts/kedaya-${VERSION}-linux-arm64.tar.gz" \
+            "kedaya-${VERSION}-linux-arm64"
+          bash "$GITHUB_WORKSPACE/docs/build/linux/package-deb.sh" \
+            "$VERSION" "$PWD/$bundle" "$PWD/build/artifacts" arm64
+          ls -lh build/artifacts
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kedaya-linux-arm64
+          path: |
+            apps/mobile/build/artifacts/*linux-arm64.tar.gz
+            apps/mobile/build/artifacts/*_arm64.deb
+          retention-days: 14
+          if-no-files-found: error
+          overwrite: true
+
+  # ------------------------------------------------------------------
   # macOS：arm64，ad-hoc 签名、未 notarize
   # ------------------------------------------------------------------
   macos:
@@ -584,6 +715,7 @@ jobs:
       - android
       - windows-x64
       - linux-x64
+      - linux-arm64
       - macos
       - ios
     if: |
@@ -672,7 +804,7 @@ jobs:
             echo '- Android/iOS/desktop builds use mock adapters unless the repository'
             echo '  variables `KEDAYA_FLAVOR` / `KEDAYA_API_BASE_URL` are configured.'
             echo '- SHA256 checksums are attached as `SHA256SUMS.txt`.'
-            echo '- Windows ARM64, Linux ARM64 and HarmonyOS are not part of this release.'
+            echo '- Windows ARM64 and HarmonyOS are not part of this release.'
           } > release-notes.md
 
           args=(--title "Kedaya mobile $TAG" --notes-file release-notes.md)

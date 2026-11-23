@@ -236,7 +236,7 @@ bash -n docs/build/linux/package-deb.sh
   并用 CI secret 注入 keystore；详见 [android.md](android.md)。
 - Windows Authenticode、macOS Developer ID/notarization、iOS 证书：
   当前 workflow 不接收签名材料；详见各平台文档。
-- Linux ARM64：官方 SDK 缺失，见 [linux.md](linux.md)。
+- Linux ARM64：官方 SDK 仍缺失，但 3.35 支持 x64 主机交叉编译 arm64；CI 用 qemu 跑 arm64 `gen_snapshot`，见 [linux.md](linux.md) 第 4 节。
 - HarmonyOS：OHOS 插件替换与签名未完成，见 [harmonyos.md](harmonyos.md)。
 - 原生工程目录（窗口/图标/权限/深链）仍需各端负责人提交，CI 的 `flutter create`
   只是构建兜底。
