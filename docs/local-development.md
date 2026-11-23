@@ -131,9 +131,14 @@ curl -s -i "http://127.0.0.1:3000/api/v1/nope"                     # 期望 404 
 | `CAMPUS_UPSTREAM_TIMEOUT_MS` | 校园上游请求超时（毫秒，默认 6000） |
 | `AGENT_LLM_BASE_URL` / `AGENT_LLM_API_KEY` / `AGENT_LLM_MODEL` | 可达鸭的 OpenAI 兼容模型；**全部留空即走规则回答**，功能完整。例：`https://api.modelverse.cn/v1` + `deepseek-v4.1-flash`（优云智算）或 `https://api.deepseek.com/v1` + `deepseek-chat` |
 | `AGENT_LLM_TIMEOUT_MS` | 模型调用超时（毫秒，默认 8000），超时即降级为规则回答 |
-| `ADMIN_API_KEY` / `ADMIN_USER_IDS` | 营养管家**菜品营养数据**的写权限（`POST/PATCH/DELETE /canteen/items`，`AdminGuard`）。前者是请求头 `x-admin-key` 的值，后者是允许的登录用户 id（逗号分隔）。**两者都不配时写操作一律 403**（fail-closed）；读接口匿名可用。Web 后台 `/admin/dishes` 用 `NEXT_PUBLIC_ADMIN_API_KEY` 传同一个值 |
+| `ADMIN_API_KEY` / `ADMIN_USER_IDS` | 管理员写权限（`AdminGuard`）：营养管家**菜品营养数据**（`POST/PATCH/DELETE /canteen/items`）与**活动提醒派发**（`POST /activities/reminders/dispatch`，外部 cron 用）。前者是请求头 `x-admin-key` 的值，后者是允许的登录用户 id（逗号分隔）。**两者都不配时一律 403**（fail-closed）；读接口匿名可用。Web 后台 `/admin/dishes` 用 `NEXT_PUBLIC_ADMIN_API_KEY` 传同一个值 |
 | `APP_TZ_OFFSET_MINUTES` | 营养管家按哪个时区切「今天」（分钟，默认 `480` = UTC+8）。开发机 TZ 与容器 TZ 不一致时靠它，别依赖进程 TZ |
 | `SEED_NUTRITION_EMAIL` | `prisma:seed` 把营养管家演示数据（每日需求 + 今日早/午餐）灌给哪个**已注册**邮箱（默认 `demo@kedaya.dev`）。账号不存在时如实跳过，不新建账号 |
+| `ACTIVITIES_TIME_ZONE` | 活动抽取、默认提醒与「北京时间」文案的 IANA 时区（默认 `Asia/Shanghai`）。传输层仍存 UTC ISO |
+| `ACTIVITIES_DISPATCH_LEASE_MS` | 活动提醒派发租约（毫秒，默认 `600000` = 10 分钟）。超过租约仍停在 `sending` 的行会在下次派发前回收重试；多副本部署时按最长发送耗时调整 |
+| `ACTIVITIES_DISPATCH_MAX_ATTEMPTS` | 单条活动提醒最多尝试次数（默认 `5`）。达到上限标记 `failed`（提醒列表可见），不再无限重试 |
+| `MAIL_CREDENTIAL_ENC_KEY` | 校园邮箱密码的 AES-256-GCM 密钥（32 字节 hex/base64）。留空回退 `CAMPUS_SESSION_ENC_KEY`；两者都没有时**拒绝保存邮箱凭证**（fail closed） |
+| `MAIL_TIME_ZONE` | 邮件活动时间解析/展示时区（默认 `Asia/Shanghai`） |
 
 `AUTH_DEV_EXPOSE_CODES` 只是为了真机联调方便；生产必须关闭，
 否则任何人都能拿到别人的注册验证码。关闭时验证码会打印到 API 控制台（`ConsoleMailAdapter`）。

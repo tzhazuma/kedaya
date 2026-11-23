@@ -182,6 +182,75 @@ describe('extractEventFromMail · 认不出就返回 null（不编）', () => {
   });
 });
 
+describe('extractEventFromMail · 活动扩展字段（可选、向后兼容）', () => {
+  it('起止时间：`14:00-15:30` 归一成 startsAt / endsAt', () => {
+    const result = extract(
+      '【讲座】AI for Science',
+      ['时间：2026年11月25日 14:00-15:30', '地点：图书馆 302'].join('\n'),
+    );
+
+    expect(result).toMatchObject({
+      startsAt: '2026-11-25T06:00:00.000Z',
+      endsAt: '2026-11-25T07:30:00.000Z',
+      kind: 'lecture',
+    });
+  });
+
+  it('报名截止可解析时同时保留原文片段（便于核对）', () => {
+    const result = extract(
+      '讲座通知',
+      [
+        '时间：2026年11月25日 14:00',
+        '报名截止：2026年11月24日 23:59',
+        '报名链接：https://example.com/sign',
+      ].join('\n'),
+    );
+
+    expect(result).toMatchObject({
+      registrationDeadlineAt: '2026-11-24T15:59:00.000Z',
+      registrationDeadlineRaw: '2026年11月24日 23:59',
+      registrationUrl: 'https://example.com/sign',
+    });
+  });
+
+  it('报名截止只有日期、没有时刻 → 保留 raw，**不补 23:59**', () => {
+    const result = extract(
+      '讲座通知',
+      ['时间：2026年11月25日 14:00', '报名截止：2026年11月24日'].join('\n'),
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.registrationDeadlineAt).toBeNull();
+    expect(result!.registrationDeadlineRaw).toBe('2026年11月24日');
+  });
+
+  it('无法识别的截止说明（如「尽快」）也保留 raw，不编时刻', () => {
+    const result = extract(
+      '宣讲会通知',
+      ['时间：2026年11月25日 14:00', '报名截止：名额满即止'].join('\n'),
+    );
+
+    expect(result).toMatchObject({
+      kind: 'info-session',
+      registrationDeadlineAt: null,
+      registrationDeadlineRaw: '名额满即止',
+    });
+  });
+
+  it('没有报名信息时扩展字段为 null，且结果不含正文键', () => {
+    const result = extract('讲座通知', '时间：2026年11月25日 14:00');
+
+    expect(result).not.toBeNull();
+    expect(result).toMatchObject({
+      endsAt: null,
+      registrationDeadlineAt: null,
+      registrationDeadlineRaw: null,
+      registrationUrl: null,
+    });
+    expect(Object.keys(result!)).not.toContain('body');
+  });
+});
+
 describe('extractEventFromMail · 参数边界', () => {
   it('receivedAt 非法时抛 RangeError（配置错误不能静默）', () => {
     expect(() =>

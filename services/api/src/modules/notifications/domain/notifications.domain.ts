@@ -77,6 +77,7 @@ export const NOTIFICATION_SOURCES = [
   'forum',
   'campus-card',
   'schedule',
+  'activities',
 ] as const;
 
 export type NotificationSource = (typeof NOTIFICATION_SOURCES)[number];

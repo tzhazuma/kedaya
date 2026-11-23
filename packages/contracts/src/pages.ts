@@ -17,6 +17,12 @@ export const MINIAPP_PAGES = {
   identity: '/presentation/pages/identity/index',
   schedule: '/presentation/pages/schedule/index',
   campusCard: '/presentation/pages/campusCard/index',
+  // 校园活动（模块 id `activities`）：候选列表 / 详情 / 导入 / 邮件提升 / 提醒
+  activitiesList: '/presentation/pages/activities/list/index',
+  activitiesDetail: '/presentation/pages/activities/detail/index',
+  activitiesImport: '/presentation/pages/activities/import/index',
+  activitiesMail: '/presentation/pages/activities/mail/index',
+  activitiesReminders: '/presentation/pages/activities/reminders/index',
   profile: '/presentation/pages/profile/index',
   profileSettings: '/presentation/pages/profile/settings/index',
   profileEdit: '/presentation/pages/profile/edit/index',

@@ -32,6 +32,25 @@ describe('sanitizeSourceUrl', () => {
     expect(sanitizeSourceUrl('https://x.test/a?code=abc&keep=1')).toBe('https://x.test/a?keep=1');
   });
 
+  it('公众号会话/追踪参数（scene/chksm/srcid/exportkey/signature/sig/key）也删掉', () => {
+    expect(
+      sanitizeSourceUrl(
+        'https://mp.weixin.qq.com/s/abc?scene=1&chksm=2&srcid=3&exportkey=4&signature=5&sig=6&key=7&id=8',
+      ),
+    ).toBe('https://mp.weixin.qq.com/s/abc?id=8');
+  });
+
+  it('短名 key/sig/sign 只做精确匹配，不误删 keyword / signup', () => {
+    expect(sanitizeSourceUrl('https://x.test/a?keyword=1&signup=2&key=3')).toBe(
+      'https://x.test/a?keyword=1&signup=2',
+    );
+  });
+
+  it('锚点里的 key 也会被清掉', () => {
+    expect(sanitizeSourceUrl('https://x.test/a#key=secret')).toBe('https://x.test/a');
+    expect(sanitizeSourceUrl('https://x.test/a#monkey')).toBe('https://x.test/a#monkey');
+  });
+
   it('参数排序，保证同样的链接得到同样的字符串', () => {
     const first = sanitizeSourceUrl('https://x.test/a?b=2&a=1');
     const second = sanitizeSourceUrl('https://x.test/a?a=1&b=2');

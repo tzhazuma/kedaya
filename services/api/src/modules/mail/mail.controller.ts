@@ -1,5 +1,7 @@
 /**
- * 校园邮箱 · 控制器（**不注册到 AppModule**，由 Lead 统一装配）
+ * 校园邮箱 · 控制器
+ *
+ * 已在 `AppModule` 装配（路由 `/mail`）。
  *
  * | 方法 | 路径 | 说明 |
  * | --- | --- | --- |
@@ -109,8 +111,8 @@ export class MailController {
   @ApiOperation({
     summary: '归一后的活动列表（按开始时间升序）',
     description:
-      '元素字段：`{id, title, startsAt, location, organizer, confidence, matchedText, receivedAt, stale}`。' +
-      '`stale = true` 表示上次同步失败、这是上次结果。',
+      '元素字段：`{id, title, kind, startsAt, endsAt, location, organizer, registrationDeadlineAt, registrationDeadlineRaw, registrationUrl, confidence, matchedText, receivedAt, stale}`。' +
+      '`stale = true` 表示上次同步失败、这是上次结果；报名截止无法确定时刻时只有 `registrationDeadlineRaw`。',
   })
   events(@CurrentUser() userId: string) {
     return this.service.listEvents(userId);

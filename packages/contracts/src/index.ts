@@ -24,6 +24,7 @@ export * from './campus-service-trust';
 export * from './campus-poi';
 export * from './group-bot';
 export * from './deadlines';
+export * from './activities';
 export * from './deadline-collect';
 export * from './petitions';
 export * from './teabreaks';

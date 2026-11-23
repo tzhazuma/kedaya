@@ -37,6 +37,9 @@ async function bootstrap(): Promise<void> {
   app.use(
     json({
       limit: JSON_BODY_LIMIT,
+      // 活动 PATCH 按契约使用 JSON Merge Patch（application/merge-patch+json）；
+      // Express 默认只解析 application/json，不显式列出会让 body 变成 undefined。
+      type: ['application/json', 'application/merge-patch+json'],
       // ⚠️ webhook 验签需要**原始字节**：JSON 重新序列化会改空格与键序，
       // 导致签名必然不匹配。只对 webhook 路径保留 rawBody，
       // 其他路由不额外占内存（图片走 base64 时体积不小）。

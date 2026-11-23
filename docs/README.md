@@ -1,6 +1,6 @@
 # 可达鸭 · 文档索引
 
-> 46 份文档、约 26,300 行。这份索引回答三个问题：
+> 55 份 Markdown 文档。这份索引回答三个问题：
 > **「我想知道 X，该读哪篇」**、**「这篇还准吗」**、**「从哪开始」**。
 
 ---
@@ -101,6 +101,7 @@
 | `techpie-native-payment-code` | — | **原生端付款码可行性**：DNS 隧道的权限要求、合规风险清单、鸿蒙评估 |
 | `petition` | — | **众筹诉求**：不筹钱、附议匿名、`ready ≠ submitted`、邮件生成的三条硬约束 |
 | `teabreak` | — | **会议茶歇**：核心是「多久没被确认」不是列表、20 分钟新鲜度、不谴责蹭会 |
+| `activities` | — | **校园活动**：候选确认、三种来源、≤200 字证据、站内信提醒、ICS / 手机日历、三端能力差异 |
 | `tts-read-aloud` | — | **朗读**：sherpa-onnx 跑服务端（模型 60 MB 端上放不下）、先 POST 拿 id 再 GET 取音频 |
 
 ### 3.3 决策记录（`adr/`）
@@ -132,7 +133,7 @@
 ## 4. 已经上线的、但**不在**任何规格文档里的事实
 
 这几轮的工作有相当一部分直接落在代码 + 提交信息里，规格文档没跟上。
-这里集中记一笔，免得下一个人从 34 份文档里找不到：
+这里集中记一笔，免得下一个人从 55 份文档里找不到：
 
 | 能力 | 在哪 | 文档状态 |
 | --- | --- | --- |
@@ -142,7 +143,7 @@
 | **Web 端 DDL 导入页 `/import`** | `apps/web/src/features/deadline-import/` | ❌ 无规格 |
 | **校园地点（POI）+ 一图通授权照片** | `apps/miniapp/.../campusPoi*` | ⚠️ `features/miniapp-campus-map` 部分覆盖 |
 | **教务课表导入** | `apps/miniapp/src/application/schedule/eamsImport.ts` | ❌ 无规格 |
-| **邮件 IMAP 接入** | `services/api/src/modules/mail/` | ❌ 无规格 |
+| **邮件 IMAP 接入** | `services/api/src/modules/mail/` | ⚠️ 活动用途见 `features/activities`；mail 模块本身仍无独立规格 |
 
 **如果要把文档补齐，优先补这七个。** 每份大约一页：
 

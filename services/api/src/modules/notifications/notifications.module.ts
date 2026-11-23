@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
-import { NOTIFICATION_PORT } from '../../common/notifications/notification.port';
+import {
+  NOTIFICATION_PORT,
+  NOTIFICATION_STRICT_PORT,
+} from '../../common/notifications/notification.port';
 import { NotificationController } from './notifications.controller';
 import { NotificationService } from './notifications.service';
 import { NotificationPrismaRepository } from './data/notifications.repository';
@@ -21,7 +24,8 @@ import { NOTIFICATION_REPOSITORY } from './domain/notifications.domain';
     NotificationService,
     { provide: NOTIFICATION_REPOSITORY, useClass: NotificationPrismaRepository },
     { provide: NOTIFICATION_PORT, useExisting: NotificationService },
+    { provide: NOTIFICATION_STRICT_PORT, useExisting: NotificationService },
   ],
-  exports: [NotificationService, NOTIFICATION_PORT],
+  exports: [NotificationService, NOTIFICATION_PORT, NOTIFICATION_STRICT_PORT],
 })
 export class NotificationModule {}

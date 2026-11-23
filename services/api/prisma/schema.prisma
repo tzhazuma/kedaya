@@ -49,6 +49,9 @@ model User {
   /// 校园邮箱接入（IMAP 只读）：账户与归一后的活动
   mailAccount    MailAccount?
   mailEvents     MailEvent[]
+  /// 校园活动（独立域，**不写进课表 deadlines**）：导入结果、确认与提醒
+  activities        Activity[]
+  activityReminders ActivityReminder[]
   consents       Consent[]
   auditLogs      AuditLog[]
   profileSetting ProfileSetting?
@@ -1181,6 +1184,7 @@ model MailAccount {
 
   user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   events MailEvent[]
+  activities Activity[]
 
   @@index([status])
   @@map("MailAccount")
@@ -1194,6 +1198,9 @@ model MailAccount {
 ///      与命中的时间片段（`matchedText`）。
 ///   2. `(accountId, uid)` 唯一：IMAP UID 在同一个邮箱内稳定，重复同步不会产生重复活动。
 ///   3. `stale` 在同步失败时置 true，旧结果**保留**；下次成功同步再清除。
+///   4. 扩展字段（`kind` / `endsAt` / 报名截止 / 报名链接）全部可空：
+///      旧行与旧邮件没有这些信息时保持 null，**不猜测**；报名截止无法确定时刻时
+///      只保留 `registrationDeadlineRaw`，绝不补 23:59。
 model MailEvent {
   id          String   @id @default(cuid())
   userId      String
@@ -1201,9 +1208,19 @@ model MailEvent {
   /// INBOX 内的 UID（用于幂等去重）
   uid         Int
   title       String
+  /// lecture | meeting | info-session（历史行可为 null；活动域的 kind 另有 sports/club/other）
+  kind        String?
   startsAt    DateTime
+  /// 结束时刻；邮件没写就是 null
+  endsAt      DateTime?
   location    String?
   organizer   String?
+  /// 报名截止绝对时刻；无法确定时为 null，原文见 registrationDeadlineRaw
+  registrationDeadlineAt  DateTime?
+  /// 报名截止原文片段（≤200 字）；**不是**邮件正文
+  registrationDeadlineRaw String?
+  /// 报名链接（http/https）
+  registrationUrl String?
   /// 0..1 的启发式置信度
   confidence  Float
   /// 命中的时间原文片段（可解释性）；**不是**邮件正文
@@ -1215,10 +1232,117 @@ model MailEvent {
 
   user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   account MailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  /// 由这封邮件提升出的活动；邮件被清理（解绑/换邮箱）时级联删除
+  activities Activity[]
 
   @@unique([accountId, uid])
   @@index([userId, startsAt])
   @@map("MailEvent")
+}
+
+/// 校园活动（独立域）。
+///
+/// 访问域：activities（用户隔离；所有查询必须带 userId）
+/// 硬规则：
+///   1. `(userId, source, sourceRef)` 唯一：同一封邮件 / 同一篇公众号 / 同一次手动录入
+///      重复导入不会产生第二条。
+///   2. 来源只有 `campus-mail` / `wechat-mp` / `manual`；状态只有
+///      `candidate` / `confirmed` / `dismissed` / `archived`。
+///   3. `candidate` 不是日程：用户确认后才建提醒。
+///   4. 只存活动字段与 ≤200 字 `evidenceText`；**不存**邮件正文、附件、公众号全文。
+///   5. `mailAccountId` 可空：由校园邮箱提升的活动在解绑邮箱时级联删除；
+///      手动/微信来源不受影响。
+model Activity {
+  id              String   @id @default(cuid())
+  userId          String
+  /// campus-mail | wechat-mp | manual
+  source          String
+  /// 来源内稳定引用：邮件事件 id / 公众号 URL / 粘贴内容哈希 / 手动随机 id
+  sourceRef       String
+  /// lecture | meeting | info-session | sports | club | other
+  kind            String
+  title           String
+  startsAt        DateTime?
+  endsAt          DateTime?
+  location        String?
+  organizer       String?
+  registrationDeadlineAt  DateTime?
+  registrationDeadlineRaw String?
+  registrationUrl String?
+  /// ≤200 字证据片段（命中的时间/截止原文）；**不是**正文
+  evidenceText    String
+  /// 0..1 的启发式置信度
+  confidence      Float    @default(0)
+  /// candidate | confirmed | dismissed | archived
+  status          String   @default("candidate")
+  sourceUrl       String?
+  sourceLabel     String?
+  publishedAt     DateTime?
+  /// 来源同步失败时置 true（保留上次结果）
+  stale           Boolean  @default(false)
+  /// 由校园邮箱提升时记录账户；解绑邮箱级联删除活动
+  mailAccountId   String?
+  /// 由哪封归一邮件提升而来；换邮箱清理旧邮件时级联删除活动
+  mailEventId     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mailAccount MailAccount?      @relation(fields: [mailAccountId], references: [id], onDelete: Cascade)
+  mailEvent   MailEvent?        @relation(fields: [mailEventId], references: [id], onDelete: Cascade)
+  reminders   ActivityReminder[]
+
+  @@unique([userId, source, sourceRef])
+  @@index([userId, status, startsAt])
+  @@index([mailAccountId])
+  @@index([mailEventId])
+  @@map("Activity")
+}
+
+/// 活动提醒（MVP 只发站内信）。
+///
+/// 访问域：activities（用户隔离；所有查询必须带 userId）
+/// 硬规则：
+///   1. 默认提醒：报名截止前 24h、开始前 1h；目标已过不建，计算时刻已过 → now+5min。
+///   2. `channel` 目前只真正接通 `inapp`；`wechat-subscribe` 只是契约占位，
+///      写入时会被服务层拒绝，**不假装已接通**。
+///   3. `dedupeKey` 防默认提醒重复（`default:registration` / `default:start`）；
+///      自定义提醒为 null。
+///   4. 派发用 `FOR UPDATE SKIP LOCKED` 原子抢占（status pending → sending），
+///      多副本不会重复发；发送失败回退 pending 供重试。
+model ActivityReminder {
+  id          String    @id @default(cuid())
+  userId      String
+  activityId  String
+  /// registration | start | custom
+  kind        String
+  remindAt    DateTime
+  /// inapp | wechat-subscribe（后者尚未接通）
+  channel     String    @default("inapp")
+  /// pending | sending | sent | failed | cancelled
+  status      String    @default("pending")
+  /// 默认提醒稳定键；自定义为 null
+  dedupeKey   String?
+  /// 已被派发器抢占/尝试的次数（抢占时 +1）
+  attempts    Int       @default(0)
+  /// 最近一次派发失败原因（截断；达到上限后状态变 failed）
+  lastError   String?
+  sentAt      DateTime?
+  claimedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  // ⚠️ 唯一性由迁移里的**部分唯一索引**保证（仅 pending/sending）：
+  //   · (activityId, dedupeKey) WHERE dedupeKey IS NOT NULL
+  //   · (activityId, kind, remindAt)
+  // 不能写成 Prisma 的 @@unique —— 全表唯一会让 sent/cancelled 的旧提醒
+  // 挡住活动改期后重建的默认提醒。见
+  // prisma/migrations/20261122130000_activity_reminder_retry/migration.sql。
+  @@index([status, remindAt])
+  @@index([userId, remindAt])
+  @@map("ActivityReminder")
 }
 
 /* ================================================================== *

@@ -28,7 +28,7 @@ export interface KedayaModule {
 }
 
 /* ------------------------------------------------------------------ *
- * 14 个业务模块（来自需求图）
+ * 17 个业务模块（需求图 14 个 + 场馆 / 诉求 / 茶歇）
  * ------------------------------------------------------------------ */
 export const BUSINESS_MODULES: readonly KedayaModule[] = [
   {
@@ -221,7 +221,7 @@ export const BUSINESS_MODULES: readonly KedayaModule[] = [
 ] as const;
 
 /* ------------------------------------------------------------------ *
- * 6 个基础模块（第 6 个是 2026-10-19 新增的 deadlines，见条目的分类说明）
+ * 8 个基础模块（deadlines / campus-map / activities 见各自条目的分类说明）
  * ------------------------------------------------------------------ */
 export const CORE_MODULES: readonly KedayaModule[] = [
   {
@@ -305,6 +305,39 @@ export const CORE_MODULES: readonly KedayaModule[] = [
     sensitivity: 'medium',
     requiresConsent: false,
     route: 'deadlines',
+  },
+  /**
+   * 校园活动（第 25 个模块）。
+   *
+   * ## 为什么是 `core`
+   *
+   * 它和 `schedule` / `deadlines` 同属**日程基础设施**：课表回答「什么时候上课」，
+   * DDL 回答「什么时候交作业」，活动回答「什么时候去哪参加什么」。
+   * 它不产生交易，也不属于需求图里的校园生活业务闭环，因此不占业务模块名额。
+   *
+   * ## 为什么不并进 `deadlines`
+   *
+   * 活动有独立的确认门：抽取/导入只产生 `candidate`，用户确认后才进入活动日程视图
+   * （可导出 ICS / 订阅系统日历）并生成提醒；不写入课程课表。
+   * DDL 没有这层状态，也没有地点/主办/报名截止。混表会让两套生命周期互相污染。
+   *
+   * ## 为什么是 `medium`、不设二次同意
+   *
+   * 条目含活动标题、时间、地点、主办方与 ≤200 字证据片段（来自校园邮件或用户主动
+   * 提交的单篇公众号）。它们能反推出「谁可能对什么活动感兴趣」，但**不存邮件正文、
+   * 附件或公众号全文**，与 `deadlines` 同级。用户主动导入即同意处理该篇内容；
+   * 不需要再叠一层同意门。将来若接入通讯录/画像推荐，必须重新评估敏感级。
+   */
+  {
+    id: 'activities',
+    nameZh: '校园活动',
+    nameEn: 'Campus Activities',
+    summary:
+      '把校园邮件、公众号单篇与手动录入的活动整理成候选，用户确认后进入活动日程视图（ICS / 系统日历）并生成提醒',
+    category: 'core',
+    sensitivity: 'medium',
+    requiresConsent: false,
+    route: 'activities',
   },
   {
     id: 'campus-card',

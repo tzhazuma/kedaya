@@ -1,6 +1,7 @@
 import { MailModule } from './modules/mail/mail.module';
 import { WechatModule } from './modules/wechat/wechat.module';
 import { EdgeModule } from './modules/edge/edge.module';
+import { ActivitiesModule } from './modules/activities/activities.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
@@ -50,6 +51,10 @@ import { AgentModule } from './modules/agent/agent.module';
  * 后者刻意不进 `@kedaya/contracts` 的 `MODULES`：它没有首页宫格，也不改变
  * 三端"20 个模块"的交付状态断言。
  *
+ * 另有独立域 `activities`（校园活动，路由 `/activities`）：它**不是**课表
+ * deadlines 的一部分，也不进 20 个契约模块；来源仅校园邮箱 / 单篇公众号 /
+ * 手动，候选活动必须用户确认后才建提醒。
+ *
  * 三个全局提供者（契约 §6.1 的统一约定都靠它们落地）：
  *   APP_PIPE       ZodValidationPipe   —— 全站唯一校验入口
  *   APP_INTERCEPTOR EnvelopeInterceptor —— 成功响应收敛成 ApiEnvelope
@@ -64,6 +69,7 @@ import { AgentModule } from './modules/agent/agent.module';
     MailModule,
     WechatModule,
     EdgeModule,
+    ActivitiesModule,
     GroupBotModule,
     ConfigModule.forRoot({
       isGlobal: true,

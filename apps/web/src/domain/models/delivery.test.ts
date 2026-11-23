@@ -21,7 +21,7 @@ import {
  */
 describe('模块交付状态', () => {
   it('Web 已上线的模块必须有真实路由，且 href 指向它', () => {
-    expect(WEB_READY_MODULES.map((m) => m.id)).toEqual(['groupbuy']);
+    expect(WEB_READY_MODULES.map((m) => m.id)).toEqual(['activities', 'groupbuy']);
     for (const mod of WEB_READY_MODULES) {
       expect(mod.delivery.webHref).toBeDefined();
       expect(mod.href).toBe(mod.delivery.webHref);
@@ -29,10 +29,12 @@ describe('模块交付状态', () => {
     }
   });
 
-  it('小程序已上线的模块 = 24 个契约模块里除 groupbuy（走 Web）之外的 23 个', () => {
+  it('小程序已上线的模块 = 25 个契约模块里除 groupbuy（走 Web）之外的 24 个；activities 为 Web + 小程序双端', () => {
     // 这份清单必须与小程序 `MODULE_ENTRY_PATHS`（真实有页面的模块）逐条对齐：
     // 端上真的做了才列进来，没做就老实留在 api-only —— 端上页面数对不上这里会红。
     expect(MINIAPP_MODULES.map((m) => m.id).sort()).toEqual([
+      // 第 25 个模块：校园活动。Web 端是无状态导入，小程序 / Flutter 有列表与详情。
+      'activities',
       'ai-portrait',
       'auth',
       'buddy',
@@ -55,21 +57,35 @@ describe('模块交付状态', () => {
       'profile',
       'schedule',
       'takeout-guard',
-        // 第 24 个模块：会议茶歇（契约规则层 + 小程序页面；服务端还没有接口）
-        'teabreak',
+      // 第 24 个模块：会议茶歇（契约规则层 + 小程序页面；服务端还没有接口）
+      'teabreak',
       'techpie',
       'wellbeing',
       'wildlife',
     ]);
     for (const mod of MINIAPP_MODULES) {
-      // 小程序模块在 Web 上没有页面，必须去说明页
+      // 小程序模块在 Web 上没有页面，必须去说明页；
+      // activities 例外：Web 有导入页，但这里仍按小程序入口列 /m/activities。
       expect(mod.href).toBe(`/m/${mod.id}`);
-      expect(mod.delivery.webHref).toBeUndefined();
+      if (mod.delivery.stage === 'miniapp') {
+        expect(mod.delivery.webHref).toBeUndefined();
+      }
       expect(mod.delivery.note).toBeTruthy();
     }
   });
 
-  it('22 个模块都已交付（facility 本轮补齐），api-only 为空', () => {
+  it('activities 标成 Web + 小程序双端，准确表达两端的交付边界', () => {
+    const delivery = deliveryOf('activities');
+    expect(delivery.stage).toBe('web-and-miniapp');
+    expect(delivery.webHref).toBe('/import#campus-activities');
+    expect(delivery.note).toContain('无状态');
+    expect(delivery.note).toContain('列表');
+    expect(delivery.note).toContain('Flutter');
+    expect(delivery.note).toContain('站内信');
+    expect(deliveryStageLabel('web-and-miniapp')).toBe('Web + 小程序已上线');
+  });
+
+  it('25 个模块都已交付（activities 为 Web + 小程序双端），api-only 为空', () => {
     // 这一条的含义变了：以前它守的是「不要假装做了 facility」，
     // 现在它守的是「不要漏登记」—— 有模块交付了却没更新 delivery.ts，
     // 这里会红（因为 MODULES.length 与 DELIVERED_MODULES.length 会对不上）。

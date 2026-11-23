@@ -6,16 +6,19 @@ import 'package:kedaya/domain/models/kedaya_module.dart';
 /// 模块注册表是契约 §4 的冻结项，Dart 侧只是镜像 —— 因此这里断言镜像没走样。
 /// 对应用例见 `packages/contracts/src/modules.test.ts`。
 void main() {
-  // 2026-10-22 契约新增 `teabreak`（学术会议茶歇）。Dart 镜像同步了这一条，
-  // 但**仍未同步** `petition` 与 `campus-map`（`modules.ts` 现有 24 条）——
-  // 那两条不在本轮范围内，已登记进交付说明。
-  test('注册表共 24 个模块：17 业务 + 7 基础（与契约 modules.ts 对齐）', () {
+  // 2026-10-22 契约新增 `teabreak`（学术会议茶歇）。Dart 镜像同步了这一条。
+  // 2026-11-22 新增独立 `activities` 域（活动不塞进课程 `deadlines`）。
+  // 注意：`packages/contracts/src/modules.ts` 的 activities 条目由契约流同步，
+  // 本端只做镜像与测试守卫。
+  test('注册表共 25 个模块：17 业务 + 8 基础（含新增 activities）', () {
     // 2026-10-22 补齐：此前 Dart 镜像只有 22 条，缺 `petition`（业务）与
     // `campus-map`（核心）—— 契约早就有了，Dart 端漏了，导致真机首页
     // 显示「查看全部 22 个模块」而契约是 24。本轮一次补齐并对齐顺序。
-    expect(kedayaModules, hasLength(24));
+    // 2026-11-22 独立 activities 域：契约把活动放在 core（与 deadlines 同组，
+    // 但**不混进**课程 DDL）。
+    expect(kedayaModules, hasLength(25));
     expect(businessModules, hasLength(17));
-    expect(coreModules, hasLength(7));
+    expect(coreModules, hasLength(8));
   });
 
   test('petition 已注册（业务 / low / 无同意门）', () {
@@ -71,6 +74,7 @@ void main() {
       'schedule',
       'campus-map',
       'deadlines',
+      'activities',
       'campus-card',
       'profile',
       'notifications',
@@ -89,6 +93,20 @@ void main() {
     expect(module.summary, contains('茶歇'));
     expect(moduleRequiresConsent('teabreak'), isFalse);
     expect(moduleIsSensitive('teabreak'), isFalse);
+  });
+
+  test('activities 是独立模块：core / medium / 无同意门 / route == id', () {
+    final KedayaModule? module = moduleById('activities');
+    expect(module, isNotNull);
+    expect(module!.nameZh, '校园活动');
+    expect(module.nameEn, 'Campus Activities');
+    expect(module.category, ModuleCategory.core);
+    expect(module.sensitivity, ModuleSensitivity.medium);
+    expect(module.requiresConsent, isFalse);
+    expect(module.route, 'activities');
+    expect(module.summary, contains('确认'));
+    expect(moduleRequiresConsent('activities'), isFalse);
+    expect(moduleIsSensitive('activities'), isFalse);
   });
 
   // 2026-10-19 契约新增第 21 个模块 `deadlines`（DDL 聚合），Dart 侧必须同步。
@@ -185,47 +203,44 @@ void main() {
         ]));
     expect(ids, isNot(contains('groupbuy')));
   });
-    // ==================================================================
-    // 防「写死模块数」—— 屏幕上显示错误数字是很尴尬的失败
-    // ==================================================================
+  // ==================================================================
+  // 防「写死模块数」—— 屏幕上显示错误数字是很尴尬的失败
+  // ==================================================================
 
-    group('⚠️ 源码守卫：不许把模块数写死在 UI 文案里', () {
-      /// 读源码（测试跑在 apps/mobile 下，路径相对它）
-      String read(String rel) => File(rel).readAsStringSync();
+  group('⚠️ 源码守卫：不许把模块数写死在 UI 文案里', () {
+    /// 读源码（测试跑在 apps/mobile 下，路径相对它）
+    String read(String rel) => File(rel).readAsStringSync();
 
-      test('modules_page.dart 的分组副标题是动态的', () {
-        final String src = read('lib/presentation/pages/modules_page.dart');
-        // 曾经写死：「来自需求图的 14 个模块」「身份 / 课表 / 校园卡 / 我的 / 通知」。
-        // 契约早就不止这些了，于是屏幕上显示的数字是错的。
-        expect(
-          src,
-          isNot(contains('14 个模块')),
-          reason: '分组副标题必须用 business.length，不能写死',
-        );
-        expect(
-          src,
-          isNot(contains('身份 / 课表 / 校园卡 / 我的 / 通知')),
-          reason: '基础模块副标题必须用 core.length，不能列举（列举必过期）',
-        );
-        // 正向：确实用了动态长度
-        expect(src, contains(r'business.length'));
-        expect(src, contains(r'core.length'));
-      });
-
-      test('home_page.dart 的「查看全部 N 个模块」是动态的', () {
-        final String src = read('lib/presentation/pages/home_page.dart');
-        expect(src, contains(r'kedayaModules.length'));
-        // 不许出现形如「查看全部 22 个模块」的字面量
-        expect(RegExp(r'查看全部\s*\d+\s*个模块').hasMatch(src), isFalse);
-      });
-
-      test('注册表计数与契约对齐（24 = 17 + 7）', () {
-        // 这条是「数字对不对」的最终裁定；上面两条防的是「UI 不读它」。
-        expect(kedayaModules.length, 24);
-        expect(businessModules.length + coreModules.length, kedayaModules.length);
-      });
+    test('modules_page.dart 的分组副标题是动态的', () {
+      final String src = read('lib/presentation/pages/modules_page.dart');
+      // 曾经写死：「来自需求图的 14 个模块」「身份 / 课表 / 校园卡 / 我的 / 通知」。
+      // 契约早就不止这些了，于是屏幕上显示的数字是错的。
+      expect(
+        src,
+        isNot(contains('14 个模块')),
+        reason: '分组副标题必须用 business.length，不能写死',
+      );
+      expect(
+        src,
+        isNot(contains('身份 / 课表 / 校园卡 / 我的 / 通知')),
+        reason: '基础模块副标题必须用 core.length，不能列举（列举必过期）',
+      );
+      // 正向：确实用了动态长度
+      expect(src, contains(r'business.length'));
+      expect(src, contains(r'core.length'));
     });
 
+    test('home_page.dart 的「查看全部 N 个模块」是动态的', () {
+      final String src = read('lib/presentation/pages/home_page.dart');
+      expect(src, contains(r'kedayaModules.length'));
+      // 不许出现形如「查看全部 22 个模块」的字面量
+      expect(RegExp(r'查看全部\s*\d+\s*个模块').hasMatch(src), isFalse);
+    });
+
+    test('注册表计数与契约对齐（25 = 17 + 8）', () {
+      // 这条是「数字对不对」的最终裁定；上面两条防的是「UI 不读它」。
+      expect(kedayaModules.length, 25);
+      expect(businessModules.length + coreModules.length, kedayaModules.length);
+    });
+  });
 }
-
-

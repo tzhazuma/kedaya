@@ -1,19 +1,21 @@
 /**
  * 模块交付状态（Web 门户展示用，domain 层，零框架依赖 —— 契约 §7）。
  *
- * 冻结契约 §4 只回答"有这 19 个模块"，不回答"哪些已经能用"。但门户必须**如实**
+ * 冻结契约 §4 只回答"有这 25 个模块"，不回答"哪些已经能用"。但门户必须**如实**
  * 告诉同学每个模块现在到底能做什么：能在 Web 门户用、已在小程序端上线、
  * 还是只有后端接口。这份表就是那个真相来源。
  *
  * 约定：
  *   · 端上真的交付了才改这里，**不要为了宫格好看提前点亮**；
- *   · `stage: 'web'` 必须同时给出 `webHref`（`validateModuleRegistry` 会校验），
- *     否则会出现"标着 Web 已上线、点进去却是占位页"的假象。
+ *   · `stage: 'web' | 'web-and-miniapp'` 必须同时给出 `webHref`
+ *     （`validateModuleRegistry` 会校验），否则会出现"标着 Web 已上线、点进去却是占位页"的假象。
  */
 
 export type DeliveryStage =
   /** Web 门户已有真实页面（可点进去使用） */
   | 'web'
+  /** Web 与小程序端都有真实页面（例如校园活动：Web 无状态导入，小程序有列表 / 详情） */
+  | 'web-and-miniapp'
   /** 微信小程序端已上线（与后端同一套 API） */
   | 'miniapp'
   /** 只有后端接口，两端都还没有页面 */
@@ -21,7 +23,7 @@ export type DeliveryStage =
 
 export interface ModuleDelivery {
   stage: DeliveryStage;
-  /** Web 端的真实路由（仅 `stage === 'web'` 时给出） */
+  /** Web 端的真实路由（`stage` 为 `web` 或 `web-and-miniapp` 时给出） */
   webHref?: string;
   /** 已交付时：端上到底能做什么（一句话，模块页展示） */
   note?: string;
@@ -30,15 +32,16 @@ export interface ModuleDelivery {
 /**
  * key = 冻结模块 id。未登记的模块一律 `api-only`。
  *
- * 现状（2026-10-18）：
- *   · Web 门户：拼单切片 + 管理后台；
- *   · 微信小程序（主端）：**20 / 20** 个模块端上可用 ——
- *     五个核心模块（账号 `auth`、课表 `schedule`、校园卡 `campus-card`、
- *     我的 `profile`、站内信 `notifications`）+ 六个生活模块（拼单、跳蚤、跑腿、
- *     找搭子、失物招领、论坛）+ 宿舍矛盾 + 四个共建型模块（食堂 `canteen`、
- *     常见问题 `faq`、动物观察 `wildlife`、偷外卖 `takeout-guard`）+
- *     技术服务目录 `techpie` + 心理支持 `wellbeing` + AI 画像 `ai-portrait` +
- *     场馆预约 `facility`（列表 / 发起 / 详情）。
+ * 现状（2026-11-22）：
+ *   · Web 门户：拼单切片 + 管理后台 + 校园活动无状态导入
+ *     （`/import#campus-activities`，不登录、不写日程）；
+ *   · 微信小程序（主端）：**25 / 25** 个模块端上可用 —— 8 个核心模块
+ *     （账号 `auth`、课表 `schedule`、校园卡 `campus-card`、我的 `profile`、
+ *     站内信 `notifications`、DDL `deadlines`、校园地点 `campus-map`、
+ *     校园活动 `activities`）+ 17 个业务模块（拼单、跳蚤、跑腿、找搭子、
+ *     失物招领、论坛、宿舍矛盾、食堂、常见问题、动物观察、偷外卖、技术服务目录、
+ *     心理支持、AI 画像、场馆预约、众筹诉求、会议茶歇）；
+ *   · Flutter 客户端：镜像同一份模块注册表，活动有列表 / 详情 / 新建 / 导入。
  *
  * ⚠️ 校园数据默认走 `CAMPUS_DATA_MODE=mock`（确定性模拟数据，响应标 `simulated: true`）。
  * 「小程序已上线」指的是**端上能用**，不代表已经对接学校真实系统。
@@ -167,6 +170,17 @@ const DELIVERY: Readonly<Record<string, ModuleDelivery>> = {
     webHref: '/groupbuy',
     note: '拼单列表与详情（Web 垂直切片），小程序端同步可用。',
   },
+
+  // ---- 第 25 个契约模块（Web + 小程序双端；入口仍由本表驱动） ----
+  activities: {
+    stage: 'web-and-miniapp',
+    webHref: '/import#campus-activities',
+    note:
+      'Web 端是**无状态导入**：用户主动给单篇公众号链接或粘贴正文，本地抽取候选活动，' +
+      '逐条确认后导出 ICS / JSON；不登录、不保存候选、不写日程、不创建提醒，刷新即清空。' +
+      '小程序端有活动列表 / 详情 / 导入 / 校园邮箱 / 提醒，Flutter 客户端也有列表 / 详情 / 新建 / 导入；' +
+      '提醒 MVP 仅站内信。不自动发现、不批量抓取历史文章、不绕过微信验证。',
+  },
 };
 
 /** 未登记模块的兜底：只有接口 */
@@ -180,11 +194,23 @@ export function deliveryStageLabel(stage: DeliveryStage): string {
   switch (stage) {
     case 'web':
       return 'Web 已上线';
+    case 'web-and-miniapp':
+      return 'Web + 小程序已上线';
     case 'miniapp':
       return '小程序已上线';
     case 'api-only':
       return '接口就绪';
   }
+}
+
+/** Web 端是否有真实页面（含 Web + 小程序双端） */
+export function isWebDelivery(stage: DeliveryStage): boolean {
+  return stage === 'web' || stage === 'web-and-miniapp';
+}
+
+/** 小程序端是否有真实页面（含 Web + 小程序双端） */
+export function isMiniappDelivery(stage: DeliveryStage): boolean {
+  return stage === 'miniapp' || stage === 'web-and-miniapp';
 }
 
 /** 端上是否已经能真的用（Web 或小程序任一端上线） */

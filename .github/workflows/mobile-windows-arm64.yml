@@ -1,0 +1,153 @@
+name: Mobile Build · Windows ARM64 (experimental)
+
+# 为什么单独一个 workflow，而不是塞进 mobile-build.yml：
+# - 仓库锁定的 Flutter 3.35.1 在 Windows 上只把 Visual Studio major 17 映射为
+#   "Visual Studio 17 2022"；major 18（VS 2026）会回退到 VS 2019 生成器。
+#   而 GitHub 的 windows-11-vs2026-arm 镜像带 VS 2026，所以 3.35.1 无法驱动。
+# - Flutter 3.50.1 才加入 "Visual Studio 18 2026" 映射。
+# - Windows 官方发布清单只有 x64 Flutter SDK（3.50.1 也是），没有 ARM64 SDK；
+#   subosito/flutter-action 装的是 x64 SDK，在 ARM64 Windows 上以 x64 仿真运行。
+# - 3.50.1 的 OperatingSystemUtils 支持 FLUTTER_HOST_ARCH 覆盖 hostPlatform；
+#   设为 arm64 后，flutter build windows 才会选 windows-arm64 目标，并下载
+#   windows-arm64 engine 产物（已核对 3.50.1 的 engine 归档存在）。
+# - `flutter build windows` 在 3.50.1 里没有 --target-platform 选项
+#   （build_windows.dart 只按 hostPlatform 决定目标），所以本 workflow 不传它。
+# - 该能力未在 GitHub 托管 runner 上实跑验证，只是实验；只手动触发，
+#   不上传 Release，产物是 portable zip，不含安装器。
+# - 构建后检查 PE machine 是否为 0xAA64，防止把 x64 二进制冒充成 ARM64。
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-windows-arm64-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: "3.50.1"
+  # x64 SDK 在 ARM64 Windows 上仿真运行，Dart 的 Abi.current() 仍是 windowsX64；
+  # 必须显式覆盖，否则 flutter build windows 会默认产出 x64。
+  FLUTTER_HOST_ARCH: "arm64"
+  KEDAYA_FLAVOR: ${{ vars.KEDAYA_FLAVOR || 'mock' }}
+  KEDAYA_API_BASE_URL: ${{ vars.KEDAYA_API_BASE_URL || 'https://api.kedaya.local' }}
+
+jobs:
+  windows-arm64:
+    name: Windows ARM64（experimental, portable only）
+    runs-on: windows-11-vs2026-arm
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: apps/mobile
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 校验宿主确实是 ARM64
+        shell: pwsh
+        run: |
+          $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+          Write-Host "OSArchitecture=$arch"
+          if ($arch -ne 'Arm64') {
+            throw "This job must run on an ARM64 Windows runner (current: $arch)"
+          }
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 工具链信息（仅诊断）
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          flutter --version
+          flutter doctor -v
+
+      - name: 预检 ARM64 目标与引擎产物
+        shell: pwsh
+        run: |
+          if ($env:FLUTTER_HOST_ARCH -ne 'arm64') {
+            throw "FLUTTER_HOST_ARCH must be arm64 (current: $env:FLUTTER_HOST_ARCH)"
+          }
+          flutter --version
+          flutter precache --windows
+          Write-Host "FLUTTER_HOST_ARCH=$env:FLUTTER_HOST_ARCH"
+
+      - name: 计算版本号
+        shell: pwsh
+        run: |
+          $line = Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)' | Select-Object -First 1
+          if (-not $line) { throw "pubspec.yaml is missing the version field" }
+          $version = $line.Matches[0].Groups[1].Value.Split('+')[0]
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $version = $env:GITHUB_REF_NAME -replace '^mobile-v',''
+          }
+          $version = $version -replace '[^0-9A-Za-z._-]','-'
+          if ([string]::IsNullOrWhiteSpace($version)) { $version = '0.0.0' }
+          $buildNumber = [int]$env:GITHUB_RUN_NUMBER * 100 + [int]$env:GITHUB_RUN_ATTEMPT
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "BUILD_NUMBER=$buildNumber" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: 生成 Windows 原生脚手架（仅缺失时）
+        run: |
+          if (-not (Test-Path windows)) {
+            flutter create --platforms=windows --org cn.shanghaitech --project-name kedaya --no-pub .
+          }
+
+      - name: 解析依赖（锁定 pubspec.lock）
+        run: flutter pub get --enforce-lockfile
+
+      # 不传 --target-platform：3.50.1 的 build windows 没有这个选项，
+      # 目标由 FLUTTER_HOST_ARCH=arm64 驱动。
+      - name: 构建 Windows ARM64
+        run: |
+          flutter build windows --release `
+            "--build-name=$env:VERSION" `
+            "--build-number=$env:BUILD_NUMBER" `
+            "--dart-define=KEDAYA_FLAVOR=$env:KEDAYA_FLAVOR" `
+            "--dart-define=KEDAYA_API_BASE_URL=$env:KEDAYA_API_BASE_URL"
+
+      - name: 校验 PE 架构并打包便携 zip
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path build/windows -Recurse -Filter kedaya.exe |
+            Where-Object { $_.FullName -match '\\runner\\Release\\kedaya\.exe$' } |
+            Select-Object -First 1
+          if (-not $exe) { throw "kedaya.exe not found under build/windows/**/runner/Release" }
+
+          $fs = [System.IO.File]::OpenRead($exe.FullName)
+          $br = New-Object System.IO.BinaryReader($fs)
+          try {
+            $fs.Seek(0x3C, [System.IO.SeekOrigin]::Begin) | Out-Null
+            $peOffset = $br.ReadInt32()
+            $fs.Seek($peOffset + 4, [System.IO.SeekOrigin]::Begin) | Out-Null
+            $machine = $br.ReadUInt16()
+          } finally {
+            $fs.Dispose()
+          }
+          $hex = '0x{0:X4}' -f $machine
+          Write-Host "PE machine=$hex (expected 0xAA64 / IMAGE_FILE_MACHINE_ARM64)"
+          if ($machine -ne 0xAA64) {
+            throw "Artifact is not ARM64: PE machine=$hex. The ARM64 Flutter/VS toolchain did not take effect."
+          }
+
+          $releaseDir = $exe.Directory.FullName
+          $repoRoot = (Resolve-Path ../..).Path
+          New-Item -ItemType Directory -Force -Path build/artifacts | Out-Null
+          Copy-Item -Force (Join-Path $repoRoot 'LICENSE') (Join-Path $releaseDir 'LICENSE')
+          Compress-Archive -Path (Join-Path $releaseDir '*') `
+            -DestinationPath "build/artifacts/kedaya-$env:VERSION-windows-arm64-portable-experimental.zip" `
+            -Force
+          Get-ChildItem build/artifacts | Format-Table Name,Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kedaya-windows-arm64-experimental
+          path: apps/mobile/build/artifacts/*.zip
+          retention-days: 7
+          if-no-files-found: error
+          overwrite: true

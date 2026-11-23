@@ -43,6 +43,8 @@ export interface KdyFieldProps {
   required?: boolean
   disabled?: boolean
   className?: string
+  /** 表单字段名（语义表单；小程序 Input 原生支持） */
+  name?: string
 
   // ---- 值模式 ----
   value?: string
@@ -74,6 +76,7 @@ export function KdyField(props: KdyFieldProps) {
     required = false,
     disabled = false,
     className,
+    name,
     value,
     onChange,
     onConfirm,
@@ -102,6 +105,7 @@ export function KdyField(props: KdyFieldProps) {
     ) : multiline ? (
       <Textarea
         className='kdy-field__input kdy-field__textarea'
+        name={name}
         value={value}
         placeholder={placeholder}
         disabled={disabled}
@@ -113,6 +117,7 @@ export function KdyField(props: KdyFieldProps) {
     ) : (
       <Input
         className='kdy-field__input'
+        name={name}
         value={value}
         type={type}
         password={password}
@@ -139,7 +144,11 @@ export function KdyField(props: KdyFieldProps) {
         {hint !== undefined && hint !== null && <Text className='kdy-field__hint'>{hint}</Text>}
       </View>
       <View className='kdy-field__control'>{control}</View>
-      {hasError && <Text className='kdy-field__error'>{error}</Text>}
+      {hasError && (
+        <View className='kdy-field__error' role='alert'>
+          {error}
+        </View>
+      )}
     </View>
   )
 }

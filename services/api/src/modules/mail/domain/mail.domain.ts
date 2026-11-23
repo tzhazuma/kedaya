@@ -17,6 +17,8 @@
  *    **不存邮件正文**。
  */
 
+import type { MailEventKind } from './mail-event.domain';
+
 /* ------------------------------------------------------------------ *
  * 账户
  * ------------------------------------------------------------------ */
@@ -105,9 +107,15 @@ export interface MailEventRecord {
   /** INBOX 内的 UID；同一账户内唯一，用于幂等去重 */
   uid: number;
   title: string;
+  /** 旧行可为 null；新同步会写入 */
+  kind?: MailEventKind | null;
   startsAt: Date;
+  endsAt?: Date | null;
   location: string | null;
   organizer: string | null;
+  registrationDeadlineAt?: Date | null;
+  registrationDeadlineRaw?: string | null;
+  registrationUrl?: string | null;
   confidence: number;
   /** 命中的时间原文片段（可解释性）；**不是**邮件正文 */
   matchedText: string;
@@ -121,9 +129,14 @@ export interface NewMailEvent {
   accountId: string;
   uid: number;
   title: string;
+  kind?: MailEventKind | null;
   startsAt: Date;
+  endsAt?: Date | null;
   location: string | null;
   organizer: string | null;
+  registrationDeadlineAt?: Date | null;
+  registrationDeadlineRaw?: string | null;
+  registrationUrl?: string | null;
   confidence: number;
   matchedText: string;
   receivedAt: Date;
@@ -134,9 +147,14 @@ export interface NewMailEvent {
 export interface MailEventView {
   id: string;
   title: string;
+  kind: MailEventKind | null;
   startsAt: string;
+  endsAt: string | null;
   location: string | null;
   organizer: string | null;
+  registrationDeadlineAt: string | null;
+  registrationDeadlineRaw: string | null;
+  registrationUrl: string | null;
   confidence: number;
   matchedText: string;
   receivedAt: string;
@@ -211,9 +229,17 @@ export function toMailEventView(event: MailEventRecord, stale = event.stale): Ma
   return {
     id: event.id,
     title: event.title,
+    kind: event.kind ?? null,
     startsAt: event.startsAt.toISOString(),
+    endsAt: event.endsAt === undefined || event.endsAt === null ? null : event.endsAt.toISOString(),
     location: event.location,
     organizer: event.organizer,
+    registrationDeadlineAt:
+      event.registrationDeadlineAt === undefined || event.registrationDeadlineAt === null
+        ? null
+        : event.registrationDeadlineAt.toISOString(),
+    registrationDeadlineRaw: event.registrationDeadlineRaw ?? null,
+    registrationUrl: event.registrationUrl ?? null,
     confidence: event.confidence,
     matchedText: event.matchedText,
     receivedAt: event.receivedAt.toISOString(),

@@ -26,12 +26,15 @@ const SENSITIVITY_TONE: Record<PortalModule['sensitivity'], KdyBadgeTone> = {
 /** 交付状态的角标语气：Web 已上线用品牌色（最醒目的"能用"信号） */
 const DELIVERY_TONE: Record<DeliveryStage, KdyBadgeTone> = {
   web: 'brand',
+  'web-and-miniapp': 'brand',
   miniapp: 'info',
   'api-only': 'neutral',
 };
 
 const DELIVERY_TITLE: Record<DeliveryStage, string> = {
   web: 'Web 门户已有真实页面，可直接使用',
+  'web-and-miniapp':
+    'Web 与小程序端都有真实页面；Web 端为无状态导入导出，小程序端有列表与详情',
   miniapp: '已在微信小程序端上线；Web 端页面待做（点进去看交付说明）',
   'api-only': '后端接口已挂脚手架，两端页面都还没做',
 };
@@ -45,7 +48,7 @@ export interface ModuleGridProps {
 }
 
 /**
- * 模块入口宫格 —— 数据驱动（`@/domain/models/modules`，当前 20 个）。
+ * 模块入口宫格 —— 数据驱动（`@/domain/models/modules`，当前 25 个）。
  * 组件本身对模块数量与内容零假设：传什么渲染什么。
  */
 export function ModuleGrid({ modules, showSummary = true, className }: ModuleGridProps) {

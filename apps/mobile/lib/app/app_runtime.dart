@@ -5,6 +5,7 @@ import '../data/api/dio_client.dart';
 import '../data/api/kedaya_api_client.dart';
 import '../data/mock/dev_unified_identity.dart';
 import '../data/mock/in_memory_stores.dart';
+import '../data/mock/mock_activities_repository.dart';
 import '../data/mock/mock_auth_repository.dart';
 import '../data/mock/mock_buddy_repository.dart';
 import '../data/mock/mock_campus_card_repository.dart';
@@ -24,6 +25,7 @@ import '../data/mock/mock_techpie_repository.dart';
 import '../data/mock/mock_webview_port.dart';
 import '../data/mock/mock_wellbeing_repository.dart';
 import '../data/mock/mock_wildlife_repository.dart';
+import '../data/repositories/remote_activities_repository.dart';
 import '../data/repositories/remote_auth_repository.dart';
 import '../data/repositories/remote_buddy_repository.dart';
 import '../data/repositories/remote_campus_card_repository.dart';
@@ -42,6 +44,7 @@ import '../data/repositories/remote_wildlife_repository.dart';
 import '../data/storage/cache_theme_mode_store.dart';
 import '../data/storage/preferences_cache_store.dart';
 import '../data/storage/secure_credential_store.dart';
+import '../domain/ports/activities_port.dart';
 import '../domain/ports/auth_port.dart';
 import '../domain/ports/buddy_port.dart';
 import '../domain/ports/campus_card_port.dart';
@@ -87,6 +90,7 @@ final class AppRuntime {
     required this.campusSessions,
     required this.consent,
     required this.groupbuy,
+    required this.activities,
     required this.forum,
     required this.buddy,
     required this.faq,
@@ -125,6 +129,9 @@ final class AppRuntime {
   final CampusSessionPort campusSessions;
   final ConsentPort consent;
   final GroupbuyPort groupbuy;
+
+  /// 校园活动（独立域）。来源：校园邮箱 / 公众号单篇 / 手动创建。
+  final ActivitiesPort activities;
 
   /// 论坛（契约 §4.1 `forum`，敏感级中；支持匿名，契约 §9）。
   final ForumPort forum;
@@ -215,6 +222,7 @@ final class AppRuntime {
       campusSessions: campus,
       consent: consent,
       groupbuy: MockGroupbuyRepository(controls: controls),
+      activities: MockActivitiesRepository(controls: controls),
       forum: MockForumRepository(controls: controls),
       buddy: MockBuddyRepository(controls: controls),
       faq: MockFaqRepository(controls: controls),
@@ -300,6 +308,7 @@ final class AppRuntime {
       campusSessions: campus,
       consent: consent,
       groupbuy: RemoteGroupbuyRepository(api),
+      activities: RemoteActivitiesRepository(api),
       forum: RemoteForumRepository(api),
       buddy: RemoteBuddyRepository(api),
       faq: RemoteFaqRepository(api),

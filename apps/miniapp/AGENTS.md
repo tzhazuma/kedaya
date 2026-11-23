@@ -68,3 +68,48 @@
   在那之前**不要**把主题开关接到页面上（半套深色比没有更糟）。
 - 贴纸簿素材与组件都在主包（`KdyDock` / `CampusChrome` / `KdyFeatureArtwork` /
   `assets/campus/*`），主包体积由 `verify:weapp` 守着；后续再加 1 MB 级素材必须放分包。
+
+## 校园活动（activities，独立域）
+
+活动**不并入课程 DDL**（`deadlines` 是作业截止，活动有自己的来源、状态机与提醒）。
+本轮新增一个独立分包 `presentation/pages/activities/`，共五页：
+
+| 页面 | 路径 | 作用 |
+| --- | --- | --- |
+| 列表 | `list/index` | 待确认 / 今天 / 本周 / 全部 + 来源筛选 |
+| 详情 | `detail/index` | 确认加入日程、忽略、设提醒、复制链接 |
+| 公众号导入 | `import/index` | 用户主动粘贴**单篇**链接或正文 |
+| 校园邮箱 | `mail/index` | 绑定 / 同步 / 把邮件事件提升为候选活动 |
+| 提醒 | `reminders/index` | 站内信提醒的待发送 / 已结束状态 |
+
+硬约束（改这一域前先读）：
+
+- 类型在 `domain/models/activity.ts`：来源只有 `campus-mail` / `wechat-mp` / `manual`，
+  状态只有 `candidate` / `confirmed` / `dismissed` / `archived`；提醒 kind 只有
+  `registration` / `start` / `custom`，channel 只有 `inapp` / `wechat-subscribe`。
+- **candidate 必须用户确认后才加入日程 / 建提醒**。默认提醒由**服务端**在
+  `confirm` 时按「报名截止前 24h、开始前 1h」创建；目标已过不建，
+  计算时刻已过但目标未来用 `now + 5min`。客户端只读取提醒、不重复创建。
+- 真实 wire 契约：公众号导入请求字段是 `url`（响应 `{item, created}`），
+  邮件提升是 `{eventIds: []}`（响应 `{items, created, skipped}`）；
+  契约没有「按活动查提醒」端点，详情页拉 `GET /activities/reminders` 后按
+  `activityId` 过滤。
+- **只建站内信**：没有真实模板 ID 时 `createReminder` 直接拒绝 `wechat-subscribe`，
+  页面也不把它画成可用渠道。管理员派发端点存在，但用户页不暴露。
+- 时间存 UTC ISO，展示显式 `Asia/Shanghai`；只有日期没有时刻的原文留在
+  `registrationDeadlineRaw`，**不补 23:59**。
+- 只存活动字段与 ≤200 字证据片段；邮件正文 / 附件 / 公众号全文不进入小程序。
+- 公众号只做用户主动单篇链接或正文：不做自动发现、批量历史抓取、反检测或绕过验证；
+  链接只复制，不用 `web-view`。
+- 邮箱复用现成 `/mail` 端点（`POST/DELETE /mail/account`、`POST /mail/sync`、
+  `GET /mail/events`）：只读 IMAP、AES-256-GCM 服务端加密、`*.shanghaitech.edu.cn`
+  IMAP 白名单。密码表单提交后立即清空，绑定/同步失败不显示假成功。
+- 活动入口登记在 `domain/models/homeEntries.ts`（服务大厅「校园日常」，不进默认首页）；
+  `@kedaya/contracts` 已有 `activities` 模块，`MODULE_ENTRY_PATHS.activities`
+  指向列表页。`APP_ENTRIES` 的 `moduleIds` 仍按契约是否存在自适应，
+  避免契约回退时目录双向一致性测试变红。
+- 单测：`domain/models/__tests__/activity.test.ts`、`mailActivity.test.ts`、
+  `application/activities/__tests__/activityUseCases.test.ts`、
+  `data/repositories/__tests__/httpActivityRepository.test.ts`、
+  `data/repositories/__tests__/mockActivityRepository.test.ts`、
+  `presentation/pages/activities/__tests__/activityPages.test.ts`。

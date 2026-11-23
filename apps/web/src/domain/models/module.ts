@@ -9,7 +9,7 @@
  */
 import type { KedayaModule, ModuleCategory, Sensitivity } from '@kedaya/contracts';
 
-import { deliveryOf, isDelivered, type ModuleDelivery } from './delivery';
+import { deliveryOf, isDelivered, isWebDelivery, type ModuleDelivery } from './delivery';
 
 /** 宫格强调色 —— 只允许语义名，具体色值由 design-tokens 决定 */
 export type ModuleAccent = 'brand' | 'info' | 'success' | 'warning' | 'danger' | 'neutral';
@@ -94,6 +94,21 @@ export function moduleHref(id: string): string {
 export interface ModuleDecoration {
   icon: ModuleIconKey;
   accent: ModuleAccent;
+}
+
+/**
+ * 独立入口（复用注册表条目的轻量视图）。
+ *
+ * 用途：像「校园活动」这种有独立落点（`/import#campus-activities`）的能力，
+ * 仍然复用同一套图标 / 强调色 / 交付状态，避免在页面里硬编码标题与落点。
+ */
+export interface PortalFeatureEntry {
+  readonly id: string;
+  readonly nameZh: string;
+  readonly href: string;
+  readonly icon: ModuleIconKey;
+  readonly accent: ModuleAccent;
+  readonly delivery: ModuleDelivery;
 }
 
 /**
@@ -189,8 +204,8 @@ export function validateModuleRegistry(
     if (isAuditedSensitivity(m.sensitivity) !== m.audited) {
       problems.push(`模块 ${m.id} 的审计标记与敏感级不一致`);
     }
-    // 交付状态必须自洽：标了 Web 已上线就得有真实路由，没上线就只能去说明页。
-    if (m.delivery.stage === 'web') {
+    // 交付状态必须自洽：标了 Web 已上线（含双端）就得有真实路由，没上线就只能去说明页。
+    if (isWebDelivery(m.delivery.stage)) {
       if (m.delivery.webHref === undefined) {
         problems.push(`模块 ${m.id} 标记为 Web 已上线，却没有 webHref`);
       } else if (m.href !== m.delivery.webHref) {

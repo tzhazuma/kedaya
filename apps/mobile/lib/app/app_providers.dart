@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/mock/mock_controls.dart';
+import '../domain/ports/activities_port.dart';
 import '../domain/ports/auth_port.dart';
 import '../domain/ports/buddy_port.dart';
 import '../domain/ports/campus_card_port.dart';
@@ -56,6 +57,11 @@ final consentProvider =
 
 final groupbuyRepositoryProvider = Provider<GroupbuyPort>(
   (ref) => ref.watch(appRuntimeProvider).groupbuy,
+);
+
+/// 校园活动（独立 `activities` 域；**不塞进**课程 `deadlines`）。
+final activitiesRepositoryProvider = Provider<ActivitiesPort>(
+  (ref) => ref.watch(appRuntimeProvider).activities,
 );
 
 /// 论坛（契约 §4.1 `forum`）。

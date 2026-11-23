@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NotFoundError } from '../../common/errors/app-error';
+import { InternalError, NotFoundError, ValidationError } from '../../common/errors/app-error';
 import type { NotifyInput } from '../../common/notifications/notification.port';
 import { NotificationService } from './notifications.service';
 import type { NotificationModel, NotificationRepository } from './domain/notifications.domain';
@@ -108,6 +108,38 @@ describe('NotificationService', () => {
     it('保留 link（前端据此决定是否可点）', async () => {
       await service.notify(VALID);
       expect(repo.create.mock.calls[0]?.[0]).toMatchObject({ link: VALID.link, source: 'groupbuy' });
+    });
+  });
+
+  describe('notifyStrict（提醒派发用：失败必须抛出）', () => {
+    it('接受 activities 来源并写入', async () => {
+      await expect(
+        service.notifyStrict({
+          ...VALID,
+          source: 'activities',
+          title: '活动开始提醒',
+          body: '「AI for Science」即将开始',
+        }),
+      ).resolves.toBeUndefined();
+      expect(repo.create).toHaveBeenCalledTimes(1);
+      expect(repo.create.mock.calls[0]?.[0]).toMatchObject({ source: 'activities' });
+    });
+
+    it('仓储失败时抛出 INTERNAL（调用方据此把提醒回退 pending）', async () => {
+      repo.create.mockRejectedValue(new Error('db down'));
+      await expect(service.notifyStrict({ ...VALID, source: 'activities' })).rejects.toBeInstanceOf(
+        InternalError,
+      );
+    });
+
+    it('source 未登记 / 字段缺失时抛出 VALIDATION，不静默丢弃', async () => {
+      await expect(
+        service.notifyStrict({ ...VALID, source: 'not-registered' }),
+      ).rejects.toBeInstanceOf(ValidationError);
+      await expect(service.notifyStrict({ ...VALID, userId: '  ' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+      expect(repo.create).not.toHaveBeenCalled();
     });
   });
 

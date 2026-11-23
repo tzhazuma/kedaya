@@ -1,0 +1,54 @@
+.kdy-activity-import {
+  &__modes {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    padding-bottom: $kdy-space-3;
+  }
+
+  .kdy-chip {
+    min-height: 44px;
+  }
+
+  &__actions {
+    padding-top: $kdy-space-3;
+  }
+
+  &__ok {
+    display: block;
+    padding-top: $kdy-space-3;
+    color: $kdy-color-success;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+  }
+
+  &__error {
+    display: block;
+    padding-top: $kdy-space-3;
+    color: $kdy-color-danger;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+  }
+
+  &__result {
+    padding-top: $kdy-space-2;
+  }
+
+  &__result-title {
+    display: block;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-md;
+    font-weight: $kdy-font-weight-semibold;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  &__hint {
+    display: block;
+    padding-top: $kdy-space-2;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.6;
+  }
+}

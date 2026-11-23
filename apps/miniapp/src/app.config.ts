@@ -117,6 +117,16 @@ const subPackages = [
    * 页面路径同样没变。
    */
   { root: 'presentation/pages/deadlines', pages: ['index'] },
+  /**
+   * 校园活动（独立域）：列表 / 详情 / 公众号导入 / 校园邮箱 / 提醒。
+   *
+   * 放分包：活动是「用户主动点进去才需要」的垂直业务，首屏不需要；
+   * 同时避免把新增的邮件与活动表单代码塞进已经接近 2 MiB 的主包。
+   */
+  {
+    root: 'presentation/pages/activities',
+    pages: ['list/index', 'detail/index', 'import/index', 'mail/index', 'reminders/index'],
+  },
 ]
 
 export default {

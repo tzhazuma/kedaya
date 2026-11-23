@@ -92,9 +92,21 @@ export interface ReadOnlyPolicy {
  * 会被当成「登录态」的参数名/片段。
  *
  * 刻意宽：`code`（OAuth 回调）、`ticket`（CAS）、`sid`（会话）、`auth`、`secret`
- * 全都算。误删一个普通参数顶多让回源链接少个筛选条件；漏删一个就是凭据泄漏。
+ * 全都算。公众号回源链接还会带一批**微信会话/追踪参数**：
+ * `scene`、`chksm`、`srcid`、`exportkey`、`signature`、`sig`、`key` ——
+ * 它们能定位到具体分享者/会话，同样不该跟着证据片段进库。
+ *
+ * 误删一个普通参数顶多让回源链接少个筛选条件；漏删一个就是凭据泄漏。
  */
-const SESSION_FRAGMENT_RE = /sid|session|token|auth|password|ticket|secret|code/i;
+const SESSION_FRAGMENT_RE =
+  /sid|session|token|auth|password|passwd|ticket|secret|code|scene|chksm|srcid|exportkey|signature|api[_-]?key/i;
+
+/** 短参数名只做**精确**匹配：`key` / `sig` / `sign`；避免误删 `keyword`、`signup` */
+const SESSION_EXACT_NAME_RE = /^(?:key|sig|sign)$/i;
+
+/** 锚点里出现这些片段就整段清空（`#key=…` 这类也要命中） */
+const SESSION_HASH_RE =
+  /sid|session|token|auth|password|passwd|ticket|secret|code|scene|chksm|srcid|exportkey|signature|api[_-]?key|(?:^|[#&?;_-])(?:key|sig|sign)(?:=|$|[&;_-])/i;
 
 /**
  * 清掉链接里的会话参数。
@@ -123,11 +135,13 @@ export function sanitizeSourceUrl(value: string | null | undefined): string | nu
   if (url.username.length > 0 || url.password.length > 0) return null;
 
   for (const key of [...url.searchParams.keys()]) {
-    if (SESSION_FRAGMENT_RE.test(key)) url.searchParams.delete(key);
+    if (SESSION_FRAGMENT_RE.test(key) || SESSION_EXACT_NAME_RE.test(key)) {
+      url.searchParams.delete(key);
+    }
   }
   url.searchParams.sort();
 
-  if (SESSION_FRAGMENT_RE.test(url.hash)) url.hash = '';
+  if (SESSION_HASH_RE.test(url.hash)) url.hash = '';
 
   return url.toString();
 }

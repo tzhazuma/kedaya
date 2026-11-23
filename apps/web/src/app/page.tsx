@@ -69,9 +69,10 @@ export default function HomePage() {
           </p>
           <p className="max-w-xl text-xs text-muted">
             其中 {DELIVERED_MODULES.length} 个模块已经能在端上真的用起来：微信小程序为主端
-            （账号体系 + 六个生活模块 + 宿舍矛盾 + 食堂营养 / 常见问题 / 动物观察 / 偷外卖
-            四个共建模块 + 技术服务目录 + 心理支持 + AI 画像），Web 门户先交付拼单垂直切片。
-            宫格角标会如实标注每个模块当前的交付状态 —— 目前只剩「场馆预约」还没有端上页面。
+            （{MINIAPP_MODULES.length} 个模块都有真实页面，其中校园活动含列表 / 详情 / 导入 / 邮箱 / 提醒），
+            Web 门户交付拼单垂直切片与校园活动无状态导入
+            （/import#campus-activities，不登录、不写日程），Flutter 客户端也有活动列表 / 详情 / 新建 / 导入。
+            宫格角标会如实标注每个模块当前的交付状态。
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <KdyButton href="/groupbuy">
@@ -97,7 +98,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ---------------- 20 个模块宫格（契约 §4 + §11.10-C） ---------------- */}
+      {/* ---------------- 25 个模块宫格（契约 §4 + §11.10-C） ---------------- */}
       <section className="flex flex-col gap-4" aria-labelledby="modules-heading">
         <header className="flex flex-wrap items-end justify-between gap-2">
           <div>
@@ -130,7 +131,8 @@ export default function HomePage() {
               交付范围
             </h2>
             <p className="text-sm text-muted">
-              宫格角标按端标注可用性；这里汇总「现在真的能用」的部分，其余模块明确不算已交付。
+              宫格角标按端标注可用性；这里汇总「现在真的能用」的部分，同一模块可能同时出现在多个端
+              （如校园活动）。
             </p>
           </div>
           <KdyBadge tone="brand">
@@ -143,7 +145,9 @@ export default function HomePage() {
             <h3 className="text-sm font-semibold text-body">
               Web 门户（{WEB_READY_MODULES.length}）
             </h3>
-            <p className="text-xs text-muted">浏览器里可以直接使用的垂直切片。</p>
+            <p className="text-xs text-muted">
+              浏览器里可以直接使用：拼单垂直切片 + 校园活动无状态导入（不保存候选、不写日程）。
+            </p>
             <ul className="flex flex-col gap-1">
               {WEB_READY_MODULES.map((mod) => (
                 <li key={mod.id} className="text-sm">
@@ -160,7 +164,8 @@ export default function HomePage() {
               微信小程序（{MINIAPP_MODULES.length}）
             </h3>
             <p className="text-xs text-muted">
-              主端已上线；Web 端还没有页面，点进模块说明页可以看到该模块的能力清单。
+              主端已上线（含校园活动；Flutter 客户端也有活动列表 / 详情）。
+              Web 端没有页面的模块，点进说明页可以看到能力清单。
             </p>
             <ul className="flex flex-wrap gap-1">
               {MINIAPP_MODULES.map((mod) => (

@@ -1,0 +1,136 @@
+.kdy-activity-detail {
+  &__head {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $kdy-space-2;
+    padding-bottom: $kdy-space-3;
+  }
+
+  &__row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: $kdy-space-3;
+    padding: $kdy-space-2 0;
+    border-bottom: 1px solid $kdy-tone-border;
+  }
+
+  &__label {
+    flex: 0 0 56px;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__value {
+    flex: 1;
+    min-width: 0;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+    word-break: break-word;
+  }
+
+  &__link {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-2;
+    padding-top: $kdy-space-3;
+  }
+
+  /* 长 URL 必须能换行：320px 下一条带参数的公众号链接会把卡片撑破 */
+  &__url {
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+    word-break: break-all;
+  }
+
+  &__evidence {
+    display: block;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.7;
+    word-break: break-word;
+  }
+
+  &__note {
+    display: block;
+    padding-top: $kdy-space-1;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.6;
+  }
+
+  &__muted {
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__section-label {
+    display: block;
+    padding: $kdy-space-4 0 $kdy-space-2;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    font-weight: $kdy-font-weight-semibold;
+  }
+
+  &__banner {
+    display: block;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-2;
+    padding-top: $kdy-space-3;
+  }
+
+  &__reminders {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-2;
+    padding-top: $kdy-space-3;
+  }
+
+  &__reminder {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: $kdy-space-2;
+    padding: $kdy-space-2 0;
+    border-top: 1px solid $kdy-tone-border;
+  }
+
+  &__reminder-copy {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__reminder-title {
+    display: block;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+  }
+
+  &__ok {
+    display: block;
+    padding: $kdy-space-3 $kdy-space-5 0;
+    color: $kdy-color-success;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+  }
+
+  &__error {
+    display: block;
+    padding: $kdy-space-3 $kdy-space-5 0;
+    color: $kdy-color-danger;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+  }
+}

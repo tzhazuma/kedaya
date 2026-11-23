@@ -1,0 +1,139 @@
+name: Mobile Build · HarmonyOS (self-hosted, manual)
+
+# 鸿蒙不是 stock Flutter 的目标：必须使用 OHOS fork（flutter_flutter，ohos channel）
+# + DevEco Studio / command-line tools + 签名材料。GitHub 托管 runner 不提供这套
+# 工具链（约数 GB，且 SDK 需要华为账号许可），所以本 workflow 只跑在自托管
+# runner 上，并且只允许手动触发。
+#
+# 自托管 runner 需要以下 label：self-hosted, linux, ohos
+# 机器上需要：
+#   - OHOS fork 的 flutter（PATH 里，flutter --version 能看到 ohos）
+#   - DEVECO_SDK_HOME 指向 HarmonyOS SDK
+#   - hvigorw / ohpm（DevEco command-line tools）
+#   - 已配置好的签名材料（ohos/build-profile.json5 的 signingConfigs）
+#
+# 本 workflow 不注入、不打印任何签名证书；未签名的 HAP 通常无法安装。
+# 当前 apps/mobile/pubspec.yaml 也没有 README §7 要求的 OHOS 插件替换
+# （flutter_secure_storage_ohos 等），构建可能失败；这里只做诚实预检和构建尝试，
+# 不会伪造成功产物。
+on:
+  workflow_dispatch:
+    inputs:
+      build_mode:
+        description: "Flutter build mode"
+        type: choice
+        options:
+          - release
+          - profile
+        default: release
+
+concurrency:
+  group: mobile-harmonyos-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  KEDAYA_FLAVOR: ${{ vars.KEDAYA_FLAVOR || 'mock' }}
+  KEDAYA_API_BASE_URL: ${{ vars.KEDAYA_API_BASE_URL || 'https://api.kedaya.local' }}
+  BUILD_MODE: ${{ inputs.build_mode }}
+
+jobs:
+  harmonyos:
+    name: HarmonyOS HAP（self-hosted）
+    runs-on: [self-hosted, linux, ohos]
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: apps/mobile
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 预检 OHOS Flutter 与 DevEco 工具链
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v flutter || {
+            echo "::error::PATH 中没有 flutter；请安装 OHOS fork（flutter_flutter）"
+            exit 1
+          }
+          flutter --version
+          if ! flutter --version 2>&1 | grep -qi 'ohos'; then
+            echo "::error::当前 flutter 不是 OHOS fork。stock Flutter 没有 OHOS engine，无法 build hap。"
+            exit 1
+          fi
+          if [ -z "${DEVECO_SDK_HOME:-}" ]; then
+            echo "::warning::DEVECO_SDK_HOME 未设置；hvigor 可能找不到 HarmonyOS SDK"
+          else
+            echo "DEVECO_SDK_HOME=$DEVECO_SDK_HOME"
+          fi
+          command -v hvigorw || command -v hvigor || echo "::warning::hvigor/hvigorw 不在 PATH"
+          command -v ohpm || echo "::warning::ohpm 不在 PATH"
+
+      - name: 计算版本号
+        shell: bash
+        run: |
+          version="$(awk '/^version:/{print $2; exit}' pubspec.yaml)"
+          version="${version%%+*}"
+          if [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
+            version="${GITHUB_REF_NAME#mobile-v}"
+          fi
+          version="$(printf '%s' "$version" | tr -c '0-9A-Za-z._-' '-')"
+          [ -n "$version" ] || version="0.0.0"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: 生成 OHOS 原生脚手架（仅缺失时）
+        run: |
+          if [ ! -d ohos ]; then
+            flutter create --platforms=ohos --org cn.shanghaitech --project-name kedaya --no-pub .
+          fi
+
+      - name: 解析依赖
+        run: flutter pub get
+
+      - name: 检查 OHOS 插件替换（不阻塞，只警告）
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for pkg in flutter_secure_storage_ohos; do
+            if ! grep -q "$pkg" pubspec.yaml pubspec_overrides.yaml 2>/dev/null; then
+              echo "::warning::未发现 $pkg；上游插件在 OHOS 上可能崩溃（见 apps/mobile/README.md §7）"
+              missing=1
+            fi
+          done
+          if [ "$missing" -eq 1 ]; then
+            echo "提示：OHOS 构建通常需要 dependency_overrides 指向 OHOS fork 的插件包。"
+          fi
+
+      - name: 构建 HAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build hap "--$BUILD_MODE" \
+            --dart-define=KEDAYA_FLAVOR="$KEDAYA_FLAVOR" \
+            --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL"
+
+      - name: 收集 HAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          hap="$(find build/ohos ohos -type f -name '*.hap' 2>/dev/null | head -1 || true)"
+          if [ -z "$hap" ]; then
+            echo "::error::构建结束但未找到 .hap；检查 OHOS 插件替换与签名配置"
+            find build -maxdepth 4 -type d 2>/dev/null | head -50 || true
+            exit 1
+          fi
+          mkdir -p build/artifacts
+          cp "$hap" "build/artifacts/kedaya-${VERSION}-harmonyos-${BUILD_MODE}-unsigned.hap"
+          ls -lh build/artifacts
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kedaya-harmonyos-hap
+          path: apps/mobile/build/artifacts/*.hap
+          retention-days: 7
+          if-no-files-found: error
+          overwrite: true

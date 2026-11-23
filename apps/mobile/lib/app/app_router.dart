@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/activities/presentation/pages/activities_page.dart';
+import '../features/activities/presentation/pages/activity_compose_page.dart';
+import '../features/activities/presentation/pages/activity_detail_page.dart';
+import '../features/activities/presentation/pages/activity_import_page.dart';
 import '../features/buddy/presentation/pages/buddy_board_page.dart';
 import '../features/buddy/presentation/pages/buddy_compose_page.dart';
 import '../features/buddy/presentation/pages/buddy_post_detail_page.dart';
@@ -294,6 +298,34 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
               name: 'teabreak-compose',
               builder: (BuildContext context, GoRouterState state) =>
                   const TeabreakComposePage(),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/activities',
+          name: 'activities',
+          builder: (BuildContext context, GoRouterState state) =>
+              const ActivitiesPage(),
+          routes: <RouteBase>[
+            // 静态段必须声明在 `:id` 之前（go_router 同级按声明顺序匹配）。
+            GoRoute(
+              path: 'new',
+              name: 'activity-new',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const ActivityComposePage(),
+            ),
+            GoRoute(
+              path: 'import',
+              name: 'activity-import',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const ActivityImportPage(),
+            ),
+            GoRoute(
+              path: ':id',
+              name: 'activity-detail',
+              builder: (BuildContext context, GoRouterState state) =>
+                  ActivityDetailPage(
+                      activityId: state.pathParameters['id'] ?? ''),
             ),
           ],
         ),

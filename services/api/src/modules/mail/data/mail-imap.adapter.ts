@@ -21,7 +21,7 @@
  * · 正文只以 `RawMailMessage` 的瞬时形式存在，**不会整体落库**。
  */
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ImapFlow, type FetchMessageObject, type MessageStructureObject } from 'imapflow';
 import {
   MailInboxError,

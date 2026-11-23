@@ -21,6 +21,7 @@ const Map<String, String> implementedModuleRoutes = <String, String>{
   'techpie': '/techpie',
   'campus-card': '/campus-card',
   'teabreak': '/teabreak',
+  'activities': '/activities',
 };
 
 /// 模块落地页 —— **注册表驱动**，不含任何伪造的业务数据。
@@ -162,6 +163,12 @@ class ModuleDetailPage extends ConsumerWidget {
                         '走 TeabreakPort。时效规则（20 分钟）与校验规则全部来自'
                         '契约的纯函数镜像，**页面里没有规则副本**。'
                         '**不做**：会议室实时人数、预约茶歇（契约开头第 3 条）。',
+                    'activities' => '本模块已实现：独立活动域（**不混进课程 DDL**）——'
+                        '列表 + 来源/状态筛选 + 详情 + 确认/忽略 + 手动创建 + '
+                        '公众号单篇导入 + 复制报名/来源链接 + 站内信提醒状态，'
+                        '走 ActivitiesPort。候选活动确认后才允许创建提醒；'
+                        '无法确定的报名截止只保留原文，不补 23:59。'
+                        '**不做**：公众号自动发现/批量抓取、反检测、系统推送。',
                     'campus-card' => '本模块已实现：余额 / 流水 / 付款码，走 CampusCardPort ——'
                         '**独立 OPENID 通道**（规格 §2.5），与校园会话代持完全解耦，'
                         '因此不产生任何 CASTGC。未开通时接口返回 409 '

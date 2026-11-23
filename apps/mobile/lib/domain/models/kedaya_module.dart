@@ -314,6 +314,19 @@ const List<KedayaModule> coreModules = <KedayaModule>[
     requiresConsent: false,
     route: 'deadlines',
   ),
+  // 独立 `activities` 域（2026-11-22，逐字镜像契约 `modules.ts`）。
+  // **不**把活动塞进课程 `deadlines`；来源只有校园邮箱 / 公众号单篇 / 手动创建，
+  // 候选活动必须用户确认后才允许提醒或进入日程。
+  KedayaModule(
+    id: 'activities',
+    nameZh: '校园活动',
+    nameEn: 'Campus Activities',
+    summary: '把校园邮件、公众号单篇与手动录入的活动整理成候选，用户确认后才加入日程与提醒',
+    category: ModuleCategory.core,
+    sensitivity: ModuleSensitivity.medium,
+    requiresConsent: false,
+    route: 'activities',
+  ),
   KedayaModule(
     id: 'campus-card',
     nameZh: '校园卡',

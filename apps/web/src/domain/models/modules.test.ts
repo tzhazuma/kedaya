@@ -27,7 +27,8 @@ describe('模块注册表（契约 §4 数据驱动）', () => {
     // 第 21 个 deadlines、第 22 个 campus-map 归核心模块；
     // 第 23 个 petition（众筹诉求）是业务模块。
     // 第 24 个 teabreak（会议茶歇）
-    expect(PORTAL_MODULE_COUNT).toBe(24);
+    // 第 25 个 activities（校园活动；独立于 deadlines，但仍是契约模块）
+    expect(PORTAL_MODULE_COUNT).toBe(25);
     expect(PORTAL_MODULES).toHaveLength(MODULES.length);
     expect(PORTAL_MODULES.map((m) => m.id)).toEqual(MODULES.map((m) => m.id));
   });
@@ -36,7 +37,7 @@ describe('模块注册表（契约 §4 数据驱动）', () => {
     expect(validateModuleRegistry(PORTAL_MODULES, MODULES)).toEqual([]);
   });
 
-  it('模块 id 唯一，且覆盖全部 7 基础 + 17 业务', () => {
+  it('模块 id 唯一，且覆盖全部 8 基础 + 17 业务', () => {
     const ids = PORTAL_MODULES.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const mod of [...CORE_MODULES, ...BUSINESS_MODULES]) {
@@ -44,8 +45,8 @@ describe('模块注册表（契约 §4 数据驱动）', () => {
     }
   });
 
-  it('分类分组：7 基础 + 17 业务', () => {
-    expect(PORTAL_MODULE_GROUPS.core).toHaveLength(7);
+  it('分类分组：8 基础 + 17 业务', () => {
+    expect(PORTAL_MODULE_GROUPS.core).toHaveLength(8);
     expect(PORTAL_MODULE_GROUPS.business).toHaveLength(17);
     expect(groupModulesByCategory(PORTAL_MODULES).business).toHaveLength(17);
   });

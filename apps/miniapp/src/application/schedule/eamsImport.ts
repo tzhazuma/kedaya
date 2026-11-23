@@ -23,7 +23,7 @@
 
 import type { EamsLesson } from '@kedaya/shared'
 
-import { MAX_SLOT, slotTimeLabel, slotTimeRange } from '../../domain/models/schedule'
+import { MAX_SLOT, slotTimeLabel } from '../../domain/models/schedule'
 import type { ScheduleCourseView } from '../../domain/models/schedule'
 
 export interface EamsImportResult {

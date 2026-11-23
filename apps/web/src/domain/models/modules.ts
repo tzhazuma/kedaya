@@ -1,7 +1,7 @@
 /**
  * 门户模块注册表 —— 首页宫格的**唯一数据源**。
  *
- * 契约 §4 + §11.10-C：**20** 个模块（5 基础 + 15 业务）由 `@kedaya/contracts` 的 `MODULES` 冻结。
+ * 契约 §4 + §11.10-C：**25** 个模块（8 基础 + 17 业务）由 `@kedaya/contracts` 的 `MODULES` 冻结。
  * 本文件只补 UI 装饰，**不复制、不改写**契约内容。
  *
  * 依赖方向：domain → @kedaya/contracts（纯类型/常量包，零框架）。
@@ -14,9 +14,10 @@ import {
   decorateModule,
   groupModulesByCategory,
   type ModuleDecoration,
+  type PortalFeatureEntry,
   type PortalModule,
 } from './module';
-import { deliveryOf, isDelivered, type ModuleDelivery } from './delivery';
+import { deliveryOf, isDelivered, isMiniappDelivery, isWebDelivery, type ModuleDelivery } from './delivery';
 
 /**
  * UI 装饰表：key = 冻结模块 id。
@@ -58,12 +59,33 @@ const DECORATION: Readonly<Record<string, ModuleDecoration>> = {
   // 第 24 个模块（2026-10-22）：学术会议茶歇。用 success 色 ——
   // 这是「有好东西」的信号，不是警告。
   teabreak: { icon: 'coffee', accent: 'success' },
+  // 第 25 个模块（2026-11-22）：校园活动。与 DDL 分开，
+  // 入口落在 /import 的活动区；复用日历图标与品牌色。
+  activities: { icon: 'calendar-days', accent: 'brand' },
 };
 
-/** 22 个模块，顺序 = 契约顺序（基础在前，业务在后） */
+/** 25 个模块，顺序 = 契约顺序（基础在前，业务在后） */
 export const PORTAL_MODULES: readonly PortalModule[] = MODULES.map((m) =>
   decorateModule(m, DECORATION[m.id]),
 );
+
+/**
+ * 独立功能域入口：校园活动。
+ *
+ * 契约现在已把 `activities` 登记为第 25 个模块，因此入口**从注册表派生**，
+ * 不再自己复制一份标题 / 图标 / 落点。它仍然独立于 `deadlines`：活动有确认门、
+ * 地点、主办与报名截止，不能塞进课程截止日期。
+ */
+const ACTIVITY_MODULE = PORTAL_MODULES.find((module) => module.id === 'activities');
+
+export const ACTIVITIES_PORTAL_ENTRY: PortalFeatureEntry = {
+  id: 'activities',
+  nameZh: ACTIVITY_MODULE?.nameZh ?? '校园活动',
+  href: ACTIVITY_MODULE?.href ?? '/m/activities',
+  icon: ACTIVITY_MODULE?.icon ?? 'calendar-days',
+  accent: ACTIVITY_MODULE?.accent ?? 'brand',
+  delivery: ACTIVITY_MODULE?.delivery ?? deliveryOf('activities'),
+};
 
 /** 分组（首页宫格分区渲染） */
 export const PORTAL_MODULE_GROUPS = groupModulesByCategory(PORTAL_MODULES);
@@ -74,7 +96,7 @@ export const CONSENT_GATED_MODULES: readonly PortalModule[] = consentGatedModule
 /** 需要审计的模块（high + critical；注意 auth / campus-card 在列但**无同意门**） */
 export const AUDITED_MODULES: readonly PortalModule[] = auditedModules(PORTAL_MODULES);
 
-/** 模块总数 —— 与契约对齐（5 基础 + 15 业务 = 20，含 §11.10-C 新增的 facility） */
+/** 模块总数 —— 与契约对齐（8 基础 + 17 业务 = 25） */
 export const PORTAL_MODULE_COUNT = PORTAL_MODULES.length;
 
 /** 契约原始条目（测试用，避免测试自己再 import 一次） */
@@ -100,17 +122,17 @@ export interface DeliveredModuleLink {
   readonly delivery: ModuleDelivery;
 }
 
-/** 在浏览器里能直接用（有真实路由） */
+/** 在浏览器里能直接用（有真实路由；含 Web + 小程序双端） */
 export const WEB_READY_MODULES: readonly DeliveredModuleLink[] = PORTAL_MODULES.flatMap((mod) => {
   const delivery = deliveryOf(mod.id);
-  if (delivery.stage !== 'web' || delivery.webHref === undefined) return [];
+  if (!isWebDelivery(delivery.stage) || delivery.webHref === undefined) return [];
   return [{ id: mod.id, nameZh: mod.nameZh, href: delivery.webHref, delivery }];
 });
 
-/** 微信小程序端已上线（Web 还没有页面，所以 href 指向模块说明页） */
+/** 微信小程序端已上线（含 Web + 小程序双端；Web 没有页面的走模块说明页） */
 export const MINIAPP_MODULES: readonly DeliveredModuleLink[] = PORTAL_MODULES.flatMap((mod) => {
   const delivery = deliveryOf(mod.id);
-  if (delivery.stage !== 'miniapp') return [];
+  if (!isMiniappDelivery(delivery.stage)) return [];
   return [{ id: mod.id, nameZh: mod.nameZh, href: `/m/${mod.id}`, delivery }];
 });
 

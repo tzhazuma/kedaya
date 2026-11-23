@@ -120,6 +120,12 @@ export const StorageKeys = {
   campusCardCache: `${STORAGE_PREFIX}cache:campus-card:overview`,
   /** 隐私开关缓存：断网时开关仍可展示（但不允许假装保存成功） */
   privacySettingsCache: `${STORAGE_PREFIX}cache:privacy:settings`,
+  /**
+   * 活动列表缓存（`/activities/items`）。
+   *
+   * 只缓存归一后的活动字段与 ≤200 字证据片段；邮件正文 / 公众号全文不落盘。
+   */
+  activityListCache: `${STORAGE_PREFIX}cache:activities:list`,
   /** 站内信列表缓存：断网进「消息」页也能看到上次拉到的通知 */
   notificationListCache: `${STORAGE_PREFIX}cache:notifications:list`,
   /** 野生动物（档案 / 观察点）列表缓存 */

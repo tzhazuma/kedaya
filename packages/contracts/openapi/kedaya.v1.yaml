@@ -108,6 +108,8 @@ tags:
     description: 猫鸟黑天鹅 —— 校园动物活动区域地图、投喂规范与上报
   - name: facility
     description: 场馆预约 —— 体育场馆、健身房等校园场馆的预约与核销
+  - name: activities
+    description: 校园活动 —— 邮件/公众号单篇/手动导入的候选，用户确认后进入活动日程视图（ICS / 系统日历）并生成提醒
 
 paths:
   # ==================================================================
@@ -1873,6 +1875,420 @@ paths:
                             type: boolean
                             description: true 表示分类能力不可用，请用户手动选择
 
+  # ==================================================================
+  # activities —— 校园活动（独立域，不并进课程 deadlines）
+  # 三条边界：只存活动字段 + ≤200 字证据；来源仅三种；candidate 必须用户确认
+  # 提醒 MVP 只有站内信（inapp），微信订阅消息未接通
+  # ==================================================================
+  /activities/items:
+    get:
+      tags: [activities]
+      summary: 活动列表（按开始时间升序；无开始时间时按报名截止兜底）
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          description: 默认只返回 `candidate` + `confirmed`；`dismissed`/`archived` 需显式查询
+          schema: { type: string, enum: [candidate, confirmed, dismissed, archived] }
+        - name: source
+          in: query
+          schema: { type: string, enum: [campus-mail, wechat-mp, manual] }
+        - name: from
+          in: query
+          description: 起始时刻（ISO-8601 UTC，含）
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          description: 结束时刻（ISO-8601 UTC，不含）
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          description: 活动列表（游标分页）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/ActivityPage' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    post:
+      tags: [activities]
+      summary: 手动创建活动（默认 candidate，不直接进日程）
+      description: |
+        客户端**不能**指定 `status` / `confidence` / `source`：
+        - `source` 固定为 `manual`；
+        - `status` 固定为 `candidate`，必须再调 `POST /items/{id}/confirm`；
+        - `confidence` 由服务端按字段完整度计算。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ActivityCreate' }
+      responses:
+        '201':
+          description: 创建成功（固定 candidate）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/ActivityItem' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /activities/items/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      tags: [activities]
+      summary: 活动详情
+      responses:
+        '200':
+          description: 活动详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/ActivityItem' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [activities]
+      summary: 更新活动事实字段（JSON Merge Patch）
+      description: |
+        只能改活动事实（标题/时间/地点/报名信息），**不能**借 PATCH 改 `status`；
+        确认/忽略走各自的领域动作端点。
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: '#/components/schemas/ActivityUpdate' }
+      responses:
+        '200':
+          description: 更新后的活动
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/ActivityItem' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /activities/items/{id}/confirm:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [activities]
+      summary: 用户确认候选 → 进入活动日程视图并生成默认提醒
+      description: |
+        只有 `candidate` 可以确认。确认后：
+        - 条目进入活动日程视图，并可导出 ICS / 订阅系统日历（**不写入课程课表**）；
+        - 按默认提前量生成提醒（报名截止前 24h、开始前 1h）；
+        - 目标已过不建；计算时刻已过但目标未来时退回 now + 5min。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: 已确认的活动（并生成默认提醒）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/ActivityItem' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /activities/items/{id}/dismiss:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [activities]
+      summary: 忽略候选（不删除，保留审计）
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: 已忽略的活动
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/ActivityItem' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /activities/items/{id}/archive:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [activities]
+      summary: 归档活动（幂等；取消待发提醒，保留已发送历史）
+      description: |
+        归档是「别再来烦我」的终态，不删除活动本身。重复归档返回同一条目；
+        归档时清掉 `pending` 提醒，`sent` 历史保留。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: 已归档的活动
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/ActivityItem' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /activities/items/{id}/restore:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [activities]
+      summary: 从归档恢复为待确认（幂等）
+      description: |
+        只把 `archived` 恢复成 `candidate`，**不会**自动重建提醒；
+        用户需要重新确认。已处于 `candidate` / `confirmed` 时返回原样（幂等）；
+        `dismissed` 语义不同，返回 409。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: 恢复为 candidate 的活动
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/ActivityItem' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /activities/imports/wechat:
+    post:
+      tags: [activities]
+      summary: 导入用户主动提交的单篇公众号文章
+      description: |
+        **只处理一篇**：用户粘贴的链接或正文。服务端不遍历历史文章、不批量抓取、
+        不做反检测或绕过验证；链接打不开时返回可照着操作的错误，不返回半篇正文。
+        导入结果一律是 `candidate`，并只保留 ≤200 字证据片段。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ActivityWechatImport' }
+      responses:
+        '201':
+          description: 导入结果（单篇，固定 candidate）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/ActivityImportResult' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '503': { $ref: '#/components/responses/UpstreamUnavailable' }
+
+  /activities/imports/mail:
+    post:
+      tags: [activities]
+      summary: 把已同步到 mail 模块的邮件提升为活动候选
+      description: |
+        复用 mail 模块的只读 IMAP / AES-GCM / 域名白名单，不重新取信。
+        只接受**明确指定的邮件 id**（用户勾选），不做全箱扫描；
+        落库只存活动字段与证据片段，不存邮件正文与附件。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ActivityMailImport' }
+      responses:
+        '201':
+          description: 多候选导入结果
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/ActivityImportResult' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /activities/reminders:
+    get:
+      tags: [activities]
+      summary: 我的提醒列表
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          description: |
+            `scheduled` 是别名，等价于 `pending + sending`（已排期但还没发完）。
+            它不是落库状态，不会出现在 `ActivityReminderItem.status` 里。
+          schema:
+            type: string
+            enum: [pending, sending, sent, failed, cancelled, scheduled]
+      responses:
+        '200':
+          description: 提醒列表（游标分页）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/ActivityReminderPage' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+  /activities/items/{id}/reminders:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    post:
+      tags: [activities]
+      summary: 为已确认活动创建自定义提醒
+      description: |
+        只能给 `confirmed` 活动建提醒。`channel` 默认 `inapp`；
+        `wechat-subscribe` 在真正接通微信订阅消息前会被拒绝（422），
+        不要用它假装「已通过微信提醒」。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ActivityReminderCreate' }
+      responses:
+        '201':
+          description: 创建的自定义提醒
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/ActivityReminderItem' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+
+  /activities/reminders/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    delete:
+      tags: [activities]
+      summary: 取消提醒（幂等）
+      responses:
+        '200':
+          description: 已删除
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        required: [id, deleted]
+                        properties:
+                          id: { type: string }
+                          deleted: { type: boolean, const: true }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /activities/reminders/dispatch:
+    post:
+      tags: [activities]
+      summary: 管理员派发到期的站内信提醒
+      description: |
+        内部/管理员端点。只派发 `pending` 且 `remindAt <= now` 的提醒；
+        重复调用必须幂等（同一提醒只发一次）。带管理员 JWT 或
+        `x-admin-key` 均可（`AdminGuard`）。
+      parameters:
+        - name: x-admin-key
+          in: header
+          required: false
+          description: 管理员密钥；与管理员 JWT 二选一
+          schema: { type: string }
+      security:
+        - bearerAuth: []
+        - adminKey: []
+      responses:
+        '200':
+          description: 派发结果
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiSuccess'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        required: [claimed, sent, failed, cancelled]
+                        properties:
+                          claimed: { type: integer, minimum: 0 }
+                          sent: { type: integer, minimum: 0 }
+                          failed: { type: integer, minimum: 0 }
+                          cancelled: { type: integer, minimum: 0 }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
 # ====================================================================
 components:
   securitySchemes:
@@ -1881,6 +2297,13 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: 可达鸭自有 JWT（第一级身份），**不是**任何校园系统的 token
+    adminKey:
+      type: apiKey
+      in: header
+      name: x-admin-key
+      description: |
+        管理员密钥（服务端 `AdminGuard`）。与管理员 JWT 二选一；
+        两者都没配置时管理员端点一律拒绝。
 
   parameters:
     Cursor:
@@ -3075,9 +3498,218 @@ components:
         #
         isSuggestion: { type: boolean, const: true }
 
+    # ---------------- 校园活动 ----------------
+    ActivityPage:
+      type: object
+      description: 活动列表（游标分页）
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ActivityItem' }
+        nextCursor: { type: [string, 'null'] }
+
+    ActivityReminderPage:
+      type: object
+      description: 提醒列表（游标分页）
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ActivityReminderItem' }
+        nextCursor: { type: [string, 'null'] }
+
+    ActivityImportResult:
+      type: object
+      description: |
+        多候选导入（邮件提升 / 批量导入）的响应。
+        `item` 是第一条（没有则为 null），`items` 是本次成功落库的全部候选；
+        `created` 是新建条数，`skipped` 是判重/已存在而跳过的条数。
+      required: [item, items, created, skipped]
+      properties:
+        item:
+          anyOf:
+            - $ref: '#/components/schemas/ActivityItem'
+            - type: 'null'
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ActivityItem' }
+        created: { type: integer, minimum: 0 }
+        skipped: { type: integer, minimum: 0 }
+
+    ActivityItem:
+      type: object
+      description: |
+        一条校园活动。时间存 ISO-8601 UTC；无法确定的时刻是 `null`，
+        原文保留在 `registrationDeadlineRaw`，**不补 23:59**。
+        `evidenceText` 只是 ≤200 字核对片段，不是邮件正文或公众号全文。
+      required:
+        [id, source, kind, title, startsAt, endsAt, location, organizer,
+         registrationDeadlineAt, registrationDeadlineRaw, registrationUrl,
+         evidenceText, confidence, status, sourceUrl, sourceLabel, publishedAt, stale]
+      properties:
+        id: { type: string }
+        source:
+          type: string
+          enum: [campus-mail, wechat-mp, manual]
+        kind:
+          type: string
+          enum: [lecture, meeting, info-session, sports, club, other]
+        title: { type: string, maxLength: 160 }
+        startsAt: { type: [string, 'null'], format: date-time }
+        endsAt: { type: [string, 'null'], format: date-time }
+        location: { type: [string, 'null'], maxLength: 160 }
+        organizer: { type: [string, 'null'], maxLength: 160 }
+        registrationDeadlineAt: { type: [string, 'null'], format: date-time }
+        registrationDeadlineRaw: { type: [string, 'null'], maxLength: 200 }
+        registrationUrl: { type: [string, 'null'], format: uri }
+        evidenceText:
+          type: string
+          maxLength: 200
+          description: ≤200 字证据片段；不是正文
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        status:
+          type: string
+          enum: [candidate, confirmed, dismissed, archived]
+        sourceUrl: { type: [string, 'null'], format: uri }
+        sourceLabel: { type: [string, 'null'], maxLength: 160 }
+        publishedAt: { type: [string, 'null'], format: date-time }
+        stale:
+          type: boolean
+          description: 上一次成功同步的旧数据；不代表活动已结束（必填）
+
+    ActivityCreate:
+      type: object
+      description: |
+        手动创建活动的请求体。**没有** `status` / `confidence` / `source`：
+        服务端固定 `source=manual`、`status=candidate`，确认走独立动作。
+      required: [title, kind]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 160 }
+        kind:
+          type: string
+          enum: [lecture, meeting, info-session, sports, club, other]
+        startsAt: { type: [string, 'null'], format: date-time }
+        endsAt: { type: [string, 'null'], format: date-time }
+        location: { type: [string, 'null'], maxLength: 160 }
+        organizer: { type: [string, 'null'], maxLength: 160 }
+        registrationDeadlineAt: { type: [string, 'null'], format: date-time }
+        registrationDeadlineRaw: { type: [string, 'null'], maxLength: 200 }
+        registrationUrl: { type: [string, 'null'], format: uri }
+        evidenceText: { type: string, maxLength: 200 }
+        sourceUrl: { type: [string, 'null'], format: uri }
+        sourceLabel: { type: [string, 'null'], maxLength: 160 }
+        publishedAt: { type: [string, 'null'], format: date-time }
+
+    ActivityUpdate:
+      type: object
+      description: |
+        JSON Merge Patch 的活动事实字段。**不含** `status` / `source` / `confidence`：
+        状态变更走 confirm / dismiss 领域动作。
+      properties:
+        title: { type: string, minLength: 1, maxLength: 160 }
+        kind:
+          type: string
+          enum: [lecture, meeting, info-session, sports, club, other]
+        startsAt: { type: [string, 'null'], format: date-time }
+        endsAt: { type: [string, 'null'], format: date-time }
+        location: { type: [string, 'null'], maxLength: 160 }
+        organizer: { type: [string, 'null'], maxLength: 160 }
+        registrationDeadlineAt: { type: [string, 'null'], format: date-time }
+        registrationDeadlineRaw: { type: [string, 'null'], maxLength: 200 }
+        registrationUrl: { type: [string, 'null'], format: uri }
+        evidenceText: { type: string, maxLength: 200 }
+        sourceUrl: { type: [string, 'null'], format: uri }
+        sourceLabel: { type: [string, 'null'], maxLength: 160 }
+        publishedAt: { type: [string, 'null'], format: date-time }
+
+    ActivityReminderItem:
+      type: object
+      required: [id, kind, remindAt, channel, status]
+      properties:
+        id: { type: string }
+        kind:
+          type: string
+          enum: [registration, start, custom]
+        remindAt: { type: string, format: date-time }
+        channel:
+          type: string
+          enum: [inapp, wechat-subscribe]
+          description: |
+            MVP 只接通 `inapp`（站内信）。`wechat-subscribe` 在真正完成订阅授权
+            与服务端发送前，不得标记为已送达。
+        status:
+          type: string
+          enum: [pending, sending, sent, failed, cancelled]
+        activityId:
+          type: string
+          description: 所属活动 id（仅列表端点返回，详情可省略）
+        activityTitle:
+          type: string
+          maxLength: 160
+          description: 所属活动标题（仅列表端点返回，详情可省略）
+
+    ActivityReminderCreate:
+      type: object
+      required: [kind, remindAt]
+      properties:
+        kind:
+          type: string
+          enum: [registration, start, custom]
+        remindAt: { type: string, format: date-time }
+        channel:
+          type: string
+          enum: [inapp, wechat-subscribe]
+          default: inapp
+          description: MVP 只接受 `inapp`；`wechat-subscribe` 未接通时返回 422
+
+    ActivityWechatImport:
+      type: object
+      description: |
+        用户主动提交的**单篇**公众号内容。服务端不遍历历史文章、不批量抓取、
+        不做反检测或绕过验证。`url` 与 `text` 至少给一个（且只能给一个）。
+        响应形状与邮件提升一致：`{ item, items, created, skipped }` ——
+        一篇文章里识别出多场活动时全部落为 `candidate`，`item` 是第一条。
+      minProperties: 1
+      oneOf:
+        - required: [url]
+        - required: [text]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: 单篇文章链接（mp.weixin.qq.com/s/...）；与 `text` 二选一
+        text:
+          type: string
+          maxLength: 200000
+          description: 用户粘贴的正文；与 `url` 二选一，只用于本次抽取，原文不落库
+        title:
+          type: string
+          maxLength: 160
+          description: 粘贴正文时可选的标题（正文里没有标题时使用）
+
+    ActivityMailImport:
+      type: object
+      description: |
+        从 mail 模块已同步的邮件里提升活动。只接受用户明确勾选的邮件 id，
+        不做全箱扫描；复用只读 IMAP / AES-GCM / 域名白名单，不重新取信。
+      required: [eventIds]
+      properties:
+        eventIds:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: { type: string }
+          description: 用户在 mail 模块里明确勾选的邮件事件 id（不是全箱扫描）
+
   responses:
     Unauthenticated:
       description: 未认证（第一级身份缺失或失效）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiFailure' }
+    Forbidden:
+      description: 无权限（已登录但角色/归属不满足）
       content:
         application/json:
           schema: { $ref: '#/components/schemas/ApiFailure' }

@@ -1,6 +1,8 @@
 # 项目开发约定
 
-当前交付范围为微信小程序、Web 和 NestJS API。保留工作区中已有修改，不回退其他人的工作。
+当前**已验证**的交付范围为微信小程序、Web 和 NestJS API；`apps/mobile` 的 Flutter 客户端已有入口，
+但能力与验证状态不同（见 `docs/features/activities.md` §8 与 `apps/mobile/README.md`）。
+保留工作区中已有修改，不回退其他人的工作。
 
 微信小程序的 UI 固定使用 **Taroify** 与「**校园贴纸簿**」视觉体系（真白底 + 墨蓝黑字 +
 鸭黄主操作 + 淡粉/淡绿功能卡 + 手绘胶囊导航，来自 `feature/pingdan` 分支的设计稿）；
@@ -32,8 +34,9 @@ Web 与小程序是独立客户端，避免为单端视觉调整改变另一个�
 （ADR 0006 C8），忌口硬过滤目前对种子菜品之外的新菜不生效；
 另有三个模块（校园技术服务目录 `techpie`、心理支持 `wellbeing`、AI 校园画像 `ai-portrait`）
 也已落地；场馆预约 `facility` 的小程序三页（列表 / 发起 / 详情）也已补齐，
-**20 个契约模块在小程序端与后端都有真实页面与端点**（`facility` 取消走
-`POST /items/:id/cancel`，时段冲突由服务端判定；小程序侧暂无单测，api 侧有 spec）：
+**25 个契约模块已登记（8 个核心 + 17 个业务）；其中 21 个有后端端点**（`deadlines` / `campus-map` 目前只有
+小程序端本机数据，`petition` / `teabreak` 只有契约与规则层）。`facility` 取消走
+`POST /items/:id/cancel`，时段冲突由服务端判定；小程序侧暂无单测，api 侧有 spec：
 - `techpie` 是**同学共建的服务目录 + 人工核对**（`POST /items/:id/sync` 只是把 status 写成 `synced`，
   没有上游同步 —— 页面写「已核对」而不是「已同步」）。外链**不做 web-view**（需业务域名备案），
   只提供「复制服务地址」；
@@ -43,19 +46,31 @@ Web 与小程序是独立客户端，避免为单端视觉调整改变另一个�
 - `ai-portrait` 的**每个标签都要能说出来源**，页面**明示**心理支持与宿舍矛盾**不参与**画像；
   后端尚无画像生成逻辑，`GET /me` 返回 `null` 是常态，页面给空态而**不在客户端编造标签**。
 两个高敏模块都保留二次同意门（同意门在**加载数据之前**），且不接分享与举报。
+第 25 个模块是独立域 `activities`（校园活动，`core` / `medium` / 不设二次同意）：
+抽取/导入只产生 `candidate`，**必须用户确认**后才进入活动日程（「今天 / 本周」列表、
+ICS / 手机日历）并生成提醒，**不写入课程课表**；来源只有校园邮箱 / 用户主动提交的**单篇**公众号 /
+手动，微信没有读取关注列表或批量历史文章的官方接口，因此不做自动发现或批量历史抓取；
+公众号链接只复制、不开 `web-view`。校园邮箱复用服务端**只读 IMAP**（客户端专用密码、
+AES-256-GCM 落库，不存正文/附件）；提醒 MVP 仅站内信，微信订阅消息 / APNs / FCM / HMS
+未接通。只存活动字段与 ≤200 字证据片段，链接清洗会话参数。详见
+`docs/features/activities.md`。
+三端入口能力不同：小程序有列表 / 详情 / 导入 / 校园邮箱 / 提醒五页；Web 是
+`/import#campus-activities` 无状态导入（不登录、不持久化，确认后导出 ICS / JSON）；
+Flutter 有列表 / 详情 / 新建 / 导入，但没有邮箱勾选 UI 与 ICS / 日历导出。
 **首页不再是模块目录**：一级入口「凑凑」聚合拼单 + 找搭子（聚合关系只在
 `apps/miniapp/src/domain/models/homeEntries.ts` 声明，契约里 `groupbuy` / `buddy` 仍是
 两个独立模块），「我的常用」宫格由用户偏好驱动（`application/homeLayout/`，本机、按账号分片、
 默认 9 个 / 上限 12 个），全部服务收进按场景分组 + 可搜索的**服务大厅**；
 「我的 → 首页管理」增删排序，`wellbeing` 是固定入口（可排序、不可移除 —— 安全出口不能被误触藏掉），
-首页底部另有常驻热线横幅。20 个契约模块现在都有可点进去的真实页面（没有「开发中」占位）。
+首页底部另有常驻热线横幅。25 个契约模块都已登记，已有真实页面的模块不再使用「开发中」占位。
 小程序的第一屏是**入口页**（`PAGE_PATHS.welcome`，`app.config.ts` 的 `pages[0]`）：
 贴纸簿大标题 + 可达鸭立绘 + 「进入主页」，首页左上角保留「返回入口」，两边可互跳；
 底部导航是**自绘的手绘胶囊 dock**（`tabBar.custom: true` + `src/custom-tab-bar/` → `KdyDock`：
 首页 / 地图 / ＋（发起拼单）/ 发现 / 我的），四个 tab 页**不要**再自己写 `<KdyDock/>`；
 「消息」不占 dock 格子，但仍是 tabBar 页（入口在「我的」，`switchTab` 与红点下标不变）。
-四个核心模块（身份 `auth`、课表 `schedule`、校园卡 `campus-card`、我的 `profile` 的
-隐私与数据页）与内置全局助手「可达鸭」（`agent`，含 `KdyAgentFab` 悬浮入口）已实现，
+核心模块（身份 `auth`、课表 `schedule`、校园卡 `campus-card`、我的 `profile` 的
+隐私与数据页，以及 DDL 聚合 `deadlines`、校园地点 `campus-map`、校园活动 `activities`、
+站内信 `notifications`）与内置全局助手「可达鸭」（`agent`，含 `KdyAgentFab` 悬浮入口）已实现，
 校园数据默认走 `CAMPUS_DATA_MODE=mock`（确定性模拟数据，响应标 `simulated: true`，
 真实对接点见 `services/api/src/modules/auth/data/http-campus-data.adapter.ts`；
 CAS 侧见 `mock-campus-auth.provider.ts` 顶部注释），拿到校方授权后切 `live` 即可，
@@ -66,11 +81,13 @@ CAS 侧见 `mock-campus-auth.provider.ts` 顶部注释），拿到校方授权�
 **真实栅格底图**（`KdyCampusMap` + `@kedaya/contracts` 的 `campus-map` 投影模块，底图在 wildlife 分包内），
 叠加层坐标系仍是 GCJ-02（页面继续走 `buildMapOverlays()`），「在腾讯地图中打开」作为导航出口保留；
 来源/署名/授权状态见 `docs/features/miniapp-campus-map.md`（校方授权**未确认**，上线前需确认）。
-Web 门户目前只交付拼单垂直切片与管理后台占位。
+Web 门户目前交付拼单垂直切片、管理后台占位与校园活动无状态导入
+（`/import#campus-activities`）。
 Web 的模块交付状态以 `apps/web/src/domain/models/delivery.ts` 为**唯一真相**
 （宫格角标与模块说明页都由它驱动，别在组件里另写一份判断）。本地启动、数据库与真实联调方式见 `docs/local-development.md`。
 
-提交前请确保以下命令全绿：
+提交前请跑以下命令；除 `docs/features/activities.md` §9 记录的既有 Windows 基线红灯外，
+不应新增失败（API techpie 3 项、Web buddy-tokens 1 项、API lint 5 项，均不属于活动功能）：
 
 ```bash
 npm run typecheck -w @kedaya/api && npm run test -w @kedaya/api && npm run lint -w @kedaya/api

@@ -1,11 +1,7 @@
 /**
  * 校园邮箱 · 模块装配
  *
- * ⚠️ **本模块不会被 `app.module.ts` 自动发现**。Lead 负责统一注册；
- * 本文件刻意不 import 任何根模块，也不修改 `app.module.ts`，
- * 以免与并行任务冲突。
- *
- * 三个端口 → 三个实现：
+ * 已在 `app.module.ts` 装配（路由 `/mail`）。三个端口 → 三个实现：
  *   · `MAIL_ACCOUNT_PORT`        → `MailAccountPrismaRepository`
  *   · `MAIL_MESSAGE_REPOSITORY`  → `MailMessagePrismaRepository`
  *   · `MAIL_INBOX_PORT`           → `MailImapAdapter`（imapflow，只读）
@@ -13,6 +9,9 @@
  *
  * `MAIL_INBOX_PORT` 用 `useExisting` 别名到同一个 `MailImapAdapter` 实例：
  * 类本身也注册，方便测试/运维按具体类型取实例。
+ *
+ * `MAIL_MESSAGE_REPOSITORY` 对外导出：activities 模块要把邮件归一结果提升为
+ * 活动时需要读到 `accountId`（用于解绑级联），但不应该复制一份 Prisma 查询。
  */
 
 import { Module } from '@nestjs/common';
@@ -36,6 +35,6 @@ import { MailController } from './mail.controller';
     { provide: MAIL_INBOX_PORT, useExisting: MailImapAdapter },
     { provide: MAIL_CLOCK, useValue: { now: () => new Date() } },
   ],
-  exports: [MailService],
+  exports: [MailService, MAIL_MESSAGE_REPOSITORY],
 })
 export class MailModule {}

@@ -57,6 +57,8 @@ const MODULE_ICONS: Readonly<Record<string, typeof AppsOutlined>> = {
   'ai-portrait': StarOutlined,
   wellbeing: LikeOutlined,
   facility: CalendarOutlined,
+  /** 校园活动（独立域）：与场馆共用日历字形，语义都是「什么时候」 */
+  activities: CalendarOutlined,
   // 核心模块
   auth: Certificate,
   schedule: ClockOutlined,
@@ -97,6 +99,7 @@ const MODULE_TONES: Readonly<Record<string, KdyModuleIconTone>> = {
   schedule: 'info',
   'campus-card': 'info',
   facility: 'info',
+  activities: 'info',
   'campus-map': 'info',
   errand: 'warning',
   'takeout-guard': 'warning',

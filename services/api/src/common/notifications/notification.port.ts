@@ -43,6 +43,19 @@ export interface NotificationPort {
 export const NOTIFICATION_PORT = Symbol('KEDAYA_NOTIFICATION_PORT');
 
 /**
+ * 严格通知端口：**失败必须抛出**。
+ *
+ * 只给"通知本身就是业务结果"的场景用（活动提醒派发）：
+ * 派发器要先把提醒标记为 sent，如果通知写失败却静默返回，提醒会永久丢失。
+ * 普通业务动作（参团、接单）继续用 best-effort 的 `NotificationPort`。
+ */
+export interface NotificationStrictPort {
+  notifyStrict(input: NotifyInput): Promise<void>;
+}
+
+export const NOTIFICATION_STRICT_PORT = Symbol('KEDAYA_NOTIFICATION_STRICT_PORT');
+
+/**
  * 由「静态页面路径 + 资源 id」拼出详情页深链。
  *
  * 为什么在服务端拼：通知是**落库**的，链接一旦写错就永远不会报错，

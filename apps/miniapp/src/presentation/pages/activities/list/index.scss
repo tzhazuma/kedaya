@@ -1,0 +1,126 @@
+.kdy-activities {
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-2;
+    padding: $kdy-space-2 $kdy-space-5 $kdy-space-3;
+  }
+
+  &__secondary {
+    display: flex;
+    gap: $kdy-space-2;
+  }
+
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    padding: 0 $kdy-space-5 $kdy-space-2;
+  }
+
+  &__filters--source {
+    padding-bottom: $kdy-space-3;
+  }
+
+  /* 触摸目标 ≥44px（KdyChip 默认 34px，列表页筛选一屏十几个，手指容易点错） */
+  .kdy-chip {
+    min-height: 44px;
+    padding: 0 $kdy-space-4;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-3;
+  }
+
+  &__more {
+    display: block;
+    padding: $kdy-space-4 0;
+    text-align: center;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+  }
+}
+
+.kdy-activity-card {
+  display: flex;
+  flex-direction: column;
+  gap: $kdy-space-2;
+
+  &__head {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: $kdy-space-2;
+  }
+
+  &__title {
+    flex: 1;
+    min-width: 0;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-md;
+    font-weight: $kdy-font-weight-semibold;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-1;
+  }
+
+  &__source {
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__time {
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+  }
+
+  &__where {
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+  }
+
+  &__deadline {
+    display: block;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+  }
+
+  &__deadline--warning {
+    color: $kdy-color-warning;
+    font-weight: $kdy-font-weight-semibold;
+  }
+
+  &__deadline--info {
+    color: $kdy-color-campus-ink;
+  }
+
+  &__deadline--neutral {
+    color: $kdy-color-campus-muted;
+  }
+
+  &__evidence {
+    display: -webkit-box;
+    overflow: hidden;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.6;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  &__foot {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $kdy-space-2;
+  }
+}

@@ -14,7 +14,10 @@
     "./validate": "./src/validate.ts",
     "./geo": "./src/geo/index.ts",
     "./buddy": "./src/buddy/index.ts",
-    "./nutrition": "./src/nutrition.ts"
+    "./nutrition": "./src/nutrition.ts",
+    "./activities-extract": "./src/activities-extract.ts",
+    "./activities-ics": "./src/activities-ics.ts",
+    "./activities-reminders": "./src/activities-reminders.ts"
   },
   "files": [
     "src"

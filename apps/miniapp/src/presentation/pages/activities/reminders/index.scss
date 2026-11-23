@@ -1,0 +1,88 @@
+.kdy-reminders {
+  &__notice {
+    display: block;
+    padding: $kdy-space-2 $kdy-space-5 $kdy-space-3;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.6;
+  }
+
+  &__ok {
+    display: block;
+    padding: 0 $kdy-space-5 $kdy-space-2;
+    color: $kdy-color-success;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+  }
+
+  &__error {
+    display: block;
+    padding: 0 $kdy-space-5 $kdy-space-2;
+    color: $kdy-color-danger;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+  }
+
+  &__section {
+    padding-top: $kdy-space-2;
+  }
+
+  &__section-title {
+    display: block;
+    padding: 0 $kdy-space-5 $kdy-space-2;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-md;
+    font-weight: $kdy-font-weight-semibold;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-3;
+  }
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    gap: $kdy-space-2;
+  }
+
+  &__head {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: $kdy-space-2;
+  }
+
+  &__title {
+    flex: 1;
+    min-width: 0;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-md;
+    font-weight: $kdy-font-weight-semibold;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  &__kind {
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.5;
+  }
+
+  &__foot {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $kdy-space-2;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+  }
+}

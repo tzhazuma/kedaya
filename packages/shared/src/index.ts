@@ -22,6 +22,9 @@ export * from './deadline-normalize';
 export * from './deadline-paste';
 export * from './deadline-html';
 export * from './deadline-ics';
+export * from './activities-extract';
+export * from './activities-ics';
+export * from './activities-reminders';
 
 // ---- 从同学项目合并（见 docs/architecture/12-merged-from-classmates.md）----
 export * from './deadline-parse-html';

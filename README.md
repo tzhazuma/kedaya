@@ -29,10 +29,10 @@
 
 | 端 | 技术 | 状态 |
 | --- | --- | --- |
-| **微信小程序**（主端） | Taro 4 + **React 18** | ✅ 论坛 / 常见问题 / 拼单 已实现 |
-| **原生移动端** iOS / Android / 鸿蒙 | Flutter 3 | ✅ 同上一组（**代码完整但未编译验证**） |
-| **Web 门户 + 管理后台** | Next.js 16 + React 19 | ✅ 同上一组 + 管理后台 |
-| **后端** | NestJS 12 + Prisma + PostgreSQL | ✅ 20 个模块，257 个测试 |
+| **微信小程序**（主端） | Taro 4 + **React 18** | ✅ 当前交付；25/25 契约模块有端上页面 |
+| **原生移动端** iOS / Android / 鸿蒙 | Flutter 3（鸿蒙需 OHOS fork） | ⚠️ 入口已接（活动含列表 / 详情 / 新建 / 导入）；CI 配置存在，GitHub runner 未实跑 |
+| **Web 门户 + 管理后台** | Next.js 16 + React 19 | ✅ 当前交付；门户 + 管理后台 + 活动无状态导入 |
+| **后端** | NestJS 12 + Prisma + PostgreSQL | ✅ 当前交付；25 个契约模块中 21 个有端点 |
 
 > **React 版本按端不同是刻意的**：`@tarojs/react@4.3.0` 的 peer 是 `react@^18`，
 > 而 Next.js 16 接受 `^18.2.0 || ^19`。小程序锁 18.3.1、Web 用 19.3.1，
@@ -54,16 +54,23 @@
 分类 / 关键词检索 / **幂等投票**（唯一约束保证一人一票，重复投不改计数、改票两边同步）/
 工单式自助答疑（未命中返回关键词建议，不引向量库）。
 
-### 场馆预约 `facility`（第 20 个模块）
+### 场馆预约 `facility`
 时段冲突 → `CONFLICT`、金额整数分、发起人可取消。
+
+### 校园活动 `activities`（第 25 个契约模块）
+候选必须确认后才进活动日程；来源只有校园邮箱、用户主动提交的**单篇**公众号、手动；
+提醒 MVP 仅站内信；支持 ICS / 手机日历，**不写入课程课表**。公众号没有读取关注列表
+或批量历史文章的官方接口，因此不做自动发现或批量历史抓取。详见
+[`docs/features/activities.md`](docs/features/activities.md)。
 
 ### 拼单 `groupbuy`（M0 的垂直切片）
 列表 / 详情 / 参团，作为后续所有模块的分层范本。
 
-### 其余模块（全部已实现，不是骨架）
+### 其余模块（已登记，不是骨架）
 
-**20 个契约模块全部有真实端点与真实页面** —— 小程序端 20/20、后端 20/20，
-没有一个「开发中」的假入口。完整清单见下方[功能模块（20）](#功能模块20)。
+**25 个契约模块已登记**：小程序端 25/25 有真实页面；后端 21/25 有端点
+（`deadlines` / `campus-map` 只有小程序本机数据，`petition` / `teabreak` 只有契约与规则层）。
+完整清单见下方[功能模块（25）](#功能模块25)。
 
 各模块的**差异化实现**（不是同一套 CRUD 换皮）：
 
@@ -80,8 +87,9 @@
 | 论坛 | 匿名**真解耦**（`authorId` 恒为 null，只存 HMAC handle）、3 人阈值自动隐藏 |
 | 跳蚤 | 双列商品网格（图 → 价 → 成色/地点） |
 | 场馆预约 | 时段冲突 → `CONFLICT`、金额整数分、发起人可取消、**冲突判定只在服务端** |
+| 校园活动 | 候选必须确认；来源只有校园邮箱 / 单篇公众号 / 手动；站内信提醒；ICS / 手机日历；不写课程课表 |
 
-### 群机器人接入（基础设施，非第 21 个模块）
+### 群机器人接入（基础设施，不计入契约模块）
 
 [QQ 机器人官方 API v2](https://bot.q.qq.com/wiki/develop/api-v2/) 的
 `GROUP_MESSAGE_CREATE`「群消息（全量模式）」支持机器人接收群内**每一条**消息
@@ -107,7 +115,11 @@ QQ 群消息 → POST /group-bot/webhook/qq（Ed25519 验签）→ 解析成候�
 
 ---
 
-## 当前完成度（全部实测，2026-10-18）
+## 当前完成度（2026-10-18 旧快照）
+
+> 下表是历史快照，**不是当前基线**。当前 Windows 基线上有已知红灯：
+> API techpie 3 项、Web buddy-tokens 1 项、API lint 5 项；它们都是既有问题，
+> 不属于活动功能，详见 [`docs/features/activities.md`](docs/features/activities.md) §9。
 
 | 端 | 类型检查 | 测试 | 构建 |
 | --- | --- | --- | --- |
@@ -116,12 +128,24 @@ QQ 群消息 → POST /group-bot/webhook/qq（Ed25519 验签）→ 解析成候�
 | `services/api` | ✅ 0 错 | ✅ **1584**（+9 skip） | — |
 | `apps/miniapp` | ✅ 0 错 | ✅ **1265** | ✅ `build:weapp` + `verify:weapp` |
 | `apps/web` | ✅ 0 错 | ✅ **787** | ✅ `next build` |
-| `apps/mobile` | ✅ 0 错 | ✅ **679** | ✅ `flutter build apk` |
+| `apps/mobile` | ✅ 0 错（2026-10-19 本机） | ⚠️ **679/680**（旧 token 断言） | ⚠️ 未在 GitHub runner 实跑 |
 
-**合计 4614 个测试全绿。**
+**旧快照合计 4614 个测试；当前基线并非全绿，见上方说明。**
 
 小程序构建产物：**507 个模块工厂 / 主包 1.44 MiB / 16 个分包**
 （微信主包上限 2 MiB，有余量）。
+
+### 跨平台构建状态
+
+| 平台 | 状态 |
+| --- | --- |
+| 微信小程序 / Web / API | ✅ 当前交付；活动相关测试已实跑通过 |
+| Android / Windows x64 / Linux x64 / macOS / iOS | ⚠️ 有 CI 配置（`.github/workflows/mobile-build.yml`），**GitHub runner 未实跑**；未在真机/模拟器启动 |
+| Windows ARM64 | ⚠️ **实验**：仅手动触发，不进入 Release，未实跑 |
+| Linux ARM64 | ❌ **未实现**（官方无 Linux ARM64 Flutter SDK） |
+| HarmonyOS | ⚠️ 仅自托管 `self-hosted, linux, ohos` 流水线，**未验证** |
+
+签名状态与构建细节见 [`docs/build/README.md`](docs/build/README.md)；不要写成已发布。
 
 ### 哪些是真的、哪些还是演示
 
@@ -129,7 +153,7 @@ QQ 群消息 → POST /group-bot/webhook/qq（Ed25519 验签）→ 解析成候�
 
 | 能力 | 状态 | 说明 |
 | --- | --- | --- |
-| 20 个业务模块的**页面与端点** | ✅ 真实 | 全部有实现、有测试、有门禁 |
+| 25 个契约模块的**页面与端点** | ✅ 真实 | 小程序 25/25 有页面；后端 21/25 有端点 |
 | 论坛 / 跳蚤 / 跑腿 / 找搭子 / 失物招领 / 宿舍矛盾 | ✅ 真实 | 端到端可用的垂直切片 |
 | 拼单 / 论坛的**社区数据** | ⚠️ 演示期 | 默认走内存 mock，无需后端即可体验 |
 | 校园卡 / 课表 / 成绩 / CAS 登录 | ⚠️ **模拟数据** | `CAMPUS_DATA_MODE=mock`，响应标 `simulated: true`；`live` 需要校方书面授权 |
@@ -137,6 +161,7 @@ QQ 群消息 → POST /group-bot/webhook/qq（Ed25519 验签）→ 解析成候�
 | AI 校园画像 | ⚠️ 后端无生成逻辑 | `GET /me` 返回 `null` 是常态，页面给空态而**不在客户端编造标签** |
 | 菜品拍照识别 | ⚠️ mock 适配器 | 响应 `mode: 'mock'`，界面明确标「演示期识别」 |
 | 校园地图底图 | ⚠️ 授权未确认 | 用校方 GIS 真实栅格图，**上线前必须确认授权** |
+| 校园活动 | ✅ 真实（MVP） | 候选确认、站内信提醒、ICS / 手机日历；公众号仅用户主动单篇；微信订阅 / APNs / FCM / HMS 未接通 |
 | 心理支持热线 | ⚠️ 待核实 | 上线前必须逐个拨通核实号码 |
 | 群机器人 | ✅ 代码完整 | 需自行申请 QQ 开放平台机器人 + 配置公钥 + 开启 `GROUP_BOT_ENABLED` |
 
@@ -157,7 +182,7 @@ graph TB
     end
 
     subgraph shared["共享契约层 · packages/"]
-        CON["@kedaya/contracts<br/>信封 · 错误码 · 19 模块注册表 · OpenAPI"]
+        CON["@kedaya/contracts<br/>信封 · 错误码 · 25 模块注册表 · OpenAPI"]
         TOK["@kedaya/design-tokens<br/>tokens.json → CSS / SCSS / TS / JS"]
         SHR["@kedaya/shared<br/>Result · 金额(整数分) · 时间 · 校验"]
     end
@@ -239,16 +264,17 @@ presentation ──> application ──> domain <── data
 kedaya/
 ├── apps/
 │   ├── miniapp/          Taro 4 → 微信小程序（主端）+ H5
+│   ├── mobile/           Flutter 3 → iOS / Android / 鸿蒙（入口已接；构建未实跑）
 │   └── web/              Next.js 16 → Web 门户 + 管理后台
 ├── services/
 │   └── api/              NestJS 12 + Prisma → /api/v1
 ├── packages/
-│   ├── contracts/        响应信封 · 错误码 · 19 模块注册表 · OpenAPI 3.1
+│   ├── contracts/        响应信封 · 错误码 · 25 模块注册表 · OpenAPI 3.1
 │   ├── design-tokens/    tokens.json → CSS / SCSS / TS / JS（单一真相）
 │   └── shared/           Result · 金额 · 时间 · 校验（纯 TS，客户端与 API 共用）
 ├── docs/
 │   ├── architecture/     总览 · 领域模型 · API 契约 · 客户端架构 · 安全 · 路线图
-│   ├── features/         功能规格：找搭子 · 野生动物地图 · TechPie 整合
+│   ├── features/         功能规格：找搭子 · 野生动物地图 · TechPie 整合 · 校园活动
 │   └── adr/              架构决策记录
 └── assets/brand/         可达鸭吉祥物与封面（原创美术）
 ```
@@ -311,16 +337,16 @@ npm run dev -w @kedaya/api          # http://localhost:3000/api/v1
 
 ```bash
 npm run typecheck      # 全量类型检查（6 个 workspace）
-npm run test           # 全量测试（827 个用例）
+npm run test           # 全量测试（各 workspace；基线红灯见 docs/features/activities.md §9）
 npm run build          # 全量构建
 npm run tokens         # 重新生成设计令牌 + 同步 Flutter 副本
 ```
 
 ---
 
-## 功能模块（20）
+## 功能模块（25）
 
-**业务模块**（来自需求图）
+**业务模块（17）**（需求图 14 个 + 场馆 / 众筹诉求 / 会议茶歇）
 
 | 模块 | 说明 | 敏感级 |
 | --- | --- | --- |
@@ -331,7 +357,7 @@ npm run tokens         # 重新生成设计令牌 + 同步 Flutter 副本
 | 跑腿 | 代取快递、买饭、送件，悬赏与接单 | 低 |
 | 找搭子 | 运动、自习、吃饭、出行组队匹配 | 低 |
 | 失物招领 | 丢失登记、拾获登记、双向匹配 | 低 |
-| 食堂营养 | 菜品营养数据、热量估算、饮食建议 | 低 |
+| 营养管家 | 菜品库、每餐记录、每日需求与缺口推荐 | 中 |
 | 论坛 | 版块、主题、回复、举报与治理 | 中 |
 | AI 校园画像 | 基于行为的画像与推荐，可解释、可关闭 | **高** |
 | 心理支持 | 倾听与预约入口，危机出口在首屏；不做诊断与治疗 | **最高** |
@@ -339,8 +365,10 @@ npm run tokens         # 重新生成设计令牌 + 同步 Flutter 副本
 | TechPie 整合 | 与 TechPie / GeekPie 体系互联互通 | 中 |
 | 野生动物 | 校园动物活动区域地图、投喂规范、上报 | 低 |
 | 场馆预约 | 体育场馆、健身房等校园场馆的预约与核销 | 中 |
+| 众筹诉求 | 把共同需求汇总成可核对的诉求，达到门槛后发信给对应部门 | 低 |
+| 会议茶歇 | 把手边学术会议的时间地点和茶歇时报上来 | 低 |
 
-**基础模块**：身份 · 课表 · 校园卡 · 我的 · 通知
+**核心模块（8）**：身份 · 课表 · DDL 聚合 · 校园地点 · 校园活动 · 校园卡 · 我的 · 通知
 
 > 模块清单的**唯一真相**是 [`packages/contracts/src/modules.ts`](packages/contracts/src/modules.ts)。
 > 小程序与 Web 的导航、宫格、权限判定全部由它驱动，**不允许在各端硬编码**。
@@ -387,7 +415,7 @@ tokens.json ──┬──> src/tokens.generated.ts    Web / 小程序 / 后端
 
 - 把契约层抽成**共享 TypeScript 包**，供客户端与 API 使用
 - 提供**微信小程序 + Web 门户与管理后台**
-- 把模块从"课表/作业"扩展为**19 个校园服务模块**
+- 把模块从"课表/作业"扩展为**25 个校园服务模块**
 - 强化隐私合规（二次同意 + 审计 + 匿名身份解耦）
 
 TechPie 整合模块（`techpie`）用于与 TechPie / GeekPie 体系互联互通。
@@ -404,8 +432,9 @@ TechPie 整合模块（`techpie`）用于与 TechPie / GeekPie 体系互联互�
 | **M3 · 高敏感业务** | 论坛、偷外卖、宿舍矛盾、心理支持 | ✅ 完成 |
 | **M4 · AI 与整合** | AI 校园画像、TechPie 整合 | ✅ 完成 |
 | **M5 · 群信息接入** | QQ 官方群机器人 → 待确认草稿 | ✅ 代码完成，待申请机器人 |
+| **M6 · 日程与活动** | 校园活动：候选确认、站内信提醒、ICS / 手机日历 | ✅ MVP 完成；多渠道推送未接 |
 
-**20/20 契约模块全部有端点与页面。**
+**25/25 契约模块已登记；21/25 有后端端点；小程序端 25/25 有真实页面。**
 
 ### 距离「生产可用」还差什么
 
@@ -419,6 +448,8 @@ TechPie 整合模块（`techpie`）用于与 TechPie / GeekPie 体系互联互�
 | 心理支持热线核实 | 上线前必须逐个拨通核实号码仍有效 | 我们自己（人工） |
 | 可达鸭名称的商标风险 | 「可达鸭」是任天堂在中国注册的官方中文名 | 需要法律意见 / 或改名 |
 | 群机器人上线 | 需要 QQ 开放平台机器人资质 + 群主授权 | 我们申请 + 群主同意 |
+| 活动提醒多渠道推送 | 微信订阅消息 / APNs / FCM / HMS 未接通，MVP 只发站内信 | 需要模板、证书与发送通道 |
+| 公众号历史 / 关注列表 | 微信没有读取关注列表 / 批量历史文章的公开 API，批量采集违反条款 | 不做；只支持用户主动单篇 |
 
 > 我们**不会**在没有授权的情况下把 `CAMPUS_DATA_MODE` 切成 `live`。
 > 当前所有校园数据都标 `simulated: true`，且 [`campus-services.ts`](packages/contracts/src/campus-services.ts)
@@ -431,7 +462,8 @@ TechPie 整合模块（`techpie`）用于与 TechPie / GeekPie 体系互联互�
 | [`buddy-matching.md`](docs/features/buddy-matching.md) | 找搭子 —— 接入 [STUMatch](https://github.com/tzhazuma/STUMatch) 的匹配算法（含真实打分公式与行号） |
 | [`wildlife-map.md`](docs/features/wildlife-map.md) | 野生动物 —— 校园地图底图、**WGS84↔GCJ-02 坐标系陷阱**、可离线降级的自动分类、轨迹推断、四层位置模糊化 |
 | [`techpie-integration.md`](docs/features/techpie-integration.md) | TechPie 能力逐项映射 + 两级身份模型下的合规红线 |
-| **[`docs/README.md`](docs/README.md)** | **📖 文档总索引** —— 36 份文档怎么读、哪些已过时、编号为什么有重复 |
+| [`activities.md`](docs/features/activities.md) | 校园活动 —— 候选确认、三种来源、≤200 字证据、站内信限制、ICS / 手机日历、三端能力差异 |
+| **[`docs/README.md`](docs/README.md)** | **📖 文档总索引** —— 55 份文档怎么读、哪些已过时、编号为什么有重复 |
 | [`campus-map-data.md`](docs/features/campus-map-data.md) | 校园地图数据来源 —— OSM relation 5390610 实测坐标、11 条 Overpass 查询、25 个地点的定位依据 |
 
 ---
@@ -456,10 +488,15 @@ TechPie 整合模块（`techpie`）用于与 TechPie / GeekPie 体系互联互�
 2. [`docs/architecture/`](docs/architecture/) —— 架构文档
 3. [`docs/adr/`](docs/adr/) —— 架构决策记录
 
-当前交付范围为微信小程序、Web 和 NestJS API。旧冻结契约与 ADR 中涉及原生端的内容
-保留作历史参考；当前客户端结构以 [客户端架构](docs/architecture/04-client-architecture.md) 为准。
+当前**已验证**的交付范围为微信小程序、Web 和 NestJS API；`apps/mobile` 的 Flutter 客户端
+已有入口，但多平台构建只有 CI 配置、GitHub runner 未实跑（见
+[`docs/features/activities.md`](docs/features/activities.md) §8）。旧冻结契约与 ADR 中涉及
+原生端的内容保留作历史参考；当前客户端结构以
+[客户端架构](docs/architecture/04-client-architecture.md) 为准。
 
-**提 PR 前请确保 `npm run typecheck && npm run test` 全绿。**
+**提 PR 前请跑 `npm run typecheck && npm run test`；除
+[`docs/features/activities.md`](docs/features/activities.md) §9 记录的既有 Windows 基线红灯外，
+不应新增失败。**
 
 ---
 

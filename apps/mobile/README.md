@@ -80,7 +80,7 @@ apps/mobile/
 │   │   ├── theme_controller.dart
 │   │   └── module_catalog.dart
 │   ├── domain/                       # 纯领域：零框架依赖（只 dart:core + 自有模型）
-│   │   ├── models/                   #   21 个模块注册表（含 deadlines）/ 金额 / 结果 / 主题模式 / 模型
+│   │   ├── models/                   #   25 个模块注册表（含 activities 与 deadlines）/ 金额 / 结果 / 主题模式 / 模型
 │   │   └── ports/                    #   接口（依赖倒置的支点）
 │   ├── data/                         # adapters：实现 ports
 │   │   ├── api/                      #   Dio 装配 + 信封解包
@@ -213,7 +213,7 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | 契约 §8 启动时序 | `lib/app/bootstrap.dart` + `lib/main.dart` |
 | 六边形分层骨架（目录名严格按 §7） | `lib/{app,application,domain,data,platform,presentation}/` |
 | 13 个 domain port | `lib/domain/ports/`：`AuthPort`、`CampusSessionPort`、`KedayaApiPort`、`CredentialStorePort`、`LocalCachePort`、`ConsentPort`、`ThemeModePort`、`GroupbuyPort`、`ForumPort`、`FaqPort`、`ErrandPort`、`LostFoundPort`、`WellbeingPort` + `platform_ports.dart` |
-| 21 个模块注册表（镜像 `packages/contracts`，含 2026-10-19 新增的 `deadlines`） | `lib/domain/models/kedaya_module.dart` |
+| 25 个模块注册表（镜像 `packages/contracts`，含 `activities` 与 `deadlines`） | `lib/domain/models/kedaya_module.dart` |
 | 金额整数分（镜像 `packages/shared/money.ts`） | `lib/domain/models/money.dart` |
 | 统一信封 + Dio 装配（Bearer / Trace / 401 刷新重试） | `lib/data/api/{api_envelope,dio_client,kedaya_api_client}.dart` |
 | 远端 repositories（auth / campus / consent / groupbuy / **forum** / **faq** / errand / lost-found / wellbeing） | `lib/data/repositories/` |
@@ -271,7 +271,7 @@ unawaited(runtime.startBackgroundRefresh());   // ③ 后台并发刷新，失�
 | 文件 | 覆盖 |
 | --- | --- |
 | `test/domain/money_test.dart` | 整数分 ↔ 元、非法输入、往返一致、带符号展示 |
-| `test/domain/module_registry_test.dart` | 21 个模块（含 `deadlines`）、id 唯一、route==id、**同意门规则**（`auth`/`campus-card` 不设门） |
+| `test/domain/module_registry_test.dart` | 25 个模块（含 `activities` 与 `deadlines`）、id 唯一、route==id、**同意门规则**（`auth`/`campus-card` 不设门） |
 | `test/domain/result_and_api_error_test.dart` | `Result` 的 Ok/Err/map/flatMap/unwrap、错误码 wire 往返、未知码收敛 |
 | `test/domain/auth_session_boundary_test.dart` | **契约 §5 边界机械校验**：序列化键名不含校园凭据；未知校园系统抛错 |
 | `test/domain/groupbuy_order_test.dart` | 模型解析/序列化、未知状态收敛、进度收敛、查询参数收敛 |

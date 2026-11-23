@@ -15,6 +15,7 @@ import type {
   MailMessageRepository,
   NewMailEvent,
 } from '../domain/mail.domain';
+import type { MailEventKind } from '../domain/mail-event.domain';
 
 /** 行 → 领域模型。逐字段显式映射。 */
 export function toMailEventRecord(row: MailEvent): MailEventRecord {
@@ -24,14 +25,23 @@ export function toMailEventRecord(row: MailEvent): MailEventRecord {
     accountId: row.accountId,
     uid: row.uid,
     title: row.title,
+    kind: normalizeKind(row.kind),
     startsAt: row.startsAt,
+    endsAt: row.endsAt,
     location: row.location,
     organizer: row.organizer,
+    registrationDeadlineAt: row.registrationDeadlineAt,
+    registrationDeadlineRaw: row.registrationDeadlineRaw,
+    registrationUrl: row.registrationUrl,
     confidence: row.confidence,
     matchedText: row.matchedText,
     receivedAt: row.receivedAt,
     stale: row.stale,
   };
+}
+
+function normalizeKind(value: string | null): MailEventKind | null {
+  return value === 'lecture' || value === 'meeting' || value === 'info-session' ? value : null;
 }
 
 @Injectable()
@@ -55,9 +65,14 @@ export class MailMessagePrismaRepository implements MailMessageRepository {
         accountId: event.accountId,
         uid: event.uid,
         title: event.title,
+        kind: event.kind ?? null,
         startsAt: event.startsAt,
+        endsAt: event.endsAt ?? null,
         location: event.location,
         organizer: event.organizer,
+        registrationDeadlineAt: event.registrationDeadlineAt ?? null,
+        registrationDeadlineRaw: event.registrationDeadlineRaw ?? null,
+        registrationUrl: event.registrationUrl ?? null,
         confidence: event.confidence,
         matchedText: event.matchedText,
         receivedAt: event.receivedAt,

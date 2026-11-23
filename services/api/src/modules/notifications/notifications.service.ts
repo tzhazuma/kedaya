@@ -1,7 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Page } from '@kedaya/contracts';
-import { NotFoundError } from '../../common/errors/app-error';
-import type { NotificationPort, NotifyInput } from '../../common/notifications/notification.port';
+import { InternalError, NotFoundError, ValidationError } from '../../common/errors/app-error';
+import type {
+  NotificationPort,
+  NotificationStrictPort,
+  NotifyInput,
+} from '../../common/notifications/notification.port';
 import {
   NOTIFICATION_BODY_MAX,
   NOTIFICATION_REPOSITORY,
@@ -19,7 +23,7 @@ import {
  * 这样在 vitest 等不做 emitDecoratorMetadata 的转译器下 DI 依然成立。
  */
 @Injectable()
-export class NotificationService implements NotificationPort {
+export class NotificationService implements NotificationPort, NotificationStrictPort {
   private readonly logger = new Logger(NotificationService.name);
 
   constructor(@Inject(NOTIFICATION_REPOSITORY) private readonly repo: NotificationRepository) {}
@@ -52,6 +56,30 @@ export class NotificationService implements NotificationPort {
       this.logger.warn(
         `写站内信失败（已忽略，不影响主流程）：${error instanceof Error ? error.message : String(error)}`,
       );
+    }
+  }
+
+  /**
+   * 严格写一条通知：失败**抛出**（不吞异常）。
+   *
+   * 只给活动提醒派发这类"通知是业务结果"的场景用。调用方在失败时会把提醒
+   * 回退成 pending，下一次派发重试；如果这里静默成功，提醒会被标成 sent 而丢失。
+   */
+  async notifyStrict(input: NotifyInput): Promise<void> {
+    const draft = this.toDraft(input);
+    if (draft === null) {
+      throw new ValidationError('通知字段不完整或 source 未登记，拒绝写入', {
+        reason: 'NOTIFICATION_INVALID',
+      });
+    }
+
+    try {
+      await this.repo.create(draft);
+    } catch (error) {
+      throw new InternalError('站内信写入失败，提醒将在下次派发重试', {
+        reason: 'NOTIFICATION_WRITE_FAILED',
+        cause: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 

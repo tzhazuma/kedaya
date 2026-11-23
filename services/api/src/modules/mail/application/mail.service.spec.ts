@@ -353,7 +353,9 @@ describe('MailService · 同步', () => {
       {
         uid: 101,
         subject: '【讲座】AI for Science',
-        body: '时间：2026年10月20日 14:00\n地点：图书馆 302',
+        body:
+          '时间：2026年10月20日 14:00-15:30\n地点：图书馆 302\n' +
+          '报名截止：2026年10月19日 23:59\n报名链接：https://example.com/sign',
         receivedAt: NOW,
       },
       {
@@ -408,10 +410,15 @@ describe('MailService · 同步', () => {
       userId: USER_ID,
       accountId: 'acc-1',
       title: 'AI for Science',
+      kind: 'lecture',
       location: '图书馆 302',
+      registrationDeadlineRaw: '2026年10月19日 23:59',
+      registrationUrl: 'https://example.com/sign',
       stale: false,
     });
     expect(fresh.startsAt.toISOString()).toBe('2026-10-20T06:00:00.000Z');
+    expect(fresh.endsAt?.toISOString()).toBe('2026-10-20T07:30:00.000Z');
+    expect(fresh.registrationDeadlineAt?.toISOString()).toBe('2026-10-19T15:59:00.000Z');
 
     const account = accounts.rows.get(USER_ID)!;
     expect(account.status).toBe('active');

@@ -121,6 +121,17 @@ export const PAGE_PATHS = {
    */
   campusMap: '/presentation/pages/campusMap/index',
   /**
+   * 校园活动（独立域，不并入课程 DDL）。
+   *
+   * 列表 / 详情 / 公众号单篇导入 / 校园邮箱 / 提醒五页。活动候选必须用户确认
+   * 后才加入日程；提醒只发站内信（微信订阅消息没有真实模板 ID，不假装接通）。
+   */
+  activitiesList: '/presentation/pages/activities/list/index',
+  activitiesDetail: '/presentation/pages/activities/detail/index',
+  activitiesImport: '/presentation/pages/activities/import/index',
+  activitiesMail: '/presentation/pages/activities/mail/index',
+  activitiesReminders: '/presentation/pages/activities/reminders/index',
+  /**
    * 课程 DDL 聚合（Blackboard / Gradescope / Piazza / e云平台）。
    *
    * 与 `app.config.ts` 的 `pages` 必须同时登记：路由表与构建配置由
@@ -189,11 +200,33 @@ export const MODULE_ENTRY_PATHS: Readonly<Record<string, string>> = {
   // 四个核心模块（身份 / 课表 / 校园卡 / 我的）
   auth: PAGE_PATHS.identity,
   schedule: PAGE_PATHS.schedule,
+  /** 校园活动（独立域）：候选列表是模块主界面 */
+  activities: PAGE_PATHS.activitiesList,
   /** DDL 聚合：本轮条目只存本机（无后端），但页面与入口已真实可用 */
   deadlines: PAGE_PATHS.deadlines,
   'campus-map': PAGE_PATHS.campusMap,
   'campus-card': PAGE_PATHS.campusCard,
   profile: PAGE_PATHS.profile,
+}
+
+export function activityListPath(): string {
+  return PAGE_PATHS.activitiesList
+}
+
+export function activityDetailPath(id: string): string {
+  return detailPath(PAGE_PATHS.activitiesDetail, id)
+}
+
+export function activityImportPath(): string {
+  return PAGE_PATHS.activitiesImport
+}
+
+export function activityMailPath(): string {
+  return PAGE_PATHS.activitiesMail
+}
+
+export function activityRemindersPath(): string {
+  return PAGE_PATHS.activitiesReminders
 }
 
 /** 场馆预约详情路径 */

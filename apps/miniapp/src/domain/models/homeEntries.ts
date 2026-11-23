@@ -83,9 +83,33 @@ const AGGREGATES: readonly HomeEntry[] = [
 /** 被聚合覆盖的模块 id（从「模块入口」里排除，避免重复入口） */
 const AGGREGATED_MODULE_IDS: readonly string[] = AGGREGATES.flatMap((entry) => entry.moduleIds)
 
+/**
+ * 独立入口：活动域。
+ *
+ * 活动在**本端**是独立域（`/activities`）。入口做成**自适应**：
+ *   · 契约已有 `activities` → `moduleIds` 归它，目录双向一致性成立；
+ *   · 契约暂时没有 → `moduleIds: []`，仍作为独立入口出现在服务大厅。
+ * 两种情况下都从 `MODULE_ENTRIES` 里排除，避免出现两个「校园活动」格子。
+ */
+const APP_ENTRIES: readonly HomeEntry[] = [
+  {
+    id: 'activities',
+    label: '校园活动',
+    hint: '从校园邮箱和公众号收集活动；确认后才加入日程与提醒。',
+    icon: 'activities',
+    moduleIds: MODULES.some((module) => module.id === 'activities') ? ['activities'] : [],
+    subLabel: null,
+    locked: false,
+    lockedReason: null,
+  },
+]
+
+/** 被独立入口覆盖的 id（从「模块入口」里排除，避免重复入口） */
+const APP_ENTRY_MODULE_IDS = new Set<string>(['activities'])
+
 /** 契约模块 → 入口（标签与说明直接取契约，避免两处文案漂移） */
 const MODULE_ENTRIES: readonly HomeEntry[] = MODULES.filter(
-  (module) => !AGGREGATED_MODULE_IDS.includes(module.id),
+  (module) => !AGGREGATED_MODULE_IDS.includes(module.id) && !APP_ENTRY_MODULE_IDS.has(module.id),
 ).map((module) => ({
   id: module.id,
   label: module.nameZh,
@@ -98,7 +122,11 @@ const MODULE_ENTRIES: readonly HomeEntry[] = MODULES.filter(
 }))
 
 /** 全部入口（聚合入口在前，便于首页默认值里「凑凑」排在第一个） */
-export const HOME_ENTRIES: readonly HomeEntry[] = [...AGGREGATES, ...MODULE_ENTRIES]
+export const HOME_ENTRIES: readonly HomeEntry[] = [
+  ...AGGREGATES,
+  ...APP_ENTRIES,
+  ...MODULE_ENTRIES,
+]
 
 /**
  * 服务大厅分组。
@@ -111,7 +139,7 @@ export const HOME_SECTIONS: readonly HomeSection[] = [
   {
     id: 'daily',
     title: '校园日常',
-    entryIds: ['cou', 'flea-market', 'errand', 'lost-found', 'canteen', 'wildlife', 'facility', 'schedule', 'deadlines', 'campus-map', 'campus-card'],
+    entryIds: ['cou', 'flea-market', 'errand', 'lost-found', 'canteen', 'wildlife', 'facility', 'schedule', 'activities', 'deadlines', 'campus-map', 'campus-card'],
   },
   {
     id: 'community',

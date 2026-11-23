@@ -133,7 +133,7 @@ export function createHttpAuthRepository(api: ApiClient): AuthRepository {
       )
     },
 
-    async deleteAccount(input) {
+    async deleteAccount(_input) {
       // ⚠️ 这是唯一一个 `DELETE` 会**永久改变账号状态**的调用。
       // 不在客户端做任何"预删除"，把判定权完全交给后端事务 ——
       // 客户端若先本地清缓存再调用，一旦后端回滚，用户会以为已注销。

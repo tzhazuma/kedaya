@@ -1,5 +1,12 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { CanActivate, Injectable, type ExecutionContext } from '@nestjs/common';
+import {
+  CanActivate,
+  Injectable,
+  Optional,
+  SetMetadata,
+  type ExecutionContext,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { ForbiddenError, UnauthenticatedError } from '../errors/app-error';
 import { authenticateRequest } from './current-user';
@@ -21,8 +28,19 @@ import { authenticateRequest } from './current-user';
  */
 export const ADMIN_KEY_HEADER = 'x-admin-key';
 
+/** 路由级文案：不同模块的管理员权限提示不该共用「菜品营养数据」这句话。 */
+export const ADMIN_GUARD_MESSAGE = 'kedaya:admin-guard-message';
+
+export const AdminGuardMessage = (message: string): MethodDecorator & ClassDecorator =>
+  SetMetadata(ADMIN_GUARD_MESSAGE, message);
+
+const DEFAULT_FORBIDDEN_MESSAGE =
+  '菜品营养数据由平台管理员维护。如需补录或修正，请联系管理员，或在菜品详情里发起纠错。';
+
 @Injectable()
 export class AdminGuard implements CanActivate {
+  constructor(@Optional() private readonly reflector?: Reflector) {}
+
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
     if (matchesAdminKey(request)) return true;
@@ -31,10 +49,13 @@ export class AdminGuard implements CanActivate {
     const allowed = adminUserIds();
     if (userId !== null && allowed.includes(userId)) return true;
 
-    throw new ForbiddenError(
-      '菜品营养数据由平台管理员维护。如需补录或修正，请联系管理员，或在菜品详情里发起纠错。',
-      { hint: '需要管理员身份' },
-    );
+    const message =
+      this.reflector?.getAllAndOverride<string>(ADMIN_GUARD_MESSAGE, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? DEFAULT_FORBIDDEN_MESSAGE;
+
+    throw new ForbiddenError(message, { hint: '需要管理员身份' });
   }
 }
 

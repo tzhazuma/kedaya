@@ -90,6 +90,10 @@ import { createPrivacyUseCase } from '../application/privacy/privacyUseCases'
 import type { PrivacyUseCase } from '../application/privacy/privacyUseCases'
 import { createHomeLayoutUseCase } from '../application/homeLayout/homeLayoutUseCases'
 import type { HomeLayoutUseCase } from '../application/homeLayout/homeLayoutUseCases'
+import { createActivityUseCases } from '../application/activities/activityUseCases'
+import type { ActivityUseCases } from '../application/activities/activityUseCases'
+import { createMailActivityUseCases } from '../application/activities/mailActivityUseCases'
+import type { MailActivityUseCases } from '../application/activities/mailActivityUseCases'
 import { createAgentUseCase } from '../application/agent/agentUseCases'
 import type { AgentUseCase } from '../application/agent/agentUseCases'
 import { createMediaUseCases } from '../application/media/mediaUseCases'
@@ -99,6 +103,12 @@ import type { ReportUseCases } from '../application/report/reportUseCases'
 import { createApiClient, createAuthRefresher, createTaroHttpPort, createTracePort } from '../data/api'
 import type { ApiClient } from '../data/api'
 import { createTaroMediaUploader } from '../data/api/mediaUpload'
+import { createHttpActivityRepository } from '../data/repositories/httpActivityRepository'
+import { createHttpMailAccountRepository } from '../data/repositories/httpMailAccountRepository'
+import { createMockActivityRepository } from '../data/repositories/mockActivityRepository'
+import type { MockActivityRepository } from '../data/repositories/mockActivityRepository'
+import { createMockMailAccountRepository } from '../data/repositories/mockMailAccountRepository'
+import type { MockMailAccountRepository } from '../data/repositories/mockMailAccountRepository'
 import { createHttpBuddyRepository } from '../data/repositories/httpBuddyRepository'
 import { createHttpFaqRepository } from '../data/repositories/httpFaqRepository'
 import { createHttpForumRepository } from '../data/repositories/httpForumRepository'
@@ -172,6 +182,8 @@ import { CAMPUS_CARD_PAYMENT_CODE_REGISTERED } from '../domain/models/campusCard
 import type { CachePort } from '../domain/ports/cachePort'
 import type { ClockPort } from '../domain/ports/clockPort'
 import type { LogPort } from '../domain/ports/logPort'
+import type { ActivityRepository } from '../domain/ports/activityRepository'
+import type { MailAccountRepository } from '../domain/ports/mailAccountRepository'
 import type { AgentRepository } from '../domain/ports/agentRepository'
 import type { AiPortraitRepository } from '../domain/ports/aiPortraitRepository'
 import type { AuthRepository } from '../domain/ports/authRepository'
@@ -256,6 +268,8 @@ export interface AppContainer {
   imagePicker: ImagePickerPort
   mediaRepository: MediaRepository
   reportRepository: ReportRepository
+  activityRepository: ActivityRepository
+  mailAccountRepository: MailAccountRepository
   telemetryRepository: TelemetryRepository
   /** 客户端遥测上报器（错误边界 / 全局错误钩子 / 服务端故障都走它） */
   telemetry: TelemetryReporter
@@ -296,6 +310,10 @@ export interface AppContainer {
   mockTechpieControls: MockTechpieRepository | null
   /** 营养管家的 mock 演示控制面（文件内置菜品库；仅 mock 模式下非空） */
   mockNutritionControls: MockNutritionRepository | null
+  /** 活动的 mock 演示控制面（确认 / 忽略 / 提醒真的改内存状态） */
+  mockActivityControls: MockActivityRepository | null
+  /** 校园邮箱的 mock 演示控制面（绑定 / 同步 / 提升） */
+  mockMailControls: MockMailAccountRepository | null
   useCases: {
     session: SessionUseCase
     auth: AuthAccountUseCase
@@ -355,6 +373,10 @@ export interface AppContainer {
     agent: AgentUseCase
     media: MediaUseCases
     report: ReportUseCases
+    /** 校园活动（独立域） */
+    activities: ActivityUseCases
+    /** 校园邮箱绑定 / 同步（复用 /mail） */
+    mailActivity: MailActivityUseCases
   }
 }
 
@@ -370,6 +392,8 @@ export interface ContainerOverrides {
   authRepository?: AuthRepository
   mediaRepository?: MediaRepository
   reportRepository?: ReportRepository
+  activityRepository?: ActivityRepository
+  mailAccountRepository?: MailAccountRepository
   telemetryRepository?: TelemetryRepository
   telemetry?: TelemetryReporter
   wechatCode?: WechatCodePort
@@ -571,6 +595,48 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     (env.useMock ? createMockReportRepository() : createHttpReportRepository(apiClient))
 
   const report = createReportUseCases({ repository: reportRepository })
+
+  /**
+   * 校园活动（独立域）与校园邮箱（复用 `/mail`）。
+   *
+   * 两个 mock 仓储共享同一份邮件事件：邮箱页「提升为候选活动」时，
+   * 活动 mock 能真的找到那封事件，而不是凭 eventId 编一条假标题。
+   */
+  const mockMailRepository = env.useMock
+    ? createMockMailAccountRepository({ latencyMs: env.mockLatencyMs, now: clock.now })
+    : null
+  const mockActivityRepository = env.useMock
+    ? createMockActivityRepository({
+        latencyMs: env.mockLatencyMs,
+        now: clock.now,
+        mailEvents: () =>
+          mockMailRepository !== null && mockMailRepository.isBound()
+            ? mockMailRepository.eventsForPromotion()
+            : [],
+      })
+    : null
+
+  const activityRepository: ActivityRepository =
+    overrides.activityRepository ??
+    mockActivityRepository ??
+    createHttpActivityRepository(apiClient, { log })
+  const mailAccountRepository: MailAccountRepository =
+    overrides.mailAccountRepository ?? mockMailRepository ?? createHttpMailAccountRepository(apiClient)
+
+  const activities = createActivityUseCases({
+    repository: activityRepository,
+    cache,
+    clock,
+    // 活动列表是用户私有数据：缓存按 userId 分片，登出 / 换号时由用例清理旧 key。
+    cacheKeyFor: (viewerId) =>
+      `${StorageKeys.activityListCache}:${viewerId ?? 'anonymous'}`,
+    session: sessionStore,
+  })
+  const mailActivity = createMailActivityUseCases({
+    repository: mailAccountRepository,
+    activities: activityRepository,
+    clock,
+  })
 
   const session = createSessionUseCase(sessionStore, { now: clock.now })
   const auth = createAuthAccountUseCase({
@@ -1002,6 +1068,8 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     imagePicker,
     mediaRepository,
     reportRepository,
+    activityRepository,
+    mailAccountRepository,
     telemetryRepository,
     telemetry,
     groupBuyRepository,
@@ -1033,6 +1101,8 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
     mockBuddyControls: mockBuddyRepository,
     mockTechpieControls: mockTechpieRepository,
     mockNutritionControls: mockNutritionRepository,
+    mockActivityControls: mockActivityRepository,
+    mockMailControls: mockMailRepository,
     useCases: {
       session,
       auth,
@@ -1083,6 +1153,8 @@ export function createContainer(overrides: ContainerOverrides = {}): AppContaine
       agent,
       media,
       report,
+      activities,
+      mailActivity,
     },
   }
 }

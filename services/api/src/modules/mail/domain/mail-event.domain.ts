@@ -30,7 +30,7 @@
  * 主题里的时间、带 `-` / `–` 的起止时间（取开始时刻）。
  */
 
-import { parseDueText } from '@kedaya/shared';
+import { parseDueText, sanitizeSourceUrl } from '@kedaya/shared';
 
 /* ------------------------------------------------------------------ *
  * 返回类型
@@ -48,8 +48,19 @@ export type MailEventKind = 'lecture' | 'meeting' | 'info-session';
 export interface ExtractedMailEvent {
   readonly title: string;
   readonly startsAt: string;
+  /**
+   * 结束时刻。邮件写了起止时间才给；写不出/解析不了就是 `null`，
+   * **不按"默认两小时"之类补一个假结束时间**。
+   */
+  readonly endsAt: string | null;
   readonly location: string | null;
   readonly organizer: string | null;
+  /** 报名截止的绝对时刻；原文只有日期/无法解析时为 `null`。 */
+  readonly registrationDeadlineAt: string | null;
+  /** 报名截止原文片段：时刻无法确定时**必须**保留，供用户核对。 */
+  readonly registrationDeadlineRaw: string | null;
+  readonly registrationUrl: string | null;
+  readonly kind: MailEventKind;
   readonly confidence: number;
   readonly matchedText: string;
 }
@@ -183,12 +194,18 @@ export function extractEventFromMail(
 
   const location = extractLocation(subjectText, bodyLines);
   const organizer = extractOrganizer(subjectText, bodyLines);
+  const registration = extractRegistrationDeadline(subjectText, bodyLines, receivedAt, timeZone);
 
   return {
     title,
     startsAt: time.startsAt,
+    endsAt: time.endsAt,
     location,
     organizer,
+    registrationDeadlineAt: registration.at,
+    registrationDeadlineRaw: registration.raw,
+    registrationUrl: extractRegistrationUrl(subjectText, bodyLines),
+    kind,
     confidence: scoreConfidence(subjectText, bodyLines, time, location, organizer),
     matchedText: time.matchedText,
   };
@@ -210,6 +227,7 @@ export function detectMailEventKind(text: string): MailEventKind | null {
 
 interface FoundTime {
   readonly startsAt: string;
+  readonly endsAt: string | null;
   readonly matchedText: string;
   readonly fromSubject: boolean;
 }
@@ -227,14 +245,27 @@ function findEventTime(
     const line = lines[index]!;
     const nextLines = lines.slice(index + 1, index + 3);
     for (const candidate of collectTimeCandidates(line, nextLines)) {
-      const sanitized = sanitizeCandidate(candidate);
+      const sanitized = sanitizeCandidate(candidate.start);
       if (sanitized.length === 0) continue;
 
       // ⚠️ parseDueText 的 RangeError 只可能来自非法 timeZone / 非法 now —— 这是配置错误，
       // 必须抛出而不是静默跳过（静默会把"整站时间都错 8 小时"藏起来）。
       const startsAt = parseDueText(sanitized, receivedAt, timeZone);
       if (startsAt !== null) {
-        return { startsAt, matchedText: candidate.trim(), fromSubject: index < subjectLines.length };
+        let endsAt: string | null = null;
+        if (candidate.end !== null) {
+          const parsedEnd = parseDueText(sanitizeCandidate(candidate.end), receivedAt, timeZone);
+          // 结束早于/等于开始：可能是跨天，但没有明确日期就**不猜**（不自动 +24h）
+          if (parsedEnd !== null && Date.parse(parsedEnd) > Date.parse(startsAt)) {
+            endsAt = parsedEnd;
+          }
+        }
+        return {
+          startsAt,
+          endsAt,
+          matchedText: candidate.start.trim(),
+          fromSubject: index < subjectLines.length,
+        };
       }
     }
   }
@@ -242,20 +273,34 @@ function findEventTime(
   return null;
 }
 
+interface TimeCandidate {
+  readonly start: string;
+  readonly end: string | null;
+}
+
 /**
  * 收集一行里所有可能的时间片段（按"完整日期+时间 → 日期+下一行时间"排序）。
  *
  * 只做切分，不做解析；同一个片段可能被不同正则重复命中，用 `push` 去重。
+ * 起止时间（`14:00-15:30` / `2:00 PM – 3:30 PM`）会同时给出 `end`。
  */
-function collectTimeCandidates(line: string, nextLines: readonly string[]): string[] {
-  const candidates: string[] = [];
-  const push = (value: string): void => {
-    const trimmed = value.trim();
-    if (trimmed.length > 0 && !candidates.includes(trimmed)) candidates.push(trimmed);
+function collectTimeCandidates(line: string, nextLines: readonly string[]): TimeCandidate[] {
+  const candidates: TimeCandidate[] = [];
+  const push = (start: string, end: string | null = null): void => {
+    const trimmed = start.trim();
+    if (trimmed.length === 0) return;
+    const duplicate = candidates.some(
+      (candidate) => candidate.start === trimmed && candidate.end === (end?.trim() ?? null),
+    );
+    if (!duplicate) candidates.push({ start: trimmed, end: end?.trim() ?? null });
   };
 
   for (const pattern of FULL_DATE_TIME_PATTERNS) {
-    for (const match of line.matchAll(pattern)) push(match[0]);
+    for (const match of line.matchAll(pattern)) {
+      const start = match[0];
+      const startEnd = (match.index ?? 0) + start.length;
+      push(start, findRangeEnd(line, startEnd, startDatePart(start)));
+    }
   }
 
   // 日期在上一行、时间在下一行：`Date: Oct 21, 2026` + `Time: 3:30 PM`
@@ -264,15 +309,23 @@ function collectTimeCandidates(line: string, nextLines: readonly string[]): stri
       const dateText = dateMatch[0];
       const dateEnd = (dateMatch.index ?? 0) + dateText.length;
 
-      const sameLineTime = firstTime(line.slice(dateEnd));
-      if (sameLineTime !== null) push(`${dateText} ${sameLineTime}`);
+      const sameLineTime = firstTimeMatch(line.slice(dateEnd));
+      if (sameLineTime !== null) {
+        push(
+          `${dateText} ${sameLineTime.text}`,
+          findRangeEnd(line, dateEnd + sameLineTime.endIndex, dateText),
+        );
+      }
 
       for (const nextLine of nextLines) {
         // 下一行自己带日期时不要拼：那多半是另一场活动
         if (hasDate(nextLine)) break;
-        const nextTime = firstTime(nextLine);
+        const nextTime = firstTimeMatch(nextLine);
         if (nextTime !== null) {
-          push(`${dateText} ${nextTime}`);
+          push(
+            `${dateText} ${nextTime.text}`,
+            findRangeEnd(nextLine, nextTime.endIndex, dateText),
+          );
           break;
         }
       }
@@ -282,9 +335,39 @@ function collectTimeCandidates(line: string, nextLines: readonly string[]): stri
   return candidates;
 }
 
-function firstTime(text: string): string | null {
+/** 在起始时刻之后找 `-15:30` / `至 15:30` / `– 3:30 PM` 形式的结束时刻。 */
+function findRangeEnd(text: string, afterIndex: number, datePart: string | null): string | null {
+  if (datePart === null) return null;
+  const rest = text.slice(afterIndex);
+  const match = /^\s*(?:[-–—~～]|至|到|to)\s*((?:上午|早上|下午|晚上|中午)?\s*\d{1,2}:\d{2}(?::\d{2})?\s*(?:[ap]m)?)/i.exec(
+    rest,
+  );
+  const endTime = match?.[1]?.trim();
+  if (endTime === undefined || endTime.length === 0) return null;
+  return `${datePart} ${endTime}`;
+}
+
+/** 从时间片段开头取日期部分（ISO / 中文 / 英文月份），用于拼结束时刻。 */
+function startDatePart(value: string): string | null {
+  const text = value.trim();
+
+  const iso = /^\d{4}-\d{1,2}-\d{1,2}/.exec(text);
+  if (iso !== null) return iso[0];
+
+  const chinese = /^(?:\d{4}\s*年\s*)?\d{1,2}\s*月\s*\d{1,2}\s*[日号]/.exec(text);
+  if (chinese !== null) return chinese[0];
+
+  const english = /^[A-Za-z]{3,9}\.?\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?/.exec(text);
+  return english?.[0] ?? null;
+}
+
+function firstTimeMatch(text: string): { text: string; endIndex: number } | null {
   const match = TIME_ONLY.exec(text);
-  return match?.[1]?.trim() ?? null;
+  if (match === null) return null;
+  const value = match[1]?.trim();
+  if (value === undefined || value.length === 0) return null;
+  // match[0] 可能带一个前导非数字字符；结束位置按整个匹配串计算即可
+  return { text: value, endIndex: match.index + match[0].length };
 }
 
 function hasDate(text: string): boolean {
@@ -412,7 +495,17 @@ function isSalutation(value: string): boolean {
 }
 
 function clampTitle(value: string): string {
-  return value.replace(/[\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+  return stripControlCharacters(value).replace(/\s+/g, ' ').trim().slice(0, 160);
+}
+
+/** 控制字符替换成空格。不用正则是为了避开 ESLint 的 no-control-regex。 */
+function stripControlCharacters(value: string): string {
+  return [...value]
+    .map((char) => {
+      const code = char.codePointAt(0) ?? 0;
+      return code < 32 || code === 127 ? ' ' : char;
+    })
+    .join('');
 }
 
 /* ------------------------------------------------------------------ *
@@ -451,6 +544,94 @@ function cleanLabelValue(raw: string): string | null {
 
   if (value.length === 0) return null;
   return value.slice(0, 120);
+}
+
+/* ------------------------------------------------------------------ *
+ * 报名截止 / 报名链接
+ * ------------------------------------------------------------------ */
+
+/**
+ * 报名截止标签。**只认明确的截止语义**：
+ * 裸「报名」不能当截止标签，否则「报名链接：https://…」会被误存成截止说明。
+ */
+const REGISTRATION_DEADLINE_LABEL =
+  /(?:报名截止(?:时间|日期)?|截止报名(?:时间|日期)?|(?:报名)?截止(?:时间|日期)?|registration\s+deadline|registration\s+closes?|register\s+by|sign[-\s]?up\s+by|rsvp\s+by|deadline)\s*(?:[:：]|is|by)?\s*([^\n]{1,200})/i;
+
+const REGISTRATION_URL_LABEL =
+  /(?:报名(?:链接|网址|地址|入口|二维码)?|报名表|注册链接|registration(?:\s+(?:link|url))?|register(?:\s+here)?|sign[-\s]?up)[^\n]{0,40}?(https?:\/\/[^\s<>"'）)】]+)/i;
+
+function extractRegistrationDeadline(
+  subject: string,
+  bodyLines: readonly string[],
+  receivedAt: Date,
+  timeZone: string,
+): { at: string | null; raw: string | null } {
+  const match = REGISTRATION_DEADLINE_LABEL.exec([subject, ...bodyLines].join('\n'));
+  if (match === null) return { at: null, raw: null };
+
+  const raw = cleanRegistrationRaw(match[1] ?? '');
+  if (raw === null) return { at: null, raw: null };
+
+  return { at: parseRegistrationDeadline(raw, receivedAt, timeZone), raw };
+}
+
+function cleanRegistrationRaw(raw: string): string | null {
+  let value = raw
+    .replace(/[\u00a0\u3000]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^[：:\-–—]\s*/, '')
+    .replace(/[。；;，,]+$/, '')
+    .trim();
+
+  // 同一行里还有下一个字段：`报名截止：10月20日 地点：图书馆`
+  const nextField =
+    /(?:报名链接|报名网址|报名入口|报名方式|地点|地址|主办|承办|时间|日期|registration\s+link|location|venue|organizer|time|date)\s*[:：]/i.exec(
+      value,
+    );
+  if (nextField !== null && nextField.index > 0) {
+    value = value.slice(0, nextField.index).trim();
+  }
+
+  return value.length === 0 ? null : value.slice(0, 200);
+}
+
+/**
+ * 解析报名截止时刻。
+ *
+ * ⚠️ 只有日期、没有时刻（`2026年11月24日`）时 `parseDueText` 返回 `null` ——
+ * 这里**保持 null**，绝不补 23:59。原文由 `registrationDeadlineRaw` 保留。
+ */
+function parseRegistrationDeadline(raw: string, receivedAt: Date, timeZone: string): string | null {
+  const direct = parseDueText(raw, receivedAt, timeZone);
+  if (direct !== null) return direct;
+
+  for (const candidate of collectTimeCandidates(raw, [])) {
+    const parsed = parseDueText(sanitizeCandidate(candidate.start), receivedAt, timeZone);
+    if (parsed !== null) return parsed;
+  }
+  return null;
+}
+
+function extractRegistrationUrl(subject: string, bodyLines: readonly string[]): string | null {
+  const text = [subject, ...bodyLines].join('\n');
+
+  const labeled = REGISTRATION_URL_LABEL.exec(text);
+  if (labeled !== null) return cleanRegistrationUrl(labeled[1] ?? '');
+
+  // 没写「报名链接」但同一行有报名语义 + URL：只在**同一行**里找，避免把文章里
+  // 不相关的链接（例如「相关阅读」）当成报名入口。
+  const lineMatch = /(?:^|\n)[^\n]*(?:报名|register|registration|sign[-\s]?up)[^\n]*?(https?:\/\/[^\s<>"'）)】]+)/i.exec(
+    text,
+  );
+  return lineMatch === null ? null : cleanRegistrationUrl(lineMatch[1] ?? '');
+}
+
+function cleanRegistrationUrl(raw: string): string | null {
+  const value = raw.trim().replace(/[),.;，。；、）\]】]+$/g, '').trim();
+  if (value.length === 0 || value.length > 2048) return null;
+  // 去掉会话参数（sid/token/ticket…）并排序查询串：报名链接不把登录态带进库。
+  return sanitizeSourceUrl(value);
 }
 
 /* ------------------------------------------------------------------ *

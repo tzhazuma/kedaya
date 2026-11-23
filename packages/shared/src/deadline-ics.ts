@@ -49,7 +49,7 @@ export interface IcsBuildOptions {
 const MAX_LINE_BYTES = 75;
 
 /** 按 UTF-8 **字节**数折行，续行以空格开头 */
-function foldLine(line: string): string {
+export function foldIcsLine(line: string): string {
   const encoder = new TextEncoder();
   if (encoder.encode(line).length <= MAX_LINE_BYTES) return line;
 
@@ -77,7 +77,7 @@ function foldLine(line: string): string {
 }
 
 /** RFC 5545 文本转义 */
-function escapeText(raw: string): string {
+export function escapeIcsText(raw: string): string {
   return raw
     .replace(/\\/g, '\\\\')
     .replace(/;/g, '\\;')
@@ -86,7 +86,7 @@ function escapeText(raw: string): string {
 }
 
 /** Date → `20261020T155900Z`（UTC，ICS 的基本时刻格式） */
-function toIcsUtc(date: Date): string {
+export function toIcsUtc(date: Date): string {
   const pad = (n: number): string => String(n).padStart(2, '0');
   return (
     String(date.getUTCFullYear()) +
@@ -120,7 +120,7 @@ export function buildDeadlineIcs(
     'PRODID:-//KedaYa//Deadlines//CN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    `X-WR-CALNAME:${escapeText(options.calendarName)}`,
+    `X-WR-CALNAME:${escapeIcsText(options.calendarName)}`,
   ];
 
   for (const item of items) {
@@ -139,13 +139,13 @@ export function buildDeadlineIcs(
 
     lines.push(
       'BEGIN:VEVENT',
-      `UID:${escapeText(item.id)}@kedaya`,
+      `UID:${escapeIcsText(item.id)}@kedaya`,
       `DTSTAMP:${stamp}`,
       `DTSTART:${toIcsUtc(due)}`,
       // 默认按"截止时刻前提醒"处理：事件本身零时长，结束时间同开始
       `DTEND:${toIcsUtc(due)}`,
-      `SUMMARY:${escapeText(item.title)}`,
-      `DESCRIPTION:${escapeText(descriptionParts.join('\n'))}`,
+      `SUMMARY:${escapeIcsText(item.title)}`,
+      `DESCRIPTION:${escapeIcsText(descriptionParts.join('\n'))}`,
       // 截止前 1 小时提醒（-PT1H）。日历端会各自再加自己的默认提醒。
       'BEGIN:VALARM',
       'TRIGGER:-PT1H',
@@ -159,7 +159,7 @@ export function buildDeadlineIcs(
   lines.push('END:VCALENDAR');
 
   // ⚠️ 折叠在最后统一做，且**必须**在拼接前逐行折叠 —— 先拼再折会把 CRLF 也折进去
-  return lines.map(foldLine).join('\r\n') + '\r\n';
+  return lines.map(foldIcsLine).join('\r\n') + '\r\n';
 }
 
 /**

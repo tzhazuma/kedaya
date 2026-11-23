@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
@@ -129,7 +129,8 @@ function listSourceFiles(dir: string, acc: string[] = []): string[] {
 function loadProductionSources(): SourceFile[] {
   return listSourceFiles(SRC_ROOT).map((path) => ({
     path,
-    relativePath: relative(SRC_ROOT, path),
+    // Windows 的 path.relative 返回反斜杠；扫描规则一律用 `/` 前缀。
+    relativePath: relative(SRC_ROOT, path).split(sep).join('/'),
     code: stripComments(readFileSync(path, 'utf8')),
   }))
 }
