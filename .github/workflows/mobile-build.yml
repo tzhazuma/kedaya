@@ -412,7 +412,7 @@ jobs:
           # 否则 apt 会把 arm64 包当成“同一份源里可选”的架构而报 hash 不匹配。
           sudo tee /etc/apt/sources.list.d/ubuntu.sources >/dev/null <<EOF
           Types: deb
-          URIs: http://archive.ubuntu.com/ubuntu/
+          URIs: http://azure.archive.ubuntu.com/ubuntu/
           Suites: ${VERSION_CODENAME} ${VERSION_CODENAME}-updates
           Components: main restricted universe multiverse
           Architectures: amd64
@@ -425,10 +425,13 @@ jobs:
           Architectures: arm64
           Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
           EOF
-          sudo DEBIAN_FRONTEND=noninteractive timeout 420 apt-get \
+          # azure.archive.ubuntu.com 是 Azure 内网镜像；archive.ubuntu.com 在
+          # GitHub runner 上此前出现过 60s 级别的 Ign/重试，直接把 420s 超时吃满。
+          sudo DEBIAN_FRONTEND=noninteractive timeout 900 apt-get \
             -o Acquire::Retries=3 \
             -o Acquire::http::Timeout=30 \
             -o Acquire::https::Timeout=30 \
+            -o Acquire::Languages=none \
             update
 
       - name: 安装 aarch64 交叉工具链
