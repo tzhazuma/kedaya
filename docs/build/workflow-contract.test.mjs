@@ -209,3 +209,10 @@ test('Windows ARM64 在 ARM64 runner 上显式安装 x64 Flutter SDK（官方无
   assert.equal(flutterStep?.with?.architecture, 'x64');
   assert.equal(windowsArm64.env?.FLUTTER_HOST_ARCH, 'arm64');
 });
+
+
+test('Windows ARM64 实验流水线允许为 Flutter 3.50.1 重新解析 SDK 固定依赖', () => {
+  const source = runBlocks(windowsArm64.jobs['windows-arm64']);
+  assert.match(source, /flutter pub get\s*$/m);
+  assert.doesNotMatch(source, /flutter pub get --enforce-lockfile/);
+});

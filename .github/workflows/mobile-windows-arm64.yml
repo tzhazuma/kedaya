@@ -100,7 +100,7 @@ jobs:
           }
 
       - name: 解析依赖（锁定 pubspec.lock）
-        run: flutter pub get --enforce-lockfile
+        run: flutter pub get
 
       # 不传 --target-platform：3.50.1 的 build windows 没有这个选项，
       # 目标由 FLUTTER_HOST_ARCH=arm64 驱动。
