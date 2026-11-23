@@ -200,3 +200,12 @@ test('Android release 使用 HMS 官方混淆保留规则且不禁用 R8', () =>
   assert.match(rules, /-keepattributes \*Annotation\*/);
   assert.doesNotMatch(gradle, /minifyEnabled\s*=\s*false/);
 });
+
+
+test('Windows ARM64 在 ARM64 runner 上显式安装 x64 Flutter SDK（官方无 ARM64 SDK）', () => {
+  const flutterStep = (windowsArm64.jobs['windows-arm64'].steps ?? []).find(
+    (step) => typeof step.uses === 'string' && step.uses.startsWith('subosito/flutter-action'),
+  );
+  assert.equal(flutterStep?.with?.architecture, 'x64');
+  assert.equal(windowsArm64.env?.FLUTTER_HOST_ARCH, 'arm64');
+});

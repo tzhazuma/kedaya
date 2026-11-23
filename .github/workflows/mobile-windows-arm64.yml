@@ -58,6 +58,7 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
+          architecture: x64
           cache: true
 
       - name: 工具链信息（仅诊断）
