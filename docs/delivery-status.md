@@ -56,7 +56,9 @@ macOS / iOS 的本地构建步骤见 `docs/build/apple.md`；鸿蒙见 `docs/bui
 | --- | --- |
 | **自动**抓取任意公众号的历史文章 | 微信无公开接口；那一页只存在于微信客户端内部的会话（`wap_sid2`），从外部拿等于逆向客户端。本项目的做法是**解析用户自己保存的页面**，不抓取、不带 Cookie |
 | 读取用户关注的公众号列表 | 同上，且微信未开放该数据 |
-| 校园卡真实余额（默认构建） | 需要 `secrets.KEDAYA_ECARD_BIND_TOKEN`；且 `ecard.shanghaitech.edu.cn` 在校外解析不到，需校内网 |
+| 校园卡真实余额（默认构建） | 需要 `secrets.KEDAYA_ECARD_BIND_TOKEN`；且 `ecard.shanghaitech.edu.cn` 在本机被代理伪解析到别的学校（见 `docs/campus-integration-status.md` §3.3 复测），需校园网 |
+| 校园邮箱真实同步 | 2026-11-25 实测：`imap.shanghaitech.edu.cn:993` TLS 正常（证书 `*.shanghaitech.edu.cn`，DigiCert），但 `LOGIN` 对 `tangzhh2026@…`、`tangzhh2026`、学号三种用户名都返回 `NO LOGIN Login error or password error` —— **邮箱密码与 eGate 不同，或需要客户端专用密码** |
+| 公众号历史列表自动获取 | 微信 4.x 的内置 webview 不开 CDP 调试端口（9222 上是 Edge，不是微信）；手机端需抓包或 root 读缓存，均越界 |
 | 小程序上传发布 | 需要真实小程序 AppID + 已备案服务器域名 |
 | 微信订阅消息 / APNs / FCM / HMS 真实下发 | 代码与登记流程已有，缺各自的模板 ID、证书与厂商配置 |
 

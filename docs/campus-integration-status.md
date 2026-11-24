@@ -104,6 +104,24 @@ TechPie 能这么做是因为它用 Dio（原生 HTTP）直接发请求，会话
 `--resolve` 强制指向 `119.78.254.196` 后 `/__ecard_bind/health` 返回 HTTP 000
 （TLS 未建立）。**结论：校外当前打不通，需校园网或镜像主机在线才能端到端验证。**
 
+**2026-11-25 复测（重要发现）**：这台机器上 `ecard.shanghaitech.edu.cn` 现在能"连上"，
+但响应**不是上科大的服务**：
+
+```text
+GET https://ecard.shanghaitech.edu.cn/
+HTTP/1.1 302
+Location: http://ecard.bda.edu.cn/errorPage?
+Server: nginx/1.31.2
+```
+
+`ecard.bda.edu.cn` 是**另一所学校**的域名。再加上 DNS 返回的是
+`198.18.x.x`（基准测试保留段）与 `2001:db8::/32`（文档保留段），可以判断本机
+走的是本地代理/VPN 的**伪解析**，请求根本没到上科大。
+
+所以「HTTP 403」这类响应**不能**当作端点存在的证据；`/__ecard_bind/health`
+返回 403 也一样。要看真实行为，只能在校园网内、或直连 `119.78.254.196`。
+
+
 已落地（可验证）：
 
 | 组件 | 路径 | 状态 |
