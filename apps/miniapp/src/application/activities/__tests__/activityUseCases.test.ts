@@ -128,6 +128,14 @@ function createFakeActivityRepository(options: FakeActivityOptions = {}) {
       calls.importWechat.push(input)
       return ok(activity({ id: 'act-wechat', source: 'wechat-mp' }))
     },
+    async archive(id) {
+      calls.dismiss.push(id)
+      return ok(activity({ ...current, status: 'archived' }))
+    },
+    async restore(id) {
+      calls.dismiss.push(id)
+      return ok(activity({ ...current, status: 'candidate' }))
+    },
     async parseWechatHistory(savedPageHtml) {
       return ok({
         accountName: '测试公众号',
@@ -326,6 +334,23 @@ describe('设置提醒', () => {
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.message).toContain('提醒读取失败')
     expect(calls.createReminder).toEqual([])
+  })
+})
+
+describe('归档与恢复', () => {
+  it('归档走 archive，并带幂等键', async () => {
+    const { useCases, calls } = setup()
+    const result = await useCases.archive('act-1')
+    expect(result.ok).toBe(true)
+    expect(calls.dismiss).toEqual(['act-1'])
+  })
+
+  it('恢复把活动退回候选', async () => {
+    const { useCases } = setup()
+    const result = await useCases.restore('act-1')
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.status).toBe('candidate')
   })
 })
 

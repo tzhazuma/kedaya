@@ -97,6 +97,10 @@ export interface ActivityUseCases {
   readonly detail: DetailUseCase<ActivityItem>
   confirm(id: string): Promise<Result<ConfirmActivityResult, RepositoryError>>
   dismiss(id: string): Promise<Result<ActivityItem, RepositoryError>>
+  /** 归档：从待确认 / 日程里收起，不删除；归档后不会再提醒 */
+  archive(id: string): Promise<Result<ActivityItem, RepositoryError>>
+  /** 从归档恢复到候选（回到待确认，需重新确认才进日程） */
+  restore(id: string): Promise<Result<ActivityItem, RepositoryError>>
   createManual(draft: ManualActivityDraft): Promise<Result<ActivityItem, RepositoryError>>
   update(id: string, patch: ActivityPatch): Promise<Result<ActivityItem, RepositoryError>>
   importWechat(input: { link?: string; text?: string }): Promise<Result<ActivityItem, RepositoryError>>
@@ -454,6 +458,10 @@ export function createActivityUseCases(deps: ActivityUseCaseDeps): ActivityUseCa
     confirm,
     dismiss: (id) =>
       repository.dismiss(id, createIdempotencyKey(`activities:dismiss:${id}`, clock.now())),
+    archive: (id) =>
+      repository.archive(id, createIdempotencyKey(`activities:archive:${id}`, clock.now())),
+    restore: (id) =>
+      repository.restore(id, createIdempotencyKey(`activities:restore:${id}`, clock.now())),
 
     async createManual(draft) {
       const problem = manualActivityProblem(draft)

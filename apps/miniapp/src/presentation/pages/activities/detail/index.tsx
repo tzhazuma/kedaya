@@ -154,6 +154,49 @@ export default function ActivityDetailPage() {
     }
   }
 
+  async function handleArchive(): Promise<void> {
+    if (busy) return
+    const confirmed = await Taro.showModal({
+      title: '归档这条活动？',
+      content: '归档后不再出现在列表里，也不会再提醒；需要时可以恢复。',
+      confirmText: '归档',
+    })
+    if (!confirmed.confirm) return
+
+    setBusy(true)
+    setError(null)
+    try {
+      const result = await activities.archive(id)
+      if (!result.ok) {
+        setError(result.error.message)
+        return
+      }
+      activities.detail.seed(result.value)
+      setNotice('已归档。可在列表的「已归档」里找回。')
+      void activities.list.load()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleRestore(): Promise<void> {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      const result = await activities.restore(id)
+      if (!result.ok) {
+        setError(result.error.message)
+        return
+      }
+      activities.detail.seed(result.value)
+      setNotice('已恢复为候选活动，确认后才加入日程。')
+      void activities.list.load()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function handleCreateDefaultReminder(
     kind: 'registration' | 'start',
   ): Promise<void> {
@@ -375,6 +418,22 @@ export default function ActivityDetailPage() {
             </KdyButton>
             <KdyButton block variant='secondary' disabled={busy} onClick={() => void handleDismiss()}>
               忽略
+            </KdyButton>
+            <KdyButton block variant='secondary' disabled={busy} onClick={() => void handleArchive()}>
+              归档
+            </KdyButton>
+          </View>
+        </KdyCard>
+      ) : null}
+
+      {item.status === 'archived' ? (
+        <KdyCard elevated={false}>
+          <Text className='kdy-activity-detail__banner'>
+            这条活动已归档：不在列表里，也不会再提醒。恢复后会回到「待确认」。
+          </Text>
+          <View className='kdy-activity-detail__actions'>
+            <KdyButton block loading={busy} onClick={() => void handleRestore()}>
+              恢复为候选活动
             </KdyButton>
           </View>
         </KdyCard>

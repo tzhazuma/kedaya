@@ -98,6 +98,10 @@ export interface ActivityRepository {
   parseWechatHistory(
     savedPageHtml: string,
   ): Promise<Result<WechatHistoryPage, RepositoryError>>
+  /** `POST /activities/items/:id/archive` —— 归档（从待确认/日程里收起，不删除） */
+  archive(id: string, idempotencyKey?: string): Promise<Result<ActivityItem, RepositoryError>>
+  /** `POST /activities/items/:id/restore` —— 从归档恢复到候选 */
+  restore(id: string, idempotencyKey?: string): Promise<Result<ActivityItem, RepositoryError>>
   /** 提升一封邮件事件；服务端可能归一出多条候选，因此返回数组 */
   importMail(eventId: string, idempotencyKey?: string): Promise<Result<ActivityItem[], RepositoryError>>
   listRemindersFor(activityId: string): Promise<Result<ActivityReminderItem[], RepositoryError>>

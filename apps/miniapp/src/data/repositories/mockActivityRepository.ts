@@ -322,6 +322,34 @@ export function createMockActivityRepository(
       })
     },
 
+    archive(id: string): Promise<Result<ActivityItem, RepositoryError>> {
+      return guard(() => {
+        const item = find(id)
+        if (item === undefined) return err({ code: 'NOT_FOUND', message: '这条活动不存在或已被删除' })
+        if (item.status === 'archived') return ok(item)
+        const next: ActivityItem = { ...item, status: 'archived' }
+        items = items.map((entry) => (entry.id === id ? next : entry))
+        // 归档后不再提醒：把待发提醒一并清掉，否则用户会收到一条已收起的活动的通知。
+        reminders = reminders.filter(
+          (reminder) => !(ownerByReminder.get(reminder.id) === id && reminder.status === 'pending'),
+        )
+        return ok(next)
+      })
+    },
+
+    restore(id: string): Promise<Result<ActivityItem, RepositoryError>> {
+      return guard(() => {
+        const item = find(id)
+        if (item === undefined) return err({ code: 'NOT_FOUND', message: '这条活动不存在或已被删除' })
+        if (item.status !== 'archived') {
+          return err({ code: 'CONFLICT', message: '只有已归档的活动才能恢复' })
+        }
+        const next: ActivityItem = { ...item, status: 'candidate' }
+        items = items.map((entry) => (entry.id === id ? next : entry))
+        return ok(next)
+      })
+    },
+
     importWechat(input): Promise<Result<ActivityItem, RepositoryError>> {
       return guard(() => {
         const link = input.link?.trim() ?? ''

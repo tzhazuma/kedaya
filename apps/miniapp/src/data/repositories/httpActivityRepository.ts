@@ -179,6 +179,28 @@ export function createHttpActivityRepository(
       return action(`${itemsPath}/${encodeURIComponent(id)}/dismiss`, 'activities.items.dismiss', idempotencyKey)
     },
 
+    async archive(
+      id: string,
+      idempotencyKey?: string,
+    ): Promise<Result<ActivityItem, RepositoryError>> {
+      return action(
+        `${itemsPath}/${encodeURIComponent(id)}/archive`,
+        'activities.items.archive',
+        idempotencyKey,
+      )
+    },
+
+    async restore(
+      id: string,
+      idempotencyKey?: string,
+    ): Promise<Result<ActivityItem, RepositoryError>> {
+      return action(
+        `${itemsPath}/${encodeURIComponent(id)}/restore`,
+        'activities.items.restore',
+        idempotencyKey,
+      )
+    },
+
     async importWechat(
       input: { link?: string; text?: string },
       idempotencyKey?: string,
