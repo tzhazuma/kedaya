@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/app_providers.dart';
 import '../../../../domain/models/activity.dart';
+import '../../../../domain/models/activity_ics.dart';
 import '../../../../domain/models/activity_time.dart';
 import '../../../../domain/models/api_error.dart';
+import '../../../../domain/models/ics_export.dart';
 import '../../../../presentation/components/state_views.dart';
 import '../../../../presentation/theme/kedaya_theme_extension.dart';
 import '../../../../presentation/theme/kedaya_tokens.dart';
@@ -37,8 +39,38 @@ class ActivityDetailPage extends ConsumerWidget {
     final AsyncValue<ActivityItem> value =
         ref.watch(activityDetailProvider(activityId));
 
+    final ActivityItem? loaded = value.valueOrNull;
     return Scaffold(
-      appBar: AppBar(title: const Text('活动详情')),
+      appBar: AppBar(
+        title: const Text('活动详情'),
+        actions: <Widget>[
+          // 只在有确定开始时间时才给出口：时间待确认的活动导出到日历是错的。
+          if (loaded != null && loaded.startsAt != null)
+            IconButton(
+              tooltip: '导出到日历（ICS）',
+              onPressed: () async {
+                final String ics = buildIcs(
+                  buildActivityIcsEvents(<ActivityItem>[loaded]),
+                );
+                await ref.read(shareProvider).copyToClipboard(ics);
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        loaded.isPending
+                            ? '已复制 ICS。这条活动还没确认，导入日历前请先核对时间。'
+                            : '已复制 ICS 到剪贴板，可粘贴保存为 .ics 后导入日历',
+                      ),
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.event_available_outlined),
+            ),
+        ],
+      ),
       body: SafeArea(
         child: value.when(
           data: (ActivityItem item) => _ActivityDetailBody(
