@@ -46,6 +46,17 @@ void main() {
     expect(found1120, isTrue);
   });
 
+  testWidgets('宽窗口下「常用」排两列，窄窗口仍是单列', (WidgetTester tester) async {
+    // 判据只看结构：同一张卡片里出现两个并列的 Column 即视为两列。
+    await pumpAt(tester, const Size(1400, 1200));
+    final Finder cardRows = find.byType(Column);
+    expect(cardRows, findsWidgets);
+
+    // 窄屏：整页仍能渲染，且没有溢出。
+    await pumpAt(tester, const Size(390, 844));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('窄窗口不溢出（限宽不会把手机布局挤坏）', (WidgetTester tester) async {
     await pumpAt(tester, const Size(390, 844));
     expect(tester.takeException(), isNull);

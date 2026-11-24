@@ -302,17 +302,37 @@ class _GroupedCard extends StatelessWidget {
         border: Border.all(color: colors.border),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: <Widget>[
-          for (int i = 0; i < children.length; i++) ...<Widget>[
-            children[i],
-            if (i != children.length - 1)
-              Divider(height: 0.5, thickness: 0.5, color: colors.border),
-          ],
-        ],
+      // 宽窗口下排两列：1120 宽的单列里，每行文字只有十几字，
+      // 右边一大片空白既浪费也不好看。
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          if (constraints.maxWidth < 900 || children.length < 2) {
+            return _singleColumn(colors);
+          }
+          final int half = (children.length + 1) ~/ 2;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(child: _columnOf(children.sublist(0, half), colors)),
+              Expanded(child: _columnOf(children.sublist(half), colors)),
+            ],
+          );
+        },
       ),
     );
   }
+
+  Widget _singleColumn(KedaYaColors colors) => _columnOf(children, colors);
+
+  Widget _columnOf(List<Widget> items, KedaYaColors colors) => Column(
+        children: <Widget>[
+          for (int i = 0; i < items.length; i++) ...<Widget>[
+            items[i],
+            if (i != items.length - 1)
+              Divider(height: 0.5, thickness: 0.5, color: colors.border),
+          ],
+        ],
+      );
 }
 
 class _ModuleRow extends StatelessWidget {
