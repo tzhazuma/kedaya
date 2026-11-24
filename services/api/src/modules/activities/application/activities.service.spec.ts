@@ -658,6 +658,25 @@ describe("ActivitiesService · 微信单篇导入", () => {
     expect(activities.rows.size).toBe(0);
   });
 
+  it("抽不出活动时给出可操作的格式说明（而不是只说「需要关键词」）", async () => {
+    const { service, activities } = build();
+    // 时间与地点被拆到不同段落 —— 这正是「活动回顾」类文章的写法。
+    const text = [
+      "弘扬科学家精神，周向宇院士开展数学科普讲座",
+      "4月10日，温州大学邀请周向宇院士开设讲座，吸引了众多师生参加。",
+      "讲座在图书馆报告厅举行，现场气氛热烈。",
+    ].join(String.fromCharCode(10));
+
+    await expect(service.importWechat(USER, { text })).rejects.toMatchObject({
+      details: { reason: "WECHAT_NOT_ACTIVITY" },
+    });
+    // 文案要告诉用户「怎么写才认得出」，否则用户只会反复重试同一段文字。
+    await expect(service.importWechat(USER, { text })).rejects.toThrow(
+      /同一句或相邻两句/,
+    );
+    expect(activities.rows.size).toBe(0);
+  });
+
   it("粘贴正文：不取网络、sourceRef 用内容哈希、不保存全文", async () => {
     const { service, wechat } = build();
     const text = [

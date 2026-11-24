@@ -362,7 +362,7 @@ export class ActivitiesService {
       const candidates = this.extractCandidates(article, this.clock.now());
       if (candidates.length === 0) {
         throw new ValidationError(
-          "没能从粘贴内容里识别出活动（需要活动关键词与明确时间）",
+          "没能从粘贴内容里识别出活动。识别规则要求「时间」与「地点/报名」出现在同一句或相邻两句里，例如「10 月 25 日 14:00，图书馆 302，扫码报名」；把这两类信息拆散在多段里就抽不出来。也可以直接用「手动添加」创建。",
           {
             reason: "WECHAT_NOT_ACTIVITY",
           },
@@ -409,7 +409,7 @@ export class ActivitiesService {
     );
     if (candidates.length === 0) {
       throw new ValidationError(
-        "这篇公众号文章里没有识别出活动（需要活动关键词与明确时间）",
+        "这篇文章里没有识别出活动。识别规则要求「时间」与「地点/报名」出现在同一句或相邻两句里，例如「10 月 25 日 14:00，图书馆 302，扫码报名」。活动回顾类文章通常不满足，可以改用「手动添加」。",
         {
           reason: "WECHAT_NOT_ACTIVITY",
         },
