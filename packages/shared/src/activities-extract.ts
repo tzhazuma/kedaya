@@ -451,8 +451,10 @@ function findRegistrationUrl(
 
 // 「主讲人：张三」是很常见的详情行。漏了它就会被 isHeadingLine 当成标题，
 // 于是 sectionBounds 在此截断，后面的「地点：…」永远进不了上下文。
+// 前缀允许「讲座地点」「报告时间」这类复合标签 —— 少了它，
+// 「讲座地点：…」会被 isHeadingLine 判成标题，sectionBounds 当场截断，地点丢失。
 const DETAIL_LABEL_RE =
-  /^(?:时间|地点|地址|场地|报名|截止|主办|承办|组织|链接|扫码|联系|主讲人|主讲嘉宾|主讲|报告人|讲者|嘉宾|主持人)\s*[：:]/;
+  /^(?:讲座|报告|活动|论坛|会议|举办|培训|沙龙)?\s*(?:时间|地点|地址|场地|报名|截止|主办|承办|组织|链接|扫码|联系|主讲人|主讲嘉宾|主讲|报告人|讲者|嘉宾|主持人)\s*[：:]/;
 const ACTION_PREFIX_RE = /^(?:扫码|报名|参加|参与|名额|截止|请|点击|关注)/;
 
 function isHeadingLine(text: string): boolean {
@@ -463,6 +465,11 @@ function isHeadingLine(text: string): boolean {
   if (/^(?:\d{4}\s*年\s*)?\d{1,2}\s*月\s*\d{1,2}\s*[日号]$/.test(line)) return false;
   if (/^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}$/.test(line)) return false;
   if (/^周[一二三四五六日天]$/.test(line)) return false;
+  // 「1讲座信息」「2讲座内容」这类序号+栏目名是排版标题，不是活动名：
+  // 当成标题会让候选标题变成「1讲座信息」。
+  if (/^\d+\s*[.、)）]?\s*(?:讲座|报告|活动|论坛|会议|议程|信息|简介|安排|内容){1,3}$/.test(line)) {
+    return false;
+  }
   if (DETAIL_LABEL_RE.test(line)) return false;
   if (ACTION_PREFIX_RE.test(line)) return false;
   if (/https?:\/\//.test(line)) return false;
@@ -502,6 +509,45 @@ const PLACE_HINT_RE = /(地点|地址|场地|教室|楼|馆|报告厅|会议室|
  * ```
  * 这里额外把「下一行（或上一行）是地点」的时间行也作为锚点，抽取逻辑不变。
  */
+/**
+ * 把「只有标签」的行与下一行合并。
+ *
+ * 公众号里极常见的排版是标签独占一行：
+ * ```
+ * 讲座时间
+ * 2024年6月3日 14:00
+ * 讲座地点
+ * 机械与动力工程学院 振华会议室
+ * ```
+ * 不合并的话：`讲座时间` 会被 isHeadingLine 当成标题（于是候选标题变成
+ * 「讲座时间」），`讲座地点` 也匹配不上要求冒号的 LOCATION_RE，地点直接丢失。
+ */
+const LABEL_ONLY_RE =
+  /^(?:讲座|报告|活动|论坛|会议|举办|培训|沙龙)?\s*(?:时间|日期|地点|地址|场地|报名|截止)\s*$/;
+
+function mergeLabelOnlyLines(lines: readonly string[]): string[] {
+  const merged: string[] = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = (lines[i] ?? '').trim();
+    // 空行必须保留：sectionBounds 靠它分段，多活动文章的分段全靠空行。
+    if (line === '') {
+      merged.push('');
+      continue;
+    }
+    if (LABEL_ONLY_RE.test(line)) {
+      let next = '';
+      for (let j = i + 1; j < lines.length; j += 1) {
+        const candidate = (lines[j] ?? '').trim();
+        if (candidate !== '') { next = candidate; i = j; break; }
+      }
+      merged.push(next === '' ? line : `${line}：${next}`);
+      continue;
+    }
+    merged.push(line);
+  }
+  return merged;
+}
+
 function pickActivityLines(lines: readonly string[]): string[] {
   const picked = new Set(pickEventCandidateLines(lines));
 
@@ -672,7 +718,7 @@ export function extractActivityCandidates(
     throw new RangeError('activities-extract: timeZone 必传（例：Asia/Shanghai）');
   }
 
-  const bodyLines = article.bodyLines;
+  const bodyLines = mergeLabelOnlyLines(article.bodyLines);
   const picked = new Set(pickActivityLines(bodyLines));
   const headings: number[] = [];
   for (let i = 0; i < bodyLines.length; i += 1) {
@@ -701,9 +747,16 @@ export function extractActivityCandidates(
 
     if (start.startsAt === null && deadline === null) continue;
 
-    const location = labelValue(context, LOCATION_RE);
-    const organizer = labelValue(context, ORGANIZER_RE);
-    const registrationUrl = findRegistrationUrl(context, article.sourceUrl);
+    // 地点 / 主办 / 报名链接按**整段**找，不限于时间行附近的 3 行：
+    // 通知常把「报告一 / 主讲人 / 邀请人 / 报告主题」排在时间与地点之间，
+    // 只搜 ±3 行会让地点稳定丢失。开始时间仍然只看附近，避免串到下一场。
+    const sectionLines = bodyLines
+      .slice(section.start, section.end)
+      .map((value) => value.trim())
+      .filter((value) => value !== '');
+    const location = labelValue(sectionLines, LOCATION_RE);
+    const organizer = labelValue(sectionLines, ORGANIZER_RE);
+    const registrationUrl = findRegistrationUrl(sectionLines, article.sourceUrl);
 
     const candidate: ActivityCandidate = {
       title: truncateActivityField(

@@ -463,6 +463,34 @@ describe('extractActivityCandidates —— 时间与地点的距离', () => {
   });
 });
 
+describe('extractActivityCandidates —— 标签独占一行（公众号常见排版）', () => {
+  it('「讲座时间」与「讲座地点」各占一行时，时间与地点都能取到', () => {
+    const real = article({
+      title: '讲座报名 | 机械学院学术报告会',
+      bodyLines: [
+        '1讲座信息',
+        '讲座时间',
+        '2026年6月3日 14:00',
+        '讲座地点',
+        '机械与动力工程学院 振华会议室',
+        '报告一',
+        '主讲人',
+        'Prof. Hui Hu',
+      ],
+    });
+    const candidates = extractActivityCandidates(real, {
+      now: NOW,
+      timeZone: 'Asia/Shanghai',
+    });
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.startsAt).toBe('2026-06-03T06:00:00.000Z');
+    // 地点必须取到：`讲座地点：…` 不能被 isHeadingLine 当成标题而截断段落。
+    expect(candidates[0]?.location).toBe('机械与动力工程学院 振华会议室');
+    // 序号栏目行不是活动名，标题回落到文章标题。
+    expect(candidates[0]?.title).toBe('讲座报名 | 机械学院学术报告会');
+  });
+});
+
 describe('extractActivityCandidates —— 缺年份与字段边界', () => {
   it('缺年份的过去日期留在今年，不推下一年', () => {
     const past = article({
