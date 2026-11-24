@@ -93,6 +93,22 @@ jobs:
       - name: 构建 weapp
         run: npm run build:weapp -w @kedaya/miniapp
 
+      # 小程序没有“安装包”：产物需要导入微信开发者工具再上传。
+      # 这里把 dist 打成 zip 供下载，并保留 14 天。
+      - name: 打包小程序产物
+        run: |
+          test -d apps/miniapp/dist
+          cd apps/miniapp
+          zip -qr kedaya-miniapp-weapp.zip dist
+          ls -lh kedaya-miniapp-weapp.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kedaya-miniapp-weapp
+          path: apps/miniapp/kedaya-miniapp-weapp.zip
+          retention-days: 14
+          if-no-files-found: error
+
   api:
     name: 后端（NestJS）
     runs-on: ubuntu-latest
