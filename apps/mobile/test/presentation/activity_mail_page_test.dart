@@ -9,7 +9,6 @@ import 'package:kedaya/domain/models/api_error.dart';
 import 'package:kedaya/domain/models/mail_activity.dart';
 import 'package:kedaya/domain/models/result.dart';
 import 'package:kedaya/domain/ports/mail_port.dart';
-import 'package:kedaya/features/activities/application/activities_providers.dart';
 import 'package:kedaya/features/activities/presentation/pages/activity_mail_page.dart';
 import 'package:kedaya/presentation/theme/kedaya_theme.dart';
 
