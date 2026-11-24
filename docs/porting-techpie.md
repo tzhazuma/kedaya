@@ -15,13 +15,27 @@
 
 测试：`test/campus_cookie_test.dart` 9 例（隔离、过期、清空、不泄露；CAS 成功/失败/非 CAS/URL 拼装）。
 
+### 1.1 内嵌浏览器 + 同源抓取桥（2026-11-24 新增）
+
+`webview_flutter ^4.13.1`（最后一代支持 Flutter 3.32–3.35 的版本）+
+`/campus-web?url=` 页面：加载校园页面后注入 `window.kedayaFetch`，
+它用 `credentials: 'include'` 在**页面内**发请求，把 `{status, body}` 通过
+`KedayaBridge` 通道回传给 Dart。
+
+为什么不在 Dart 侧读 cookie：`CASTGC`/`JSESSIONID` 是 HttpOnly，Dart 读不到，
+也不该读；只有同源页面的 fetch 会自动携带。脚本里**没有** `document.cookie`，
+有单测守着这条边界。
+
+平台：Android / iOS 可用；Windows / Linux / macOS / 鸿蒙自动降级为
+「复制链接到系统浏览器」。OHOS 包在加入该依赖后仍能正常打出 25 MB HAP（插件未注册）。
+
 ## 2. 每个能力还需要什么
 
 | 能力 | 上游实现 | 我们缺的前置条件 |
 | --- | --- | --- |
 | CAS 登录 | `uni_auth_service.dart` + WebView 登录 | 服务端已完成：`/auth/cas/login-url`、`/auth/cas/callback`（ticket→30s 单次 code）、`/auth/cas/exchange`；客户端已完成 `/campus-login` 页与 `AuthPort.signInWithCasCode`。**仍缺**：校方注册的回调 URL（`CAMPUS_CAS_SERVICE`）与 `CAMPUS_CAS_MODE=live` |
-| 场馆预约 | `oa_gym_service.dart` + `oa_gym_local_client.dart`（OA 表单 + HTML 表格解析） | OA 会话（CAS 之后）；需要 `webview_flutter`（移动）与 `desktop_webview_window`（桌面） |
-| ELRC 录播 | `elrc_client.dart`（5 个 JSON 端点） | ELRC cookie；同上 WebView 依赖 |
+| 场馆预约 | `oa_gym_service.dart` + `oa_gym_local_client.dart`（OA 表单 + HTML 表格解析） | WebView 层已就位；还需要 OA 页面内的表单提交与表格解析（桌面端仍走系统浏览器） |
+| ELRC 录播 | `elrc_client.dart`（5 个 JSON 端点） | ✅ WebView 层已就位（`/campus-web` + `kedayaFetch` 同源桥，Android/iOS）；**下一步**：把 5 个端点的解析搬到桥的回传上 |
 | Gradescope | `assignment_service.dart` `_fetchGradescope` | Gradescope 会话（第三方登录） |
 | E云课堂 / 请假 / 活动 | URL 直达 | 已做：`/campus-services` 页面（不代持 cookie） |
 | 校园卡 | `features/campus_card/*`（含付款码、账单） | 校园卡协议 + 密钥；资金相关必须校方书面确认 |
