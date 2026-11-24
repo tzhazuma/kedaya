@@ -94,6 +94,44 @@ void main() {
     expect(find.textContaining('至少勾一篇'), findsOneWidget);
   });
 
+  testWidgets('导入只提交链接（url 与 text 二选一，同时给会 422）', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final AppRuntime runtime = AppRuntime.mock(latency: Duration.zero);
+    addTearDown(runtime.dispose);
+
+    // 走真实路由：导入成功后页面会 `context.pop()`，没有 router 会直接炸。
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          appRuntimeProvider.overrideWithValue(runtime),
+          activitiesRepositoryProvider.overrideWithValue(buildRepo()),
+          activitiesClockProvider.overrideWithValue(() => now),
+        ],
+        child: MaterialApp.router(
+          theme: KedaYaTheme.light(),
+          routerConfig:
+              createAppRouter(initialLocation: '/activities/import/history'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('history-html')), 'page');
+    await tester.tap(find.text('解析出文章列表'));
+    await tester.pumpAndSettle();
+
+    // mock 的第一条带摘要；如果实现把摘要也当 text 一起发，这里会变成
+    // 「链接与正文只能填一个」，导入计数不会增加、页面上不会出现「已导入」提示。
+    await tester.tap(find.textContaining('导入选中的'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('只能填一个'), findsNothing);
+    expect(find.textContaining('已导入'), findsWidgets);
+  });
+
   testWidgets('导入页可以跳到历史消息页，且路由不被 :id 吃掉', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1200, 3000);
     tester.view.devicePixelRatio = 1.0;

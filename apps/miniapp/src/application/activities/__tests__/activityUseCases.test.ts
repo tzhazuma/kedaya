@@ -348,6 +348,20 @@ describe('导入', () => {
     expect(calls.importWechat).toEqual([{ link: 'https://mp.weixin.qq.com/s/AbCd' }])
   })
 
+  it('链接与正文同时给会被客户端拦下 —— 服务端契约只收一个', async () => {
+    const { useCases, calls } = setup()
+
+    // 回归点：历史页导入曾经把「摘要」也当 text 一起发，
+    // 服务端 `url 与 text 二选一` 的校验会让**每一篇**都 422。
+    const result = await useCases.importWechat({
+      link: 'https://mp.weixin.qq.com/s/AbCd',
+      text: '11 月 30 日开跑',
+    })
+
+    expect(result.ok).toBe(false)
+    expect(calls.importWechat).toEqual([])
+  })
+
   it('邮件提升必须有事件 id', async () => {
     const { useCases, calls } = setup()
 

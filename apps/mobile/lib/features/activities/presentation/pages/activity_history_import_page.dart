@@ -90,8 +90,11 @@ class _ActivityHistoryImportPageState
     for (final WechatHistoryArticle article in page.articles) {
       if (!_selected.contains(article.url)) continue;
       try {
+        // 只传链接：服务端契约要求 url 与 text **二选一**，
+        // 同时给两个会被判成入参错误（`WECHAT_IMPORT_SOURCE_REQUIRED` 的另一半）。
+        // 摘要只是列表里的提示，不当作正文提交 —— 正文由服务端取回原文后抽取。
         await ref.read(activitiesActionsProvider).importWechat(
-              WechatImportDraft(url: article.url, text: article.digest),
+              WechatImportDraft(url: article.url),
             );
         imported++;
         if (mounted) setState(() => _imported = imported);

@@ -56,10 +56,8 @@ export default function ActivityHistoryPage() {
     const failures: string[] = []
     try {
       for (const article of picked) {
-        const result = await activities.importWechat({
-          link: article.url,
-          ...(article.digest === null ? {} : { text: article.digest }),
-        })
+        // 只传链接：契约要求 url 与 text 二选一，同时给会被判成入参错误。
+        const result = await activities.importWechat({ link: article.url })
         if (!result.ok) {
           // 一篇失败不拖垮整批：其余继续，最后统一报哪几篇没进去。
           failures.push(`${article.title}：${result.error.message}`)
