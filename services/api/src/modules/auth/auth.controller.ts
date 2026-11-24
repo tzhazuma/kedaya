@@ -1,4 +1,18 @@
-import { Body, Controller, Delete, Get, Headers, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { MODULES, modulePath } from '@kedaya/contracts';
 import { z } from 'zod';
@@ -20,6 +34,7 @@ import {
   type CampusSessionPort as CampusLinkPort,
 } from '../techpie/domain/ports/campus-session.port';
 import { readAuthContext } from './request-context';
+import { CasCodeService } from './application/cas-code.service';
 import { toCampusBindingSummary } from './campus-binding-summary';
 import { AuthService } from './auth.service';
 import { AccountDeletionService } from './application/account-deletion.service';
@@ -28,6 +43,10 @@ import { LocalAuthService } from './local-auth.service';
 const loginSchema = z.object({
   /** 上科大 CAS 回调拿到的 ticket（真实实现里服务端校验后立即丢弃） */
   ticket: z.string().min(1, 'ticket 不能为空').max(512, 'ticket 过长'),
+});
+
+const casExchangeSchema = z.object({
+  code: z.string().min(16).max(128),
 });
 
 const deleteAccountSchema = z.object({
@@ -82,6 +101,7 @@ export class AuthController {
     @Inject(LocalAuthService) private readonly localAuth: LocalAuthService,
     private readonly authService: AuthService,
     private readonly config: ConfigService,
+    private readonly casCodes: CasCodeService,
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     /**
      * 第二级「绑定」的**唯一**实现（techpie 的 `CampusSessionPort`，落 `TechpieLink` 表）。
@@ -93,6 +113,59 @@ export class AuthController {
      */
     @Inject(CAMPUS_LINK_PORT) private readonly campusLinks: CampusLinkPort,
   ) {}
+
+  @Get('cas/callback')
+  @ApiOperation({
+    summary: 'CAS 回调（浏览器跳转）：ticket → 一次性授权码',
+    description:
+      '校验 ticket 后签发会话，但**不把令牌放进 URL**：改成 30 秒单次使用的 code，' +
+      '客户端用 POST /auth/cas/exchange 换回令牌。',
+  })
+  async casCallback(
+    @Query('ticket') ticket: string | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
+    if (ticket === undefined || ticket.trim() === '') {
+      res.status(400).type('text/plain').send('缺少 ticket');
+      return;
+    }
+    try {
+      const session = await this.authService.login(ticket, {});
+      const code = this.casCodes.issue(session);
+      const target = (this.config.get<string>('KEDAYA_CAS_RETURN_URL') ?? '').trim();
+      if (target !== '') {
+        const url = new URL(target);
+        url.searchParams.set('code', code);
+        res.redirect(302, url.toString());
+        return;
+      }
+      res
+        .status(200)
+        .type('text/html')
+        .send(
+          '<!doctype html><meta charset="utf-8"><title>登录成功</title>' +
+            '<p>登录成功。回到可达鸭，粘贴下面的授权码（30 秒内有效）：</p>' +
+            `<p style="font:16px monospace;word-break:break-all">${code}</p>`,
+        );
+    } catch {
+      res
+        .status(401)
+        .type('text/html')
+        .send('<!doctype html><meta charset="utf-8"><p>统一身份认证失败，请回到应用重试。</p>');
+    }
+  }
+
+  @Post('cas/exchange')
+  @ApiOperation({
+    summary: '用一次性授权码换取令牌（CAS 回调的客户端侧）',
+  })
+  casExchange(@ZodBody(casExchangeSchema) body: { code: string }) {
+    const session = this.casCodes.consume(body.code);
+    if (session === null) {
+      throw new UnauthenticatedError('授权码无效或已过期，请重新登录');
+    }
+    return session;
+  }
 
   @Get('cas/login-url')
   @ApiOperation({

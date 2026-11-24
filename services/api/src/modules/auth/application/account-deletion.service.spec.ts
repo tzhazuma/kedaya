@@ -8,6 +8,7 @@ import {
   ValidationError,
 } from '../../../common/errors/app-error';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { CasCodeService } from './cas-code.service';
 import { AuthController } from '../auth.controller';
 import { AuthService } from '../auth.service';
 import { AccountDeletionPrismaRepository } from '../data/account-deletion.prisma-repository';
@@ -487,6 +488,7 @@ function buildAuthController(fake: FakePrisma, service: AccountDeletionService):
     {} as never,
     authService,
     { get: () => undefined } as never,
+    new CasCodeService(),
     users,
     {} as never,
   );

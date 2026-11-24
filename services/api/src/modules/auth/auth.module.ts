@@ -8,6 +8,7 @@ import { CampusIdentityController } from './campus-identity.controller';
 import { CampusIdentityService } from './campus-identity.service';
 import { LocalAuthController } from './local-auth.controller';
 import { LocalAuthService } from './local-auth.service';
+import { CasCodeService } from './application/cas-code.service';
 import { WechatAuthController } from './wechat-auth.controller';
 import { WechatAuthService } from './wechat-auth.service';
 import { ConsoleMailAdapter } from './data/console-mail.adapter';
@@ -81,6 +82,7 @@ import { WECHAT_SESSION_PORT } from './domain/wechat.domain';
     CampusIdentityService,
     MockCampusDataAdapter,
     HttpCampusDataAdapter,
+    CasCodeService,
     HttpCampusAuthProvider,
     MockCampusAuthProvider,
     { provide: CAS_FETCH, useValue: fetch },

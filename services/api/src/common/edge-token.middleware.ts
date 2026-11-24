@@ -33,7 +33,15 @@ export const EDGE_TOKEN_HEADER = 'x-edge-token';
  * 登录口与探活一样**必须豁免** —— 否则没人能拿到第一张通行证。
  * （路径带全局前缀，见 `main.ts` 的 `setGlobalPrefix`。）
  */
-const EXEMPT_PATHS: readonly string[] = ['/health', '/api/v1/edge/login'];
+const EXEMPT_PATHS: readonly string[] = [
+  '/health',
+  '/api/v1/edge/login',
+  // CAS 回调由学校浏览器直接跳过来，不会带我们的共享密钥；
+  // exchange 是"拿第一张票"的客户端侧，同样不能要求已登录。
+  '/api/v1/auth/cas/callback',
+  '/api/v1/auth/cas/exchange',
+  '/api/v1/auth/cas/login-url',
+];
 
 function constantTimeEqual(a: string, b: string): boolean {
   // 长度不同直接 false（长度本身不是秘密：令牌长度固定）
