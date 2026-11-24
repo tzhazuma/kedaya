@@ -72,6 +72,14 @@ const List<CampusService> campusServices = <CampusService>[
     requiresLogin: true,
   ),
   CampusService(
+    id: 'facility',
+    name: '场馆空闲（OA）',
+    url: 'https://oa.shanghaitech.edu.cn/wui/main.jsp?templateId=1',
+    group: CampusServiceGroup.affairs,
+    description: '羽毛球 / 乒乓球 / 网球 / 匹克球真实空闲',
+    requiresLogin: true,
+  ),
+  CampusService(
     id: 'activity',
     name: '学生活动',
     url: 'https://egate.shanghaitech.edu.cn/',

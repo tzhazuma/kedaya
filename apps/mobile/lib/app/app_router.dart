@@ -17,6 +17,7 @@ import '../features/deadlines/presentation/pages/deadlines_page.dart';
 import '../features/dorm_harmony/dorm_harmony_routes.dart';
 import '../features/errand/errand_routes.dart';
 import '../features/facility/facility_routes.dart';
+import '../features/facility/presentation/oa_gym_page.dart';
 import '../features/flea_market/presentation/pages/flea_compose_page.dart';
 import '../features/flea_market/presentation/pages/flea_detail_page.dart';
 import '../features/flea_market/presentation/pages/flea_market_page.dart';
@@ -442,6 +443,12 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
         ...buildWellbeingRoutes(),
         ...buildAiPortraitRoutes(),
         ...facilityRoutes(),
+        GoRoute(
+          path: oaGymRoutePath,
+          name: 'oa-gym',
+          builder: (BuildContext context, GoRouterState state) =>
+              const OaGymPage(),
+        ),
         ...buildPetitionRoutes(),
         GoRoute(
           path: '/flea-market',
