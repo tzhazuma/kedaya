@@ -21,6 +21,7 @@ final class CampusBridgeRequest {
     required this.url,
     this.method = 'GET',
     this.form,
+    this.json,
   });
 
   final String id;
@@ -32,11 +33,15 @@ final class CampusBridgeRequest {
   /// `application/x-www-form-urlencoded` 的字段；GET 时忽略。
   final Map<String, String>? form;
 
+  /// `application/json` 请求体（ELRC 的 rman 接口要 JSON 而不是表单）。
+  final Object? json;
+
   String encode() => jsonEncode(<String, Object?>{
         'id': id,
         'url': url,
         'method': method,
         'form': form,
+        'json': json,
       });
 }
 
@@ -108,7 +113,10 @@ const String campusBridgeScript = r'''
     try {
       var options = { credentials: 'include', method: payload.method || 'GET',
         headers: { 'Accept': 'application/json, text/html;q=0.9, */*;q=0.8' } };
-      if (payload.form && options.method !== 'GET') {
+      if (payload.json !== null && payload.json !== undefined) {
+        options.body = JSON.stringify(payload.json);
+        options.headers['Content-Type'] = 'application/json';
+      } else if (payload.form && options.method !== 'GET') {
         options.body = new URLSearchParams(payload.form);
         options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
       }

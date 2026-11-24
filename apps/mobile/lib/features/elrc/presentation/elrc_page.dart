@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../../../app/app_providers.dart';
 import '../../../presentation/components/kedaya_shell.dart';
 import '../../../presentation/theme/kedaya_theme_extension.dart';
 import '../../../presentation/theme/kedaya_tokens.dart';
@@ -17,14 +19,14 @@ import '../domain/elrc_models.dart';
 ///
 /// 页面先加载 ELRC 的录播首页（用户在这里完成登录），再通过同源桥拉课程列表；
 /// 点开某门课就地展开课次。所有请求都在页面内发，Dart 侧不接触 cookie。
-class ElrcPage extends StatefulWidget {
+class ElrcPage extends ConsumerStatefulWidget {
   const ElrcPage({super.key});
 
   @override
-  State<ElrcPage> createState() => _ElrcPageState();
+  ConsumerState<ElrcPage> createState() => _ElrcPageState();
 }
 
-class _ElrcPageState extends State<ElrcPage> {
+class _ElrcPageState extends ConsumerState<ElrcPage> {
   static const String _entry =
       'https://elrc.shanghaitech.edu.cn/learn/videoreview?type=1';
 
@@ -147,6 +149,60 @@ class _ElrcPageState extends State<ElrcPage> {
     }
   }
 
+  Future<void> _openSources(ElrcCourse course, ElrcLesson lesson) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    try {
+      final List<ElrcSource> sources = await _client.sources(course, lesson);
+      if (!mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        builder: (BuildContext sheetContext) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(KedaYaTokens.space3),
+                child: Text(
+                  '${course.name} · ${lesson.title}',
+                  style: TextStyle(
+                    fontSize: KedaYaTokens.fontSizeSm,
+                    color: sheetContext.kedayaColors.textMuted,
+                  ),
+                ),
+              ),
+              for (final ElrcSource source in sources)
+                ListTile(
+                  leading: const Icon(Icons.play_circle_outline),
+                  title: Text(source.label),
+                  subtitle: Text(
+                    source.uri.toString(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  onTap: () async {
+                    Navigator.of(sheetContext).pop();
+                    final bool opened = await ref
+                        .read(webViewProvider)
+                        .openOneTimeUrl(source.uri.toString());
+                    if (!opened) {
+                      await ref
+                          .read(shareProvider)
+                          .copyToClipboard(source.uri.toString());
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('已复制播放地址')),
+                      );
+                    }
+                  },
+                ),
+            ],
+          ),
+        ),
+      );
+    } on ElrcException catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final KedaYaColors colors = context.kedayaColors;
@@ -261,26 +317,30 @@ class _ElrcPageState extends State<ElrcPage> {
                                     right: KedaYaTokens.space4,
                                     bottom: KedaYaTokens.space2,
                                   ),
-                                  child: Row(
-                                    children: <Widget>[
-                                      Expanded(
-                                        child: Text(
-                                          '${lesson.title}'
-                                          '${lesson.weekDate.isEmpty ? '' : ' · ${lesson.weekDate}'}',
-                                          style: TextStyle(
-                                            fontSize: KedaYaTokens.fontSizeSm,
-                                            color: colors.text,
+                                  child: InkWell(
+                                    onTap: () => _openSources(course, lesson),
+                                    child: Row(
+                                      children: <Widget>[
+                                        Expanded(
+                                          child: Text(
+                                            '${lesson.title}'
+                                            '${lesson.weekDate.isEmpty ? '' : ' · ${lesson.weekDate}'}',
+                                            style: TextStyle(
+                                              fontSize: KedaYaTokens.fontSizeSm,
+                                              color: colors.text,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      Text(
-                                        '${lesson.scheduleIds.length} 个机位',
-                                        style: TextStyle(
-                                          fontSize: KedaYaTokens.fontSizeXs,
-                                          color: colors.textMuted,
+                                        Text(
+                                          '${lesson.scheduleIds.length} 个机位',
+                                          style: TextStyle(
+                                            fontSize: KedaYaTokens.fontSizeXs,
+                                            color: colors.textMuted,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                        const Icon(Icons.play_arrow, size: 18),
+                                      ],
+                                    ),
                                   ),
                                 ),
                         ],
