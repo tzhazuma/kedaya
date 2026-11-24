@@ -1,6 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/campus/campus_cookie_vault.dart';
+import '../data/campus/ecard_api_client.dart';
+import '../data/campus/ecard_bind_config.dart';
+import '../data/campus/ecard_link_store.dart';
+import '../data/campus/ecard_transport.dart';
 import '../data/api/dio_client.dart';
 import '../data/api/kedaya_api_client.dart';
 import '../data/mock/dev_unified_identity.dart';
@@ -25,6 +30,7 @@ import '../data/mock/mock_techpie_repository.dart';
 import '../data/mock/mock_webview_port.dart';
 import '../data/mock/mock_wellbeing_repository.dart';
 import '../data/mock/mock_wildlife_repository.dart';
+import '../data/repositories/ecard_direct_campus_card_repository.dart';
 import '../data/repositories/remote_activities_repository.dart';
 import '../data/repositories/remote_auth_repository.dart';
 import '../data/repositories/remote_buddy_repository.dart';
@@ -201,6 +207,29 @@ final class AppRuntime {
   /// 最近一次后台刷新的失败摘要（诊断用，绝不弹给用户 —— 契约 §8 静默降级）。
   String? lastBackgroundError;
 
+  /// 校园卡端口的选型：注入密钥的构建走客户端直连，否则走远端端点。
+  ///
+  /// 判据只看**构建期配置**，不看运行时开关：没有密钥就不可能完成绑定，
+  /// 此时挂上直连仓库只会让「未开通」按钮变成一次注定失败的请求。
+  static CampusCardPort _campusCard(KedayaApiPort api) {
+    final EcardBindConfig config = EcardBindConfig.fromDartDefine();
+    if (!config.isConfigured) return RemoteCampusCardRepository(api);
+
+    final DioEcardTransport transport = DioEcardTransport();
+    final CampusCookieVault cookies = SecureCookieVault();
+    return EcardDirectCampusCardRepository(
+      clientFactory: (String openId, String? cookieHeader) => EcardApiClient(
+        transport: transport.transport,
+        openId: openId,
+        baseUrl: config.baseUrl,
+        cookieHeader: cookieHeader,
+      ),
+      linkStore: SecureEcardLinkStore(),
+      cookieReader: (String host) => cookies.read(host),
+      host: Uri.parse(config.baseUrl).host,
+    );
+  }
+
   final List<Future<void> Function()> _disposers;
 
   /// mock 运行时：零网络、零平台插件，`git clone` 后直接可跑（契约 §7 硬规则 4）。
@@ -321,7 +350,9 @@ final class AppRuntime {
       // 假设，形状登记在 `remote_teabreak_repository.dart` 的注释与交付说明里。
       teabreak: RemoteTeabreakRepository(api),
       tts: RemoteTtsRepository(api),
-      campusCard: RemoteCampusCardRepository(api),
+      // 校园卡：注入绑定密钥的构建走**客户端直连**（架构 A）；
+      // 没注入时维持远端端点，避免出现一个注定超时的入口。
+      campusCard: _campusCard(api),
       webView: const MethodChannelWebView(),
       mediaPicker: ImagePickerMediaPicker(),
       location: const MethodChannelLocation(),

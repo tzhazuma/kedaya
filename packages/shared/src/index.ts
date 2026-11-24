@@ -30,6 +30,7 @@ export * from "./zhishu";
 // ---- 从同学项目合并（见 docs/architecture/12-merged-from-classmates.md）----
 export * from "./deadline-parse-html";
 export * from "./wechat-article";
+export * from "./wechat-profile-list";
 export * from "./deadline-nextddl-week";
 export * from "./deadline-parse-gradescope";
 export * from "./deadline-parse-blackboard";

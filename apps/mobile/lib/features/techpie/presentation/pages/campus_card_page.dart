@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/app_providers.dart';
 import '../../../../application/session_controller.dart';
+import '../../../../data/campus/ecard_bind_config.dart';
 import '../../../../data/mock/mock_controls.dart';
 import '../../../../domain/models/campus_card.dart';
 import '../../../../presentation/components/async_state_view.dart';
@@ -14,6 +15,7 @@ import '../../../../presentation/components/state_views.dart';
 import '../../../../presentation/theme/kedaya_theme_extension.dart';
 import '../../../../presentation/theme/kedaya_tokens.dart';
 import '../../application/techpie_providers.dart';
+import '../components/ecard_bind_dialog.dart';
 import '../components/techpie_cards.dart';
 
 /// 校园卡页（路由 `/campus-card`）。
@@ -132,6 +134,7 @@ class _OpenBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final KedaYaColors colors = context.kedayaColors;
     final bool isMock = ref.watch(mockControlsProvider) != null;
+    final bool bindConfigured = EcardBindConfig.fromDartDefine().isConfigured;
     final bool needsRebind = snapshot.link.state.needsRebind;
     return ListView(
       padding: const EdgeInsets.all(KedaYaTokens.space4),
@@ -178,11 +181,40 @@ class _OpenBody extends ConsumerWidget {
                   icon: const Icon(Icons.qr_code, size: 18),
                   label: const Text('（mock）模拟 eCard 授权回调并开通'),
                 )
+              else if (bindConfigured)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    FilledButton.icon(
+                      onPressed: () async {
+                        final bool? linked =
+                            await showEcardBindDialog(context);
+                        if (linked == true) {
+                          await ref
+                              .read(campusCardControllerProvider.notifier)
+                              .refresh();
+                        }
+                      },
+                      icon: const Icon(Icons.dialpad, size: 18),
+                      label: const Text('输入一卡通小程序的绑定码'),
+                    ),
+                    const SizedBox(height: KedaYaTokens.space2),
+                    Text(
+                      '绑定码在微信「上科大一卡通」小程序首页的「绑定码」入口。'
+                      '一次性有效，过期后重新获取即可。',
+                      style: TextStyle(
+                        fontSize: KedaYaTokens.fontSizeXs,
+                        height: KedaYaTokens.lineHeightNormal,
+                        color: colors.textMuted,
+                      ),
+                    ),
+                  ],
+                )
               else
                 Text(
-                  '开通需要一个真实的 OPENID，它必须来自 eCard 官方授权流程。'
-                  '原生侧授权流程尚未实现，因此真实运行时这里没有可用按钮 ——'
-                  '本端不伪造 OPENID。',
+                  '本构建没有注入绑定密钥（KEDAYA_ECARD_BIND_TOKEN），'
+                  '因此这里没有可用入口。正式包会在构建时注入，'
+                  '届时可用小程序绑定码完成开通 —— 本端不伪造 OPENID。',
                   style: TextStyle(
                     fontSize: KedaYaTokens.fontSizeXs,
                     height: KedaYaTokens.lineHeightNormal,
