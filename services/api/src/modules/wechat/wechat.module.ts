@@ -2,7 +2,10 @@ import { Module } from "@nestjs/common";
 
 import { WechatController } from "./wechat.controller";
 import { WechatArticleService } from "./application/wechat-article.service";
-import { WechatOfficialAccountService } from "./application/wechat-official-account.service";
+import {
+  WECHAT_FETCH,
+  WechatOfficialAccountService,
+} from "./application/wechat-official-account.service";
 
 /**
  * 公众号文章接入。
@@ -20,7 +23,11 @@ import { WechatOfficialAccountService } from "./application/wechat-official-acco
  */
 @Module({
   controllers: [WechatController],
-  providers: [WechatArticleService, WechatOfficialAccountService],
+  providers: [
+    WechatArticleService,
+    WechatOfficialAccountService,
+    { provide: WECHAT_FETCH, useValue: fetch },
+  ],
   exports: [WechatArticleService, WechatOfficialAccountService],
 })
 export class WechatModule {}

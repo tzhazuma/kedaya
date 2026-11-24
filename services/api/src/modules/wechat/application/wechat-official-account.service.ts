@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
 import {
@@ -26,15 +26,22 @@ interface TokenCache {
   expiresAt: number;
 }
 
+export const WECHAT_FETCH = "WECHAT_FETCH";
+
 @Injectable()
 export class WechatOfficialAccountService {
   private readonly configs: OfficialAccountConfig[];
   private readonly tokens = new Map<string, TokenCache>();
 
+  private readonly fetcher: typeof fetch;
+
   constructor(
     config: ConfigService,
-    private readonly fetcher: typeof fetch = fetch,
+    // 默认参数在 Nest 里**不是**可选依赖：运行时会按 index 1 去找 provider 并报
+    // UnknownDependenciesException（测试直接 new 所以发现不了）。用显式 token + Optional。
+    @Optional() @Inject(WECHAT_FETCH) fetcher?: typeof fetch,
   ) {
+    this.fetcher = fetcher ?? fetch;
     this.configs = parseAccounts(
       config.get<string>("WECHAT_OFFICIAL_ACCOUNTS"),
     );
