@@ -449,7 +449,10 @@ function findRegistrationUrl(
  * 标题 / 证据 / 去重
  * ------------------------------------------------------------------ */
 
-const DETAIL_LABEL_RE = /^(?:时间|地点|地址|场地|报名|截止|主办|承办|组织|链接|扫码|联系)\s*[：:]/;
+// 「主讲人：张三」是很常见的详情行。漏了它就会被 isHeadingLine 当成标题，
+// 于是 sectionBounds 在此截断，后面的「地点：…」永远进不了上下文。
+const DETAIL_LABEL_RE =
+  /^(?:时间|地点|地址|场地|报名|截止|主办|承办|组织|链接|扫码|联系|主讲人|主讲嘉宾|主讲|报告人|讲者|嘉宾|主持人)\s*[：:]/;
 const ACTION_PREFIX_RE = /^(?:扫码|报名|参加|参与|名额|截止|请|点击|关注)/;
 
 function isHeadingLine(text: string): boolean {
@@ -482,6 +485,10 @@ function findHeadingTitle(
 
 const TIME_ONLY_HINT_RE =
   /(\d{1,2}\s*[:：]\s*\d{2})|(\d{1,2}\s*月\s*\d{1,2}\s*[日号])|(\d{4}\s*[-/年]\s*\d{1,2})/;
+/** 活动「回顾」语气词：这类文字后面不会再有可报名/可参加的活动。 */
+const RECAP_HINT_RE =
+  /(成功举办|顺利举办|已举办|圆满(?:结束|落幕)|落下帷幕|吸引了[^。]{0,12}(?:参加|参与)|现场气氛|回顾)/;
+
 const PLACE_HINT_RE = /(地点|地址|场地|教室|楼|馆|报告厅|会议室|线上|腾讯会议|zoom)/i;
 
 /**
@@ -502,10 +509,22 @@ function pickActivityLines(lines: readonly string[]): string[] {
     const text = lines[i]?.trim() ?? '';
     if (text.length < 8 || !TIME_ONLY_HINT_RE.test(text)) continue;
 
-    const before = lines[i - 1]?.trim() ?? '';
-    const after = lines[i + 1]?.trim() ?? '';
-    if (PLACE_HINT_RE.test(before) || PLACE_HINT_RE.test(after)) {
-      picked.add(text);
+    // 窗口取 ±2：通知里常见「时间… / 主讲人… / 地点…」三行连排，
+    // 只认相邻一行会漏掉主讲人占位的情况。
+    const near: string[] = [];
+    for (let d = 1; d <= 2; d += 1) {
+      const before = lines[i - d]?.trim() ?? '';
+      const after = lines[i + d]?.trim() ?? '';
+      if (before !== '') near.push(before);
+      if (after !== '') near.push(after);
+    }
+    if (near.some((value) => PLACE_HINT_RE.test(value))) {
+      // 放宽窗口后会把「4月10日…成功举办」这类回顾也捞进来。
+      // 判据用**语气词**而不是日期先后：缺年份的过去日期在本项目里
+      // 明确要求「留在今年并产出候选」（见 extract 测试），不能按时间拦。
+      if (!RECAP_HINT_RE.test(text) && !near.some((value) => RECAP_HINT_RE.test(value))) {
+        picked.add(text);
+      }
       continue;
     }
 

@@ -429,6 +429,40 @@ describe('extractActivityCandidates —— 分行与多活动', () => {
   });
 });
 
+describe('extractActivityCandidates —— 时间与地点的距离', () => {
+  it('时间行与地点行相隔一行（中间是主讲人）也能识别', () => {
+    const spaced = article({
+      bodyLines: [
+        '【学术讲座】大模型与推理',
+        '时间：2026年10月25日 14:00',
+        '主讲人：张三 教授',
+        '地点：信息学院 1-101 报告厅',
+      ],
+    });
+    const candidates = extractActivityCandidates(spaced, {
+      now: NOW,
+      timeZone: 'Asia/Shanghai',
+    });
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.location).toContain('信息学院');
+  });
+
+  it('活动回顾（成功举办/现场气氛）不产出候选', () => {
+    const recap = article({
+      bodyLines: [
+        '弘扬科学家精神，周向宇院士开展数学科普讲座',
+        '4月10日，温州大学邀请周向宇院士开设讲座，吸引了众多师生参加。',
+        '讲座在图书馆报告厅成功举办，现场气氛热烈。',
+      ],
+    });
+    const candidates = extractActivityCandidates(recap, {
+      now: NOW,
+      timeZone: 'Asia/Shanghai',
+    });
+    expect(candidates).toHaveLength(0);
+  });
+});
+
 describe('extractActivityCandidates —— 缺年份与字段边界', () => {
   it('缺年份的过去日期留在今年，不推下一年', () => {
     const past = article({
