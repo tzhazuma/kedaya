@@ -85,6 +85,25 @@ TechPie 能这么做是因为它用 Dio（原生 HTTP）直接发请求，会话
 已完成的地基：`EcardCipher`（AES-ECB/PKCS7 + 头变换，9 例测试）。
 下一步需要先解决 CAS 登录（拿到各站 cookie），再实现加密存储的 cookie vault。
 
+## 3.3 校园卡绑定依赖外部服务（2026-11-24 核实）
+
+读完 TechPie 的绑定链路后确认：`openid` 不是它自己算的，而是来自一个
+**第三方绑定服务**：
+
+- 端点：`https://ecard.shanghaitech.edu.cn/__ecard_bind/exchange`
+- 请求要带一个写死在客户端里的共享密钥（`bindToken`）
+- 该端点由 GeekPie 自己的部署提供（TLS 固定 + Android 隧道镜像指向它）
+- 小程序里展示一次性绑定码，客户端拿码去 exchange 换 `openid`
+
+也就是说，**校园卡真实绑定不能靠移植代码独立完成**，需要以下之一：
+
+1. GeekPie 授权我们访问他们的 `/__ecard_bind` 服务（并接受共用那份密钥）；
+2. 我们自己实现同等的绑定后端（微信小程序 + WeChat OAuth + 他们的换码协议）；
+3. 校园卡系统提供对第三方开放的正式 OAuth/OPENID 接入。
+
+在此之前，我们已完成且可验证的是：`EcardCipher`、`CampusCookieVault`、
+`EcardApiClient`（账户/流水，7 例测试）。**不会**用 mock 数据冒充真实余额。
+
 ## 4. 现在就能做的（不依赖登录）
 
 - 课表 / 考试 / DDL / ICS 导出 / 场馆本机演示 / 营养 / 失物 / 跳蚤 等本机功能
