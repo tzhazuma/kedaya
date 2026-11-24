@@ -1,6 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/ai_portrait/presentation/ai_portrait_routes.dart';
+import '../features/campus_map/campus_map_routes.dart';
+import '../features/campus_map/presentation/pages/campus_map_page.dart';
+import '../features/campus_map/presentation/pages/campus_place_detail_page.dart';
+import '../features/canteen/canteen_routes.dart';
+import '../features/deadlines/presentation/pages/deadline_compose_page.dart';
+import '../features/deadlines/presentation/pages/deadlines_page.dart';
+import '../features/dorm_harmony/dorm_harmony_routes.dart';
+import '../features/errand/errand_routes.dart';
+import '../features/facility/facility_routes.dart';
+import '../features/flea_market/presentation/pages/flea_compose_page.dart';
+import '../features/flea_market/presentation/pages/flea_detail_page.dart';
+import '../features/flea_market/presentation/pages/flea_market_page.dart';
+import '../features/lost_found/lost_found_routes.dart';
+import '../features/petition/presentation/petition_routes.dart';
+import '../features/schedule/presentation/pages/schedule_page.dart';
+import '../features/takeout_guard/takeout_guard_routes.dart';
+import '../features/wellbeing/presentation/wellbeing_routes.dart';
 import '../features/activities/presentation/pages/activities_page.dart';
 import '../features/activities/presentation/pages/activity_compose_page.dart';
 import '../features/activities/presentation/pages/activity_detail_page.dart';
@@ -380,6 +398,72 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
           name: 'campus-card',
           builder: (BuildContext context, GoRouterState state) =>
               const CampusCardPage(),
+        ),
+        // 2026-11-24 批次：15 个模块的落地路由。
+        ...takeoutGuardRoutes,
+        ...lostFoundRoutes,
+        ...errandRoutes,
+        ...dormHarmonyRoutes,
+        ...canteenRoutes,
+        ...buildWellbeingRoutes(),
+        ...buildAiPortraitRoutes(),
+        ...facilityRoutes(),
+        ...buildPetitionRoutes(),
+        GoRoute(
+          path: '/flea-market',
+          name: 'flea-market',
+          builder: (BuildContext context, GoRouterState state) =>
+              const FleaMarketPage(),
+          routes: <RouteBase>[
+            GoRoute(
+              path: 'new',
+              name: 'flea-market-new',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const FleaComposePage(),
+            ),
+            GoRoute(
+              path: ':id',
+              name: 'flea-market-detail',
+              builder: (BuildContext context, GoRouterState state) =>
+                  FleaDetailPage(
+                      listingId: state.pathParameters['id'] ?? ''),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: CampusMapRoutes.list,
+          name: CampusMapRoutes.listName,
+          builder: (BuildContext context, GoRouterState state) =>
+              const CampusMapPage(),
+          routes: <RouteBase>[
+            GoRoute(
+              path: ':id',
+              name: CampusMapRoutes.detailName,
+              builder: (BuildContext context, GoRouterState state) =>
+                  CampusPlaceDetailPage(
+                      placeId: state.pathParameters['id'] ?? ''),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/schedule',
+          name: 'schedule',
+          builder: (BuildContext context, GoRouterState state) =>
+              const SchedulePage(),
+        ),
+        GoRoute(
+          path: '/deadlines',
+          name: 'deadlines',
+          builder: (BuildContext context, GoRouterState state) =>
+              const DeadlinesPage(),
+          routes: <RouteBase>[
+            GoRoute(
+              path: 'new',
+              name: 'deadline-new',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const DeadlineComposePage(),
+            ),
+          ],
         ),
         GoRoute(
           path: '/module/:moduleId',

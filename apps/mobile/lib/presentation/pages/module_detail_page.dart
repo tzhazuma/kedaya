@@ -24,6 +24,19 @@ const Map<String, String> implementedModuleRoutes = <String, String>{
   'activities': '/activities',
   'zhishu': '/zhishu',
   'notifications': '/notifications',
+  'takeout-guard': '/takeout-guard',
+  'lost-found': '/lost-found',
+  'flea-market': '/flea-market',
+  'errand': '/errand',
+  'dorm-harmony': '/dorm-harmony',
+  'schedule': '/schedule',
+  'deadlines': '/deadlines',
+  'canteen': '/canteen',
+  'campus-map': '/campus-map',
+  'facility': '/facility',
+  'petition': '/petition',
+  'wellbeing': '/wellbeing',
+  'ai-portrait': '/ai-portrait',
 };
 
 /// 模块落地页 —— **注册表驱动**，不含任何伪造的业务数据。
@@ -179,6 +192,44 @@ class ModuleDetailPage extends ConsumerWidget {
                         '**独立 OPENID 通道**（规格 §2.5），与校园会话代持完全解耦，'
                         '因此不产生任何 CASTGC。未开通时接口返回 409 '
                         'CAMPUS_BINDING_REQUIRED（不是 401）。',
+                    'takeout-guard' =>
+                      '本模块已实现：本人可见的外卖报备记录（新增 / 标记已解决 / 删除），'
+                          '本机演示，不会通知任何人，也不做公开举报墙。',
+                    'lost-found' =>
+                      '本模块已实现：寻物 / 招领列表 + 搜索 + 状态筛选 + 详情 + 标记解决，'
+                          '联系方式只存本机，公开前请自行脱敏。',
+                    'flea-market' =>
+                      '本模块已实现：二手列表（分类 / 搜索 / 价格排序）+ 发布 + 详情 + '
+                          '复制联系文案 + 下架/重新上架，全部本机演示数据。',
+                    'errand' =>
+                      '本模块已实现：待接单 / 进行中 / 已完成三 Tab、发布、详情与接单→完成流转；'
+                          '演示：不会真的通知对方。',
+                    'dorm-harmony' =>
+                      '本模块已实现：匿名倾诉板（楼栋筛选 / 匿名发帖 / 回复）。'
+                          '不点名、不做公开举报墙；涉及安全请直接联系辅导员/保卫处。',
+                    'schedule' =>
+                      '本模块已实现：今天 / 本周课表，进行中课程高亮；演示课表，真实课表需接教务。',
+                    'deadlines' =>
+                      '本模块已实现：DDL 列表（排序 / 筛选 / 逾期提示 / 新增 / 完成 / 删除）+ 统计条；'
+                          'DDL 不写入课程表。',
+                    'canteen' =>
+                      '本模块已实现：营养管家（今日汇总 / 按食堂看菜品 / 记一餐 / 今日记录），'
+                          '营养值为演示估算；记录只保存在本机。',
+                    'campus-map' =>
+                      '本模块已实现：校园地点目录（分类 / 搜索 / 详情 / 复制位置与坐标）；'
+                          '未接入地图 SDK，坐标仅演示。',
+                    'facility' =>
+                      '本模块已实现：场馆列表 + 日期/时段选择 + 预约 + 我的预约与取消，'
+                          '含同场馆同时段冲突检测；演示数据，不会真的锁定场馆。',
+                    'petition' =>
+                      '本模块已实现：建议与诉求（提交 / 我的提交 / 状态时间线 / 撤回）；'
+                          '演示版：只保存在本机，不会发送给学校。',
+                    'wellbeing' =>
+                      '本模块已实现：首屏热线卡 + 二次同意门 + 本机预约 + 我的预约 + 清空记录；'
+                          '只做倾听与预约，不做诊断 / 治疗 / 量表。',
+                    'ai-portrait' =>
+                      '本模块已实现：只读画像 + 标签来源与更新时间 + 空态 + 删除本机画像；'
+                          '心理支持与宿舍矛盾不参与画像。',
                     _ => '本模块尚未实现：只有冻结契约里的路由与权限信息，'
                         '没有页面、没有 mock 数据、没有假成功。',
                   },
