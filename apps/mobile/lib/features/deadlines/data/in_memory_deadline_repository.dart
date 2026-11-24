@@ -14,6 +14,9 @@ abstract interface class DeadlineRepository {
   /// 勾选 / 取消勾选完成。
   Future<DeadlineItem> setCompleted(String id, bool completed);
 
+  /// 覆盖式更新（保留 id 与 completed 之外的字段）。
+  Future<DeadlineItem> update(String id, DeadlineDraft draft);
+
   /// 删除（调用方负责二次确认）。
   Future<void> delete(String id);
 }
@@ -52,6 +55,25 @@ final class InMemoryDeadlineRepository implements DeadlineRepository {
   Future<DeadlineItem> setCompleted(String id, bool completed) async {
     final int index = _indexOf(id);
     final DeadlineItem next = _items[index].copyWith(completed: completed);
+    _items[index] = next;
+    return next;
+  }
+
+  @override
+  Future<DeadlineItem> update(String id, DeadlineDraft draft) async {
+    final int index = _indexOf(id);
+    // 不复用 copyWith：它把 null 当成「保留原值」，而编辑时清空来源/备注
+    // 是合法操作，必须真的写回 null。
+    final DeadlineItem previous = _items[index];
+    final DeadlineItem next = DeadlineItem(
+      id: previous.id,
+      title: draft.normalizedTitle,
+      kind: draft.kind,
+      dueAt: draft.dueAt,
+      source: draft.normalizedSource,
+      note: draft.normalizedNote,
+      completed: previous.completed,
+    );
     _items[index] = next;
     return next;
   }

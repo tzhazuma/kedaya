@@ -56,6 +56,14 @@ final class DeadlinesController extends AsyncNotifier<List<DeadlineItem>> {
   }
 
   /// 删除（页面在调用前已做二次确认）。
+  /// 编辑既有 DDL；校验规则与新增共用 [validateDeadlineDraft]。
+  ///
+  /// 名字不能叫 `update`：`AsyncNotifier` 已有同签名族的方法，会变成非法覆写。
+  Future<void> updateItem(String id, DeadlineDraft draft) async {
+    await ref.read(deadlineRepositoryProvider).update(id, draft);
+    ref.invalidateSelf();
+  }
+
   Future<void> delete(String id) async {
     await ref.read(deadlineRepositoryProvider).delete(id);
     ref.invalidateSelf();

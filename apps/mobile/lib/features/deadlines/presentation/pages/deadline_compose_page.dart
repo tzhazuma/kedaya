@@ -16,7 +16,10 @@ import '../../application/deadlines_providers.dart';
 ///
 /// 表单只写本机 DDL 列表：**不写入课程表**。
 class DeadlineComposePage extends ConsumerStatefulWidget {
-  const DeadlineComposePage({super.key});
+  const DeadlineComposePage({this.initial, super.key});
+
+  /// 传入即进入「编辑」模式（id / completed 保留，其余字段用草稿覆盖）。
+  final DeadlineItem? initial;
 
   @override
   ConsumerState<DeadlineComposePage> createState() =>
@@ -37,7 +40,16 @@ class _DeadlineComposePageState extends ConsumerState<DeadlineComposePage> {
   @override
   void initState() {
     super.initState();
-    _dueAt = _defaultDueAt(ref.read(deadlinesClockProvider)());
+    final DeadlineItem? initial = widget.initial;
+    if (initial != null) {
+      _title.text = initial.title;
+      _source.text = initial.source ?? '';
+      _note.text = initial.note ?? '';
+      _kind = initial.kind;
+      _dueAt = initial.dueAt;
+    } else {
+      _dueAt = _defaultDueAt(ref.read(deadlinesClockProvider)());
+    }
   }
 
   @override
@@ -69,10 +81,23 @@ class _DeadlineComposePageState extends ConsumerState<DeadlineComposePage> {
 
     setState(() => _submitting = true);
     try {
-      await ref.read(deadlinesControllerProvider.notifier).add(draft);
+      final DeadlinesController controller =
+          ref.read(deadlinesControllerProvider.notifier);
+      final DeadlineItem? initial = widget.initial;
+      if (initial == null) {
+        await controller.add(draft);
+      } else {
+        await controller.updateItem(initial.id, draft);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('已添加：${draft.normalizedTitle}')),
+        SnackBar(
+          content: Text(
+            initial == null
+                ? '已添加：${draft.normalizedTitle}'
+                : '已保存：${draft.normalizedTitle}',
+          ),
+        ),
       );
       Navigator.of(context).maybePop(true);
     } on Object catch (error) {

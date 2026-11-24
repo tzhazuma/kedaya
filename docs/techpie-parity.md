@@ -21,7 +21,7 @@
 | 学期考试 | ✅ 本轮新增 | 课表第三个 tab，倒计时 + 座位 |
 | ICS 导出（课表 / 考试 / DDL） | ✅ 本轮新增 | `domain/models/ics_export.dart`，复制到剪贴板 |
 | DDL 聚合 + 倒计时 | ✅ 已有 | 本机新增/完成/删除；**不接 Gradescope** |
-| 自定义 DDL | ❌ 未做 | 下一批：本机 CRUD 已有新增页，缺编辑 |
+| 自定义 DDL | ✅ 已有 | 新增 / 编辑（点卡片进入） / 完成 / 删除，全部本机 |
 | Gradescope 作业同步 | ⛔ 不做（需登录态） | 需要用户 Gradescope 会话；属未公开接口 |
 | iOS/macOS 桌面小组件 | ⛔ 不在本仓库范围 | 需要原生 Widget Extension |
 | 校园卡：绑定 / 余额 / 流水 | ⚠️ 只有 mock 切片 | `campus-card` 走 CampusCardPort，未接真实协议 |

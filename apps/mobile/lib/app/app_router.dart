@@ -7,6 +7,7 @@ import '../features/campus_map/presentation/pages/campus_map_page.dart';
 import '../features/campus_map/presentation/pages/campus_place_detail_page.dart';
 import '../features/canteen/canteen_routes.dart';
 import '../features/deadlines/presentation/pages/deadline_compose_page.dart';
+import '../features/deadlines/presentation/pages/deadline_edit_page.dart';
 import '../features/deadlines/presentation/pages/deadlines_page.dart';
 import '../features/dorm_harmony/dorm_harmony_routes.dart';
 import '../features/errand/errand_routes.dart';
@@ -471,6 +472,13 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
               name: 'deadline-new',
               builder: (BuildContext context, GoRouterState state) =>
                   const DeadlineComposePage(),
+            ),
+            GoRoute(
+              path: ':id/edit',
+              name: 'deadline-edit',
+              builder: (BuildContext context, GoRouterState state) =>
+                  DeadlineEditPage(
+                      itemId: state.pathParameters['id'] ?? ''),
             ),
           ],
         ),

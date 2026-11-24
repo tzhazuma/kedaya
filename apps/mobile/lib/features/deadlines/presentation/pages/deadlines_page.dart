@@ -220,14 +220,18 @@ class _DeadlinesPageState extends ConsumerState<DeadlinesPage> {
                         const SizedBox(height: KedaYaTokens.space2),
                     itemBuilder: (BuildContext context, int index) {
                       final DeadlineItem item = items[index];
-                      return DeadlineCard(
-                        key: ValueKey<String>('deadline-${item.id}'),
-                        item: item,
-                        now: now,
-                        busy: _busy.contains(item.id),
-                        onToggle: (bool completed) =>
-                            unawaited(_toggle(item, completed)),
-                        onDelete: () => unawaited(_delete(item)),
+                      return GestureDetector(
+                        onTap: () =>
+                            context.push('/deadlines/${item.id}/edit'),
+                        child: DeadlineCard(
+                          key: ValueKey<String>('deadline-${item.id}'),
+                          item: item,
+                          now: now,
+                          busy: _busy.contains(item.id),
+                          onToggle: (bool completed) =>
+                              unawaited(_toggle(item, completed)),
+                          onDelete: () => unawaited(_delete(item)),
+                        ),
                       );
                     },
                   ),
