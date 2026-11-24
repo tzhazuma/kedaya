@@ -30,7 +30,13 @@ List<String> dartSourcesUnder(String relativeDir) {
   final List<String> out = <String>[];
   for (final FileSystemEntity entity in dir.listSync(recursive: true)) {
     if (entity is! File || !entity.path.endsWith('.dart')) continue;
-    out.add(entity.path.substring(root.path.length + 1));
+    // Windows 上分隔符是反斜杠，而所有断言都按 POSIX 写（lib/app/）；
+    // 不归一化会让「exclude lib/app/」这类规则在 Windows 上静默失效。
+    out.add(
+      entity.path
+          .substring(root.path.length + 1)
+          .replaceAll(Platform.pathSeparator, '/'),
+    );
   }
   out.sort();
   return out;

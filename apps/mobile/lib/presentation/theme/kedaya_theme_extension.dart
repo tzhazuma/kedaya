@@ -37,6 +37,50 @@ final class KedaYaColors extends ThemeExtension<KedaYaColors> {
   /// 暗色主题（契约 §11.5）。
   static final KedaYaColors dark = KedaYaColors._fromTokens(isDark: true);
 
+  /// Flutter 端「现代」亮色（2026-11-24 视觉改版）。
+  ///
+  /// 只影响 `apps/mobile`：不改 `packages/design-tokens/tokens.json`，
+  /// 因为小程序/Web 仍使用「校园贴纸簿」体系（根 AGENTS.md 要求两端独立）。
+  /// 取色参考 TechPie 的分组表面 + iOS 系统色，品牌仍是可达鸭琥珀色。
+  static const KedaYaColors modernLight = KedaYaColors(
+    brand: Color(0xFFE8A33D),
+    brandStrong: Color(0xFFC6821F),
+    brandSoft: Color(0xFFFBEED6),
+    ink: Color(0xFF171717),
+    inkSoft: Color(0xFF3A3A3C),
+    bg: Color(0xFFF2F2F7),
+    surface: Color(0xFFFFFFFF),
+    surfaceAlt: Color(0xFFF2F2F7),
+    text: Color(0xFF171717),
+    textMuted: Color(0xFF8E8E93),
+    textInverse: Color(0xFFFFFFFF),
+    border: Color(0xFFE5E5EA),
+    success: Color(0xFF34C759),
+    warning: Color(0xFFFF9F0A),
+    danger: Color(0xFFFF3B30),
+    info: Color(0xFF007AFF),
+  );
+
+  /// Flutter 端「现代」暗色（AMOLED 友好的中性黑）。
+  static const KedaYaColors modernDark = KedaYaColors(
+    brand: Color(0xFFF5C065),
+    brandStrong: Color(0xFFE8A33D),
+    brandSoft: Color(0xFF3A2F12),
+    ink: Color(0xFF0A0A0A),
+    inkSoft: Color(0xFF1C1C1E),
+    bg: Color(0xFF0A0A0A),
+    surface: Color(0xFF1C1C1E),
+    surfaceAlt: Color(0xFF2C2C2E),
+    text: Color(0xFFF2F2F7),
+    textMuted: Color(0xFF8E8E93),
+    textInverse: Color(0xFF0A0A0A),
+    border: Color(0xFF38383A),
+    success: Color(0xFF30D158),
+    warning: Color(0xFFFF9F0A),
+    danger: Color(0xFFFF453A),
+    info: Color(0xFF0A84FF),
+  );
+
   /// 令牌键名清单，亮暗共用。
   ///
   /// 必须与 `KedaYaTokens.darkColors` 的键集合一致 —— 由

@@ -14,10 +14,12 @@ abstract final class KedaYaTheme {
   static const double minTouchTarget = 48;
 
   /// 亮色主题（默认）。
-  static ThemeData light() => _build(KedaYaColors.light, Brightness.light);
+  static ThemeData light() =>
+      _build(KedaYaColors.modernLight, Brightness.light);
 
   /// 暗色主题（契约 §11.5）。
-  static ThemeData dark() => _build(KedaYaColors.dark, Brightness.dark);
+  static ThemeData dark() =>
+      _build(KedaYaColors.modernDark, Brightness.dark);
 
   static ThemeData _build(KedaYaColors palette, Brightness brightness) {
     final ColorScheme scheme = ColorScheme.fromSeed(
@@ -49,21 +51,28 @@ abstract final class KedaYaTheme {
         backgroundColor: palette.surface,
         foregroundColor: palette.text,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        titleTextStyle: TextStyle(
+          fontFamily: KedaYaTokens.fontFamilySans,
+          fontSize: 17,
+          fontWeight: KedaYaTokens.fontWeightSemibold,
+          color: palette.text,
+        ),
       ),
       cardTheme: CardThemeData(
         color: palette.surface,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KedaYaTokens.radiusLg),
+          borderRadius: BorderRadius.circular(14),
           side: BorderSide(color: palette.border),
         ),
       ),
       dividerTheme: DividerThemeData(
         color: palette.border,
-        thickness: 1,
-        space: 1,
+        thickness: 0.5,
+        space: 0.5,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -71,7 +80,7 @@ abstract final class KedaYaTheme {
           foregroundColor: palette.ink,
           minimumSize: const Size(minTouchTarget, minTouchTarget),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(KedaYaTokens.radiusMd),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
@@ -104,6 +113,43 @@ abstract final class KedaYaTheme {
                 : palette.textMuted,
           ),
         ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: palette.surfaceAlt,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: KedaYaTokens.space4,
+          vertical: KedaYaTokens.space3,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: palette.brand, width: 1.5),
+        ),
+        hintStyle: TextStyle(color: palette.textMuted),
+      ),
+      chipTheme: base.chipTheme.copyWith(
+        backgroundColor: palette.surface,
+        side: BorderSide(color: palette.border),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        labelStyle: TextStyle(
+          fontSize: KedaYaTokens.fontSizeSm,
+          color: palette.text,
+        ),
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: palette.textMuted,
+        textColor: palette.text,
+        minVerticalPadding: KedaYaTokens.space2,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: palette.brandStrong,
