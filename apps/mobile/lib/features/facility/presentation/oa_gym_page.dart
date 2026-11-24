@@ -32,6 +32,9 @@ class _OaGymPageState extends State<OaGymPage> {
   DateTime _date = DateTime.now();
   final Set<OaSport> _sports = <OaSport>{OaSport.badminton, OaSport.tennis};
   bool _loading = false;
+  final TextEditingController _name = TextEditingController();
+  final TextEditingController _studentId = TextEditingController();
+  final TextEditingController _phone = TextEditingController();
   String? _error;
   bool _sessionExpired = false;
   List<OaAvailability> _rows = <OaAvailability>[];
@@ -119,6 +122,150 @@ class _OaGymPageState extends State<OaGymPage> {
         _rows = rows;
         _loading = false;
       });
+    } on OaGymException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = error.message;
+        _sessionExpired = error.sessionExpired;
+      });
+    }
+  }
+
+  Future<void> _bookRow(OaAvailability row) async {
+    if (row.availableCourts.isEmpty) return;
+    final KedaYaColors colors = context.kedayaColors;
+    int court = row.availableCourts.first;
+    int players = 2;
+
+    final bool? submitted = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext sheetContext) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            KedaYaTokens.space4,
+            KedaYaTokens.space4,
+            KedaYaTokens.space4,
+            MediaQuery.of(context).viewInsets.bottom + KedaYaTokens.space4,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                '${row.sport.label} · $_dateParam · ${_slotLabel(row.timeSlot)}',
+                style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeMd,
+                  fontWeight: KedaYaTokens.fontWeightSemibold,
+                  color: colors.text,
+                ),
+              ),
+              const SizedBox(height: KedaYaTokens.space3),
+              Wrap(
+                spacing: KedaYaTokens.space2,
+                children: <Widget>[
+                  for (final int number in row.availableCourts)
+                    ChoiceChip(
+                      label: Text('$number 号'),
+                      selected: court == number,
+                      onSelected: (_) => setSheetState(() => court = number),
+                    ),
+                ],
+              ),
+              const SizedBox(height: KedaYaTokens.space3),
+              DropdownButtonFormField<int>(
+                initialValue: players,
+                decoration: const InputDecoration(labelText: '使用人数'),
+                items: <DropdownMenuItem<int>>[
+                  for (int i = 1; i <= 10; i++)
+                    DropdownMenuItem<int>(value: i, child: Text('$i 人')),
+                ],
+                onChanged: (int? value) {
+                  if (value != null) setSheetState(() => players = value);
+                },
+              ),
+              const SizedBox(height: KedaYaTokens.space2),
+              TextField(
+                controller: _name,
+                decoration: const InputDecoration(labelText: '姓名'),
+              ),
+              const SizedBox(height: KedaYaTokens.space2),
+              TextField(
+                controller: _studentId,
+                decoration: const InputDecoration(labelText: '学号'),
+              ),
+              const SizedBox(height: KedaYaTokens.space2),
+              TextField(
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(labelText: '手机号'),
+              ),
+              const SizedBox(height: KedaYaTokens.space3),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(sheetContext).pop(true),
+                  child: const Text('继续'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (submitted != true || !mounted) return;
+
+    final String name = _name.text.trim();
+    final String studentId = _studentId.text.trim();
+    final String phone = _phone.text.trim();
+    if (name.isEmpty || studentId.isEmpty || phone.isEmpty) {
+      setState(() => _error = '请先填写姓名、学号、手机号');
+      return;
+    }
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('确认提交预约申请？'),
+        content: Text(
+          '''${row.sport.label} $court 号
+$_dateParam ${_slotLabel(row.timeSlot)}
+$players 人 · $name
+
+提交后不可在本应用撤销；超时请先到 OA「我的请求」确认，避免重复预约。''',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('确认提交'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _loading = true);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    try {
+      final OaBookingResult result = await _client.book(
+        sport: row.sport,
+        date: _dateParam,
+        timeSlot: row.timeSlot,
+        courtNumber: court,
+        playersCount: players,
+        userName: name,
+        studentId: studentId,
+        phone: phone,
+      );
+      if (!mounted) return;
+      setState(() => _loading = false);
+      messenger.showSnackBar(SnackBar(content: Text(result.message)));
+      if (result.success) await _query();
     } on OaGymException catch (error) {
       if (!mounted) return;
       setState(() {
@@ -242,6 +389,7 @@ class _OaGymPageState extends State<OaGymPage> {
                       final OaAvailability row = _rows[index];
                       return ListTile(
                         dense: true,
+                        onTap: row.hasFree ? () => _bookRow(row) : null,
                         leading: Text(
                           _slotLabel(row.timeSlot),
                           style: TextStyle(

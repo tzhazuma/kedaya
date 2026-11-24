@@ -11,6 +11,124 @@ CampusBridgeResponse _json(Object? body) => CampusBridgeResponse(
     );
 
 void main() {
+  group('book()', () {
+    test('把工作流字段按约定提交，并按 wfforward 判定成功', () async {
+      final List<CampusBridgeRequest> requests = <CampusBridgeRequest>[];
+      final OaGymClient client = OaGymClient((CampusBridgeRequest request) async {
+        requests.add(request);
+        if (request.expr != null) {
+          return const CampusBridgeResponse(id: 'x', status: 200, body: 'u-123');
+        }
+        return const CampusBridgeResponse(
+          id: 'x',
+          status: 200,
+          body: "<script>wfforward('/workflow/request/WorkflowDirection.jsp?x=1')</script>",
+        );
+      });
+
+      final OaBookingResult result = await client.book(
+        sport: OaSport.badminton,
+        date: '2026-11-25',
+        timeSlot: 4,
+        courtNumber: 2,
+        playersCount: 4,
+        userName: '张三',
+        studentId: '20265555',
+        phone: '13800000000',
+      );
+
+      expect(result.success, isTrue);
+      final CampusBridgeRequest post = requests.last;
+      expect(post.method, 'POST');
+      expect(post.url, contains('/workflow/request/RequestOperation.jsp'));
+      final Map<String, String> form = post.form!;
+      expect(form['field31883'], '63_14'); // offset 12 + 2
+      expect(form['field31902'], '4');
+      expect(form['field31904'], '14:00');
+      expect(form['field31905'], '15:00');
+      expect(form['field31876'], 'u-123');
+      expect(form['workflowid'], '14862');
+    });
+
+    test('提交返回错误页 → success=false，且不重试', () async {
+      int posts = 0;
+      final OaGymClient client = OaGymClient((CampusBridgeRequest request) async {
+        if (request.expr != null) {
+          return const CampusBridgeResponse(id: 'x', status: 200, body: 'u-1');
+        }
+        posts++;
+        return const CampusBridgeResponse(id: 'x', status: 200, body: '失败');
+      });
+      final OaBookingResult result = await client.book(
+        sport: OaSport.tennis,
+        date: '2026-11-25',
+        timeSlot: 1,
+        courtNumber: 1,
+        playersCount: 2,
+        userName: '张三',
+        studentId: '20265555',
+        phone: '13800000000',
+      );
+      expect(result.success, isFalse);
+      expect(posts, 1);
+    });
+
+    test('拿不到 OA 用户 → sessionExpired', () async {
+      final OaGymClient client = OaGymClient(
+        (CampusBridgeRequest request) async =>
+            const CampusBridgeResponse(id: 'x', status: 200, body: ''),
+      );
+      try {
+        await client.book(
+          sport: OaSport.tennis,
+          date: '2026-11-25',
+          timeSlot: 1,
+          courtNumber: 1,
+          playersCount: 2,
+          userName: '张三',
+          studentId: '20265555',
+          phone: '13800000000',
+        );
+        fail('应当抛 OaGymException');
+      } on OaGymException catch (error) {
+        expect(error.sessionExpired, isTrue);
+      }
+    });
+
+    test('场地编号与人数在本地校验', () async {
+      final OaGymClient client = OaGymClient(
+        (CampusBridgeRequest request) async =>
+            const CampusBridgeResponse(id: 'x', status: 200, body: 'u'),
+      );
+      expect(
+        () => client.book(
+          sport: OaSport.pickleball,
+          date: '2026-11-25',
+          timeSlot: 1,
+          courtNumber: 2,
+          playersCount: 2,
+          userName: 'a',
+          studentId: 'b',
+          phone: 'c',
+        ),
+        throwsA(isA<OaGymException>()),
+      );
+      expect(
+        () => client.book(
+          sport: OaSport.tennis,
+          date: '2026-11-25',
+          timeSlot: 1,
+          courtNumber: 1,
+          playersCount: 11,
+          userName: 'a',
+          studentId: 'b',
+          phone: 'c',
+        ),
+        throwsA(isA<OaGymException>()),
+      );
+    });
+  });
+
   group('availability()', () {
     test('两级树：父节点下按前缀与编号范围取空闲场地', () async {
       final List<CampusBridgeRequest> requests = <CampusBridgeRequest>[];

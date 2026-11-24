@@ -33,7 +33,23 @@
 | Gradescope 同步 | 需要 Gradescope 会话 |
 | Passkey | 与校园系统无关，但它只是登录方式，不解决数据访问 |
 
-## 3. 两条可选架构（需要拍板）
+## 3. 已选架构：A（客户端/内嵌浏览器持有会话）
+
+2026-11-24 项目负责人确定走 A。实现方式是**内嵌 WebView 持有会话**：
+cookie 留在 WebView 里，Dart 不读取；所有校园请求通过 `kedayaRequest` /
+`kedayaEval` 在页面内发出（同源自动带 HttpOnly cookie）。
+
+代价与配套：
+- `techpie_source_invariants_test.dart` 里"源码不得出现 cookie"的断言仍然成立
+  （我们确实不读 cookie），但要接受"会话由页面持有"这一事实；
+- 需要用户在应用内登录一次，会话随 WebView 生命周期存在；
+- 桌面/鸿蒙没有 WebView 插件，相关真实能力仅移动端可用。
+
+已在此架构下完成：ELRC 全链路、OA 场馆空闲查询、**OA 场馆预约提交**
+（`OaGymClient.book`：读 `loginidweaver` → POST 工作流 14862 → 按 `wfforward(`
+判定成功；提交超时**不重试**，提示先去 OA 核对）。
+
+### 3.1 两条备选架构（历史记录）
 
 ### A. 客户端持有会话（TechPie 的做法）
 

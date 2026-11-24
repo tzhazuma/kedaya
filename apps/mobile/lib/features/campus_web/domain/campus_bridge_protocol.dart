@@ -22,6 +22,7 @@ final class CampusBridgeRequest {
     this.method = 'GET',
     this.form,
     this.json,
+    this.expr,
   });
 
   final String id;
@@ -36,12 +37,17 @@ final class CampusBridgeRequest {
   /// `application/json` 请求体（ELRC 的 rman 接口要 JSON 而不是表单）。
   final Object? json;
 
+  /// 页面内表达式（`eval`）。用于读 DOM/全局变量，例如 OA 的 `loginidweaver`。
+  /// 与 `url` 二选一；设置时不会发网络请求。
+  final String? expr;
+
   String encode() => jsonEncode(<String, Object?>{
         'id': id,
         'url': url,
         'method': method,
         'form': form,
         'json': json,
+        'expr': expr,
       });
 }
 
@@ -99,6 +105,26 @@ const String campusBridgeScript = r'''
 (function () {
   if (window.__kedayaBridgeInstalled) return;
   window.__kedayaBridgeInstalled = true;
+  window.kedayaEval = function (payloadJson) {
+    var payload;
+    try { payload = JSON.parse(payloadJson); } catch (e) { payload = null; }
+    if (!payload || !payload.id) return;
+    var value = null;
+    var error = null;
+    try {
+      // 只允许读取值：调用方传的是表达式，不是函数体。
+      value = (0, eval)(payload.expr);
+      if (value !== null && typeof value === 'object') {
+        value = JSON.stringify(value);
+      }
+    } catch (e) { error = String(e); }
+    if (window.KedayaBridge) {
+      window.KedayaBridge.postMessage(JSON.stringify({
+        id: payload.id, status: error ? 0 : 200,
+        body: error ? '' : String(value), error: error
+      }));
+    }
+  };
   window.kedayaRequest = async function (payloadJson) {
     var payload;
     try { payload = JSON.parse(payloadJson); } catch (e) { payload = null; }
