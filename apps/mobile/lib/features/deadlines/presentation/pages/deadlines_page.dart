@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/app_providers.dart';
 import '../../../../domain/models/deadline_item.dart';
+import '../../../../domain/models/ics_export.dart';
 import '../../../../presentation/components/async_state_view.dart';
 import '../../../../presentation/theme/kedaya_theme_extension.dart';
 import '../../../../presentation/theme/kedaya_tokens.dart';
+import '../../application/deadlines_ics.dart';
 import '../../application/deadlines_providers.dart';
 import '../components/deadline_card.dart';
 import '../components/deadline_summary.dart';
@@ -136,6 +139,22 @@ class _DeadlinesPageState extends ConsumerState<DeadlinesPage> {
       appBar: AppBar(
         title: const Text('DDL 聚合'),
         actions: <Widget>[
+          IconButton(
+            tooltip: '导出未完成 DDL (ICS)',
+            onPressed: all == null
+                ? null
+                : () async {
+                    final String ics = buildIcs(buildDeadlineIcsEvents(all));
+                    await ref.read(shareProvider).copyToClipboard(ics);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('已复制 ICS 到剪贴板，可粘贴保存为 .ics 后导入日历'),
+                      ),
+                    );
+                  },
+            icon: const Icon(Icons.event_available_outlined),
+          ),
           IconButton(
             tooltip: '刷新',
             onPressed: controller.refresh,

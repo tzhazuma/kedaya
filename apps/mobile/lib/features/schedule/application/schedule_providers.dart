@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/course_session.dart';
+import '../../../domain/models/exam_entry.dart';
 import '../data/in_memory_schedule_repository.dart';
 
 /// 「现在」的注入点。
@@ -37,3 +38,9 @@ final class WeekScheduleController extends AsyncNotifier<List<CourseSession>> {
     return sortCourseSessions(await repository.list());
   }
 }
+
+/// 学期考试（演示数据，按开考时间升序）。
+final examsProvider = Provider<List<ExamEntry>>((ref) {
+  final DateTime now = ref.watch(scheduleClockProvider)();
+  return sortExams(demoExams(now));
+});

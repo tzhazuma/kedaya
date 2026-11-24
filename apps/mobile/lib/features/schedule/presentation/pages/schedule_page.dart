@@ -3,11 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/app_providers.dart';
 import '../../../../domain/models/course_session.dart';
+import '../../../../domain/models/exam_entry.dart';
+import '../../../../domain/models/ics_export.dart';
 import '../../../../presentation/components/async_state_view.dart';
 import '../../../../presentation/components/kedaya_shell.dart';
 import '../../../../presentation/theme/kedaya_theme_extension.dart';
 import '../../../../presentation/theme/kedaya_tokens.dart';
+import '../../application/schedule_ics.dart';
 import '../../application/schedule_providers.dart';
 import '../components/course_session_card.dart';
 
@@ -58,12 +62,30 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
         ref.read(weekScheduleProvider.notifier);
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: KedaYaPageScaffold(
         title: '课表',
         // TabBarView 自己带列表内边距；外壳不再额外加一圈，避免双重留白。
         padding: EdgeInsets.zero,
         actions: <Widget>[
+          IconButton(
+            tooltip: '导出日历 (ICS)',
+            onPressed: () async {
+              final String ics = buildIcs(
+                buildScheduleIcsEvents(
+                  sessions: value.valueOrNull ?? const <CourseSession>[],
+                  exams: ref.read(examsProvider),
+                  now: now,
+                ),
+              );
+              await ref.read(shareProvider).copyToClipboard(ics);
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('已复制 ICS 到剪贴板，可粘贴保存为 .ics 后导入日历')),
+              );
+            },
+            icon: const Icon(Icons.event_available_outlined),
+          ),
           IconButton(
             tooltip: '刷新',
             onPressed: controller.refresh,
@@ -74,6 +96,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
           tabs: <Tab>[
             Tab(text: '今天'),
             Tab(text: '本周'),
+            Tab(text: '考试'),
           ],
         ),
         child: Column(
@@ -94,6 +117,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
                       value: value, now: now, onRefresh: controller.refresh),
                   _WeekTab(
                       value: value, now: now, onRefresh: controller.refresh),
+                  _ExamsTab(exams: ref.watch(examsProvider), now: now),
                 ],
               ),
             ),
@@ -359,6 +383,131 @@ class _WeekdayHeader extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// 考试 tab：按开考时间升序，显示倒计时与考场信息。
+class _ExamsTab extends StatelessWidget {
+  const _ExamsTab({required this.exams, required this.now});
+
+  final List<ExamEntry> exams;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final KedaYaColors colors = context.kedayaColors;
+    if (exams.isEmpty) {
+      return Center(
+        child: Text(
+          '暂无考试安排（演示数据，真实考场需接入教务）',
+          style: TextStyle(
+            fontSize: KedaYaTokens.fontSizeSm,
+            color: colors.textMuted,
+          ),
+        ),
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.all(KedaYaTokens.space4),
+      itemCount: exams.length + 1,
+      separatorBuilder: (_, __) => const SizedBox(height: KedaYaTokens.space3),
+      itemBuilder: (BuildContext context, int index) {
+        if (index == 0) {
+          return Text(
+            '演示考试安排 · 导出 ICS 可导入系统日历',
+            style: TextStyle(
+              fontSize: KedaYaTokens.fontSizeXs,
+              color: colors.textMuted,
+            ),
+          );
+        }
+        final ExamEntry exam = exams[index - 1];
+        final int days = daysUntilExam(exam, now);
+        final String countdown = days > 0
+            ? '还有 $days 天'
+            : days == 0
+                ? '今天'
+                : '已结束';
+        return Container(
+          padding: const EdgeInsets.all(KedaYaTokens.space4),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: colors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      exam.courseName,
+                      style: TextStyle(
+                        fontSize: KedaYaTokens.fontSizeMd,
+                        fontWeight: KedaYaTokens.fontWeightSemibold,
+                        color: colors.text,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: days <= 3 && days >= 0
+                          ? colors.danger.withValues(alpha: 0.12)
+                          : colors.brandSoft,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      countdown,
+                      style: TextStyle(
+                        fontSize: KedaYaTokens.fontSizeXs,
+                        color: days <= 3 && days >= 0
+                            ? colors.danger
+                            : colors.brandStrong,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: KedaYaTokens.space2),
+              Text(
+                '${exam.startsAt.month} 月 ${exam.startsAt.day} 日 '
+                '${exam.startsAt.hour.toString().padLeft(2, '0')}:'
+                '${exam.startsAt.minute.toString().padLeft(2, '0')}'
+                ' · ${exam.durationMinutes} 分钟',
+                style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeSm,
+                  color: colors.text,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${exam.location}'
+                '${exam.seat == null ? '' : ' · 座位 ${exam.seat}'}',
+                style: TextStyle(
+                  fontSize: KedaYaTokens.fontSizeXs,
+                  color: colors.textMuted,
+                ),
+              ),
+              if ((exam.note ?? '').trim().isNotEmpty) ...<Widget>[
+                const SizedBox(height: 2),
+                Text(
+                  exam.note!,
+                  style: TextStyle(
+                    fontSize: KedaYaTokens.fontSizeXs,
+                    color: colors.textMuted,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }
