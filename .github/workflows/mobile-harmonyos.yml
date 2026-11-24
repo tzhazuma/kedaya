@@ -38,9 +38,10 @@ env:
   KEDAYA_FLAVOR: ${{ vars.KEDAYA_FLAVOR || 'mock' }}
   KEDAYA_API_BASE_URL: ${{ vars.KEDAYA_API_BASE_URL || 'https://api.kedaya.local' }}
   BUILD_MODE: ${{ inputs.build_mode }}
-  # Flutter-OH 的 Dart SDK / engine 产物不在 Google 上，走华为 OBS 镜像。
-  # 参考 Flutter-OH 3.35.7 官方拉取指南（oh-3.35.7-dev / -release）。
-  FLUTTER_STORAGE_BASE_URL: ${{ vars.FLUTTER_OH_STORAGE_BASE_URL || 'https://flutter-ohos.obs.cn-south-1.myhuaweicloud.com' }}
+  # 注意：**不要**覆盖 FLUTTER_STORAGE_BASE_URL。实测指到华为 OBS 后，
+  # 工具会去找 <engine>/engine_stamp.json，那个路径 404；而 Google 上同一个
+  # engine hash 的 engine_stamp.json / dart-sdk-*.zip 是 200。
+  # OHOS 专属引擎产物由 fork 自己的 FLUTTER_OHOS_STORAGE_BASE_URL 负责（默认 OBS）。
 
 jobs:
   harmonyos:
@@ -69,7 +70,7 @@ jobs:
             echo "::error::当前 flutter 不是 Flutter-OH。stock Flutter 没有 OHOS engine，无法 build hap。"
             exit 1
           fi
-          echo "FLUTTER_STORAGE_BASE_URL=$FLUTTER_STORAGE_BASE_URL"
+          echo "FLUTTER_STORAGE_BASE_URL=${FLUTTER_STORAGE_BASE_URL:-<default google>}"
           if [ -z "${DEVECO_SDK_HOME:-}" ]; then
             echo "::warning::DEVECO_SDK_HOME 未设置；hvigor 可能找不到 HarmonyOS SDK"
           else

@@ -70,7 +70,7 @@ dependency_overrides:
 git clone --depth 1 -b oh-3.35.7-release \
   https://atomgit.com/openharmony-tpc/flutter_flutter.git "$HOME/flutter-ohos"
 export PATH="$HOME/flutter-ohos/bin:$PATH"
-export FLUTTER_STORAGE_BASE_URL=https://flutter-ohos.obs.cn-south-1.myhuaweicloud.com
+# 不要覆盖 FLUTTER_STORAGE_BASE_URL；OHOS 产物走 fork 的默认 FLUTTER_OHOS_STORAGE_BASE_URL
 
 flutter --version      # 必须出现 -ohos，channel 为 [user-branch]/ohos
 flutter doctor -v      # HarmonyOS toolchain 一节必须识别到 DevEco SDK
