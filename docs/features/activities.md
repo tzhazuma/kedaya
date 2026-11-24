@@ -253,6 +253,27 @@ npx vitest run apps/miniapp/src/domain/models/__tests__/activity.test.ts \
 - 提醒：微信订阅消息、APNs、FCM、HMS 未接通；目前只有站内信。
 - 小程序：没有独立的手动创建页；`archive` / `restore` 没有页面入口。
 - Web：无登录、无持久化、无提醒；确认只对本次导出有效。
-- Flutter：没有校园邮箱勾选 UI、没有 ICS / 手机日历导出；未在真机验证。
-- 移动端多平台：CI 配置存在但 GitHub runner 未实跑；Windows ARM64 实验、
-  Linux ARM64 未实现、HarmonyOS 仅自托管未验证。
+- Flutter：**已补齐**校园邮箱（绑定 / 同步 / 提升）与 ICS 导出（单条 + 批量）；
+  ⚠️ 未在真机验证（本机缺 Visual Studio，Windows 包由 CI 产出后跑过启动 + 截图）。
+- 移动端多平台：Windows x64 / Linux x64 / Linux ARM64 / macOS / iOS / Android
+  均已由 CI 实跑并发布（`mobile-v0.1.7`）；HarmonyOS HAP 本地构建通过但未签名。
+
+### 11.1 真实抓取与抽取的实测结论（2026-11-25）
+
+用一篇**真实**公众号文章跑通了整条链路（`https://mp.weixin.qq.com/s/fmfXwa…`）：
+
+| 环节 | 结果 |
+| --- | --- |
+| `fetch` 文章页 | HTTP 200，3.78 MB，无「环境异常」墙 |
+| `parseWechatArticle` | 标题、公众号名、`publishedAt`（+08:00）、10 行正文、7 张图 |
+| `extractActivityCandidates` | **0 条候选** |
+
+0 条不是崩溃，而是规则的结果：候选锚点要求**同一行**同时含「时间线索」与
+「地点/报名线索」（`pickEventCandidateLines`），或「时间行紧邻地点行」。
+这篇是活动**回顾**，写着「4月10日，温州大学邀请…开设讲座」，时间与地点分散在
+不同句子，因此不产出候选 —— 服务端随后会返回
+「没能从粘贴内容里识别出活动」。
+
+**已知局限**：像这样把时间与地点写散的通知需要用户手工新建。要放宽就得改
+`pickEventCandidateLines`，那会同时影响小程序与 Web 的抽取结果，需要单独一轮
+带回归样本的改动，不在本轮范围内。
