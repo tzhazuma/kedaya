@@ -90,6 +90,12 @@ class CampusServicesPage extends ConsumerWidget {
   ) async {
     // 移动端用内嵌 WebView（可注入同源抓取桥）；桌面/鸿蒙没有该插件，
     // 走下面的"打开一次性 URL / 复制链接"降级。
+    if (service.id == 'elrc' &&
+        !kIsWeb &&
+        campusWebSupported(defaultTargetPlatform)) {
+      await context.push('/elrc');
+      return;
+    }
     if (!kIsWeb && campusWebSupported(defaultTargetPlatform)) {
       await context.push(
         '/campus-web?url=${Uri.encodeComponent(service.url)}'
