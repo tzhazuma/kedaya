@@ -22,6 +22,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('可达鸭'), findsWidgets);
-    expect(find.text('已跑通的垂直切片'), findsOneWidget);
+    // 2026-11-24 首页改为分组列表：首屏应看到「常用」与快捷入口。
+    // 「业务模块」在首屏之外，ListView 懒构建，不做断言。
+    expect(find.text('常用'), findsOneWidget);
+    expect(find.text('课表'), findsWidgets);
   });
 }
