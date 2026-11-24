@@ -72,6 +72,12 @@ class HomePage extends ConsumerWidget {
                 subtitle: '按「值不值得现在跑一趟」排序',
                 onTap: () => context.push('/teabreak'),
               ),
+              _ModuleRow(
+                icon: Icons.school_outlined,
+                title: '校园服务',
+                subtitle: 'E云课堂 · ELRC 录播 · 教务 · 请假',
+                onTap: () => context.push('/campus-services'),
+              ),
             ],
           ),
           const SizedBox(height: KedaYaTokens.space5),

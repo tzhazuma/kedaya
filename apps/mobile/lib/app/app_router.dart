@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/ai_portrait/presentation/ai_portrait_routes.dart';
 import '../features/campus_map/campus_map_routes.dart';
+import '../features/campus_services/presentation/campus_services_page.dart';
 import '../features/campus_map/presentation/pages/campus_map_page.dart';
 import '../features/campus_map/presentation/pages/campus_place_detail_page.dart';
 import '../features/canteen/canteen_routes.dart';
@@ -407,6 +408,7 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
         ...errandRoutes,
         ...dormHarmonyRoutes,
         ...canteenRoutes,
+        ...campusServicesRoutes(),
         ...buildWellbeingRoutes(),
         ...buildAiPortraitRoutes(),
         ...facilityRoutes(),

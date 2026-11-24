@@ -1,0 +1,46 @@
+# TechPie 真实校园能力移植计划
+
+> 2026-11-24。上游：`HeZeBang/TechPie-flutter`（无 LICENSE 文件；据项目负责人转述，
+> GeekPie 同学已口头允许复用其实现，校方也认可这种接入方式）。
+>
+> 本文件只记录**技术事实与依赖**，不是"已完成"的声明。
+
+## 1. 已完成的地基（本轮）
+
+| 组件 | 位置 | 作用 |
+| --- | --- | --- |
+| `CampusCookieJar` | `lib/data/campus/campus_cookie_jar.dart` | host 作用域的内存 cookie；支持 Max-Age/Expires、过期清理、`clear()`、toString 不泄露值 |
+| `CampusHttpClient` | `lib/data/campus/campus_http_client.dart` | 自动带 Cookie 头、吸收 `Set-Cookie`；不打印头与响应体 |
+| `parseCasServiceValidate` | `lib/data/campus/cas_ticket_client.dart` | 解析 CAS `/serviceValidate` 的 XML（成功取 `cas:user`，失败取 `errorCode` 属性） |
+
+测试：`test/campus_cookie_test.dart` 9 例（隔离、过期、清空、不泄露；CAS 成功/失败/非 CAS/URL 拼装）。
+
+## 2. 每个能力还需要什么
+
+| 能力 | 上游实现 | 我们缺的前置条件 |
+| --- | --- | --- |
+| CAS 登录 | `uni_auth_service.dart` + WebView 登录 | 校方**注册的回调 service URL**；把 `ticket` 交给后端校验（后端已有 mock 适配器，需换真实实现） |
+| 场馆预约 | `oa_gym_service.dart` + `oa_gym_local_client.dart`（OA 表单 + HTML 表格解析） | OA 会话（CAS 之后）；需要 `webview_flutter`（移动）与 `desktop_webview_window`（桌面） |
+| ELRC 录播 | `elrc_client.dart`（5 个 JSON 端点） | ELRC cookie；同上 WebView 依赖 |
+| Gradescope | `assignment_service.dart` `_fetchGradescope` | Gradescope 会话（第三方登录） |
+| E云课堂 / 请假 / 活动 | URL 直达 | 已做：`/campus-services` 页面（不代持 cookie） |
+| 校园卡 | `features/campus_card/*`（含付款码、账单） | 校园卡协议 + 密钥；资金相关必须校方书面确认 |
+| Passkey | 上游无（其 Passkey 为自有实现） | 服务端 WebAuthn（`services/api`）+ 各平台凭证配置 |
+| E2E 云同步 | `sync_service.dart` | 密钥派生、冲突合并、服务端存储；建议单独 ADR |
+| 桌面小组件 | `apple/` WidgetKit + Android/OHOS 原生 | 原生工程，无法在本机验证 |
+
+## 3. 为什么不能"一次搬完"
+
+1. **WebView 依赖**：我们的 `WebViewPort` 目前只接受一次性 URL，不接受 cookie 注入；
+   上游的实现依赖 `webview_flutter` + `desktop_webview_window`，并要处理 OHOS 的 ArkWeb。
+   这会改变 `test/domain/techpie_source_invariants_test.dart` 守的边界，必须显式改契约与测试。
+2. **没有真实账号**：本机无法登录 IDS/ELRC/OA，任何"跑通"的断言都只能是单测 + 假服务端。
+3. **资金与隐私**：付款码、账单、画像这类能力，代码之外的合规确认比代码更重要。
+
+## 4. 建议的落地顺序
+
+1. CAS 真实校验（后端）：`CAMPUS_CAS_SERVICE` + `parseCasServiceValidate` + 会话签发；
+2. 引入 WebView 依赖与 cookie 注入，先做 ELRC 只读；
+3. 场馆预约（OA 表单）；
+4. 校园卡只读（余额/流水），付款码最后；
+5. Passkey（服务端 WebAuthn）与 E2E 同步各开一个 ADR。

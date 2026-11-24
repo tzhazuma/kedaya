@@ -1,0 +1,13 @@
+This product includes design ideas and integration knowledge derived from
+TechPie (https://github.com/HeZeBang/TechPie-flutter), developed by GeekPie at
+ShanghaiTech University. Reuse was permitted by the TechPie maintainers
+(per the project owner, 2026-11-24) and the campus integration approach was
+reviewed with the university.
+
+The upstream repository does not ship a LICENSE file; this notice documents the
+permission rather than a license grant. Files copied or adapted from TechPie
+must carry an `// Adapted from TechPie (GeekPie, ShanghaiTech)` header.
+
+No campus credentials, cookies, tickets or payment secrets are stored in this
+repository. Campus sessions live in memory only (see
+apps/mobile/lib/data/campus/).
