@@ -275,6 +275,15 @@ List<DateTime> weekDatesFor(DateTime now) {
 }
 
 /// 把当天分钟数格式化为 `HH:mm`（允许 `24:00` 表示一天结束）。
+/// 粗略把时刻映射到节次：08:00 起每 45 分钟一节，最多 12 节。
+///
+/// 真实节次由教务定义；这里只用于用户自定义课程时给出一个可编辑的默认值。
+int estimatePeriodForMinutes(int minutes) {
+  const int dayStart = 8 * 60;
+  final int index = (minutes - dayStart) ~/ 45;
+  return index.clamp(0, 11) + 1;
+}
+
 String formatMinutesOfDay(int minutes) {
   if (minutes < 0 || minutes > minutesPerDay) {
     throw RangeError.range(minutes, 0, minutesPerDay, 'minutes');

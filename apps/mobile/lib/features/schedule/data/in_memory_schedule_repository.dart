@@ -7,14 +7,21 @@ import '../../../domain/models/course_session.dart';
 abstract interface class ScheduleRepository {
   /// 全部课程时段（未排序；排序由 application 层的纯函数负责）。
   Future<List<CourseSession>> list();
+
+  /// 新增一门课（本机内存；重启即回到演示数据）。
+  Future<void> add(CourseSession session);
+
+  /// 按 id 删除；id 不存在时静默成功（幂等）。
+  Future<void> remove(String id);
 }
 
 /// 本机内存课表：启动即有一份演示数据，不读写网络与磁盘。
 final class InMemoryScheduleRepository implements ScheduleRepository {
   InMemoryScheduleRepository({List<CourseSession>? sessions})
+      // 必须 growable：add / remove 会直接改它，定长列表会抛 UnsupportedError。
       : _sessions = List<CourseSession>.of(
           sessions ?? demoWeekSchedule(),
-          growable: false,
+          growable: true,
         );
 
   final List<CourseSession> _sessions;
@@ -22,6 +29,16 @@ final class InMemoryScheduleRepository implements ScheduleRepository {
   @override
   Future<List<CourseSession>> list() async =>
       List<CourseSession>.unmodifiable(_sessions);
+
+  @override
+  Future<void> add(CourseSession session) async {
+    _sessions.add(session);
+  }
+
+  @override
+  Future<void> remove(String id) async {
+    _sessions.removeWhere((CourseSession s) => s.id == id);
+  }
 
   /// 测试用：仓库里到底有几条。
   int get debugLength => _sessions.length;

@@ -37,6 +37,18 @@ final class WeekScheduleController extends AsyncNotifier<List<CourseSession>> {
     // 排序是纯领域函数：这里只负责把仓库结果排好，不含任何规则副本。
     return sortCourseSessions(await repository.list());
   }
+
+  /// 新增课程后立即重载（列表按开始时间重排）。
+  Future<void> addCourse(CourseSession session) async {
+    await ref.read(scheduleRepositoryProvider).add(session);
+    state = AsyncValue<List<CourseSession>>.data(await _load());
+  }
+
+  /// 删除课程；删除失败也要把最新列表刷回来，避免界面与仓库不一致。
+  Future<void> removeCourse(String id) async {
+    await ref.read(scheduleRepositoryProvider).remove(id);
+    state = AsyncValue<List<CourseSession>>.data(await _load());
+  }
 }
 
 /// 学期考试（演示数据，按开考时间升序）。

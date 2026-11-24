@@ -16,6 +16,7 @@ import '../features/flea_market/presentation/pages/flea_detail_page.dart';
 import '../features/flea_market/presentation/pages/flea_market_page.dart';
 import '../features/lost_found/lost_found_routes.dart';
 import '../features/petition/presentation/petition_routes.dart';
+import '../features/schedule/presentation/pages/course_compose_page.dart';
 import '../features/schedule/presentation/pages/schedule_page.dart';
 import '../features/takeout_guard/takeout_guard_routes.dart';
 import '../features/wellbeing/presentation/wellbeing_routes.dart';
@@ -450,6 +451,14 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
           name: 'schedule',
           builder: (BuildContext context, GoRouterState state) =>
               const SchedulePage(),
+          routes: <RouteBase>[
+            GoRoute(
+              path: 'new',
+              name: 'schedule-new',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const CourseComposePage(),
+            ),
+          ],
         ),
         GoRoute(
           path: '/deadlines',

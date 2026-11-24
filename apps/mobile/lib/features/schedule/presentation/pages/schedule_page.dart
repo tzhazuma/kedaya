@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/app_providers.dart';
 import '../../../../domain/models/course_session.dart';
@@ -69,6 +70,11 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
         padding: EdgeInsets.zero,
         actions: <Widget>[
           IconButton(
+            tooltip: '添加课程',
+            onPressed: () => context.push('/schedule/new'),
+            icon: const Icon(Icons.add),
+          ),
+          IconButton(
             tooltip: '导出日历 (ICS)',
             onPressed: () async {
               final String ics = buildIcs(
@@ -114,9 +120,19 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
               child: TabBarView(
                 children: <Widget>[
                   _TodayTab(
-                      value: value, now: now, onRefresh: controller.refresh),
+                    value: value,
+                    now: now,
+                    onRefresh: controller.refresh,
+                    onDelete: (CourseSession session) =>
+                        _confirmDelete(context, controller, session),
+                  ),
                   _WeekTab(
-                      value: value, now: now, onRefresh: controller.refresh),
+                    value: value,
+                    now: now,
+                    onRefresh: controller.refresh,
+                    onDelete: (CourseSession session) =>
+                        _confirmDelete(context, controller, session),
+                  ),
                   _ExamsTab(exams: ref.watch(examsProvider), now: now),
                 ],
               ),
@@ -129,6 +145,34 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
 }
 
 /// 页首说明：演示数据 + 与 DDL 的边界。
+Future<void> _confirmDelete(
+  BuildContext context,
+  WeekScheduleController controller,
+  CourseSession session,
+) async {
+  final bool? confirmed = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext dialogContext) => AlertDialog(
+      title: const Text('删除这门课？'),
+      content: Text('${session.courseName} · ${session.weekday.label} '
+          '${session.timeRangeLabel}'),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text('删除'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed ?? false) {
+    await controller.removeCourse(session.id);
+  }
+}
+
 class ScheduleNotice extends StatelessWidget {
   const ScheduleNotice({super.key});
 
@@ -186,11 +230,13 @@ class _TodayTab extends StatelessWidget {
     required this.value,
     required this.now,
     required this.onRefresh,
+    required this.onDelete,
   });
 
   final AsyncValue<List<CourseSession>> value;
   final DateTime now;
   final Future<void> Function() onRefresh;
+  final Future<void> Function(CourseSession session) onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -219,10 +265,13 @@ class _TodayTab extends StatelessWidget {
               const SizedBox(height: KedaYaTokens.space3),
           itemBuilder: (BuildContext context, int index) {
             final CourseSession session = items[index];
-            return CourseSessionCard(
-              key: ValueKey<String>('schedule-today-${session.id}'),
-              session: session,
-              now: now,
+            return GestureDetector(
+              onLongPress: () => onDelete(session),
+              child: CourseSessionCard(
+                key: ValueKey<String>('schedule-today-${session.id}'),
+                session: session,
+                now: now,
+              ),
             );
           },
         ),
@@ -237,11 +286,13 @@ class _WeekTab extends StatelessWidget {
     required this.value,
     required this.now,
     required this.onRefresh,
+    required this.onDelete,
   });
 
   final AsyncValue<List<CourseSession>> value;
   final DateTime now;
   final Future<void> Function() onRefresh;
+  final Future<void> Function(CourseSession session) onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -298,13 +349,16 @@ class _WeekTab extends StatelessWidget {
                       padding: const EdgeInsets.only(
                         bottom: KedaYaTokens.space2,
                       ),
-                      child: CourseSessionCard(
-                        key: ValueKey<String>(
-                          'schedule-week-${session.id}',
+                      child: GestureDetector(
+                        onLongPress: () => onDelete(session),
+                        child: CourseSessionCard(
+                          key: ValueKey<String>(
+                            'schedule-week-${session.id}',
+                          ),
+                          session: session,
+                          now: now,
+                          dense: true,
                         ),
-                        session: session,
-                        now: now,
-                        dense: true,
                       ),
                     ),
                 const SizedBox(height: KedaYaTokens.space3),
