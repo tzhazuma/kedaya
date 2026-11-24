@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../data/campus/ecard_bind_client.dart';
+import '../data/campus/ecard_bind_config.dart';
 import '../data/mock/mock_controls.dart';
 import '../data/mock/mock_mail_repository.dart';
 import '../data/repositories/remote_mail_repository.dart';
@@ -72,8 +74,22 @@ final activitiesRepositoryProvider = Provider<ActivitiesPort>(
   (ref) => ref.watch(appRuntimeProvider).activities,
 );
 
-/// 校园邮箱（`/mail`）。
+/// 校园卡绑定码交换的构建期配置。
 ///
+/// 走 Provider 而不是页面里直接 `fromDartDefine()`：一是让测试能注入
+/// 「已配置密钥」的场景（`String.fromEnvironment` 在测试进程里永远是空），
+/// 二是让「这份构建有没有绑定能力」只有一处判断。
+final ecardBindConfigProvider = Provider<EcardBindConfig>(
+  (ref) => EcardBindConfig.fromDartDefine(),
+);
+
+/// 绑定码交换客户端。测试用假 transport 覆盖。
+final ecardBindClientProvider = Provider<EcardBindClient>((ref) {
+  final EcardBindConfig config = ref.watch(ecardBindConfigProvider);
+  return EcardBindClient(bindToken: config.bindToken, baseUrl: config.baseUrl);
+});
+
+/// 校园邮箱（`/mail`）。///
 /// 不走 `AppRuntime`：这条链只在「有真后端」时才有意义，
 /// 而 mock 运行时也能用（内存实现，邮箱域校验是真的，事件是演示数据）。
 final mailRepositoryProvider = Provider<MailPort>((ref) {

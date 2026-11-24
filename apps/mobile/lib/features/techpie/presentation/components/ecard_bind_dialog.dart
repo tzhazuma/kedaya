@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/app_providers.dart';
 import '../../../../data/campus/ecard_api_client.dart' show EcardException;
 import '../../../../data/campus/ecard_bind_client.dart';
-import '../../../../data/campus/ecard_bind_config.dart';
 import '../../../../presentation/theme/kedaya_theme_extension.dart';
 import '../../../../presentation/theme/kedaya_tokens.dart';
 import '../../application/techpie_providers.dart';
@@ -55,13 +54,9 @@ class _EcardBindDialogState extends ConsumerState<_EcardBindDialog> {
       _error = null;
     });
 
-    final EcardBindConfig config = EcardBindConfig.fromDartDefine();
     try {
-      final EcardBindClient client = EcardBindClient(
-        bindToken: config.bindToken,
-        baseUrl: config.baseUrl,
-      );
-      final EcardBindResult binding = await client.exchange(raw);
+      final EcardBindResult binding =
+          await ref.read(ecardBindClientProvider).exchange(raw);
 
       // OPENID 只在这里出现一次：交给端口落盘，随后丢弃。
       final result = await ref

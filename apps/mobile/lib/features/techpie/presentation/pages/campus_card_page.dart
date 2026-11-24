@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/app_providers.dart';
 import '../../../../application/session_controller.dart';
-import '../../../../data/campus/ecard_bind_config.dart';
 import '../../../../data/mock/mock_controls.dart';
 import '../../../../domain/models/campus_card.dart';
 import '../../../../presentation/components/async_state_view.dart';
@@ -134,7 +133,7 @@ class _OpenBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final KedaYaColors colors = context.kedayaColors;
     final bool isMock = ref.watch(mockControlsProvider) != null;
-    final bool bindConfigured = EcardBindConfig.fromDartDefine().isConfigured;
+    final bool bindConfigured = ref.watch(ecardBindConfigProvider).isConfigured;
     final bool needsRebind = snapshot.link.state.needsRebind;
     return ListView(
       padding: const EdgeInsets.all(KedaYaTokens.space4),
