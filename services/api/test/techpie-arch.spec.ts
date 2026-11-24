@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -50,8 +50,14 @@ function sourceFiles(root: string): string[] {
   return walk(root).filter((file) => SOURCE_EXT.test(file) && !file.endsWith('.d.ts'));
 }
 
-/** 相对仓库根的路径（用于断言与报错信息，避免把绝对路径写进测试输出） */
-const rel = (file: string): string => relative(REPO_ROOT, file);
+/**
+ * 相对仓库根的路径（用于断言与报错信息，避免把绝对路径写进测试输出）。
+ *
+ * ⚠️ 必须把分隔符统一成 `/`：`path.relative` 在 Windows 上返回反斜杠，
+ * 而下面的断言写的是 `startsWith('services/api/src')` / `includes('webview-session/')`。
+ * 不归一化会让这三条不变式**只在 Windows 上红**，看着像架构违规，其实是路径写法。
+ */
+const rel = (file: string): string => relative(REPO_ROOT, file).split(sep).join('/');
 
 /** 8 个禁用键名（契约 §11.4 I1）—— 刻意在测试里独立抄一遍，防止实现被改后测试跟着漂 */
 const FORBIDDEN_KEYS = [

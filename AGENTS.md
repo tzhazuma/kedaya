@@ -92,8 +92,8 @@ Web 门户目前交付拼单垂直切片、管理后台占位与校园活动无�
 Web 的模块交付状态以 `apps/web/src/domain/models/delivery.ts` 为**唯一真相**
 （宫格角标与模块说明页都由它驱动，别在组件里另写一份判断）。本地启动、数据库与真实联调方式见 `docs/local-development.md`。
 
-提交前请跑以下命令；除 `docs/features/activities.md` §9 记录的既有 Windows 基线红灯外，
-不应新增失败（API techpie 3 项、Web buddy-tokens 1 项、API lint 5 项，均不属于活动功能）：
+提交前请跑以下命令；除 `docs/features/activities.md` §9 记录的既有基线（API lint 5 项）外，
+不应新增失败。API / Web 的测试套件在 Windows 与 Linux 上都应为全绿（2026-11-25 修掉了两处路径分隔符导致的假红灯）：
 
 ```bash
 npm run typecheck -w @kedaya/api && npm run test -w @kedaya/api && npm run lint -w @kedaya/api

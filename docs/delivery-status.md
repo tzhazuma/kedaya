@@ -24,17 +24,20 @@ macOS / iOS 的本地构建步骤见 `docs/build/apple.md`；鸿蒙见 `docs/bui
 
 | 包 | 结果 |
 | --- | --- |
-| `@kedaya/api` | **1839 通过 / 3 失败 / 15 跳过**（3 个失败是 `techpie-arch` 既有基线） |
-| `@kedaya/web` | **846 通过 / 1 失败**（`buddy-tokens` 既有基线） |
+| `@kedaya/api` | **1842 通过 / 0 失败 / 15 跳过** |
+| `@kedaya/web` | **847 通过 / 0 失败** |
 | `@kedaya/miniapp` | **1496 通过 / 0 失败** |
 | `apps/mobile`（Flutter） | **1251 通过 / 0 失败**，`flutter analyze` 0 issue |
 | `@kedaya/miniapp` 构建 | `build:weapp` + `verify:weapp` 通过；主包 1.73 MiB（上限 2） |
 | HAP | `flutter build hap --release` 通过，`module.json` 为 `versionName 0.1.8 / versionCode 9` |
 
-两条既有红灯**不是本次引入**，但会让 `main` 的 CI 一直是红的：
+2026-11-25 修掉两处「假红灯」：`techpie-arch.spec.ts` 与 `buddy-tokens.test.ts`
+用 `/` 比较路径，而 Windows 上 `path.relative` 产出 `\`，于是本地恒红、Linux CI 恒绿。
+归一化后本地与 CI 一致，两套测试都是 0 失败。
 
-- `services/api/test/buddy-http.spec.ts` 4 例：依赖真实 Postgres，本地无库被跳过、CI 跑真库时失败；
-- `apps/web/src/presentation/theme/buddy-tokens.test.ts` 1 例：`buddy` 组件里扫到了请求字样。
+**仍红的是 CI 侧**：`services/api/test/buddy-http.spec.ts` 4 例依赖真实 Postgres，
+本地无库被跳过、CI 跑真库时失败——这不是本地能复现的问题。
+另有 `npm run lint -w @kedaya/api` 5 项既有未使用变量。
 
 ## 3. 功能矩阵（按端）
 

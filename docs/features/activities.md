@@ -187,13 +187,26 @@
 
 ## 9. 已知基线红灯（不属于活动功能）
 
-在 Windows 上跑全量门禁时，以下失败是既有问题，**不要算到 activities 头上**：
+**2026-11-25 更新：API 与 Web 的「基线红灯」都已修掉，原因是测试自身的 Windows 路径缺陷。**
 
-| 位置 | 数量 | 原因 |
-| ------------------------------------------------- | --------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API `test/techpie-arch.spec.ts` | 3 项 | 断言用 `/` 比较路径，Windows 下 `path.relative` 产出 `\`，导致 `startsWith('services/api/')` / `includes('webview-session/')` 不匹配 |
-| Web `src/presentation/theme/buddy-tokens.test.ts` | 1 项 | 同一类 Windows 路径分隔符问题，扫描到的组件数为 0 |
-| API `npm run lint` | 5 项（4 error + 1 warning） | `auth.module.ts`、`tts.service.ts`、`tts.controller.spec.ts`、`wechat.controller.ts`、`test/tts-http.spec.ts` 的既有未使用变量 / 失效 eslint-disable |
+两条断言用 `/` 比较路径，而 `path.relative` 在 Windows 上产出 `\`：
+`startsWith('services/api/src')`、`includes('webview-session/')`、
+`includes('presentation/components/buddy')` 在 Windows 上全部不匹配。
+修法是先把路径归一化成 `/` 再比较（`relative(...).split(sep).join('/')`）。
+
+修完后的实测：
+
+| 位置 | 结果 |
+| --- | --- |
+| API `npm run test` | **1842 通过 / 0 失败 / 15 跳过** |
+| Web `npm run test` | **847 通过 / 0 失败** |
+
+**仍存在的基线**：`npm run lint -w @kedaya/api` 5 项（4 error + 1 warning），
+是 `auth.module.ts`、`tts.service.ts`、`tts.controller.spec.ts`、`wechat.controller.ts`、
+`test/tts-http.spec.ts` 的既有未使用变量 / 失效 eslint-disable，与活动功能无关。
+
+`services/api/test/buddy-http.spec.ts` 的 4 个 DB 集成用例依赖真实 Postgres：
+本地无库时被跳过，CI 跑真库时会失败（**CI 红在它身上，不是本地能复现的问题**）。
 
 实测（2026-11-23）：
 

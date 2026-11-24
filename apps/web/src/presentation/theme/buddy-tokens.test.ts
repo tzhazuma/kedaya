@@ -9,7 +9,7 @@
  * 5. 发布表单**没有自由文本标签输入**（规格 §3.2 的封闭标签硬要求）。
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
@@ -46,7 +46,10 @@ function collectFiles(target: string): string[] {
   });
 }
 
-const FILES = TARGETS.flatMap(collectFiles);
+// 统一成 `/`：Windows 上 `join` 产出反斜杠，而下面的断言按 `/` 匹配目录
+// （`file.includes('presentation/components/buddy')`）。不归一化会让这条
+// 「presentation 不得直接发请求」的不变式在 Windows 上恒红、看起来像违规。
+const FILES = TARGETS.flatMap(collectFiles).map((file) => file.split(sep).join('/'));
 const readSource = (target: string): string => readFileSync(join(SRC, target), 'utf8');
 
 describe('令牌纪律：buddy 源码零手写色值', () => {
