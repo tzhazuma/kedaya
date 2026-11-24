@@ -32,6 +32,7 @@ import '../features/activities/presentation/pages/activity_compose_page.dart';
 import '../features/activities/presentation/pages/activity_detail_page.dart';
 import '../features/activities/presentation/pages/activity_history_import_page.dart';
 import '../features/activities/presentation/pages/activity_import_page.dart';
+import '../features/activities/presentation/pages/activity_mail_page.dart';
 import '../features/buddy/presentation/pages/buddy_board_page.dart';
 import '../features/buddy/presentation/pages/buddy_compose_page.dart';
 import '../features/buddy/presentation/pages/buddy_post_detail_page.dart';
@@ -342,6 +343,12 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
               name: 'activity-new',
               builder: (BuildContext context, GoRouterState state) =>
                   const ActivityComposePage(),
+            ),
+            GoRoute(
+              path: 'mail',
+              name: 'activity-mail',
+              builder: (BuildContext context, GoRouterState state) =>
+                  const ActivityMailPage(),
             ),
             GoRoute(
               path: 'import',

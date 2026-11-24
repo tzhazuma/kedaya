@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/mock/mock_controls.dart';
+import '../data/mock/mock_mail_repository.dart';
+import '../data/repositories/remote_mail_repository.dart';
 import '../domain/ports/activities_port.dart';
 import '../domain/ports/auth_port.dart';
 import '../domain/ports/buddy_port.dart';
@@ -13,9 +15,11 @@ import '../domain/ports/errand_port.dart';
 import '../domain/ports/faq_port.dart';
 import '../domain/ports/forum_port.dart';
 import '../domain/ports/groupbuy_port.dart';
+import '../domain/ports/kedaya_api_port.dart';
 import '../domain/ports/local_cache_port.dart';
 import '../domain/ports/location_port.dart';
 import '../domain/ports/lost_found_port.dart';
+import '../domain/ports/mail_port.dart';
 import '../domain/ports/media_picker_port.dart';
 import '../domain/ports/platform_ports.dart';
 import '../domain/ports/techpie_port.dart';
@@ -67,6 +71,15 @@ final groupbuyRepositoryProvider = Provider<GroupbuyPort>(
 final activitiesRepositoryProvider = Provider<ActivitiesPort>(
   (ref) => ref.watch(appRuntimeProvider).activities,
 );
+
+/// 校园邮箱（`/mail`）。
+///
+/// 不走 `AppRuntime`：这条链只在「有真后端」时才有意义，
+/// 而 mock 运行时也能用（内存实现，邮箱域校验是真的，事件是演示数据）。
+final mailRepositoryProvider = Provider<MailPort>((ref) {
+  final KedayaApiPort? api = ref.watch(appRuntimeProvider).api;
+  return api == null ? MockMailRepository() : RemoteMailRepository(api);
+});
 
 /// 论坛（契约 §4.1 `forum`）。
 final forumRepositoryProvider = Provider<ForumPort>(

@@ -50,6 +50,11 @@ class ActivitiesPage extends ConsumerWidget {
             icon: const Icon(Icons.link_outlined),
           ),
           IconButton(
+            tooltip: '校园邮箱',
+            onPressed: () => context.push('/activities/mail'),
+            icon: const Icon(Icons.mark_email_read_outlined),
+          ),
+          IconButton(
             tooltip: '刷新',
             onPressed: controller.refresh,
             icon: const Icon(Icons.refresh),
