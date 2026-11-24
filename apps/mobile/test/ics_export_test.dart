@@ -96,10 +96,10 @@ void main() {
       expect(event.recurrence, contains('FREQ=WEEKLY'));
       expect(event.recurrence, contains('BYDAY=MO'));
       expect(event.recurrence, contains('UNTIL='));
-      // 本地 08:00 在 UTC+8 下是 00:00Z
-      expect(event.startUtc.hour, 0);
-      expect(event.endUtc.hour, 1);
-      expect(event.endUtc.minute, 40);
+      // 断言用「同一时刻转 UTC」而不是绝对小时：CI 跑在 UTC，
+      // 写死 00:00Z 只在 UTC+8 的开发机上成立。
+      expect(event.startUtc, DateTime(2026, 3, 2, 8).toUtc());
+      expect(event.endUtc, DateTime(2026, 3, 2, 9, 40).toUtc());
     });
 
     test('考试是单次事件，并带上座位与时长', () {
