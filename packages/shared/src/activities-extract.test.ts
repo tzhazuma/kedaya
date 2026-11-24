@@ -491,6 +491,41 @@ describe('extractActivityCandidates —— 标签独占一行（公众号常见�
   });
 });
 
+describe('extractActivityCandidates —— 整段兜底（时间与地点写在两句里）', () => {
+  it('时间与地点分属不同句子、同一段时仍能抽出', () => {
+    const prose = article({
+      title: '名师讲坛：大模型与程序分析',
+      bodyLines: [
+        '10月22日 18:30，信息学院将举办名师讲坛，欢迎师生参加。',
+        '讲座地点设在信息学院 1 号楼报告厅，请提前十分钟入场。',
+      ],
+    });
+    const candidates = extractActivityCandidates(prose, {
+      now: NOW,
+      timeZone: 'Asia/Shanghai',
+    });
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.startsAt).not.toBeNull();
+    expect(candidates[0]?.location).toContain('报告厅');
+    expect(candidates[0]?.title).toBe('名师讲坛：大模型与程序分析');
+  });
+
+  it('同样的句式但带回顾语气时仍然不产出', () => {
+    const recap = article({
+      title: '名师讲坛回顾',
+      bodyLines: [
+        '10月22日 18:30，信息学院举办了名师讲坛，吸引了百余名师生参加。',
+        '讲座地点设在信息学院 1 号楼报告厅，现场气氛热烈。',
+      ],
+    });
+    const candidates = extractActivityCandidates(recap, {
+      now: NOW,
+      timeZone: 'Asia/Shanghai',
+    });
+    expect(candidates).toHaveLength(0);
+  });
+});
+
 describe('extractActivityCandidates —— 缺年份与字段边界', () => {
   it('缺年份的过去日期留在今年，不推下一年', () => {
     const past = article({

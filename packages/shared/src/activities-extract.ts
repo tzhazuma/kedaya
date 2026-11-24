@@ -377,7 +377,8 @@ function findRegistrationDeadline(
  * 地点 / 主办 / 报名链接
  * ------------------------------------------------------------------ */
 
-const LOCATION_RE = /(?:活动地点|举办地点|地点|地址|场地)\s*[：:]\s*([^\n。；;]+)/;
+const LOCATION_RE =
+  /(?:(?:活动|举办|讲座|报告)地点|地点|地址|场地)\s*(?:[：:]|设在|位于|在)\s*([^\n。；;]+)/;
 const ORGANIZER_RE = /(?:主办方|主办|承办|组织)\s*[：:]\s*([^\n。；;]+)/;
 const NEXT_LABEL_RE = /(?:主办|承办|组织|时间|报名|截止|链接|联系|扫码)\s*[：:]/;
 
@@ -494,7 +495,7 @@ const TIME_ONLY_HINT_RE =
   /(\d{1,2}\s*[:：]\s*\d{2})|(\d{1,2}\s*月\s*\d{1,2}\s*[日号])|(\d{4}\s*[-/年]\s*\d{1,2})/;
 /** 活动「回顾」语气词：这类文字后面不会再有可报名/可参加的活动。 */
 const RECAP_HINT_RE =
-  /(成功举办|顺利举办|已举办|圆满(?:结束|落幕)|落下帷幕|吸引了[^。]{0,12}(?:参加|参与)|现场气氛|回顾)/;
+  /(成功举办|顺利举办|已举办|举办了|举行了|开展了|圆满(?:结束|落幕)|落下帷幕|吸引了[^。]{0,12}(?:参加|参与)|现场气氛|回顾)/;
 
 const PLACE_HINT_RE = /(地点|地址|场地|教室|楼|馆|报告厅|会议室|线上|腾讯会议|zoom)/i;
 
@@ -579,7 +580,9 @@ function pickActivityLines(lines: readonly string[]): string[] {
     if (/(?:截止|截至)/.test(text)) picked.add(text);
   }
 
-  return [...picked];
+  // 锚点本身是回顾语气就不算锚点。`pickEventCandidateLines` 的「参加/参与」
+  // 线索会把「…举办了讲座，吸引了…参加」也选进来，那一支绕过了上面的语气检查。
+  return [...picked].filter((line) => !RECAP_HINT_RE.test(line));
 }
 
 function isEvidenceLine(text: string): boolean {
@@ -783,7 +786,58 @@ export function extractActivityCandidates(
     if (byKey.size >= maxCandidates) break;
   }
 
+  // 一段也没抽到时，退一步按「段」判断一次：通知常把时间写在一句里、
+  // 地点写在另一句里（「4月10日…开设讲座」「讲座在图书馆报告厅举行」），
+  // 逐行锚点永远匹配不上，但整段读是清楚的。
+  // 只在这一步放宽，且仍然拒绝回顾语气 —— 放宽只影响「能不能认出来」，
+  // 不影响「该不该是一条活动」。
+  if (byKey.size === 0) {
+    for (const section of splitIntoSections(bodyLines)) {
+      const text = section.join(String.fromCharCode(10));
+      if (RECAP_HINT_RE.test(text)) continue;
+      const deadline = findRegistrationDeadline(section, options.now, options.timeZone);
+      const start = findStart(section, options.now, options.timeZone, deadline);
+      if (start.startsAt === null && deadline === null) continue;
+      const location = labelValue(section, LOCATION_RE);
+      const organizer = labelValue(section, ORGANIZER_RE);
+      const candidate: ActivityCandidate = {
+        title: truncateActivityField(article.title.trim() || '未命名活动'),
+        startsAt: start.startsAt,
+        endsAt: start.endsAt,
+        location,
+        organizer,
+        registrationDeadlineAt: deadline?.at ?? null,
+        registrationDeadlineRaw: deadline?.raw ?? null,
+        registrationUrl: findRegistrationUrl(section, article.sourceUrl),
+        evidenceText: buildEvidence(section),
+        confidence: scoreCandidate(start.startsAt, deadline, location, organizer),
+      };
+      const key = dedupeKey(candidate);
+      const existing = byKey.get(key);
+      if (existing === undefined) byKey.set(key, candidate);
+      else byKey.set(key, mergeDuplicateCandidate(existing, candidate));
+      if (byKey.size >= maxCandidates) break;
+    }
+  }
+
   return [...byKey.values()];
+}
+
+/** 按空行切段（公众号最常见的分段方式）。 */
+function splitIntoSections(lines: readonly string[]): string[][] {
+  const sections: string[][] = [];
+  let current: string[] = [];
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line === '') {
+      if (current.length > 0) sections.push(current);
+      current = [];
+      continue;
+    }
+    current.push(line);
+  }
+  if (current.length > 0) sections.push(current);
+  return sections;
 }
 
 /**
