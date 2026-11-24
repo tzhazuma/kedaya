@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/app_providers.dart';
 import '../../application/campus_bindings_controller.dart';
@@ -57,9 +58,7 @@ class ProfilePage extends ConsumerWidget {
           Row(
             children: <Widget>[
               FilledButton(
-                onPressed: () async {
-                  await ref.read(sessionControllerProvider.notifier).signIn();
-                },
+                onPressed: () => context.push('/campus-login'),
                 child: const Text('统一身份登录'),
               ),
               const SizedBox(width: KedaYaTokens.space3),

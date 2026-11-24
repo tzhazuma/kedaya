@@ -48,6 +48,14 @@ final class MockAuthRepository implements AuthPort {
   }
 
   @override
+  Future<AuthSession> signInWithCasCode(String code) async {
+    if (code.trim().isEmpty) {
+      throw StateError('请填写 CAS 授权码');
+    }
+    return signInWithUnifiedIdentity();
+  }
+
+  @override
   Future<AuthSession> refresh() async {
     await controls.simulate();
     final AuthSession? existing = _session;

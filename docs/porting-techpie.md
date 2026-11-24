@@ -19,7 +19,7 @@
 
 | 能力 | 上游实现 | 我们缺的前置条件 |
 | --- | --- | --- |
-| CAS 登录 | `uni_auth_service.dart` + WebView 登录 | 校方**注册的回调 service URL**；把 `ticket` 交给后端校验（后端已有 mock 适配器，需换真实实现） |
+| CAS 登录 | `uni_auth_service.dart` + WebView 登录 | 服务端已完成：`/auth/cas/login-url`、`/auth/cas/callback`（ticket→30s 单次 code）、`/auth/cas/exchange`；客户端已完成 `/campus-login` 页与 `AuthPort.signInWithCasCode`。**仍缺**：校方注册的回调 URL（`CAMPUS_CAS_SERVICE`）与 `CAMPUS_CAS_MODE=live` |
 | 场馆预约 | `oa_gym_service.dart` + `oa_gym_local_client.dart`（OA 表单 + HTML 表格解析） | OA 会话（CAS 之后）；需要 `webview_flutter`（移动）与 `desktop_webview_window`（桌面） |
 | ELRC 录播 | `elrc_client.dart`（5 个 JSON 端点） | ELRC cookie；同上 WebView 依赖 |
 | Gradescope | `assignment_service.dart` `_fetchGradescope` | Gradescope 会话（第三方登录） |

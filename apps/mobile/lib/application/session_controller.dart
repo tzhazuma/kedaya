@@ -36,6 +36,17 @@ final class SessionController extends AsyncNotifier<AuthSession?> {
     );
   }
 
+  /// 用 CAS 回调产生的一次性授权码登录。
+  ///
+  /// 桌面/移动统一走这条：浏览器完成 CAS，应用拿 `?code=` 或用户粘贴，
+  /// 避免在客户端处理 cookie 与重定向。
+  Future<void> signInWithCode(String code) async {
+    state = const AsyncLoading<AuthSession?>();
+    state = await AsyncValue.guard<AuthSession?>(
+      () => ref.read(authProvider).signInWithCasCode(code),
+    );
+  }
+
   Future<void> signOut() async {
     state = const AsyncLoading<AuthSession?>();
     await ref.read(authProvider).signOut();

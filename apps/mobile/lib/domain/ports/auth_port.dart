@@ -29,6 +29,13 @@ abstract interface class AuthPort {
   /// 用户在授权页取消时抛 [StateError]。
   Future<AuthSession> signInWithUnifiedIdentity();
 
+  /// 用**已拿到的一次性授权码**换取会话（CAS 回调 → `/auth/cas/exchange`）。
+  ///
+  /// 与 [signInWithUnifiedIdentity] 的区别：这里不负责打开浏览器，
+  /// 授权码由调用方（登录页 / 深链）提供。这样就绕开了"客户端拿不到
+  /// CAS 重定向"的平台差异，桌面端也能用。
+  Future<AuthSession> signInWithCasCode(String code);
+
   /// 用 refreshToken 轮换 accessToken。
   ///
   /// 失败抛 [StateError]；调用方决定是否降级为登出。

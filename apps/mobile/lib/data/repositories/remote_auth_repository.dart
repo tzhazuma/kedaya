@@ -79,11 +79,20 @@ final class RemoteAuthRepository implements AuthPort {
     if (code == null || code.isEmpty) {
       throw StateError('用户取消了统一身份认证');
     }
+    return signInWithCasCode(code);
+  }
+
+  @override
+  Future<AuthSession> signInWithCasCode(String code) async {
+    final String normalized = code.trim();
+    if (normalized.isEmpty) {
+      throw StateError('请填写 CAS 授权码');
+    }
     final Result<AuthSession> result = await _api.send<AuthSession>(
       ApiRequest(
         path: 'auth/cas/exchange',
         method: ApiMethod.post,
-        body: <String, Object?>{'code': code},
+        body: <String, Object?>{'code': normalized},
         idempotencyKey: newIdempotencyKey(),
       ),
       _decodeSession,
