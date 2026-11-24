@@ -237,3 +237,68 @@ describe('批量语义（由控制器编排，服务层保证单篇独立）', (
     expect(second.code).toBe('login-required');
   });
 });
+
+/**
+ * `parseProfileList` 与抓取路径的关键区别：**它不发任何网络请求**。
+ *
+ * 所以这组测试不需要 stub `fetch` —— 反过来说，如果哪天这里需要 stub，
+ * 就说明有人偷偷加了抓取，那是要拒绝的改动。
+ */
+describe('WechatArticleService · parseProfileList', () => {
+  const service = new WechatArticleService();
+
+  const articlePage = (json: unknown) =>
+    `<html><body><script>var nickname = "上科大信息学院";`
+    + `var msgList = '${JSON.stringify(json)}';</script></body></html>`;
+
+  it('解析出文章列表，且不触碰网络', () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const outcome = service.parseProfileList(
+      articlePage({
+        list: [
+          {
+            comm_msg_info: { type: 49, datetime: 1732000000 },
+            app_msg_ext_info: {
+              title: '校园马拉松报名',
+              content_url: 'https://mp.weixin.qq.com/s?__biz=A&mid=1',
+              multi_app_msg_item_list: [],
+            },
+          },
+        ],
+      }),
+    );
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) throw new Error('unreachable');
+    expect(outcome.list.items).toHaveLength(1);
+    expect(outcome.list.items[0]?.title).toBe('校园马拉松报名');
+    expect(outcome.list.accountName).toBe('上科大信息学院');
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+
+  it('空页面返回 empty-page', () => {
+    const outcome = service.parseProfileList('  ');
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) throw new Error('unreachable');
+    expect(outcome.code).toBe('empty-page');
+  });
+
+  it('不是历史页时给出可操作的说明', () => {
+    const outcome = service.parseProfileList('<html><body>某篇文章</body></html>');
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) throw new Error('unreachable');
+    expect(outcome.code).toBe('unrecognized-structure');
+    expect(outcome.message).toContain('历史');
+  });
+
+  it('超过 12 MB 直接拒绝，不做解析', () => {
+    const outcome = service.parseProfileList('x'.repeat(12 * 1024 * 1024 + 1));
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) throw new Error('unreachable');
+    expect(outcome.code).toBe('payload-too-large');
+  });
+});

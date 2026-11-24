@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
-import { parseWechatArticle, type WechatArticle } from '@kedaya/shared';
+import {
+  parseWechatArticle,
+  parseWechatProfileList,
+  type WechatArticle,
+  type WechatProfileList,
+} from '@kedaya/shared';
 
 /** 取一次文章 HTML 的超时（毫秒）。微信正文页 3–4 MB，给宽一点。 */
 const FETCH_TIMEOUT_MS = 12_000;
@@ -115,4 +120,34 @@ export class WechatArticleService {
       clearTimeout(timer);
     }
   }
+
+  /**
+   * 解析用户**自己保存**的公众号「历史消息」页。
+   *
+   * 这条路和 [`fetchAndParse`] 的分工要说清：
+   * - 本方法**不发任何网络请求**，输入就是调用方给的 HTML；
+   * - 因此不存在「抓取」「绕过验证」的问题 —— 用户本来就能在微信里看到这一页；
+   * - 想自动拿这一页就必须持有微信客户端内部的会话 Cookie（`wap_sid2`），
+   *   那条路等于逆向微信客户端，本服务不碰。
+   *
+   * 体积上限沿用 [MAX_HTML_BYTES]：历史页比文章页大，但也不该无界。
+   */
+  parseProfileList(rawHtml: string): WechatProfileOutcome {
+    if (rawHtml.length > MAX_HTML_BYTES) {
+      return {
+        ok: false,
+        code: 'payload-too-large',
+        message: '页面上限 12 MB，请只保存一页历史消息',
+      };
+    }
+    const parsed = parseWechatProfileList(rawHtml);
+    if (!parsed.ok) {
+      return { ok: false, code: parsed.error.code, message: parsed.error.message };
+    }
+    return { ok: true, list: parsed.value };
+  }
 }
+
+export type WechatProfileOutcome =
+  | { readonly ok: true; readonly list: WechatProfileList }
+  | { readonly ok: false; readonly code: string; readonly message: string };

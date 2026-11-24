@@ -32,6 +32,9 @@ const singleUrl = z
  *
  * 所以唯一可行的「拿到多篇文章」的路是：**用户自己在微信里逐篇复制链接**，
  * 一次性交给我们批量解析。这不是爬虫，是「把用户已经打开的东西读出来」。
+ *
+ * 后来补上的第二条路见 `POST /wechat/profile-list`：用户把「查看历史消息」页
+ * 保存下来，我们只解析那份 HTML。它同样不抓取、不带 Cookie。
  */
 const articleRequestSchema = z
   .object({
@@ -50,6 +53,16 @@ const articleRequestSchema = z
 
 /** 批量上限：超过这个数就拒绝 —— 20 篇已经是一次「整理几周通知」的量了 */
 const MAX_BATCH = 20;
+
+/**
+ * 历史消息页入参。
+ *
+ * `.strict()` 同样重要：多塞 `cookie` / `url` 会被结构性拒绝，
+ * 免得让人以为服务端会替他去抓页面。本端点**只解析传进来的 HTML**。
+ */
+const profileListRequestSchema = z
+  .object({ html: z.string().min(1).max(12 * 1024 * 1024) })
+  .strict();
 
 @ApiTags('wechat')
 @Controller('wechat')
@@ -112,9 +125,44 @@ export class WechatController {
     return { ok: true, article: this.toArticleView(outcome.article) };
   }
 
-  /** 把领域对象转成对外视图（单条与批量共用，避免两处漂移） */
-  private toArticleView(article: WechatArticle) {
+  @Post('profile-list')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '解析用户自己保存的公众号历史消息页',
+    description:
+      '入参 `{html}`：用户在微信里打开公众号「查看历史消息」后保存下来的页面内容。' +
+      '返回 `{ok, accountName?, biz?, items:[{title,url,publishedAt,digest?,coverUrl?,isHeadline}]}`。' +
+      '\n\n⚠️ **本端点不发任何网络请求**：输入就是调用方给的 HTML。' +
+      '微信没有公开的历史列表 API，自动获取需要微信客户端内部的会话 Cookie，本服务不碰那条路。' +
+      '\n\n失败时返回 `{ok:false, code, message}`：`empty-page` / `unrecognized-structure` / ' +
+      '`module-missing` / `payload-too-large`。',
+  })
+  @ApiResponse({ status: 200, description: '解析成功或结构化的失败（都在 200 里，用 ok 区分）' })
+  @ApiResponse({ status: 400, description: '入参不合法' })
+  profileList(@Body() body: unknown) {
+    const parsed = profileListRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        code: 'invalid-request',
+        message: '只接受 `{html}` 一个字段（页面内容），最多 12 MB',
+      };
+    }
+    const outcome = this.service.parseProfileList(parsed.data.html);
+    if (!outcome.ok) {
+      return { ok: false, code: outcome.code, message: outcome.message };
+    }
     return {
+      ok: true,
+      accountName: outcome.list.accountName,
+      biz: outcome.list.biz,
+      total: outcome.list.items.length,
+      items: outcome.list.items,
+    };
+  }
+
+  /** 把领域对象转成对外视图（单条与批量共用，避免两处漂移） */
+  private toArticleView(article: WechatArticle) {    return {
       title: article.title,
       accountName: article.accountName,
       publishedAt: article.publishedAt,
