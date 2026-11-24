@@ -15,6 +15,7 @@ import { EnvelopeInterceptor } from '../src/common/interceptors/envelope.interce
 import { TraceMiddleware } from '../src/common/middleware/trace.middleware';
 import { ValidationError } from '../src/common/errors/app-error';
 import { ActivitiesService } from '../src/modules/activities/application/activities.service';
+import { OfficialSyncService } from '../src/modules/activities/application/official-sync.service';
 import { ActivitiesController } from '../src/modules/activities/activities.controller';
 
 /**
@@ -75,12 +76,23 @@ const service = {
   dispatchDue: vi.fn(async () => ({ claimed: 0, sent: 0, failed: 0, cancelled: 0, reclaimed: 0 })),
 };
 
+const officialService = {
+  listAccounts: vi.fn(async () => ({ items: [] })),
+  listSubscriptions: vi.fn(async () => ({ items: [] })),
+  subscribe: vi.fn(async () => ({ ok: true })),
+  unsubscribe: vi.fn(async () => ({ ok: true })),
+  sync: vi.fn(async () => ({ scanned: 0, created: 0, skipped: 0 })),
+};
+
 @Module({
   controllers: [ActivitiesController],
   providers: [
     IdempotencyStore,
     TraceMiddleware,
     { provide: ActivitiesService, useValue: service },
+    // 控制器在「公众号订阅同步」落地后多了一个依赖；这个探针模块只验证
+    // 路由 / 鉴权 / 幂等 / AdminGuard，所以用空实现即可。
+    { provide: OfficialSyncService, useValue: officialService },
     { provide: ConfigService, useValue: { get: () => undefined } },
     { provide: APP_INTERCEPTOR, useClass: EnvelopeInterceptor },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
@@ -93,9 +105,13 @@ describe('HTTP 集成：/activities 路由 + 登录 + Idempotency + AdminGuard',
   let baseUrl: string;
   let token: string;
   const previousAdminKey = process.env.ADMIN_API_KEY;
+  // `authenticateRequest` 从 `process.env.JWT_SECRET` 取密钥；测试签的 token 也要用它，
+  // 否则验签失败会被当成 500（不是 401），10 个用例一起红。
+  const previousJwtSecret = process.env.JWT_SECRET;
 
   beforeAll(async () => {
     process.env.ADMIN_API_KEY = 'activities-admin-key';
+    process.env.JWT_SECRET = SECRET;
     const moduleRef = await Test.createTestingModule({ imports: [ActivitiesProbeModule] }).compile();
 
     app = moduleRef.createNestApplication<NestExpressApplication>();
@@ -115,6 +131,8 @@ describe('HTTP 集成：/activities 路由 + 登录 + Idempotency + AdminGuard',
   afterAll(async () => {
     if (previousAdminKey === undefined) delete process.env.ADMIN_API_KEY;
     else process.env.ADMIN_API_KEY = previousAdminKey;
+    if (previousJwtSecret === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = previousJwtSecret;
     await app?.close();
   });
 
