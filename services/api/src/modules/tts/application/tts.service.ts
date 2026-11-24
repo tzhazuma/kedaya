@@ -284,7 +284,6 @@ export class TtsService {
   /** 动态 import 原生插件；失败返回 null（不抛） */
   private async importSherpa(): Promise<SherpaModule | null> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const mod = (await import('sherpa-onnx-node')) as unknown as {
         default?: SherpaModule;
       } & SherpaModule;

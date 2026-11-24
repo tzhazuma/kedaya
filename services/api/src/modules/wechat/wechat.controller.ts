@@ -36,10 +36,13 @@ const singleUrl = z
  * 后来补上的第二条路见 `POST /wechat/profile-list`：用户把「查看历史消息」页
  * 保存下来，我们只解析那份 HTML。它同样不抓取、不带 Cookie。
  */
+/** 批量上限：超过这个数就拒绝 —— 20 篇已经是一次「整理几周通知」的量了 */
+const MAX_BATCH = 20;
+
 const articleRequestSchema = z
   .object({
     url: singleUrl.optional(),
-    urls: z.array(singleUrl).min(1).max(20).optional(),
+    urls: z.array(singleUrl).min(1).max(MAX_BATCH).optional(),
   })
   .strict()
   .refine(
@@ -50,9 +53,6 @@ const articleRequestSchema = z
     (value) => !(value.url !== undefined && value.urls !== undefined),
     '`url` 与 `urls` 只能给一个',
   );
-
-/** 批量上限：超过这个数就拒绝 —— 20 篇已经是一次「整理几周通知」的量了 */
-const MAX_BATCH = 20;
 
 /**
  * 历史消息页入参。

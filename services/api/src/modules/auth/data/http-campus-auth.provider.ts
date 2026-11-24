@@ -9,13 +9,6 @@ export const CAS_FETCH = 'CAS_FETCH';
 
 const DEFAULT_CAS_URL = 'https://ids.shanghaitech.edu.cn/authserver';
 
-interface CasAttributes {
-  user?: string;
-  realName?: string;
-  email?: string;
-  department?: string;
-}
-
 /**
  * 真实 CAS 身份提供方（Apereo CAS 3.0 `/serviceValidate`）。
  *

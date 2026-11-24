@@ -27,7 +27,6 @@ import { UnauthenticatedError } from '../src/common/errors/app-error';
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
 import { AuthGuard } from '../src/common/auth/auth.guard';
 import { TtsModule } from '../src/modules/tts/tts.module';
-import { TtsService } from '../src/modules/tts/application/tts.service';
 
 /**
  * 未登录的守卫。

@@ -37,7 +37,7 @@ macOS / iOS 的本地构建步骤见 `docs/build/apple.md`；鸿蒙见 `docs/bui
 
 **仍红的是 CI 侧**：`services/api/test/buddy-http.spec.ts` 4 例依赖真实 Postgres，
 本地无库被跳过、CI 跑真库时失败——这不是本地能复现的问题。
-另有 `npm run lint -w @kedaya/api` 5 项既有未使用变量。
+`npm run lint -w @kedaya/api` 已于 2026-11-25 清零（6 处死声明，零行为变化）。
 
 ## 3. 功能矩阵（按端）
 

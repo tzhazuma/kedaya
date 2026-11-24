@@ -13,7 +13,7 @@
  * | audioId 形状不对 | **400** | 防路径穿越 |
  */
 import { Test } from '@nestjs/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthGuard } from '../../common/auth/auth.guard';
 import { TtsController } from './tts.controller';

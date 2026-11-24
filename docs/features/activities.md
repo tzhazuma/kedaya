@@ -201,9 +201,8 @@
 | API `npm run test` | **1842 通过 / 0 失败 / 15 跳过** |
 | Web `npm run test` | **847 通过 / 0 失败** |
 
-**仍存在的基线**：`npm run lint -w @kedaya/api` 5 项（4 error + 1 warning），
-是 `auth.module.ts`、`tts.service.ts`、`tts.controller.spec.ts`、`wechat.controller.ts`、
-`test/tts-http.spec.ts` 的既有未使用变量 / 失效 eslint-disable，与活动功能无关。
+**lint 也已清零**（2026-11-25）：6 处死声明（未使用导入 / 失效 eslint-disable /
+未被使用的 `MAX_BATCH` 常量）全部处理，`npm run lint -w @kedaya/api` 通过。
 
 `services/api/test/buddy-http.spec.ts` 的 4 个 DB 集成用例依赖真实 Postgres：
 本地无库时被跳过，CI 跑真库时会失败（**CI 红在它身上，不是本地能复现的问题**）。

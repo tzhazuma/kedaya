@@ -28,11 +28,7 @@ import { ACCOUNT_DELETION_REPOSITORY } from './domain/account-deletion.domain';
 import { AccountDeletionService } from './application/account-deletion.service';
 import { VerificationCodePrismaRepository } from './data/verification-code.prisma-repository';
 import { WeChatMiniProgramAdapter } from './data/wechat-miniprogram.adapter';
-import {
-  AUTH_PORT,
-  CAMPUS_SESSION_PORT,
-  USER_REPOSITORY,
-} from './domain/auth.domain';
+import { AUTH_PORT, USER_REPOSITORY } from './domain/auth.domain';
 import { CAMPUS_DATA_PORT } from './domain/campus-data.domain';
 import {
   CLOCK,
