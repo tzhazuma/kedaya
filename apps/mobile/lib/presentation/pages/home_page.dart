@@ -32,7 +32,12 @@ class HomePage extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
+      // 桌面宽度下不让内容铺满整窗：一行正文拉到 1300px 会很难读，
+      // 列表行也会长成两条互不相干的「左字右空白」。居中 + 限宽即可。
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1120),
+          child: ListView(
         padding: const EdgeInsets.fromLTRB(
           KedaYaTokens.space4,
           KedaYaTokens.space2,
@@ -110,6 +115,8 @@ class HomePage extends ConsumerWidget {
           const SizedBox(height: KedaYaTokens.space4),
           const UnofficialPlatformNotice(),
         ],
+          ),
+        ),
       ),
     );
   }
