@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -181,6 +182,13 @@ class _ElrcPageState extends ConsumerState<ElrcPage> {
                   ),
                   onTap: () async {
                     Navigator.of(sheetContext).pop();
+                    if (campusWebSupported(defaultTargetPlatform)) {
+                      await context.push(
+                        '/elrc/player?url=${Uri.encodeComponent(source.uri.toString())}'
+                        '&title=${Uri.encodeComponent('${course.name} · ${source.label}')}',
+                      );
+                      return;
+                    }
                     final bool opened = await ref
                         .read(webViewProvider)
                         .openOneTimeUrl(source.uri.toString());

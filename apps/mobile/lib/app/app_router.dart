@@ -7,6 +7,7 @@ import '../features/auth/presentation/campus_login_page.dart';
 import '../features/campus_services/presentation/campus_services_page.dart';
 import '../features/campus_web/presentation/campus_web_page.dart';
 import '../features/elrc/presentation/elrc_page.dart';
+import '../features/elrc/presentation/elrc_player_page.dart';
 import '../features/campus_map/presentation/pages/campus_map_page.dart';
 import '../features/campus_map/presentation/pages/campus_place_detail_page.dart';
 import '../features/canteen/canteen_routes.dart';
@@ -418,6 +419,17 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
           name: 'elrc',
           builder: (BuildContext context, GoRouterState state) =>
               const ElrcPage(),
+          routes: <RouteBase>[
+            GoRoute(
+              path: 'player',
+              name: 'elrc-player',
+              builder: (BuildContext context, GoRouterState state) =>
+                  ElrcPlayerPage(
+                url: state.uri.queryParameters['url'] ?? '',
+                title: state.uri.queryParameters['title'] ?? '课程录播',
+              ),
+            ),
+          ],
         ),
         GoRoute(
           path: campusWebRoutePath,
