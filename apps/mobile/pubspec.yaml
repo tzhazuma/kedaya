@@ -19,6 +19,8 @@ dependencies:
   image_picker: ^1.1.2
   intl: ^0.20.2
   json_annotation: ^4.9.0
+  # 校园卡接口用 AES-ECB + PKCS7（与 ecard 前端一致的加密形态）。
+  pointycastle: ^4.0.0
   shared_preferences: ^2.3.0
   # 4.13.1 是最后一代支持 Flutter 3.32–3.35 的版本；4.14 要求 >=3.38。
   webview_flutter: ^4.13.1
