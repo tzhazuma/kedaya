@@ -1,7 +1,7 @@
 name: kedaya
 description: 可达鸭 · 上海科技大学统一校园服务平台（Flutter 原生端 iOS / Android / 鸿蒙）
 publish_to: "none"
-version: 0.1.5+6
+version: 0.1.6+7
 
 environment:
   sdk: ">=3.6.2 <4.0.0"
