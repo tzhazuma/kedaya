@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -5,6 +8,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../../presentation/components/kedaya_shell.dart';
 import '../../../presentation/theme/kedaya_theme_extension.dart';
 import '../../../presentation/theme/kedaya_tokens.dart';
+import '../domain/campus_bridge_protocol.dart';
 
 /// 校园系统内嵌页 + 同源抓取桥。
 ///
@@ -29,35 +33,8 @@ class CampusWebPage extends StatefulWidget {
   State<CampusWebPage> createState() => _CampusWebPageState();
 }
 
-/// 注入到页面里的抓取函数（纯字符串，便于单测）。
-const String campusWebBridgeScript = r'''
-(function () {
-  if (window.__kedayaBridgeInstalled) return;
-  window.__kedayaBridgeInstalled = true;
-  window.kedayaFetch = async function (url, options) {
-    try {
-      const response = await fetch(url, Object.assign({
-        credentials: 'include',
-        headers: { 'Accept': 'application/json, text/plain, */*' }
-      }, options || {}));
-      const text = await response.text();
-      if (window.KedayaBridge) {
-        window.KedayaBridge.postMessage(JSON.stringify({
-          url: url, status: response.status, body: text
-        }));
-      }
-      return text;
-    } catch (error) {
-      if (window.KedayaBridge) {
-        window.KedayaBridge.postMessage(JSON.stringify({
-          url: url, status: 0, body: String(error)
-        }));
-      }
-      return null;
-    }
-  };
-})();
-''';
+/// 兼容旧测试：页面注入的脚本就是协议脚本。
+const String campusWebBridgeScript = campusBridgeScript;
 
 bool campusWebSupported(TargetPlatform platform) =>
     platform == TargetPlatform.android || platform == TargetPlatform.iOS;
@@ -65,7 +42,44 @@ bool campusWebSupported(TargetPlatform platform) =>
 class _CampusWebPageState extends State<CampusWebPage> {
   WebViewController? _controller;
   String? _lastFetch;
+  final Map<String, Completer<CampusBridgeResponse>> _pending =
+      <String, Completer<CampusBridgeResponse>>{};
+  int _sequence = 0;
   bool get _supported => !kIsWeb && campusWebSupported(defaultTargetPlatform);
+
+  Future<void> _requestCurrentPage() async {
+    final WebViewController? controller = _controller;
+    if (controller == null) return;
+    final String id = 'r${_sequence++}';
+    final Completer<CampusBridgeResponse> completer =
+        Completer<CampusBridgeResponse>();
+    _pending[id] = completer;
+    final CampusBridgeRequest request =
+        CampusBridgeRequest(id: id, url: 'location.href');
+    // location.href 不是合法 URL；页面里换成当前地址。
+    final String script =
+        'kedayaRequest(${jsonEncode(request.encode())})'
+            .replaceFirst('"location.href"', 'location.href');
+    await controller.runJavaScript(script);
+    final CampusBridgeResponse response = await completer.future.timeout(
+      const Duration(seconds: 20),
+      onTimeout: () {
+        _pending.remove(id);
+        return CampusBridgeResponse(
+          id: id,
+          status: 0,
+          body: '',
+          error: '请求超时',
+        );
+      },
+    );
+    if (!mounted) return;
+    setState(() {
+      _lastFetch = response.error == null
+          ? '${response.status} · ${response.body.length} 字符'
+          : '失败：${response.error}';
+    });
+  }
 
   @override
   void initState() {
@@ -76,14 +90,23 @@ class _CampusWebPageState extends State<CampusWebPage> {
       ..addJavaScriptChannel(
         'KedayaBridge',
         onMessageReceived: (JavaScriptMessage message) {
+          final CampusBridgeResponse? response =
+              CampusBridgeResponse.decode(message.message);
+          if (response == null) return;
+          final Completer<CampusBridgeResponse>? completer =
+              _pending.remove(response.id);
+          completer?.complete(response);
           if (!mounted) return;
-          setState(() => _lastFetch = message.message);
+          setState(() => _lastFetch = response.error == null
+              ? '${response.id} · HTTP ${response.status} · '
+                  '${response.body.length} 字符'
+              : '${response.id} · 失败：${response.error}');
         },
       )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (String url) {
-            _controller?.runJavaScript(campusWebBridgeScript);
+            _controller?.runJavaScript(campusBridgeScript);
           },
         ),
       )
@@ -114,9 +137,7 @@ class _CampusWebPageState extends State<CampusWebPage> {
       actions: <Widget>[
         IconButton(
           tooltip: '抓取当前页',
-          onPressed: () {
-            _controller?.runJavaScript('kedayaFetch(location.href)');
-          },
+          onPressed: () => _requestCurrentPage(),
           icon: const Icon(Icons.cloud_download_outlined),
         ),
       ],
@@ -132,7 +153,7 @@ class _CampusWebPageState extends State<CampusWebPage> {
                 vertical: KedaYaTokens.space1,
               ),
               child: Text(
-                '桥接回传 ${_lastFetch!.length} 字符（内容不落日志）',
+                '桥接：$_lastFetch（内容不落日志）',
                 style: TextStyle(
                   fontSize: KedaYaTokens.fontSizeXs,
                   color: colors.textMuted,

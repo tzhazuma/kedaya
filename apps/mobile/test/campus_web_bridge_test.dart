@@ -27,7 +27,8 @@ void main() {
     });
 
     test('失败也会回传，不会静默吞掉', () {
-      expect(campusWebBridgeScript, contains('status: 0'));
+      // 协议脚本里失败走 reply(0, '', String(error))。
+      expect(campusWebBridgeScript, contains("reply(0, '', String(error))"));
     });
   });
 }
