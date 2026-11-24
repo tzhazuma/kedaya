@@ -69,6 +69,22 @@ CAS 登录后用 Dart HTTP 客户端跟随跳转、在内存/加密存储里保�
 两条都需要先解决第 2 节的登录问题。建议先用浏览器手动确认账号在 IDS 可用：
 `https://ids.shanghaitech.edu.cn/authserver/login?service=https://egate.shanghaitech.edu.cn/login`。
 
+## 3.2 校园卡：WebView 桥做不到的部分（2026-11-24 核实）
+
+校园卡的线上接口（`ecard.shanghaitech.edu.cn`）有两条硬约束，浏览器 `fetch` 满足不了：
+
+1. **GET 带请求体**：`/selftrade/queryCardSelfTradeList` 用 GET，但参数放在
+   `{"datajson": 密文}` 的 body 里；`fetch` 对 GET/HEAD 明确禁止 body
+   （`TypeError: Request with GET/HEAD method cannot have body`）。
+2. **自定义头**：`session-type: uniapp`、`isWechatApp: true` 等，浏览器预检会拦。
+
+TechPie 能这么做是因为它用 Dio（原生 HTTP）直接发请求，会话 cookie 由它自己持有。
+也就是说：**校园卡必须走"Dart 侧持有会话"的 A 方案**，而不是我们现在的
+"WebView 持有会话"。同一结论大概率适用于 Gradescope。
+
+已完成的地基：`EcardCipher`（AES-ECB/PKCS7 + 头变换，9 例测试）。
+下一步需要先解决 CAS 登录（拿到各站 cookie），再实现加密存储的 cookie vault。
+
 ## 4. 现在就能做的（不依赖登录）
 
 - 课表 / 考试 / DDL / ICS 导出 / 场馆本机演示 / 营养 / 失物 / 跳蚤 等本机功能
