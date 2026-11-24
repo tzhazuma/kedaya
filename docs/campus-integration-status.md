@@ -85,24 +85,43 @@ TechPie 能这么做是因为它用 Dio（原生 HTTP）直接发请求，会话
 已完成的地基：`EcardCipher`（AES-ECB/PKCS7 + 头变换，9 例测试）。
 下一步需要先解决 CAS 登录（拿到各站 cookie），再实现加密存储的 cookie vault。
 
-## 3.3 校园卡绑定依赖外部服务（2026-11-24 核实）
+## 3.3 校园卡绑定：官方域名下的 `/__ecard_bind` 端点（2026-11-24 修正）
 
-读完 TechPie 的绑定链路后确认：`openid` 不是它自己算的，而是来自一个
-**第三方绑定服务**：
+**上一版这里写错了**：曾把 `https://ecard.shanghaitech.edu.cn/__ecard_bind/exchange`
+判成「GeekPie 私有服务」。项目负责人更正：这个端点是**学校官方**的接入方式，
+学校允许第三方客户端按此绑定校园卡。按更正重写如下。
 
-- 端点：`https://ecard.shanghaitech.edu.cn/__ecard_bind/exchange`
-- 请求要带一个写死在客户端里的共享密钥（`bindToken`）
-- 该端点由 GeekPie 自己的部署提供（TLS 固定 + Android 隧道镜像指向它）
-- 小程序里展示一次性绑定码，客户端拿码去 exchange 换 `openid`
+事实（读 TechPie 源码 + 本机实测）：
 
-也就是说，**校园卡真实绑定不能靠移植代码独立完成**，需要以下之一：
+- 端点在**校园卡域名**下：`/__ecard_bind/exchange`、`/__ecard_bind/health`
+- 交换请求带 `X-Bind-Token` 共享密钥头，body 是 `{"code":"<6 位绑定码>"}`
+- 成功返回 `{ok: true, openid, usertype, orgid}`；`usertype` 决定渠道，缺省 `wechat`
+- 绑定码由**学校一卡通小程序**首页的「绑定码」入口一次性展示
+- 该域名在校园网外解析不到，TechPie 用**系统级 DNS 覆盖**把它指到
+  `119.78.254.196`（只劫持 DNS，不代理 TCP，Android/iOS/鸿蒙各一套原生实现）
 
-1. GeekPie 授权我们访问他们的 `/__ecard_bind` 服务（并接受共用那份密钥）；
-2. 我们自己实现同等的绑定后端（微信小程序 + WeChat OAuth + 他们的换码协议）；
-3. 校园卡系统提供对第三方开放的正式 OAuth/OPENID 接入。
+本机实测（校外网络，2026-11-24）：`nslookup ecard.shanghaitech.edu.cn` 无响应；
+`--resolve` 强制指向 `119.78.254.196` 后 `/__ecard_bind/health` 返回 HTTP 000
+（TLS 未建立）。**结论：校外当前打不通，需校园网或镜像主机在线才能端到端验证。**
 
-在此之前，我们已完成且可验证的是：`EcardCipher`、`CampusCookieVault`、
-`EcardApiClient`（账户/流水，7 例测试）。**不会**用 mock 数据冒充真实余额。
+已落地（可验证）：
+
+| 组件 | 路径 | 状态 |
+| --- | --- | --- |
+| 换码客户端 | `lib/data/campus/ecard_bind_client.dart` | ✅ 11 例单测（状态码映射、200 但非本服务、超时、空码不发请求） |
+| 构建期配置 | `lib/data/campus/ecard_bind_config.dart` | ✅ `KEDAYA_ECARD_BIND_TOKEN` / `KEDAYA_ECARD_BIND_BASE_URL` |
+
+两条刻意的取舍：
+
+1. **密钥不进仓库**。`EcardBindClient` 构造时要求非空 token，未配置就抛
+   `ArgumentError`；`EcardBindConfig.isConfigured` 让 UI 显示「本构建未启用绑定」，
+   而不是让用户点进去等超时。
+2. **200 不等于成功**。落到同一 host 的强制门户、别的服务也回 200，所以只认
+   `ok == true` 且 `openid` 非空，否则报「绑定服务返回异常」。这条有单测守着。
+
+还没做的：DNS 覆盖的原生实现（`EcardBindHijackPort` 的 Android `VpnService` /
+iOS `NEPacketTunnelProvider` / 鸿蒙 `VpnExtensionAbility`）。这一步需要真机 + 校园网
+才能验证，没有证据前不写「已实现」。
 
 ## 4. 现在就能做的（不依赖登录）
 
