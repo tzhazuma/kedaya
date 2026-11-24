@@ -2,12 +2,12 @@
 
 > 2026-11-25。只写**已验证**的事实；没验证的写「未验证」，做不到的写「不做的原因」。
 
-## 1. 安装包（`mobile-v0.1.7`，已发布）
+## 1. 安装包（`mobile-v0.1.8`，已发布）
 
 | 平台 | 资产 | 大小 | 状态 |
 | --- | --- | --- | --- |
-| Android | `kedaya-0.1.7-android-universal-debug-signed.apk` | 64 MB | debug 签名，可装可跑，不能上架 |
-| iOS | `kedaya-0.1.7-ios-unsigned.zip` | 11.7 MB | **未签名** `Runner.app`，需在你 Mac 上重签 |
+| Android | `kedaya-0.1.8-android-universal-debug-signed.apk` | 64 MB | debug 签名，可装可跑，不能上架 |
+| iOS | `kedaya-0.1.8-ios-unsigned.zip` | 11.7 MB | **未签名** `Runner.app`，需在你 Mac 上重签 |
 | Windows x64 | `setup.exe` + `portable.zip` | 11.7 / 13.8 MB | 可用 |
 | Windows arm64 | `portable-experimental.zip` | 13.1 MB | 实验性，未真机验证 |
 | Linux x64 | `tar.gz` + `deb` | 20.3 / 16.1 MB | 可用 |
@@ -24,12 +24,12 @@ macOS / iOS 的本地构建步骤见 `docs/build/apple.md`；鸿蒙见 `docs/bui
 
 | 包 | 结果 |
 | --- | --- |
-| `@kedaya/api` | **1838 通过 / 3 失败 / 15 跳过**（3 个失败是 `techpie-arch` 既有基线） |
+| `@kedaya/api` | **1839 通过 / 3 失败 / 15 跳过**（3 个失败是 `techpie-arch` 既有基线） |
 | `@kedaya/web` | **846 通过 / 1 失败**（`buddy-tokens` 既有基线） |
-| `@kedaya/miniapp` | **1492 通过 / 0 失败** |
-| `apps/mobile`（Flutter） | **1246 通过 / 0 失败**，`flutter analyze` 0 issue |
+| `@kedaya/miniapp` | **1496 通过 / 0 失败** |
+| `apps/mobile`（Flutter） | **1251 通过 / 0 失败**，`flutter analyze` 0 issue |
 | `@kedaya/miniapp` 构建 | `build:weapp` + `verify:weapp` 通过；主包 1.73 MiB（上限 2） |
-| HAP | `flutter build hap --release` 通过，`pack.info` 版本 0.1.7+8 |
+| HAP | `flutter build hap --release` 通过，`module.json` 为 `versionName 0.1.8 / versionCode 9` |
 
 两条既有红灯**不是本次引入**，但会让 `main` 的 CI 一直是红的：
 
@@ -46,7 +46,7 @@ macOS / iOS 的本地构建步骤见 `docs/build/apple.md`；鸿蒙见 `docs/bui
 | 校园邮箱绑定 / 同步 / 提升 | ✅ | — | ✅ |
 | 活动导出日历（ICS） | ✅ | ✅（导出） | ✅ |
 | 提醒（站内信） | ✅ | — | ✅ |
-| 校园卡：绑定码 / 余额 / 流水 / 付款码 | mock | — | 注入密钥后可用 |
+| 校园卡：绑定码 / 余额 / 流水 / 付款码 | mock | — | 注入 `KEDAYA_ECARD_BIND_TOKEN` 后可绑定；真实数据需校园网 |
 | ELRC 录播 / OA 场馆 / CAS 登录 | — | — | ✅ |
 | 知枢五页（日报 / JARVIS / 资料库 / 知乎 / QQ） | ✅ | — | ✅ |
 
