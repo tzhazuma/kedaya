@@ -64,6 +64,10 @@ env:
   # 未配置仓库变量时默认 mock：产物开箱可看 UI，不指向占位域名。
   KEDAYA_FLAVOR: ${{ vars.KEDAYA_FLAVOR || 'mock' }}
   KEDAYA_API_BASE_URL: ${{ vars.KEDAYA_API_BASE_URL || 'https://api.kedaya.local' }}
+  # 校园卡绑定码交换的共享密钥。未配置时为空，客户端据此把「绑定」入口显示成
+  # 「本构建未启用」——不会出现一个注定超时的按钮。配了这个 secret 再出包，
+  # 产物里才带可用的校园卡绑定。
+  KEDAYA_ECARD_BIND_TOKEN: ${{ secrets.KEDAYA_ECARD_BIND_TOKEN }}
 
 jobs:
   # ------------------------------------------------------------------
@@ -155,7 +159,8 @@ jobs:
             --build-name="$VERSION" \
             --build-number="$BUILD_NUMBER" \
             --dart-define=KEDAYA_FLAVOR="$KEDAYA_FLAVOR" \
-            --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL"
+            --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL" \
+            --dart-define=KEDAYA_ECARD_BIND_TOKEN="$KEDAYA_ECARD_BIND_TOKEN"
 
       - name: 收集产物
         run: |
@@ -248,7 +253,8 @@ jobs:
             "--build-name=$env:VERSION" `
             "--build-number=$env:BUILD_NUMBER" `
             "--dart-define=KEDAYA_FLAVOR=$env:KEDAYA_FLAVOR" `
-            "--dart-define=KEDAYA_API_BASE_URL=$env:KEDAYA_API_BASE_URL"
+            "--dart-define=KEDAYA_API_BASE_URL=$env:KEDAYA_API_BASE_URL" `
+            "--dart-define=KEDAYA_ECARD_BIND_TOKEN=$env:KEDAYA_ECARD_BIND_TOKEN"
 
       - name: 打包便携 zip 与 Inno Setup 安装器
         run: |
@@ -352,7 +358,8 @@ jobs:
             --build-name="$VERSION" \
             --build-number="$BUILD_NUMBER" \
             --dart-define=KEDAYA_FLAVOR="$KEDAYA_FLAVOR" \
-            --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL"
+            --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL" \
+            --dart-define=KEDAYA_ECARD_BIND_TOKEN="$KEDAYA_ECARD_BIND_TOKEN"
 
       - name: 打包 tar.gz 与 deb
         run: |
@@ -446,7 +453,7 @@ jobs:
 
       - name: 构建 Linux arm64
         run: |
-          flutter build linux --release             --build-name="$VERSION"             --build-number="$BUILD_NUMBER"             --dart-define=KEDAYA_FLAVOR="$KEDAYA_FLAVOR"             --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL"
+          flutter build linux --release             --build-name="$VERSION"             --build-number="$BUILD_NUMBER"             --dart-define=KEDAYA_FLAVOR="$KEDAYA_FLAVOR"             --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL"             --dart-define=KEDAYA_ECARD_BIND_TOKEN="$KEDAYA_ECARD_BIND_TOKEN"
 
       - name: 校验产物架构并打包 tar.gz 与 deb
         run: |
@@ -551,7 +558,8 @@ jobs:
             --build-name="$VERSION" \
             --build-number="$BUILD_NUMBER" \
             --dart-define=KEDAYA_FLAVOR="$KEDAYA_FLAVOR" \
-            --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL"
+            --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL" \
+            --dart-define=KEDAYA_ECARD_BIND_TOKEN="$KEDAYA_ECARD_BIND_TOKEN"
 
       - name: 打包 zip/dmg（ad-hoc 签名）
         run: |
@@ -654,7 +662,8 @@ jobs:
             --build-name="$VERSION" \
             --build-number="$BUILD_NUMBER" \
             --dart-define=KEDAYA_FLAVOR="$KEDAYA_FLAVOR" \
-            --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL"
+            --dart-define=KEDAYA_API_BASE_URL="$KEDAYA_API_BASE_URL" \
+            --dart-define=KEDAYA_ECARD_BIND_TOKEN="$KEDAYA_ECARD_BIND_TOKEN"
 
       - name: 打包未签名 Runner.app
         run: |

@@ -89,6 +89,38 @@ fi
 
 这些是 `vars` 不是 `secrets`：域名会出现在产物里，不应视为秘密。
 
+### 3.1 校园卡绑定密钥（`secrets.KEDAYA_ECARD_BIND_TOKEN`）
+
+校园卡绑定要一个共享密钥（`EcardBindClient` 的 `X-Bind-Token`）。
+它是 **secret**，且**不能写进仓库**：
+
+- `apps/mobile/lib/data/campus/ecard_bind_config.dart` 从
+  `--dart-define=KEDAYA_ECARD_BIND_TOKEN` 读；
+- 未注入时 `isConfigured == false`，校园卡页把「输入绑定码」入口显示成
+  **「本构建未注入绑定密钥」** —— 不会给一个注定超时的按钮；
+- 注入后入口出现，用户可以拿一卡通小程序的 6 位码完成绑定。
+
+CI 里配一次即可（**Settings → Secrets → Actions**）：
+
+```text
+KEDAYA_ECARD_BIND_TOKEN=<共享密钥>
+```
+
+`mobile-build.yml` 的 6 个构建命令（Android / Windows / Linux x64 / Linux arm64 /
+macOS / iOS）都把它透传成 `--dart-define`。GitHub 会在日志里掩码 secret 值，
+但要知道：**这个值会嵌进产物**（和上游客户端同样的做法），所以
+「谁拿到安装包，谁就拿到这个 key」是既定事实，不要把它当服务端凭证用。
+
+本地出带绑定的包：
+
+```bash
+flutter build apk --release \
+  --dart-define=KEDAYA_FLAVOR=prod \
+  --dart-define=KEDAYA_API_BASE_URL=https://<real-host> \
+  --dart-define=KEDAYA_ECARD_BIND_TOKEN=<共享密钥>
+```
+
+
 ---
 
 ## 4. 版本号与 Release
