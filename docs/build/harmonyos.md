@@ -90,6 +90,16 @@ flutter doctor -v
 DevEco 自带的 `hvigorw` / `ohpm` 在
 `C:\Program Files\Huawei\DevEco Studio\tools\{hvigor,ohpm}\bin`，需要加进 PATH。
 
+⚠️ **`jbr\bin` 也必须进 PATH**。`PackageHap` 任务会 `spawn java`，机器上没装独立
+JDK 时它会直接以 `spawn java ENOENT` 失败，而 hvigor 只把它报成
+`Error Code: 00308018 Unknown Error`（`BUILD FAILED in ~50s`），
+看不出是缺 java。2026-11-25 踩过一次：
+
+```powershell
+$env:Path = "C:\Program Files\Huawei\DevEco Studio\jbr\bin;" + $env:Path
+```
+
+
 ---
 
 ## 4. 构建与签名
