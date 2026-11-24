@@ -3,6 +3,7 @@ import '../../domain/models/api_request.dart';
 import '../../domain/models/json_read.dart';
 import '../../domain/models/page.dart';
 import '../../domain/models/result.dart';
+import '../../domain/models/wechat_history.dart';
 import '../../domain/ports/activities_port.dart';
 import '../../domain/ports/kedaya_api_port.dart';
 import '../api/request_ids.dart';
@@ -115,8 +116,28 @@ final class RemoteActivitiesRepository implements ActivitiesPort {
       );
 
   @override
-  Future<Result<ActivityItem>> promoteMail(String mailEventId) =>
-      _api.send<ActivityItem>(
+  Future<Result<WechatHistoryPage>> listWechatHistory(
+    String savedPageHtml,
+  ) =>
+      _api.send<WechatHistoryPage>(
+        // 这个端点在 `/api/v1/wechat` 下，不在 `/activities` 下：
+        // 它只做「解析这段 HTML」，与活动存储无关。
+        ApiRequest(
+          path: 'wechat/profile-list',
+          method: ApiMethod.post,
+          body: <String, Object?>{'html': savedPageHtml},
+        ),
+        (Object? data) {
+          final Map<String, Object?> map =
+              requireJsonMap(data, what: 'wechat profile list');
+          // 服务端用 200 + `ok:false` 表达「这段 HTML 不是历史页」，
+          // 到不了这里就会先被错误层拦下；能到这里说明解析成功。
+          return WechatHistoryPage.fromJson(map);
+        },
+      );
+
+  @override
+  Future<Result<ActivityItem>> promoteMail(String mailEventId) =>      _api.send<ActivityItem>(
         ApiRequest(
           path: '$_base/imports/mail',
           method: ApiMethod.post,

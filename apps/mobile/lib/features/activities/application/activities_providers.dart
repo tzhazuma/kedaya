@@ -6,6 +6,7 @@ import '../../../domain/models/api_error.dart';
 import '../../../domain/models/api_request.dart';
 import '../../../domain/models/page.dart';
 import '../../../domain/models/result.dart';
+import '../../../domain/models/wechat_history.dart';
 import '../../../domain/ports/activities_port.dart';
 
 /// 可注入的“现在”（默认规则、倒计时、默认开始时间都依赖它）。
@@ -416,6 +417,11 @@ final class ActivityActions {
     onMutated(item.id);
     return item;
   }
+
+  /// 解析用户保存的公众号历史消息页。**不写入任何活动** ——
+  /// 只是把一页页面变成候选列表，用户勾选后才逐篇走 [importWechat]。
+  Future<WechatHistoryPage> parseWechatHistory(String savedPageHtml) async =>
+      _require<WechatHistoryPage>(await port.listWechatHistory(savedPageHtml));
 
   Future<ActivityItem> promoteMail(String mailEventId) async {
     final ActivityItem item =

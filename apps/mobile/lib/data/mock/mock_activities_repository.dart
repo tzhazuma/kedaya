@@ -4,6 +4,7 @@ import '../../domain/models/api_error.dart';
 import '../../domain/models/api_request.dart';
 import '../../domain/models/page.dart';
 import '../../domain/models/result.dart';
+import '../../domain/models/wechat_history.dart';
 import '../../domain/ports/activities_port.dart';
 import 'activity_fixtures.dart';
 import 'mock_controls.dart';
@@ -278,6 +279,56 @@ final class MockActivitiesRepository implements ActivitiesPort {
     );
     _activities[created.id] = created;
     return Ok<ActivityItem>(created);
+  }
+
+  /// 演示用的历史页解析。
+  ///
+  /// 真实的 `msgList` 解析在服务端（`@kedaya/shared` 的
+  /// `parseWechatProfileList`），这里不重复实现一份 HTML 解析器 ——
+  /// 两套解析逻辑一定会漂移，而漂移后的差异极难被发现。
+  /// 因此 mock 只做**输入判断**：没给内容就当空页，给了就给三条固定条目。
+  @override
+  Future<Result<WechatHistoryPage>> listWechatHistory(
+    String savedPageHtml,
+  ) async {
+    await controls.simulate();
+    if (controls.failure != null) {
+      return controls.failureResult<WechatHistoryPage>();
+    }
+
+    if (savedPageHtml.trim().isEmpty) {
+      return _err<WechatHistoryPage>(
+        ApiErrorCode.validationFailed,
+        '先把公众号「查看历史消息」页的内容粘贴进来',
+      );
+    }
+
+    final DateTime now = _clock().toUtc();
+    return Ok<WechatHistoryPage>(
+      WechatHistoryPage(
+        accountName: '上科大信息学院（演示）',
+        articles: <WechatHistoryArticle>[
+          WechatHistoryArticle(
+            title: '关于举办 2026 年校园马拉松的通知',
+            url: 'https://mp.weixin.qq.com/s/demo-marathon',
+            publishedAt: now.subtract(const Duration(days: 1)),
+            digest: '11 月 30 日开跑，报名截止 11 月 26 日',
+          ),
+          WechatHistoryArticle(
+            title: '名师讲坛：大模型与程序分析',
+            url: 'https://mp.weixin.qq.com/s/demo-talk',
+            publishedAt: now.subtract(const Duration(days: 3)),
+            digest: '周四 18:30，信息学院 1 号楼报告厅',
+          ),
+          WechatHistoryArticle(
+            title: '2026 春季学期选课安排',
+            url: 'https://mp.weixin.qq.com/s/demo-courses',
+            publishedAt: now.subtract(const Duration(days: 6)),
+            isHeadline: false,
+          ),
+        ],
+      ),
+    );
   }
 
   @override

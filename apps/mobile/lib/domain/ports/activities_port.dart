@@ -2,6 +2,7 @@ import '../models/activity.dart';
 import '../models/api_request.dart';
 import '../models/page.dart';
 import '../models/result.dart';
+import '../models/wechat_history.dart';
 
 /// 校园活动端口（共同 REST 契约 `/activities`）。
 ///
@@ -41,6 +42,12 @@ abstract interface class ActivitiesPort {
 
   /// `POST /activities/imports/wechat` —— 用户主动提交的**单篇**公众号文章。
   Future<Result<ActivityItem>> importWechat(WechatImportDraft draft);
+
+  /// `POST /wechat/profile-list` —— 解析**用户自己保存**的公众号历史消息页。
+  ///
+  /// 入参是页面 HTML 原文，不是 URL：服务端不会替客户端去抓任何东西。
+  /// 返回的是候选列表，用户勾选后再逐篇走 [importWechat]。
+  Future<Result<WechatHistoryPage>> listWechatHistory(String savedPageHtml);
 
   /// `POST /activities/imports/mail` —— 把校园邮箱归一出的邮件事件提升为活动。
   ///

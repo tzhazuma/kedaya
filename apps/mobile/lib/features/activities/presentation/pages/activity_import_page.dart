@@ -193,6 +193,17 @@ class _ActivityImportPageState extends ConsumerState<ActivityImportPage> {
                 ),
               ),
               const SizedBox(height: KedaYaTokens.space2),
+              OutlinedButton.icon(
+                onPressed: _saving
+                    ? null
+                    : () => context.push('/activities/import/history'),
+                icon: const Icon(Icons.list_alt_outlined, size: 18),
+                label: const Text('从「历史消息」页批量导入'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+              ),
+              const SizedBox(height: KedaYaTokens.space2),
               OutlinedButton(
                 onPressed: _saving ? null : () => context.pop(),
                 style: OutlinedButton.styleFrom(

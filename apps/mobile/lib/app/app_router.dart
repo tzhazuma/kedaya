@@ -30,6 +30,7 @@ import '../features/wellbeing/presentation/wellbeing_routes.dart';
 import '../features/activities/presentation/pages/activities_page.dart';
 import '../features/activities/presentation/pages/activity_compose_page.dart';
 import '../features/activities/presentation/pages/activity_detail_page.dart';
+import '../features/activities/presentation/pages/activity_history_import_page.dart';
 import '../features/activities/presentation/pages/activity_import_page.dart';
 import '../features/buddy/presentation/pages/buddy_board_page.dart';
 import '../features/buddy/presentation/pages/buddy_compose_page.dart';
@@ -347,6 +348,16 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
               name: 'activity-import',
               builder: (BuildContext context, GoRouterState state) =>
                   const ActivityImportPage(),
+              routes: <RouteBase>[
+                // 嵌套在 `import` 下，路径是 `/activities/import/history`：
+                // 两条导入入口放在一起，且不会被 `:id` 吃掉。
+                GoRoute(
+                  path: 'history',
+                  name: 'activity-import-history',
+                  builder: (BuildContext context, GoRouterState state) =>
+                      const ActivityHistoryImportPage(),
+                ),
+              ],
             ),
             GoRoute(
               path: ':id',
