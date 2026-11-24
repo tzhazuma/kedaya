@@ -20,6 +20,10 @@ dependencies:
   intl: ^0.20.2
   json_annotation: ^4.9.0
   shared_preferences: ^2.3.0
+  # 鸿蒙（OHOS）联邦实现：只在 ohos 上注册，其他平台是惰性包。
+  shared_preferences_ohos: ^2.2.0
+  path_provider_ohos: ^2.2.1
+  flutter_secure_storage_ohos: ^1.0.0
 
 dev_dependencies:
   build_runner: ^2.4.13

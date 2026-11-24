@@ -30,7 +30,7 @@
 | iOS | `mobile-build.yml` / `ios` | **`macos-15`** | 未签名 `Runner.app` zip（不是 `.ipa`） | 实跑通过，产物在 `mobile-v0.1.0` |
 | Windows ARM64 | `mobile-windows-arm64.yml` | `windows-11-vs2026-arm` | 便携 zip（实验性） | **实验**；仅手动、不进入 Release；已单独实跑过（PE32+ ARM64），不随 Release 产出 |
 | Linux ARM64 | `mobile-build.yml` / `linux-arm64` | **`ubuntu-24.04-arm`**（原生 arm64） | tar.gz + `_arm64.deb` | **2026-11-24 实跑通过**，`file` 断言 aarch64，产物在 `mobile-v0.1.0` |
-| HarmonyOS | `mobile-harmonyos.yml` | 自托管 `self-hosted, ohos`（Linux / Windows+DevEco） | `.hap`（签名取决于构建机） | **2026-11-24 本机产出未签名 HAP（24 MB, arm64-v8a）**；插件未登记、未签名 |
+| HarmonyOS | `mobile-harmonyos.yml` | 自托管 `self-hosted, ohos`（Linux / Windows+DevEco） | `.hap`（签名取决于构建机） | **2026-11-24 本机产出未签名 HAP（25 MB, arm64-v8a）**；已登记 3 个插件，未签名 |
 | 微信小程序 | 现有 `.github/workflows/ci.yml` | `ubuntu-latest` | `apps/miniapp/dist`（当前不上传 artifact） | **已存在**；本目录不重复实现 |
 
 ### 1.1 为什么是这些 runner

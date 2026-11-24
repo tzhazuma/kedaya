@@ -165,13 +165,13 @@ CI 的做法：`.p12/.cer/.p7b` 以 base64 放 secrets，构建前解码到 `oho
 | `flutter create --platforms=ohos` | ✅ 生成 `ohos/`（已提交进仓库） |
 | `flutter pub get` | ✅ 通过 |
 | `flutter build hap --release` | ✅ hvigor 产出 **`entry-default-unsigned.hap`（24 MB）** |
-| HAP 内容 | `libs/arm64-v8a/libflutter.so` 16 MB + `libapp.so` 8.3 MB + `ets/modules.abc` |
+| HAP 内容 | `libs/arm64-v8a/libflutter.so` 16 MB + `libapp.so` 8.3 MB + `ets/modules.abc` + 三个插件的 har |
 | 签名 | ❌ 未签名。Flutter 工具报“请配置调试签名”，HAP 是 unsigned |
-| 插件注册 | ⚠️ `GeneratedPluginRegistrant.ets` 里**一个插件都没有**，见 §6.1 |
+| 插件注册 | ⚠️ 已接入 3 个（见 §6.2），`image_picker` / `audioplayers` 仍缺 |
 | 真机安装 | ❌ 未做（需要 AGC 调试证书 / 签名 HAP） |
 
 产物已复制到 `kedaya-dist/harmonyos/kedaya-0.1.0-harmonyos-release-unsigned.hap`，
-SHA-256 `c901835b999858b89a7678d64e1a83863d7e3e989ee99d4457c47df6b52a3628`。
+SHA-256 `eab08c67cde4dbb77798785ded40c90e1657d3cd767d0a8dc5accadec08155e5`（25 MB，含三个插件）。
 
 ### 6.1 实测踩到的四个坑
 
@@ -193,16 +193,36 @@ SHA-256 `c901835b999858b89a7678d64e1a83863d7e3e989ee99d4457c47df6b52a3628`。
    要安装仍需：DevEco 打开 `ohos/` → File → Project Structure → Signing Configs →
    勾选 Automatically generate signature（需登录华为账号），或配置 §4 的证书三件套。
 
-### 6.2 运行时缺口：插件没有登记
+### 6.2 插件登记：已接 3 个，仍缺 2 个
 
-`ohos/entry/src/main/ets/plugins/GeneratedPluginRegistrant.ets` 是空的，意味着
-`shared_preferences` / `path_provider` / `image_picker` / `flutter_secure_storage` /
-`audioplayers` 在鸿蒙上**没有原生实现**。应用能编译、能打 HAP，但启动后这些能力会缺失
-（安全存储、本地缓存、相册、朗读播放）。
+`pubspec.yaml` 增加了三个 OHOS 联邦实现（pub.dev 上的稳定版本，非 git）：
 
-修法是 §2 的 `pubspec_overrides.yaml`：把可用的 OHOS 端口挂上，然后重新
-`flutter create --platforms=ohos` / `flutter build hap`，让 registrant 自动生成。
-`audioplayers` 没有找到稳定 OHOS 端口，朗读功能需要在鸿蒙上降级（例如隐藏按钮）。
+```yaml
+shared_preferences_ohos: ^2.2.0
+path_provider_ohos: ^2.2.1
+flutter_secure_storage_ohos: ^1.0.0
+```
+
+重新构建后 `GeneratedPluginRegistrant.ets`（该文件被 `ohos/entry/.gitignore` 忽略，
+每次构建由工具生成）变成：
+
+```ts
+flutterEngine.getPlugins()?.add(new SharedPreferencesPlugin());
+flutterEngine.getPlugins()?.add(new PathProviderPlugin());
+flutterEngine.getPlugins()?.add(new FlutterSecureStorageOhosPlugin());
+```
+
+也就是说：**安全存储、本地缓存、路径**在鸿蒙上已可用。
+
+仍缺：
+
+| 依赖 | 影响 | 处理 |
+| --- | --- | --- |
+| `image_picker` | 野生动物拍照上报、头像选图不可用 | 只有 `flutter_packages` 的 `br_image_picker-v1.1.2_ohos` 分支，没有 pub.dev 版本；用 git 依赖会把整个仓库克隆进 CI，暂不接 |
+| `audioplayers` | TTS「朗读」按钮不可用 | 没找到稳定 OHOS 端口；鸿蒙上应在 UI 层隐藏该按钮 |
+
+`flutter pub get` 只多了 3 个纯 Dart 包，其他平台构建不受影响；但没有在 Android/iOS/桌面
+重新跑一遍全量测试，以 CI 结果为准。
 
 ## 7. 未解决项
 
