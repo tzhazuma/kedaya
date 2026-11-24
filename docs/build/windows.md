@@ -18,6 +18,15 @@ Workflow：
 ### 1.1 前置
 
 - Windows 10/11 x64
+
+⚠️ **本机（2026-11-25）编不了 Windows**：`flutter build windows` 报
+`could not find any instance of Visual Studio`（只探测到 VS 16 2019 生成器，
+实际未安装 VS + C++ 桌面工作负载）。要本地出包必须先装
+**Visual Studio 2022 + 「使用 C++ 的桌面开发」**。
+
+在那之前，验证 UI 改动的可行路径是：dispatch 只跑 `windows_x64` 的 CI job →
+下载 artifact → 解包运行 → 截图。注意用 `gh run download` 而不是内联的
+`wsl bash -lc '...'`（PATH 里的 `Program Files (x86)` 会触发 shell 语法错误）。
 - **Visual Studio 2022（major 17）**，勾选 **“使用 C++ 的桌面开发”**
   （含 MSVC v143、Windows 10/11 SDK、CMake）
 - Flutter 3.35.1 stable
