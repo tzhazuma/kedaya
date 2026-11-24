@@ -10,7 +10,8 @@
 
 > **runner 核对日期：2026-11-22**。下表里的 runner 来自
 > [actions/runner-images README](https://github.com/actions/runner-images#available-images)
-> 与对应镜像 Readme，不是“以前能跑”的假设。GitHub Actions **仍未在本仓库实跑**。
+> 与对应镜像 Readme，不是“以前能跑”的假设。GitHub Actions 已于 **2026-11-24** 实跑，
+并创建 `mobile-v0.1.0`（见第 6 节）。
 
 本目录回答三个问题：**能构建什么、产物是什么签名状态、哪些目标现在做不到**。
 所有“未验证”的地方都明确写出，不把未跑过的 CI 说成已通过。
@@ -21,15 +22,15 @@
 
 | 目标 | Workflow / job | Runner | 产物 | 当前状态 |
 | --- | --- | --- | --- | --- |
-| 质量门禁 | `mobile-build.yml` / `quality` | `ubuntu-latest` | 无（只跑检查） | 已配置 `flutter analyze` + `flutter test`；**未在 CI 实跑** |
-| Android APK | `mobile-build.yml` / `android` | `ubuntu-latest` | universal APK（release 构建，**debug 签名**） | 已配置；**未在 CI 实跑** |
-| Windows x64 | `mobile-build.yml` / `windows-x64` | **`windows-2022`** | 便携 zip + Inno Setup 安装器 | 已配置；**未在 CI 实跑**，安装器未在本机编译 |
-| Linux x64 | `mobile-build.yml` / `linux-x64` | `ubuntu-latest`（24.04） | tar.gz + `.deb` | 已配置；**未在 CI 实跑** |
-| macOS arm64 | `mobile-build.yml` / `macos` | **`macos-15`** | ad-hoc 签名 zip/dmg，**未 notarize** | 已配置；**未在 CI 实跑** |
-| iOS | `mobile-build.yml` / `ios` | **`macos-15`** | 未签名 `Runner.app` zip（不是 `.ipa`） | 已配置；**未在 CI 实跑** |
-| Windows ARM64 | `mobile-windows-arm64.yml` | `windows-11-vs2026-arm` | 便携 zip（实验性） | **实验**；仅手动、不进入 Release；**未实跑** |
-| Linux ARM64 | `mobile-build.yml` / `linux-arm64` | **`ubuntu-24.04-arm`**（原生 arm64） | tar.gz + `_arm64.deb` | 已配置：删 `bin/cache` 自举 arm64 Dart SDK；**待 CI 实跑** |
-| HarmonyOS | `mobile-harmonyos.yml` | 自托管 `self-hosted, ohos`（Linux / Windows+DevEco） | `.hap`（签名取决于构建机） | 已固定 Flutter-OH **3.35.7** 路径；**本机下载受限，未产出 HAP** |
+| 质量门禁 | `mobile-build.yml` / `quality` | `ubuntu-latest` | 无（只跑检查） | **2026-11-24 实跑通过**（analyze + test 全绿） |
+| Android APK | `mobile-build.yml` / `android` | `ubuntu-latest` | universal APK（release 构建，**debug 签名**） | 实跑通过，产物在 `mobile-v0.1.0` |
+| Windows x64 | `mobile-build.yml` / `windows-x64` | **`windows-2022`** | 便携 zip + Inno Setup 安装器 | 实跑通过，zip/exe 在 `mobile-v0.1.0`；未做 Authenticode |
+| Linux x64 | `mobile-build.yml` / `linux-x64` | `ubuntu-latest`（24.04） | tar.gz + `.deb` | 实跑通过，产物在 `mobile-v0.1.0` |
+| macOS arm64 | `mobile-build.yml` / `macos` | **`macos-15`** | ad-hoc 签名 zip/dmg，**未 notarize** | 实跑通过，产物在 `mobile-v0.1.0` |
+| iOS | `mobile-build.yml` / `ios` | **`macos-15`** | 未签名 `Runner.app` zip（不是 `.ipa`） | 实跑通过，产物在 `mobile-v0.1.0` |
+| Windows ARM64 | `mobile-windows-arm64.yml` | `windows-11-vs2026-arm` | 便携 zip（实验性） | **实验**；仅手动、不进入 Release；已单独实跑过（PE32+ ARM64），不随 Release 产出 |
+| Linux ARM64 | `mobile-build.yml` / `linux-arm64` | **`ubuntu-24.04-arm`**（原生 arm64） | tar.gz + `_arm64.deb` | **2026-11-24 实跑通过**，`file` 断言 aarch64，产物在 `mobile-v0.1.0` |
+| HarmonyOS | `mobile-harmonyos.yml` | 自托管 `self-hosted, ohos`（Linux / Windows+DevEco） | `.hap`（签名取决于构建机） | **2026-11-24 本机产出未签名 HAP（24 MB, arm64-v8a）**；插件未登记、未签名 |
 | 微信小程序 | 现有 `.github/workflows/ci.yml` | `ubuntu-latest` | `apps/miniapp/dist`（当前不上传 artifact） | **已存在**；本目录不重复实现 |
 
 ### 1.1 为什么是这些 runner
@@ -154,21 +155,32 @@ flutter test
 
 ---
 
-## 6. 本机验证边界（如实说明）
+## 6. 验证边界（如实说明）
 
-执行本次改动的机器是 **Windows，PATH 中没有 Flutter、Java、Rust、gh**，因此：
+这台开发机是 **Windows**：Git Bash + WSL（`gh` 在 WSL 的 zsh 里），**PATH 中没有 Flutter**。
+所以“能不能构建”以 GitHub Actions 的实际结果为准：
 
-- **没有运行** `flutter pub get` / `flutter build *` / `flutter analyze` / `flutter test`；
-- **没有运行** GitHub Actions（本地无法触发，也没有 GitHub runner）；
-- **没有编译** Inno Setup 脚本（本机未安装 Inno Setup）；
-- **没有构建** 真实 `.deb`（本机无 `dpkg-deb`；只用 mock `dpkg-deb` 验证了脚本路径与 control 生成）；
-- 已做：YAML 解析、`actionlint` 静态检查、`bash -n`、PowerShell 解析、workflow 契约测试、
-  deb 脚本 mock 运行。
+**2026-11-24 实跑（run 45318778786）**
 
-所以上面所有 “已配置” 都不等于 “CI 已通过”。第一次真正运行需要在 GitHub 上手动
-`workflow_dispatch`，并按 [mobile.md](mobile.md) 的检查清单看日志。
+| job | 结果 |
+| --- | --- |
+| quality（analyze + test） | ✅ |
+| android | ✅ |
+| windows-x64（zip + Inno Setup exe） | ✅ |
+| linux-x64（tar.gz + deb） | ✅ |
+| linux-arm64（原生 arm64 runner） | ✅ `file` 断言 aarch64 |
+| macos（zip + dmg，ad-hoc） | ✅ |
+| ios（未签名 Runner.app zip） | ✅ |
+| release | ✅ 创建 `mobile-v0.1.0`（prerelease），11 个资产 + `SHA256SUMS.txt` |
 
----
+仍然**没有**做的：
+
+- 本机 `flutter build *`（没有 Flutter SDK；Windows SDK 下载两次被网络截断）；
+- 真实签名：Android 仍是 debug key、Windows 未 Authenticode、macOS 未 notarize、
+  iOS 未签名、HAP 未签名；
+- 真机安装与运行验证（Android/iOS/Windows/Linux/macOS 都没有实机冒烟记录）；
+- HarmonyOS 签名与插件：本机已产出 unsigned HAP，但 `GeneratedPluginRegistrant` 为空、
+  也没有 AGC 调试证书，见 [harmonyos.md](harmonyos.md) 第 6 节。
 
 ## 7. 相关文档
 
@@ -179,13 +191,13 @@ flutter test
 
 ---
 
-## 8. 本次静态验证记录（2026-11-22）
+## 8. 静态验证记录（2026-11-22）
 
 在本机 Windows 上实际执行过的检查：
 
 | 检查 | 命令 | 结果 |
 | --- | --- | --- |
-| Workflow 契约测试 | `node --test docs/build/workflow-contract.test.mjs` | 11/11 通过 |
+| Workflow 契约测试 | `node --test docs/build/workflow-contract.test.mjs` | 18/18 通过（2026-11-24 复跑） |
 | YAML 解析 | `npx prettier@3.9.10 --parser yaml <file>` | 3 个 workflow 全部通过 |
 | Actions 静态检查 | `actionlint` v1.7.7（忽略两个真实 runner label 误报，见下） | 退出码 0 |
 | Bash `run` 块语法 | 提取 35 个 Bash `run` 块后逐个 `bash -n` | 全部通过 |
@@ -204,9 +216,9 @@ flutter test
     .github/workflows/mobile-windows-arm64.yml \
     .github/workflows/mobile-harmonyos.yml
   ```
-- 没有执行：`flutter pub get`、`flutter build *`、`flutter analyze`、`flutter test`、
-  GitHub Actions、Inno Setup 编译、`dpkg-deb`。原因见第 6 节。
-  **首次 CI 运行前不要把这些配置当成已验证。**
+- 没有在本机执行：`flutter pub get`、`flutter build *`、`flutter analyze`、`flutter test`、
+  Inno Setup 编译、`dpkg-deb`。这些由 GitHub Actions 在 2026-11-24 实跑覆盖（第 6 节）；
+  本机仍不能复现，不要把本机环境当成已验证。
 
 ---
 

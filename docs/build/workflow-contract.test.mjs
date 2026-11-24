@@ -172,7 +172,7 @@ test('docs/build 反映新 runner、质量门禁与诚实状态', () => {
   assert.match(readme, /flutter analyze/);
   assert.match(readme, /flutter test/);
   assert.match(readme, /Linux ARM64/);
-  assert.match(readme, /待 CI 实跑/);
+  assert.match(readme, /实跑通过/);
   assert.match(readme, /Windows ARM64/);
   assert.match(readme, /实验/);
   assert.match(readme, /680/);

@@ -30,6 +30,9 @@ migration:
     - platform: macos
       create_revision: 20f82749394e68bcfbbeee96bad384abaae09c13
       base_revision: 20f82749394e68bcfbbeee96bad384abaae09c13
+    - platform: ohos
+      create_revision: 20f82749394e68bcfbbeee96bad384abaae09c13
+      base_revision: 20f82749394e68bcfbbeee96bad384abaae09c13
 
   # User provided section
 

@@ -155,26 +155,54 @@ CI 的做法：`.p12/.cer/.p7b` 以 base64 放 secrets，构建前解码到 `oho
 
 ---
 
-## 6. 本机实测到哪一步（2026-11-23）
+## 6. 本机实测记录（2026-11-24）
 
 | 步骤 | 结果 |
 | --- | --- |
-| DevEco Studio 安装 | ✅ `C:\Program Files\Huawei\DevEco Studio`，SDK `default/openharmony` API **26.0.0 Beta2** |
-| `hvigorw` / `ohpm` / `node` | ✅ 都在 `tools/` 下 |
-| Flutter-OH 分支存在性 | ✅ `oh-3.35.7-release` 等分支已用 `git ls-remote` 核对 |
-| 克隆 Flutter-OH | ❌ 本机到 GitCode/AtomGit 的带宽只有数 MB/分钟，数百 MB 的 SDK 与 Dart SDK 无法在合理时间内拉完 |
-| `flutter --version`（Flutter-OH） | ⛔ 未完成，卡在 Dart SDK 下载 |
-| `flutter create --platforms=ohos` | ⛔ 未执行（依赖上一步） |
-| `flutter build hap` | ⛔ 未执行 |
-| HAP 产物 | ⛔ **没有** |
+| DevEco Studio 安装 | ✅ `C:\Program Files\Huawei\DevEco Studio`，SDK `default/openharmony` API **26.0.0 Beta2**，自带 `jbr`(JDK 25) / `hvigorw` / `ohpm` / `node` |
+| Flutter-OH 分支 | ✅ `oh-3.35.7-release` / `oh-3.35.7-dev`（GitCode / AtomGit，实际拉到的是 dev 的 3.35.7 引擎） |
+| `flutter --version` | ✅ 3.35.7 / Dart 3.9.2（见下面第 1 个坑） |
+| `flutter create --platforms=ohos` | ✅ 生成 `ohos/`（已提交进仓库） |
+| `flutter pub get` | ✅ 通过 |
+| `flutter build hap --release` | ✅ hvigor 产出 **`entry-default-unsigned.hap`（24 MB）** |
+| HAP 内容 | `libs/arm64-v8a/libflutter.so` 16 MB + `libapp.so` 8.3 MB + `ets/modules.abc` |
+| 签名 | ❌ 未签名。Flutter 工具报“请配置调试签名”，HAP 是 unsigned |
+| 插件注册 | ⚠️ `GeneratedPluginRegistrant.ets` 里**一个插件都没有**，见 §6.1 |
+| 真机安装 | ❌ 未做（需要 AGC 调试证书 / 签名 HAP） |
 
-所以本目录**不声称**已经产出可安装的鸿蒙包。要落地，需要满足其一：
+产物已复制到 `kedaya-dist/harmonyos/kedaya-0.1.0-harmonyos-release-unsigned.hap`，
+SHA-256 `c901835b999858b89a7678d64e1a83863d7e3e989ee99d4457c47df6b52a3628`。
 
-- 在能正常访问 AtomGit / 华为 OBS 镜像的机器上按第 3–4 节执行；
-- 或把 Flutter-OH 与 DevEco 预装进自托管 runner 镜像，再触发 workflow；
-- 或由你在本机 DevEco 里打开生成的 `ohos/` 工程手动签名运行。
+### 6.1 实测踩到的四个坑
 
----
+1. **浅克隆导致版本号是 `0.0.0-unknown`**
+   `git clone --depth 1` 没有 tag，`flutter --version` 会报 `0.0.0-unknown`，
+   于是 pub 认为 Flutter 版本不满足 `flutter_secure_storage >=2.0.0`，直接求解失败。
+   解决：把 `bin/cache/flutter.version.json` 的 `frameworkVersion` / `flutterVersion`
+   改成 `3.35.7`（Dart 已经是 3.9.2）。
+2. **不要覆盖 `FLUTTER_STORAGE_BASE_URL`**
+   指到华为 OBS 后它会去找 `engine_stamp.json`，那个路径 404；而 Google 上同一个
+   engine hash 的 `engine_stamp.json` / `dart-sdk-windows-x64.zip` 是 200。
+   OHOS 专属产物由 fork 自己的 `FLUTTER_OHOS_STORAGE_BASE_URL` 负责，默认就是 OBS。
+3. **`spawn java ENOENT`**
+   hvigor 需要 `java`。DevEco 自带 JBR：
+   `JAVA_HOME=C:\Program Files\Huawei\DevEco Studio\jbr`，
+   并把 `jbrin` 加进 `PATH`。
+4. **签名**
+   Flutter 工具在 hvigor 之后才检查签名并报错，但 **unsigned HAP 已经生成**。
+   要安装仍需：DevEco 打开 `ohos/` → File → Project Structure → Signing Configs →
+   勾选 Automatically generate signature（需登录华为账号），或配置 §4 的证书三件套。
+
+### 6.2 运行时缺口：插件没有登记
+
+`ohos/entry/src/main/ets/plugins/GeneratedPluginRegistrant.ets` 是空的，意味着
+`shared_preferences` / `path_provider` / `image_picker` / `flutter_secure_storage` /
+`audioplayers` 在鸿蒙上**没有原生实现**。应用能编译、能打 HAP，但启动后这些能力会缺失
+（安全存储、本地缓存、相册、朗读播放）。
+
+修法是 §2 的 `pubspec_overrides.yaml`：把可用的 OHOS 端口挂上，然后重新
+`flutter create --platforms=ohos` / `flutter build hap`，让 registrant 自动生成。
+`audioplayers` 没有找到稳定 OHOS 端口，朗读功能需要在鸿蒙上降级（例如隐藏按钮）。
 
 ## 7. 未解决项
 

@@ -115,6 +115,32 @@ jobs:
             echo "提示：OHOS 构建通常需要 dependency_overrides 指向 OHOS fork 的插件包。"
           fi
 
+      - name: 解析 hvigor 需要的 Java（DevEco 自带 JBR）
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${JAVA_HOME:-}" ]; then
+            # 本机实测：hvigor 报 `spawn java ENOENT` 就是缺这个。
+            for candidate in \
+              "/c/Program Files/Huawei/DevEco Studio/jbr" \
+              "C:/Program Files/Huawei/DevEco Studio/jbr" \
+              "/Applications/DevEco-Studio.app/Contents/jbr" \
+              "/opt/deveco/jbr"; do
+              if [ -x "$candidate/bin/java" ] || [ -x "$candidate/bin/java.exe" ]; then
+                export JAVA_HOME="$candidate"
+                break
+              fi
+            done
+          fi
+          if [ -z "${JAVA_HOME:-}" ]; then
+            echo "::warning::JAVA_HOME 未设置；若 hvigor 报 spawn java ENOENT，请把 DevEco 的 jbr 配进 PATH"
+          else
+            echo "JAVA_HOME=$JAVA_HOME"
+            echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+            echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
+            "$JAVA_HOME/bin/java" -version 2>&1 | head -3 || true
+          fi
+
       - name: 构建 HAP
         shell: bash
         run: |
