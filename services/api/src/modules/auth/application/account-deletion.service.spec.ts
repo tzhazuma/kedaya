@@ -479,10 +479,17 @@ function buildAuthController(fake: FakePrisma, service: AccountDeletionService):
       revokeAllForUser: async () => 0,
     } as unknown as RefreshSessionRepository,
   );
-  // 构造参数顺序：accountDeletion → localAuth → authService → users → campusLinks
+  // 构造参数顺序：accountDeletion → localAuth → authService → config → users → campusLinks
   // 第 2 个（LocalAuthService）本组不测（发码路径由 service 层用例覆盖），
   // 第 5 个（校园绑定端口）本组不碰绑定列表之外的能力。
-  return new AuthController(service, {} as never, authService, users, {} as never);
+  return new AuthController(
+    service,
+    {} as never,
+    authService,
+    { get: () => undefined } as never,
+    users,
+    {} as never,
+  );
 }
 
 describe('账号注销 · 真实仓储行为', () => {

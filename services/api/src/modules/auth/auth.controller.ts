@@ -2,6 +2,8 @@ import { Body, Controller, Delete, Get, Headers, Inject, Param, Patch, Post, Use
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { MODULES, modulePath } from '@kedaya/contracts';
 import { z } from 'zod';
+import { ConfigService } from '@nestjs/config';
+
 import { UnauthenticatedError } from '../../common/errors/app-error';
 import { AuthGuard } from '../../common/auth/auth.guard';
 import { USER_REPOSITORY, type UserRepository } from './domain/auth.domain';
@@ -79,6 +81,7 @@ export class AuthController {
     @Inject(AccountDeletionService) private readonly accountDeletion: AccountDeletionService,
     @Inject(LocalAuthService) private readonly localAuth: LocalAuthService,
     private readonly authService: AuthService,
+    private readonly config: ConfigService,
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     /**
      * 第二级「绑定」的**唯一**实现（techpie 的 `CampusSessionPort`，落 `TechpieLink` 表）。
@@ -90,6 +93,31 @@ export class AuthController {
      */
     @Inject(CAMPUS_LINK_PORT) private readonly campusLinks: CampusLinkPort,
   ) {}
+
+  @Get('cas/login-url')
+  @ApiOperation({
+    summary: 'CAS 登录地址（客户端用系统浏览器 / 内嵌浏览器打开）',
+    description:
+      '地址由 CAMPUS_CAS_URL 与 CAMPUS_CAS_SERVICE 拼出；service 必须是校方注册过的回调。' +
+      '本接口不下发任何凭据，也不保存票据。',
+  })
+  casLoginUrl(): { url: string } {
+    const casBase = (
+      this.config.get<string>('CAMPUS_CAS_URL') ??
+      'https://ids.shanghaitech.edu.cn/authserver'
+    )
+      .trim()
+      .replace(/\/+$/, '');
+    const service = (this.config.get<string>('CAMPUS_CAS_SERVICE') ?? '').trim();
+    if (service === '') {
+      throw new ValidationError(
+        'CAMPUS_CAS_SERVICE 未配置：真实 CAS 需要校方注册的回调地址',
+      );
+    }
+    return {
+      url: `${casBase}/login?service=${encodeURIComponent(service)}`,
+    };
+  }
 
   @Post('login')
   @ApiOperation({
