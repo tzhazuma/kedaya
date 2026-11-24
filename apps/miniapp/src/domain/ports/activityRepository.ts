@@ -10,6 +10,7 @@ import type {
   ActivityStatus,
   ManualActivityDraft,
 } from '../models/activity'
+import type { WechatHistoryPage } from '../models/wechatHistory'
 import type { RepositoryError } from './errors'
 
 /**
@@ -88,6 +89,15 @@ export interface ActivityRepository {
     input: { link?: string; text?: string },
     idempotencyKey?: string,
   ): Promise<Result<ActivityItem, RepositoryError>>
+  /**
+   * 解析**用户自己保存**的公众号历史消息页（`POST /wechat/profile-list`）。
+   *
+   * 入参是页面 HTML 原文，不是 URL —— 服务端不会替客户端去抓任何东西。
+   * 返回候选列表，用户勾选后再逐篇走 `importWechat`。
+   */
+  parseWechatHistory(
+    savedPageHtml: string,
+  ): Promise<Result<WechatHistoryPage, RepositoryError>>
   /** 提升一封邮件事件；服务端可能归一出多条候选，因此返回数组 */
   importMail(eventId: string, idempotencyKey?: string): Promise<Result<ActivityItem[], RepositoryError>>
   listRemindersFor(activityId: string): Promise<Result<ActivityReminderItem[], RepositoryError>>

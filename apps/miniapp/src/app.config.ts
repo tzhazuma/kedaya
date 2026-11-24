@@ -162,6 +162,7 @@ const subPackages = [
       "list/index",
       "detail/index",
       "import/index",
+      "history/index",
       "mail/index",
       "reminders/index",
     ],

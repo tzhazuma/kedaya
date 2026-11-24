@@ -1,0 +1,68 @@
+.kdy-activity-history {
+  &__modes {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    padding-bottom: $kdy-space-3;
+  }
+
+  .kdy-chip {
+    min-height: 44px;
+  }
+
+  &__actions {
+    padding-top: $kdy-space-3;
+  }
+
+  &__error {
+    display: block;
+    padding-top: $kdy-space-3;
+    color: $kdy-color-danger;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+  }
+
+  &__notice {
+    display: block;
+    padding-top: $kdy-space-3;
+    color: $kdy-color-success;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+  }
+
+  &__count {
+    display: block;
+    padding-bottom: $kdy-space-2;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+  }
+
+  &__row {
+    padding: $kdy-space-2 0;
+    border-bottom: 1px solid $kdy-tone-border;
+  }
+
+  &__row-title {
+    display: block;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.5;
+  }
+
+  &__row-meta {
+    display: block;
+    padding-top: $kdy-space-1;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.5;
+  }
+
+  &__hint {
+    display: block;
+    padding-top: $kdy-space-2;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.6;
+  }
+}

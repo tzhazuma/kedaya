@@ -20,6 +20,7 @@ import {
   type ActivityView,
   type ManualActivityDraft,
 } from '../../domain/models/activity'
+import type { WechatHistoryPage } from '../../domain/models/wechatHistory'
 import type { CachePort } from '../../domain/ports/cachePort'
 import type { ClockPort } from '../../domain/ports/clockPort'
 import type { RepositoryError } from '../../domain/ports/errors'
@@ -99,6 +100,12 @@ export interface ActivityUseCases {
   createManual(draft: ManualActivityDraft): Promise<Result<ActivityItem, RepositoryError>>
   update(id: string, patch: ActivityPatch): Promise<Result<ActivityItem, RepositoryError>>
   importWechat(input: { link?: string; text?: string }): Promise<Result<ActivityItem, RepositoryError>>
+  /**
+   * 解析用户保存的公众号历史消息页，返回候选文章列表。
+   *
+   * **不写入任何活动**：用户还要在页面上勾选，再逐篇 `importWechat`。
+   */
+  parseWechatHistory(savedPageHtml: string): Promise<Result<WechatHistoryPage, RepositoryError>>
   importMail(eventId: string): Promise<Result<ActivityItem[], RepositoryError>>
   reminders(): Promise<Result<ActivityReminderWithActivity[], RepositoryError>>
   remindersFor(activityId: string): Promise<Result<ActivityReminderItem[], RepositoryError>>
@@ -477,8 +484,15 @@ export function createActivityUseCases(deps: ActivityUseCaseDeps): ActivityUseCa
       )
     },
 
-    async importMail(eventId) {
-      const trimmed = eventId.trim()
+    async parseWechatHistory(savedPageHtml) {
+      const html = savedPageHtml.trim()
+      if (html === '') {
+        return err(validation('先把公众号「查看历史消息」页的内容粘贴进来'))
+      }
+      return repository.parseWechatHistory(html)
+    },
+
+    async importMail(eventId) {      const trimmed = eventId.trim()
       if (trimmed === '') return err(validation('缺少邮件事件 id'))
       return repository.importMail(
         trimmed,

@@ -129,6 +129,7 @@ export const PAGE_PATHS = {
   activitiesList: "/presentation/pages/activities/list/index",
   activitiesDetail: "/presentation/pages/activities/detail/index",
   activitiesImport: "/presentation/pages/activities/import/index",
+  activitiesHistory: "/presentation/pages/activities/history/index",
   activitiesMail: "/presentation/pages/activities/mail/index",
   activitiesReminders: "/presentation/pages/activities/reminders/index",
   zhishu: "/presentation/pages/zhishu/index/index",
@@ -226,6 +227,11 @@ export function activityDetailPath(id: string): string {
 
 export function activityImportPath(): string {
   return PAGE_PATHS.activitiesImport;
+}
+
+/** 公众号历史消息页批量导入（解析用户保存的页面） */
+export function activityHistoryPath(): string {
+  return PAGE_PATHS.activitiesHistory;
 }
 
 export function activityMailPath(): string {

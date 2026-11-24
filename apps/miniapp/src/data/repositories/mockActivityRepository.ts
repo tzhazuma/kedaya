@@ -9,6 +9,7 @@ import {
   type ManualActivityDraft,
 } from '../../domain/models/activity'
 import type { MailEventItem } from '../../domain/models/mailActivity'
+import type { WechatHistoryPage } from '../../domain/models/wechatHistory'
 import type { RepositoryError } from '../../domain/ports/errors'
 import type {
   ActivityPage,
@@ -347,6 +348,54 @@ export function createMockActivityRepository(
         }
         items = [item, ...items]
         return ok(item)
+      })
+    },
+
+    /**
+     * mock 只判空并给三条固定条目。
+     *
+     * 真实的 `msgList` 解析只在服务端一处（`@kedaya/shared` 的
+     * `parseWechatProfileList`）：两套解析器一定会漂移，而漂移后的差异
+     * 在真机上极难被发现。
+     */
+    parseWechatHistory(savedPageHtml: string): Promise<Result<WechatHistoryPage, RepositoryError>> {
+      return guard(() => {
+        if (savedPageHtml.trim() === '') {
+          return err({ code: 'VALIDATION_FAILED', message: '先把公众号「查看历史消息」页的内容粘贴进来' })
+        }
+        const base = now()
+        const at = (days: number): string =>
+          new Date(base.getTime() - days * 86_400_000).toISOString()
+        return ok({
+          accountName: '上科大信息学院（演示）',
+          biz: null,
+          articles: [
+            {
+              title: '关于举办 2026 年校园马拉松的通知',
+              url: 'https://mp.weixin.qq.com/s/demo-marathon',
+              publishedAt: at(1),
+              digest: '11 月 30 日开跑，报名截止 11 月 26 日',
+              coverUrl: null,
+              isHeadline: true,
+            },
+            {
+              title: '名师讲坛：大模型与程序分析',
+              url: 'https://mp.weixin.qq.com/s/demo-talk',
+              publishedAt: at(3),
+              digest: '周四 18:30，信息学院 1 号楼报告厅',
+              coverUrl: null,
+              isHeadline: true,
+            },
+            {
+              title: '2026 春季学期选课安排',
+              url: 'https://mp.weixin.qq.com/s/demo-courses',
+              publishedAt: at(6),
+              digest: null,
+              coverUrl: null,
+              isHeadline: false,
+            },
+          ],
+        })
       })
     },
 

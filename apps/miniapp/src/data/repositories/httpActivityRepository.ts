@@ -13,6 +13,10 @@ import {
 } from '../../domain/models/activity'
 import type { RepositoryError } from '../../domain/ports/errors'
 import type { LogPort } from '../../domain/ports/logPort'
+import {
+  normalizeWechatHistoryPage,
+  type WechatHistoryPage,
+} from '../../domain/models/wechatHistory'
 import type {
   ActivityPage,
   ActivityPatch,
@@ -231,8 +235,40 @@ export function createHttpActivityRepository(
       return ok(normalized)
     },
 
-    async listRemindersFor(activityId: string): Promise<Result<ActivityReminderItem[], RepositoryError>> {
-      // 契约没有「按活动查提醒」端点：拉一次我的提醒再按 activityId 过滤。
+    async parseWechatHistory(
+      savedPageHtml: string,
+    ): Promise<Result<WechatHistoryPage, RepositoryError>> {
+      const html = savedPageHtml.trim()
+      if (html === '') return invalid('先把公众号「查看历史消息」页的内容粘贴进来')
+
+      const result = await client.post<unknown, { html: string }>(
+        // 这个端点在 `/wechat` 下，不在 `/activities` 下：它只做解析，与活动存储无关。
+        modulePath('wechat', 'profile-list'),
+        { html },
+      )
+      if (!result.ok) return err(toRepositoryError(result.error))
+
+      // 服务端用 200 + `ok:false` 表达「这页不是历史页」。
+      if (isRecord(result.value) && result.value.ok === false) {
+        const message = typeof result.value.message === 'string' ? result.value.message : ''
+        return invalid(message === '' ? '这段内容里没有历史文章列表' : message)
+      }
+
+      const { page, dropped } = normalizeWechatHistoryPage(result.value)
+      if (page === null) {
+        reportViolation(log, 'wechat.profile-list', 1, 'SHAPE_OR_ENUM')
+        return invalid('解析结果形状不合法，已拒绝使用')
+      }
+      if (page.articles.length === 0) {
+        return invalid('这一页没有可读文章，请翻到有文章的一页再保存')
+      }
+      if (dropped > 0) {
+        reportViolation(log, 'wechat.profile-list', dropped, 'SHAPE_OR_ENUM')
+      }
+      return ok(page)
+    },
+
+    async listRemindersFor(activityId: string): Promise<Result<ActivityReminderItem[], RepositoryError>> {      // 契约没有「按活动查提醒」端点：拉一次我的提醒再按 activityId 过滤。
       // limit 取契约上限 100 —— 默认 20 会让提醒多的用户看不到本条活动的提醒。
       const result = await client.get<unknown>(modulePath('activities', 'reminders'), {
         limit: 100,

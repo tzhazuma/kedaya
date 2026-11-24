@@ -128,6 +128,25 @@ function createFakeActivityRepository(options: FakeActivityOptions = {}) {
       calls.importWechat.push(input)
       return ok(activity({ id: 'act-wechat', source: 'wechat-mp' }))
     },
+    async parseWechatHistory(savedPageHtml) {
+      return ok({
+        accountName: '测试公众号',
+        biz: null,
+        articles:
+          savedPageHtml.trim() === ''
+            ? []
+            : [
+                {
+                  title: '一条历史文章',
+                  url: 'https://mp.weixin.qq.com/s/fake',
+                  publishedAt: '2026-11-20T00:00:00.000Z',
+                  digest: null,
+                  coverUrl: null,
+                  isHeadline: true,
+                },
+              ],
+      })
+    },
     async importMail(eventId) {
       calls.importMail.push(eventId)
       return ok([activity({ id: 'act-mail', source: 'campus-mail' })])

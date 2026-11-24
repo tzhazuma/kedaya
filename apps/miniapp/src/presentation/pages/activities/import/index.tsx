@@ -2,7 +2,7 @@ import { Text, View } from '@tarojs/components'
 import { useReducer } from 'react'
 
 import { getContainer } from '../../../../app/container'
-import { activityDetailPath } from '../../../../app/routes'
+import { activityDetailPath, activityHistoryPath } from '../../../../app/routes'
 import { wechatImportProblem } from '../../../../domain/models/activity'
 import { navigateTo } from '../../../../platform/navigation'
 import { KdyButton, KdyCard, KdyChip, KdyTag } from '../../../components'
@@ -102,6 +102,11 @@ export default function ActivityImportPage() {
         <View className='kdy-activity-import__actions'>
           <KdyButton block loading={state.submitting} onClick={() => void handleSubmit()}>
             导入为候选活动
+          </KdyButton>
+        </View>
+        <View className='kdy-activity-import__actions'>
+          <KdyButton block onClick={() => void navigateTo(activityHistoryPath())}>
+            从「历史消息」页批量挑文章
           </KdyButton>
         </View>
 

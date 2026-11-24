@@ -79,6 +79,7 @@
 | 列表 | `list/index` | 待确认 / 今天 / 本周 / 全部 + 来源筛选 |
 | 详情 | `detail/index` | 确认加入日程、忽略、设提醒、复制链接 |
 | 公众号导入 | `import/index` | 用户主动粘贴**单篇**链接或正文 |
+| 历史页导入 | `history/index` | 解析用户**保存下来的**「查看历史消息」页，勾选后逐篇导入；默认只勾主条 |
 | 校园邮箱 | `mail/index` | 绑定 / 同步 / 把邮件事件提升为候选活动 |
 | 提醒 | `reminders/index` | 站内信提醒的待发送 / 已结束状态 |
 
@@ -91,6 +92,9 @@
   `confirm` 时按「报名截止前 24h、开始前 1h」创建；目标已过不建，
   计算时刻已过但目标未来用 `now + 5min`。客户端只读取提醒、不重复创建。
 - 真实 wire 契约：公众号导入请求字段是 `url`（响应 `{item, created}`），
+  历史页解析是 `POST /wechat/profile-list`（请求 `{html}`，响应
+  `{ok, accountName?, biz?, items:[{title,url,publishedAt,digest?,coverUrl?,isHeadline}]}`；
+  失败也用 200 + `{ok:false,code,message}`），
   邮件提升是 `{eventIds: []}`（响应 `{items, created, skipped}`）；
   契约没有「按活动查提醒」端点，详情页拉 `GET /activities/reminders` 后按
   `activityId` 过滤。
@@ -100,8 +104,11 @@
 - 时间存 UTC ISO，展示显式 `Asia/Shanghai`；只有日期没有时刻的原文留在
   `registrationDeadlineRaw`，**不补 23:59**。
 - 只存活动字段与 ≤200 字证据片段；邮件正文 / 附件 / 公众号全文不进入小程序。
-- 单篇公众号仍只做用户主动链接或正文；自动同步仅走学校/学院认证服务号授权的
-  `freepublish/batchget`，按用户订阅运行，不使用私有 Cookie、反检测或绕过验证；链接只复制，不用 `web-view`。
+- 单篇公众号仍只做用户主动链接或正文；**历史页导入（`history/index`）只解析用户自己保存的页面**
+  （`POST /wechat/profile-list`，入参是 HTML 原文，服务端不发任何网络请求）；
+  自动同步仅走学校/学院认证服务号授权的
+  `freepublish/batchget`，按用户订阅运行，不使用私有 Cookie、反检测或绕过验证；
+  链接只复制，不用 `web-view`。历史页导入同样**不抓取**：它处理的每一篇用户都已经在微信里看得见。
 - 邮箱复用现成 `/mail` 端点（`POST/DELETE /mail/account`、`POST /mail/sync`、
   `GET /mail/events`）：只读 IMAP、AES-256-GCM 服务端加密、`*.shanghaitech.edu.cn`
   IMAP 白名单。密码表单提交后立即清空，绑定/同步失败不显示假成功。
