@@ -646,3 +646,19 @@ describe('校园邮箱用例', () => {
     expect(calls.importMail).toEqual(['mail-ev-1'])
   })
 })
+
+describe('手动创建', () => {
+  it('标题为空时不请求服务端', async () => {
+    const { useCases, calls } = setup()
+    const result = await useCases.createManual({ title: '  ', kind: 'lecture' })
+    expect(result.ok).toBe(false)
+    expect(calls.create).toEqual([])
+  })
+
+  it('只填名称也能创建（时间待定）', async () => {
+    const { useCases, calls } = setup()
+    const result = await useCases.createManual({ title: '临时讲座', kind: 'lecture' })
+    expect(result.ok).toBe(true)
+    expect(calls.create).toHaveLength(1)
+  })
+})

@@ -251,7 +251,7 @@ npx vitest run apps/miniapp/src/domain/models/__tests__/activity.test.ts \
 
 - 公众号：没有读取关注列表 / 批量历史文章的官方接口，因此永远不做自动发现与批量历史抓取。
 - 提醒：微信订阅消息、APNs、FCM、HMS 未接通；目前只有站内信。
-- 小程序：没有独立的手动创建页；`archive` / `restore` **已接**——详情页有「归档」与「恢复为候选活动」，归档会清掉待发提醒。
+- 小程序：手动创建页 `activities/compose` **已接**（列表页入口）；`archive` / `restore` **已接**——详情页有「归档」与「恢复为候选活动」，归档会清掉待发提醒。
 - Web：无登录、无持久化、无提醒；确认只对本次导出有效。
 - Flutter：**已补齐**校园邮箱（绑定 / 同步 / 提升）与 ICS 导出（单条 + 批量）；
   ⚠️ 未在真机验证（本机缺 Visual Studio，Windows 包由 CI 产出后跑过启动 + 截图）。

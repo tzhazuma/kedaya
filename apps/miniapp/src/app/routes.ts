@@ -128,6 +128,7 @@ export const PAGE_PATHS = {
    */
   activitiesList: "/presentation/pages/activities/list/index",
   activitiesDetail: "/presentation/pages/activities/detail/index",
+  activitiesCompose: "/presentation/pages/activities/compose/index",
   activitiesImport: "/presentation/pages/activities/import/index",
   activitiesHistory: "/presentation/pages/activities/history/index",
   activitiesMail: "/presentation/pages/activities/mail/index",
@@ -230,6 +231,11 @@ export function activityImportPath(): string {
 }
 
 /** 公众号历史消息页批量导入（解析用户保存的页面） */
+/** 手动创建活动 */
+export function activityComposePath(): string {
+  return PAGE_PATHS.activitiesCompose;
+}
+
 export function activityHistoryPath(): string {
   return PAGE_PATHS.activitiesHistory;
 }

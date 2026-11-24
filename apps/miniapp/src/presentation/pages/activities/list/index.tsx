@@ -6,6 +6,7 @@ import { getContainer } from '../../../../app/container'
 import {
   PAGE_PATHS,
   activityDetailPath,
+  activityComposePath,
   activityImportPath,
   activityMailPath,
   activityRemindersPath,
@@ -171,6 +172,14 @@ export default function ActivitiesListPage() {
       <View className='kdy-activities__actions'>
         <KdyButton block onClick={() => void navigateTo(activityImportPath())}>
           导入公众号文章
+        </KdyButton>
+        <KdyButton
+          size='md'
+          variant='secondary'
+          block
+          onClick={() => void navigateTo(activityComposePath())}
+        >
+          手动添加活动
         </KdyButton>
         <View className='kdy-activities__secondary'>
           <KdyButton

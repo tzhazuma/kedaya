@@ -161,6 +161,7 @@ const subPackages = [
     pages: [
       "list/index",
       "detail/index",
+      "compose/index",
       "import/index",
       "history/index",
       "mail/index",

@@ -1,0 +1,43 @@
+.kdy-activity-compose {
+  &__label {
+    display: block;
+    padding: $kdy-space-3 0 $kdy-space-2;
+    color: $kdy-color-campus-ink;
+    font-size: $kdy-font-size-sm;
+    font-weight: 600;
+  }
+
+  &__chips {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: $kdy-space-2;
+    padding-bottom: $kdy-space-3;
+  }
+
+  &__row {
+    display: flex;
+    flex-direction: row;
+    gap: $kdy-space-3;
+  }
+
+  &__actions {
+    padding-top: $kdy-space-3;
+  }
+
+  &__error {
+    display: block;
+    padding-top: $kdy-space-3;
+    color: $kdy-color-danger;
+    font-size: $kdy-font-size-sm;
+    line-height: 1.6;
+  }
+
+  &__hint {
+    display: block;
+    padding-top: $kdy-space-2;
+    color: $kdy-color-campus-muted;
+    font-size: $kdy-font-size-xs;
+    line-height: 1.6;
+  }
+}
