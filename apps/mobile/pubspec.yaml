@@ -20,6 +20,8 @@ dependencies:
   intl: ^0.20.2
   json_annotation: ^4.9.0
   shared_preferences: ^2.3.0
+  # 4.13.1 是最后一代支持 Flutter 3.32–3.35 的版本；4.14 要求 >=3.38。
+  webview_flutter: ^4.13.1
   # 鸿蒙（OHOS）联邦实现：只在 ohos 上注册，其他平台是惰性包。
   shared_preferences_ohos: ^2.2.0
   path_provider_ohos: ^2.2.1

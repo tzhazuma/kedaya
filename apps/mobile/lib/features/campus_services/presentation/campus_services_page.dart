@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import '../../../domain/ports/webview_port.dart';
 import '../../../presentation/components/kedaya_shell.dart';
 import '../../../presentation/theme/kedaya_theme_extension.dart';
 import '../../../presentation/theme/kedaya_tokens.dart';
+import '../../campus_web/presentation/campus_web_page.dart';
 import '../domain/campus_service.dart';
 
 /// 校园服务直达：打开学校公开入口，不代持任何会话。
@@ -86,6 +88,15 @@ class CampusServicesPage extends ConsumerWidget {
     WidgetRef ref,
     CampusService service,
   ) async {
+    // 移动端用内嵌 WebView（可注入同源抓取桥）；桌面/鸿蒙没有该插件，
+    // 走下面的"打开一次性 URL / 复制链接"降级。
+    if (!kIsWeb && campusWebSupported(defaultTargetPlatform)) {
+      await context.push(
+        '/campus-web?url=${Uri.encodeComponent(service.url)}'
+        '&title=${Uri.encodeComponent(service.name)}',
+      );
+      return;
+    }
     final WebViewPort port = ref.read(webViewProvider);
     final bool opened = await port.openOneTimeUrl(service.url);
     if (!context.mounted) return;
