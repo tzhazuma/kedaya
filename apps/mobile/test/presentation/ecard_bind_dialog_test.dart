@@ -9,7 +9,6 @@ import 'package:kedaya/data/campus/ecard_bind_client.dart';
 import 'package:kedaya/data/campus/ecard_bind_config.dart';
 import 'package:kedaya/data/campus/ecard_link_store.dart';
 import 'package:kedaya/data/repositories/ecard_direct_campus_card_repository.dart';
-import 'package:kedaya/domain/models/campus_card.dart';
 import 'package:kedaya/features/techpie/presentation/components/ecard_bind_dialog.dart';
 import 'package:kedaya/presentation/theme/kedaya_theme.dart';
 

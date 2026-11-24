@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/app_providers.dart';
 import '../../../../data/mock/mock_controls.dart';
 import '../../../../domain/models/activity.dart';
+import '../../../../domain/models/activity_ics.dart';
+import '../../../../domain/models/ics_export.dart';
 import '../../../../domain/models/api_error.dart';
 import '../../../../presentation/components/async_state_view.dart';
 import '../../../../presentation/components/mock_state_menu.dart';
@@ -34,6 +36,10 @@ class ActivitiesPage extends ConsumerWidget {
     final ActivitiesListController controller =
         ref.read(activitiesListControllerProvider.notifier);
     final MockControls? mockControls = ref.watch(mockControlsProvider);
+    final List<ActivityItem>? schedulable = value.valueOrNull
+        ?.where((ActivityItem item) =>
+            item.status == ActivityStatus.confirmed && item.startsAt != null)
+        .toList(growable: false);
 
     return Scaffold(
       appBar: AppBar(
@@ -53,6 +59,32 @@ class ActivitiesPage extends ConsumerWidget {
             tooltip: '校园邮箱',
             onPressed: () => context.push('/activities/mail'),
             icon: const Icon(Icons.mark_email_read_outlined),
+          ),
+          IconButton(
+            // 一次导出**已确认且有开始时间**的活动：用户常常一屏有好几条要排进日历，
+            // 逐条点详情页太慢；这里只导已确认的，避免把待确认的东西塞进日历。
+            tooltip: '导出已确认活动到日历（ICS）',
+            onPressed: schedulable == null || schedulable.isEmpty
+                ? null
+                : () async {
+                    final String ics = buildIcs(
+                      buildActivityIcsEvents(schedulable),
+                    );
+                    await ref.read(shareProvider).copyToClipboard(ics);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            '已复制 ${schedulable.length} 条活动到剪贴板，'
+                            '可粘贴保存为 .ics 后导入日历',
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+            icon: const Icon(Icons.event_available_outlined),
           ),
           IconButton(
             tooltip: '刷新',
