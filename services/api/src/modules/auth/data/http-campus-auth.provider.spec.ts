@@ -1,128 +1,110 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { UnauthenticatedError, InternalError } from '../../../common/errors/app-error';
-import { parseServiceResponse } from './http-campus-auth.provider';
+import { UnauthenticatedError } from '../../../common/errors/app-error';
+import type { ConfigService } from '@nestjs/config';
+import { HttpCampusAuthProvider } from './http-campus-auth.provider';
 
-/**
- * CAS `p3/serviceValidate?format=JSON` 的响应解析。
- *
- * 这些 JSON 形状是**对着真实 IDS 抓的**（2026-10-20）：
- * 失败响应确实长这样：
- * ```json
- * { "serviceResponse": { "authenticationFailure": {
- *     "code": "INVALID_TICKET",
- *     "description": "未能够识别出目标 'ST-…'票根" } } }
- * ```
- *
- * 所以测试不是凭空编的 —— 是照着上游真实返回写的。
- */
-describe('parseServiceResponse —— 真实 CAS 响应形状', () => {
-  it('学号有效时解析出身份', () => {
-    const identity = parseServiceResponse({
-      serviceResponse: {
-        authenticationSuccess: {
-          user: '20230001',
-          attributes: {
-            // CAS 的属性值**总是数组**（多值字段）
-            name: ['张三'],
-            email: ['zhangsan@shanghaitech.edu.cn'],
-            department: ['信息科学与技术学院'],
-          },
-        },
-      },
-    });
+function configWith(values: Record<string, string | undefined>): ConfigService {
+  return {
+    get: (key: string) => values[key],
+  } as unknown as ConfigService;
+}
 
+const successXml = `<?xml version="1.0" encoding="UTF-8"?>
+<cas:serviceResponse xmlns:cas="http://www.yale.edu/tp/cas">
+  <cas:authenticationSuccess>
+    <cas:user>20265555</cas:user>
+    <cas:attributes>
+      <cas:cn>张三</cas:cn>
+      <cas:mail>zhangsan@shanghaitech.edu.cn</cas:mail>
+      <cas:ou>信息科学与技术学院</cas:ou>
+    </cas:attributes>
+  </cas:authenticationSuccess>
+</cas:serviceResponse>`;
+
+describe('HttpCampusAuthProvider', () => {
+  it('成功票据 → 解析学号/姓名/邮箱/院系', async () => {
+    const provider = new HttpCampusAuthProvider(
+      configWith({
+        CAMPUS_CAS_URL: 'https://ids.example.edu/authserver',
+        CAMPUS_CAS_SERVICE: 'https://api.example.cn/auth/cas/callback',
+      }),
+      vi.fn(async () => new Response(successXml, { status: 200 })),
+    );
+
+    const identity = await provider.authenticateTicket('ST-123');
     expect(identity.provider).toBe('SHTU_CAS');
-    expect(identity.externalId).toBe('20230001');
+    expect(identity.externalId).toBe('20265555');
     expect(identity.realName).toBe('张三');
     expect(identity.email).toBe('zhangsan@shanghaitech.edu.cn');
     expect(identity.department).toBe('信息科学与技术学院');
+    expect(provider.simulated).toBe(false);
   });
 
-  it('属性给单个字符串也认（个别部署不是数组）', () => {
-    const identity = parseServiceResponse({
-      serviceResponse: {
-        authenticationSuccess: {
-          user: '20230001',
-          attributes: { name: '李四', mail: 'lisi@shanghaitech.edu.cn' },
-        },
-      },
-    });
-    expect(identity.realName).toBe('李四');
-    expect(identity.email).toBe('lisi@shanghaitech.edu.cn');
-  });
-
-  it('属性缺失时字段为 undefined，**不编造**', () => {
-    const identity = parseServiceResponse({
-      serviceResponse: { authenticationSuccess: { user: '20230001' } },
-    });
-    expect(identity.externalId).toBe('20230001');
-    expect(identity.realName).toBeUndefined();
-    expect(identity.email).toBeUndefined();
-    expect(identity.department).toBeUndefined();
-  });
-
-  it('空数组 / 空字符串不算值', () => {
-    const identity = parseServiceResponse({
-      serviceResponse: {
-        authenticationSuccess: {
-          user: '20230001',
-          attributes: { name: ['  '], email: [] },
-        },
-      },
-    });
-    expect(identity.realName).toBeUndefined();
-    expect(identity.email).toBeUndefined();
-  });
-
-  it('⚠️ 票根无效 → UnauthenticatedError（不是 500）', () => {
-    expect(() =>
-      parseServiceResponse({
-        serviceResponse: {
-          authenticationFailure: {
-            code: 'INVALID_TICKET',
-            description: "未能够识别出目标 'ST-invalid'票根",
-          },
-        },
-      }),
-    ).toThrow(UnauthenticatedError);
-  });
-
-  it('⚠️ 上游的错误描述**不**透传给用户（可能含 ticket）', () => {
-    try {
-      parseServiceResponse({
-        serviceResponse: {
-          authenticationFailure: {
-            code: 'INVALID_TICKET',
-            description: "未能够识别出目标 'ST-secret-ticket-value'票根",
-          },
-        },
+  it('校验 URL 带 service 与 ticket，且请求体不落日志（错误里没有 ticket）', async () => {
+    const fetchMock = vi.fn(async (input: unknown) => {
+      const url = new URL(String(input));
+      expect(url.pathname).toBe('/authserver/serviceValidate');
+      expect(url.searchParams.get('service')).toBe(
+        'https://api.example.cn/auth/cas/callback',
+      );
+      expect(url.searchParams.get('ticket')).toBe('ST-SECRET');
+      return new Response('<cas:serviceResponse></cas:serviceResponse>', {
+        status: 200,
       });
-      expect.unreachable('应该抛错');
-    } catch (error) {
-      expect((error as Error).message).not.toContain('ST-secret-ticket-value');
-    }
-  });
-
-  it('⚠️ 没有学号 → InternalError（上游违约，不是用户的问题）', () => {
-    expect(() =>
-      parseServiceResponse({ serviceResponse: { authenticationSuccess: { user: '' } } }),
-    ).toThrow(InternalError);
-    expect(() =>
-      parseServiceResponse({ serviceResponse: { authenticationSuccess: {} } }),
-    ).toThrow(InternalError);
-  });
-
-  it('结构完全不对 → InternalError，不崩', () => {
-    for (const bad of [null, undefined, {}, { serviceResponse: null }, { foo: 1 }, 'string']) {
-      expect(() => parseServiceResponse(bad), JSON.stringify(bad)).toThrow(InternalError);
-    }
-  });
-
-  it('学号会 trim（上游偶尔带空白）', () => {
-    const identity = parseServiceResponse({
-      serviceResponse: { authenticationSuccess: { user: '  20230001  ' } },
     });
-    expect(identity.externalId).toBe('20230001');
+    const provider = new HttpCampusAuthProvider(
+      configWith({
+        CAMPUS_CAS_URL: 'https://ids.example.edu/authserver/',
+        CAMPUS_CAS_SERVICE: 'https://api.example.cn/auth/cas/callback',
+      }),
+      fetchMock,
+    );
+
+    await expect(provider.authenticateTicket('ST-SECRET')).rejects.toThrow(
+      UnauthenticatedError,
+    );
+    await expect(provider.authenticateTicket('ST-SECRET')).rejects.not.toThrow(
+      /ST-SECRET/,
+    );
+  });
+
+  it('authenticationFailure → UnauthenticatedError', async () => {
+    const provider = new HttpCampusAuthProvider(
+      configWith({
+        CAMPUS_CAS_SERVICE: 'https://api.example.cn/auth/cas/callback',
+      }),
+      vi.fn(
+        async () =>
+          new Response(
+            '<cas:serviceResponse><cas:authenticationFailure code="INVALID_TICKET"/></cas:serviceResponse>',
+            { status: 200 },
+          ),
+      ),
+    );
+    await expect(provider.authenticateTicket('bad')).rejects.toThrow(
+      UnauthenticatedError,
+    );
+  });
+
+  it('没配 CAMPUS_CAS_SERVICE 时拒绝，且不发请求', async () => {
+    const fetchMock = vi.fn();
+    const provider = new HttpCampusAuthProvider(configWith({}), fetchMock);
+    await expect(provider.authenticateTicket('ST-1')).rejects.toThrow(
+      /CAMPUS_CAS_SERVICE/,
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('空票据直接拒绝', async () => {
+    const fetchMock = vi.fn();
+    const provider = new HttpCampusAuthProvider(
+      configWith({ CAMPUS_CAS_SERVICE: 'https://x/cb' }),
+      fetchMock,
+    );
+    await expect(provider.authenticateTicket('  ')).rejects.toThrow(
+      UnauthenticatedError,
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

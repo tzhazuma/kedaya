@@ -14,6 +14,10 @@ import { ConsoleMailAdapter } from './data/console-mail.adapter';
 import { SmtpMailAdapter, resolveMailTransport } from './data/smtp-mail.adapter';
 import { HttpCampusDataAdapter } from './data/http-campus-data.adapter';
 import { LocalAccountPrismaRepository } from './data/local-account.prisma-repository';
+import {
+  CAS_FETCH,
+  HttpCampusAuthProvider,
+} from './data/http-campus-auth.provider';
 import { MockCampusAuthProvider } from './data/mock-campus-auth.provider';
 import { MockCampusDataAdapter } from './data/mock-campus-data.adapter';
 import { RefreshSessionPrismaRepository } from './data/refresh-session.prisma-repository';
@@ -77,7 +81,22 @@ import { WECHAT_SESSION_PORT } from './domain/wechat.domain';
     CampusIdentityService,
     MockCampusDataAdapter,
     HttpCampusDataAdapter,
-    { provide: AUTH_PORT, useClass: MockCampusAuthProvider },
+    HttpCampusAuthProvider,
+    MockCampusAuthProvider,
+    { provide: CAS_FETCH, useValue: fetch },
+    {
+      // 第一级身份：CAMPUS_CAS_MODE=live 走真实 CAS `/serviceValidate`，
+      // 其余（默认）走 fail-closed 的 mock（见 MockCampusAuthProvider 顶部注释）。
+      provide: AUTH_PORT,
+      inject: [ConfigService, MockCampusAuthProvider, HttpCampusAuthProvider],
+      useFactory: (
+        config: ConfigService,
+        mock: MockCampusAuthProvider,
+        live: HttpCampusAuthProvider,
+      ) => ((config.get<string>('CAMPUS_CAS_MODE') ?? '').trim().toLowerCase() === 'live'
+        ? live
+        : mock),
+    },
     { provide: WECHAT_SESSION_PORT, useClass: WeChatMiniProgramAdapter },
     {
       // 第二级「取数」实现：默认模拟（确定性数据，响应里标注 simulated），
