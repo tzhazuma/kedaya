@@ -363,6 +363,34 @@ describe('MailService · 绑定', () => {
   });
 });
 
+describe('extractEventFromMail · 句子式地点', () => {
+  it('「将在图书馆 305 视听鉴赏室举办讲座」能取到地点', async () => {
+    const { extractEventFromMail } = await import('../domain/mail-event.domain');
+    const event = extractEventFromMail(
+      '【讲座预告】理解绩效社会',
+      ['各位老师、同学们：', '11 月 27 日 ( 周五 )18:00 将在图书馆 305 视听鉴赏室举办讲座，欢迎参加！'].join(
+        String.fromCharCode(10),
+      ),
+      new Date('2026-11-24T00:00:00Z'),
+      'Asia/Shanghai',
+    );
+    expect(event).not.toBeNull();
+    expect(event?.location).toBe('图书馆 305 视听鉴赏室');
+    expect(event?.startsAt).toBe('2026-11-27T10:00:00.000Z');
+  });
+
+  it('普通状语不会被误当地点', async () => {
+    const { extractEventFromMail } = await import('../domain/mail-event.domain');
+    const event = extractEventFromMail(
+      '关于实验室安全的通知',
+      '请各位同学在实验室内进行安全检查，具体时间见附件。',
+      new Date('2026-11-24T00:00:00Z'),
+      'Asia/Shanghai',
+    );
+    expect(event === null || event.location !== '实验室内').toBe(true);
+  });
+});
+
 describe('MailService · 同步', () => {
   it('拉邮件 → 只存归一后的活动；按 uid 去重', async () => {
     const { service, accounts, messages, inbox } = build();

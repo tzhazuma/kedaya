@@ -513,8 +513,20 @@ function stripControlCharacters(value: string): string {
  * ------------------------------------------------------------------ */
 
 function extractLocation(subject: string, bodyLines: readonly string[]): string | null {
-  const match = LOCATION_LABEL.exec([subject, ...bodyLines].join('\n'));
-  return match === null ? null : cleanLabelValue(match[1] ?? '');
+  const text = [subject, ...bodyLines].join('\n');
+  const labelled = LOCATION_LABEL.exec(text);
+  if (labelled !== null) return cleanLabelValue(labelled[1] ?? '');
+
+  // 通知里更常见的是**句子**而不是标签：「将在图书馆 305 视听鉴赏室举办讲座」。
+  // 只认紧贴「在」且后面直接跟「举办/举行/召开/开展/进行」的短片段，
+  // 避免把「在他的研究中」这类普通状语当地点。
+  const inSentence = /在\s*([^\n。；;，,]{2,40}?)\s*(?:举办|举行|召开|开展|进行)/.exec(text);
+  if (inSentence !== null) {
+    const value = cleanLabelValue(inSentence[1] ?? '');
+    // 地点里不该出现时间词，出现就说明抓错了片段。
+    if (value !== null && !/\d{1,2}\s*[:：]\s*\d{2}|\d{1,2}\s*月/.test(value)) return value;
+  }
+  return null;
 }
 
 function extractOrganizer(subject: string, bodyLines: readonly string[]): string | null {
