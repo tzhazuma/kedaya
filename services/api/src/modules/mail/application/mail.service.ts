@@ -111,7 +111,10 @@ export class MailService {
       const reason = error instanceof MailInboxError ? error.reason : 'VERIFY_FAILED';
       // 不把底层错误消息直接给客户端：里面可能带服务器地址/协议细节。
       throw new ValidationError(
-        '无法用这组凭证登录校园邮箱 IMAP，请检查邮箱地址、服务器与密码',
+        '无法用这组凭证登录校园邮箱 IMAP。若账号开启了短信二次验证'
+          + '（mail.shanghaitech.edu.cn 登录时会要求短信码），IMAP 不接受账号密码，'
+          + '请在邮件系统「设置 → 安全设置」里生成**客户端专用密码**后用那个密码；'
+          + '否则请检查邮箱地址、服务器与密码',
         { reason },
       );
     }

@@ -52,6 +52,20 @@
   再把用户勾选的事件通过 `POST /activities/imports/mail`（`{ eventIds: [...] }`）
   提升为候选活动；不做全箱扫描。
 
+**2026-11-25 实测事实（用于排查「为什么一直 NO LOGIN」）**
+
+| 检查 | 结果 |
+| --- | --- |
+| 浏览器登录 `mail.shanghaitech.edu.cn` | 账号密码**通过**，随即弹出「二次验证 · 短信验证码」（发到绑定手机） |
+| `imap.shanghaitech.edu.cn:993` | TLS 正常、证书 `*.shanghaitech.edu.cn` 有效 |
+| IMAP `LOGIN`（账号密码） | `NO LOGIN Login error or password error` —— **就是被 2FA 拒的**，不是密码错 |
+| 直连校内 MX `10.15.44.251:993` | 同样拒绝，排除「DNS/代理导致」的可能 |
+| `smtp.shanghaitech.edu.cn:465` | TLS 正常，banner 为 `Coremail System` |
+
+结论：启用短信二次验证的账号，IMAP/SMTP 只接受**客户端专用密码**
+（Coremail 里叫「客户端专用密码 / 授权码」，在 设置 → 安全设置 里生成）。
+绑定失败时的文案已改为直接说明这一点，避免用户反复试账号密码。
+
 ### 2.2 微信公众号 `wechat-mp`
 
 - 只接受**用户主动**给的**单篇**文章：`POST /activities/imports/wechat`，
