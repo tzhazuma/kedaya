@@ -267,6 +267,24 @@ describe('MailService · 绑定', () => {
     expect(accounts.rows.size).toBe(0);
   });
 
+  it('验证失败时提示「客户端专用密码」——开了二次验证的账号 IMAP 不收账号密码', async () => {
+    const { service, inbox } = build();
+    inbox.verifyImpl = async () => {
+      throw new Error('authentication failed');
+    };
+
+    // 实测依据：网页登录账号密码能过（随后要短信码），而 IMAP 对同一组凭证 NO LOGIN。
+    // 文案必须指向「客户端专用密码」，否则用户只会反复试账号密码。
+    await expect(
+      service.link(USER_ID, {
+        email: EMAIL,
+        imapHost: IMAP_HOST,
+        imapPort: 993,
+        password: PASSWORD,
+      }),
+    ).rejects.toThrow(/客户端专用密码/);
+  });
+
   it('非校园邮箱 / 非学校域 IMAP 主机被拒（避免 SSRF 与任意来源）', async () => {
     const { service, accounts, inbox } = build();
 
