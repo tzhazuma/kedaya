@@ -40,6 +40,7 @@ import {
   activeTags,
   isKnownLocation,
 } from '@kedaya/contracts';
+import { zonedDowAndMinute } from '@kedaya/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { AddressInfo } from 'node:net';
 import type { NextFunction, Request, Response } from 'express';
@@ -210,7 +211,18 @@ async function setProfile(userId: string, overrides: Record<string, unknown> = {
       interestTags: ['badminton'],
       activityTags: ['badminton'],
       skillLevel: 'regular',
-      availability: [{ dow: new Date(Date.now() + DAY).getDay(), startMin: 0, endMin: 1439 }],
+      availability: [
+        {
+          // 生产的 F7 时段重叠按 **Asia/Shanghai** 取星期几
+          // （`@kedaya/shared` 的 `zonedDowAndMinute`），夹具必须用同一个函数。
+          // 原先这里写 `new Date(...).getDay()`（进程本地时区）：本地是上海时区时
+          // 恰好一致，UTC 的 CI 上星期几差一天，F7 硬过滤把所有候选滤掉，
+          // 表现为「推荐永远为空」且只在凌晨的 CI 上复现。
+          dow: zonedDowAndMinute(new Date(Date.now() + DAY)).dow,
+          startMin: 0,
+          endMin: 1439,
+        },
+      ],
       preferredAreas: ['体育馆'],
       department: '信息学院',
       bio: '常打羽毛球',
@@ -932,7 +944,23 @@ describe('GET /recommendations（规格 §5.7）', () => {
     // vector 档：本仓没有中文 embedding 模型（规格 U4），
     // 因此"请求 vector"会降级为 hash —— 由 domain/matching-mode.spec.ts 穷举验证。
     // 这里断言的是"降级后仍然可用且理由非空"。
-    expect(hash.body.data.items.length + rule.body.data.items.length).toBeGreaterThan(0);
+    //
+    // 失败时把现场放进断言消息（vitest 的控制台输出可能被配置过滤，
+    // 断言消息则一定会出现在失败报告里）：时区相关的空候选尤其难排查。
+    const posts = await ctx.prisma.buddyPost.findMany({
+      select: {
+        activity: true, status: true, startsAt: true,
+        autoCloseAt: true, deletedAt: true, creatorId: true,
+      },
+    });
+    const diag = JSON.stringify({
+      now: new Date().toString(),
+      tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      posts,
+      hash: hash.body.data,
+      rule: rule.body.data,
+    });
+    expect(hash.body.data.items.length + rule.body.data.items.length, diag).toBeGreaterThan(0);
   }, 60_000);
 
   it('T4（HTTP 层）：academic 同院系候选人排序高于不同院系，且 reason 含"同院系"', async () => {
