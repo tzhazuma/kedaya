@@ -174,7 +174,7 @@ export class AuthController {
       '地址由 CAMPUS_CAS_URL 与 CAMPUS_CAS_SERVICE 拼出；service 必须是校方注册过的回调。' +
       '本接口不下发任何凭据，也不保存票据。',
   })
-  casLoginUrl(): { url: string } {
+  casLoginUrl(): { url: string; service: string } {
     const casBase = (
       this.config.get<string>('CAMPUS_CAS_URL') ??
       'https://ids.shanghaitech.edu.cn/authserver'
@@ -189,6 +189,9 @@ export class AuthController {
     }
     return {
       url: `${casBase}/login?service=${encodeURIComponent(service)}`,
+      // 回调地址也下发：内嵌登录页据此识别"登录已完成"，自动取出授权码，
+      // 用户不必再从地址栏里手工摘 code。它不是凭据，本身就可以公开。
+      service,
     };
   }
 

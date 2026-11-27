@@ -25,6 +25,8 @@ class CampusServicesPage extends ConsumerWidget {
       title: '校园服务',
       child: ListView(
         children: <Widget>[
+          const _CampusAccountEntries(),
+          const SizedBox(height: KedaYaTokens.space4),
           Text(
             '登录在学校页面内完成，本机不保存校园会话。'
             '桌面端若没有内嵌浏览器，会退化为复制链接。',
@@ -130,6 +132,143 @@ class CampusServicesPage extends ConsumerWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('已复制「${service.name}」链接')),
+    );
+  }
+}
+
+/// 校园账号相关入口（原 `techpie` 模块的四个能力，并入校园服务）。
+///
+/// 用户关心的是"查余额""打开 E 云课堂"，而不是这些功能来自哪个项目，
+/// 因此不再单独设一个「TechPie 整合」模块。
+class _CampusAccountEntries extends StatelessWidget {
+  const _CampusAccountEntries();
+
+  static const List<({IconData icon, String title, String subtitle, String route})>
+      _entries =
+      <({IconData icon, String title, String subtitle, String route})>[
+    (
+      icon: Icons.credit_card_outlined,
+      title: '校园卡',
+      subtitle: '余额、流水与付款码（独立 OPENID 通道）',
+      route: '/campus-card',
+    ),
+    (
+      icon: Icons.public_outlined,
+      title: '校园系统安全直连',
+      subtitle: '换一次性票据后打开，登录在学校页面里自己完成',
+      route: '/techpie/webview',
+    ),
+    (
+      icon: Icons.link_outlined,
+      title: '校园系统绑定',
+      subtitle: '查看绑定、发起绑定、解绑与手动续期',
+      route: '/techpie/bindings',
+    ),
+    (
+      icon: Icons.checklist_outlined,
+      title: '能力清单',
+      subtitle: '哪些可用、哪些需要绑定，以及还没做的原因',
+      route: '/techpie/capabilities',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final KedaYaColors colors = context.kedayaColors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(
+            left: KedaYaTokens.space1,
+            bottom: KedaYaTokens.space2,
+          ),
+          child: Text(
+            '我的校园账号',
+            style: TextStyle(
+              fontSize: KedaYaTokens.fontSizeSm,
+              fontWeight: KedaYaTokens.fontWeightSemibold,
+              color: colors.textMuted,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: colors.border),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: <Widget>[
+              for (int i = 0; i < _entries.length; i++) ...<Widget>[
+                _EntryRow(entry: _entries[i]),
+                if (i != _entries.length - 1)
+                  Divider(height: 0.5, thickness: 0.5, color: colors.border),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EntryRow extends StatelessWidget {
+  const _EntryRow({required this.entry});
+
+  final ({IconData icon, String title, String subtitle, String route}) entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final KedaYaColors colors = context.kedayaColors;
+    return InkWell(
+      onTap: () => context.push(entry.route),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: KedaYaTokens.space4,
+          vertical: KedaYaTokens.space3,
+        ),
+        child: Row(
+          children: <Widget>[
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: colors.brandSoft,
+                borderRadius: BorderRadius.circular(9),
+              ),
+              alignment: Alignment.center,
+              child: Icon(entry.icon, size: 18, color: colors.brandStrong),
+            ),
+            const SizedBox(width: KedaYaTokens.space3),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    entry.title,
+                    style: TextStyle(
+                      fontSize: KedaYaTokens.fontSizeMd,
+                      color: colors.text,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    entry.subtitle,
+                    style: TextStyle(
+                      fontSize: KedaYaTokens.fontSizeXs,
+                      color: colors.textMuted,
+                      height: KedaYaTokens.lineHeightNormal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 18, color: colors.textMuted),
+          ],
+        ),
+      ),
     );
   }
 }

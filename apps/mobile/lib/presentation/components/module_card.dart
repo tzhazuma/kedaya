@@ -83,15 +83,6 @@ class ModuleCard extends StatelessWidget {
                         height: KedaYaTokens.lineHeightNormal,
                       ),
                     ),
-                    const SizedBox(height: KedaYaTokens.space2),
-                    Text(
-                      '/api/v1/${module.route}',
-                      style: const TextStyle(
-                        fontSize: KedaYaTokens.fontSizeXs,
-                        fontFamily: KedaYaTokens.fontFamilyMono,
-                        color: KedaYaTokens.colorTextMuted,
-                      ),
-                    ),
                   ],
                 ),
               ),

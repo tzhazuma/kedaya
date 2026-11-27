@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../application/module_catalog.dart';
+import '../../application/module_entries.dart';
 import '../../domain/models/kedaya_module.dart';
 import '../components/module_card.dart';
 import '../theme/kedaya_tokens.dart';
@@ -16,23 +17,25 @@ class ModulesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final List<KedayaModule> core = ref.watch(coreModulesProvider);
-    final List<KedayaModule> business = ref.watch(businessModulesProvider);
+    final List<KedayaModule> core =
+        directoryModules(ref.watch(coreModulesProvider));
+    final List<KedayaModule> business =
+        directoryModules(ref.watch(businessModulesProvider));
     return Scaffold(
-      appBar: AppBar(title: const Text('全部模块')),
+      appBar: AppBar(title: const Text('全部服务')),
       body: ListView(
         padding: const EdgeInsets.all(KedaYaTokens.space4),
         children: <Widget>[
           // ⚠️ 原先这里把核心模块**逐个列举**（列举必过期：后来加了
           // campus-map 与 deadlines，列举就漏了）。改为读 core.length。
           _GroupHeader(
-            title: '基础模块',
+            title: '基础服务',
             subtitle: '共 ${core.length} 个',
           ),
           for (final KedayaModule module in core) ...<Widget>[
             ModuleCard(
               module: module,
-              onTap: () => context.push('/module/${module.id}'),
+              onTap: () => context.push(moduleEntryLocation(module.id)),
             ),
             const SizedBox(height: KedaYaTokens.space3),
           ],
@@ -46,7 +49,7 @@ class ModulesPage extends ConsumerWidget {
           for (final KedayaModule module in business) ...<Widget>[
             ModuleCard(
               module: module,
-              onTap: () => context.push('/module/${module.id}'),
+              onTap: () => context.push(moduleEntryLocation(module.id)),
             ),
             const SizedBox(height: KedaYaTokens.space3),
           ],

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../application/consent_controller.dart';
 import '../../application/module_catalog.dart';
+import '../../application/module_entries.dart';
 import '../../domain/models/kedaya_module.dart';
 import '../components/kedaya_shell.dart';
 import '../theme/kedaya_theme_extension.dart';
@@ -11,40 +12,15 @@ import '../theme/kedaya_tokens.dart';
 
 /// 已实现垂直切片的入口路由（契约 §4 的模块 id → 该模块的落地路由）。
 ///
-/// 未列出的模块仍然只有"尚未实现"的如实说明，没有假页面、没有假成功。
-const Map<String, String> implementedModuleRoutes = <String, String>{
-  'groupbuy': '/groupbuy',
-  'buddy': '/buddy',
-  'forum': '/forum',
-  'faq': '/faq',
-  'wildlife': '/wildlife',
-  'techpie': '/techpie',
-  'campus-card': '/campus-card',
-  'teabreak': '/teabreak',
-  'activities': '/activities',
-  'zhishu': '/zhishu',
-  'notifications': '/notifications',
-  'takeout-guard': '/takeout-guard',
-  'lost-found': '/lost-found',
-  'flea-market': '/flea-market',
-  'errand': '/errand',
-  'dorm-harmony': '/dorm-harmony',
-  'schedule': '/schedule',
-  'deadlines': '/deadlines',
-  'canteen': '/canteen',
-  'campus-map': '/campus-map',
-  'facility': '/facility',
-  'petition': '/petition',
-  'wellbeing': '/wellbeing',
-  'ai-portrait': '/ai-portrait',
-};
+/// 唯一真相在 `application/module_entries.dart`；这里保留旧名字，
+/// 避免既有引用与测试失效。
+const Map<String, String> implementedModuleRoutes = moduleEntryRoutes;
 
 /// 模块落地页 —— **注册表驱动**，不含任何伪造的业务数据。
 ///
-/// 已实现的模块（`groupbuy` / `forum` / `faq`）从这里给出真实入口；
-/// 其余模块如实说明"尚未实现"，并展示它在契约里的冻结信息
-/// （路由前缀 / 敏感级 / 是否需要二次同意）。这样"未实现"是**可见的**，
-/// 而不是假装成功。
+/// 目录里的卡片默认直达真实页面（见 `application/module_entries.dart`），
+/// 本页只承担两种角色：尚未实现的模块在这里如实说明；已实现模块的
+/// 契约信息与二次同意开关仍可从本页查看（`/module/:id` 直接打开）。
 class ModuleDetailPage extends ConsumerWidget {
   const ModuleDetailPage({required this.moduleId, super.key});
 
@@ -166,12 +142,9 @@ class ModuleDetailPage extends ConsumerWidget {
                     'wildlife' => '本模块已实现：静态底图 + 叠加层（区域/聚合热点/推断轨迹）+ '
                         '观测列表与详情 + 区域与告示位 + 上报（选图/定位/分类建议/命名个体/'
                         '伦理确认）+ 推断轨迹页，走 WildlifePort。',
-                    'techpie' => '本模块已实现 **Phase 0**：绑定管理（列表 / 发起绑定 / 解绑 / '
-                        '手动续期，响应不含凭证）+ 能力清单（未绑定项显示 '
-                        'CAMPUS_BINDING_REQUIRED 引导，**不是**报错）+ 校园系统 WebView 直连'
-                        '（一次性票据；票据不缓存、不进日志），走 TechpiePort。'
-                        '**未实现**：Phase 1（结构化校园数据，阻塞于信息办书面回复）、'
-                        'Phase 2（场馆预约 / 会话注入）、Phase 3（自动续期）。'
+                    'techpie' => '这些校园能力已经并入常用入口，不再有独立模块：'
+                        '校园系统直连在「校园服务」，余额 / 流水 / 付款码在「校园卡」，'
+                        '绑定管理与能力清单在「我的」。'
                         '**不做**：任何校园会话落库路径。',
                     'teabreak' => '本模块已实现：列表（按 worthGoing → freshness → '
                         '结束时间排序）+「确认还有」+ 新建表单 + 三态与空态，'
@@ -247,7 +220,7 @@ class ModuleDetailPage extends ConsumerWidget {
                       onPressed: () =>
                           context.push(implementedModuleRoutes[module.id]!),
                       icon: const Icon(Icons.arrow_forward, size: 18),
-                      label: const Text('进入模块'),
+                      label: const Text('打开'),
                     ),
                   ),
                 ],

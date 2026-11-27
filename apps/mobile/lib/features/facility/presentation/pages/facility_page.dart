@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,7 @@ import '../../../../presentation/components/kedaya_shell.dart';
 import '../../../../presentation/theme/kedaya_theme_extension.dart';
 import '../../../../presentation/theme/kedaya_tokens.dart';
 import '../../application/facility_providers.dart';
+import '../../../campus_web/presentation/campus_web_page.dart' show campusWebSupported;
 import '../components/facility_common.dart';
 
 /// 场馆列表（`/facility`）。
@@ -41,6 +43,20 @@ class FacilityPage extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.all(KedaYaTokens.space4),
         children: <Widget>[
+          const _RealFacilityEntry(),
+          const SizedBox(height: KedaYaTokens.space5),
+          Padding(
+            padding: const EdgeInsets.only(left: KedaYaTokens.space1),
+            child: Text(
+              '本机演练',
+              style: TextStyle(
+                fontSize: KedaYaTokens.fontSizeSm,
+                fontWeight: KedaYaTokens.fontWeightSemibold,
+                color: colors.textMuted,
+              ),
+            ),
+          ),
+          const SizedBox(height: KedaYaTokens.space2),
           const FacilityDemoNotice(),
           const SizedBox(height: KedaYaTokens.space3),
           Text(
@@ -77,6 +93,70 @@ class FacilityPage extends ConsumerWidget {
               onTap: () => context.push('/facility/${venues[i].id}'),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// 真实场馆通道：学校 OA 的空闲查询与预约申请。
+///
+/// 这是**主入口**，放在演示列表之前：用户点「场馆」要的是真的约到场地，
+/// 而不是一份本机演示数据。登录在学校 OA 页面里完成，本机不保存校园会话。
+class _RealFacilityEntry extends StatelessWidget {
+  const _RealFacilityEntry();
+
+  @override
+  Widget build(BuildContext context) {
+    final KedaYaColors colors = context.kedayaColors;
+    final bool supported = !kIsWeb && campusWebSupported(defaultTargetPlatform);
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(KedaYaTokens.radiusLg),
+        border: Border.all(color: colors.brand.withValues(alpha: 0.35)),
+      ),
+      padding: const EdgeInsets.all(KedaYaTokens.space4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(Icons.sports_tennis_outlined,
+                  size: 20, color: colors.brandStrong),
+              const SizedBox(width: KedaYaTokens.space2),
+              Expanded(
+                child: Text(
+                  '学校场馆系统（真实预约）',
+                  style: TextStyle(
+                    fontSize: KedaYaTokens.fontSizeMd,
+                    fontWeight: KedaYaTokens.fontWeightSemibold,
+                    color: colors.text,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: KedaYaTokens.space2),
+          Text(
+            '连接学校 OA 查询羽毛球、网球等场地的实时空闲，并提交预约申请。'
+            '需要校园网或 VPN；登录在打开的学校页面里完成。'
+            '提交后请到 OA「我的请求」确认结果。',
+            style: TextStyle(
+              fontSize: KedaYaTokens.fontSizeXs,
+              height: KedaYaTokens.lineHeightLoose,
+              color: colors.textMuted,
+            ),
+          ),
+          const SizedBox(height: KedaYaTokens.space3),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: supported ? () => context.push('/oa-gym') : null,
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: Text(supported ? '查询空闲并预约' : '当前平台不支持内嵌学校页面'),
+            ),
+          ),
         ],
       ),
     );

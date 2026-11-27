@@ -92,6 +92,28 @@ Web 门户目前交付拼单垂直切片、管理后台占位与校园活动无�
 Web 的模块交付状态以 `apps/web/src/domain/models/delivery.ts` 为**唯一真相**
 （宫格角标与模块说明页都由它驱动，别在组件里另写一份判断）。本地启动、数据库与真实联调方式见 `docs/local-development.md`。
 
+## Flutter 客户端的信息架构（2026-11-28）
+
+- **点击直达**：模块卡片不再先跳契约信息页。`apps/mobile/lib/application/module_entries.dart`
+  是唯一真相：`moduleEntryRoutes`（模块 id → 真实路由）、`mergedModuleIds`
+  （不再单独占格子的模块）、`moduleEntryLocation()`（有真实页面直达，否则去
+  `/module/:id` 如实说明页）。`ModuleDetailPage` 仍保留，承载契约信息与二次同意开关。
+- **`techpie` 不再是独立模块入口**：它仍在冻结契约注册表里（三端镜像，不能删），
+  但 Flutter 目录用 `directoryModules()` 过滤掉它；能力落到校园服务页顶部
+  （校园卡 / 安全直连 / 绑定管理 / 能力清单）与「我的」。裸 `/techpie` 重定向到
+  `/campus-services`，三个子页路由保持不变。
+- **场馆页先给真实通道**：`/facility` 顶部是「学校场馆系统（真实预约）」→ `/oa-gym`
+  （OA 空闲查询 + 预约申请，需校园网/VPN，登录在学校页面内完成）；本机演示列表
+  降级为明确标注的「本机演练」。Windows / Linux / 鸿蒙没有内嵌浏览器，按钮置灰并说明。
+- **登录**：`CasWebViewPage`（Android / iOS）按回调地址前缀自动取 code；
+  服务端 `GET /auth/cas/login-url` 因此多返回一个 `service` 字段（回调地址，非凭据）。
+  桌面端原生 WebView 宿主仍未实现，改为 `platform/system_browser.dart`
+  直接拉起系统浏览器（`cmd /c start` / `open` / `xdg-open`，无新插件），
+  授权码输入框支持**粘贴整段回调地址**（`features/auth/domain/cas_callback.dart`
+  的 `extractCasCode` 只接受 URL-safe 字符，避免把一句中文当成 code）。
+- **「我的」页**是常规个人中心：账户卡 + 校园账号 / 偏好 / 关于三组；
+  契约条款号、适配器名等实现细节收进「关于 → 运行环境」折叠项。
+
 提交前请跑以下命令；除 `docs/features/activities.md` §9 记录的既有基线（API lint 5 项）外，
 不应新增失败。API / Web 的测试套件在 Windows 与 Linux 上都应为全绿（2026-11-25 修掉了两处路径分隔符导致的假红灯）：
 

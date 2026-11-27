@@ -52,7 +52,6 @@ import '../features/teabreak/presentation/pages/teabreak_list_page.dart';
 import '../features/techpie/presentation/pages/campus_card_page.dart';
 import '../features/techpie/presentation/pages/techpie_bindings_page.dart';
 import '../features/techpie/presentation/pages/techpie_capabilities_page.dart';
-import '../features/techpie/presentation/pages/techpie_home_page.dart';
 import '../features/techpie/presentation/pages/techpie_webview_page.dart';
 import '../features/wildlife/presentation/pages/wildlife_map_page.dart';
 import '../features/wildlife/presentation/pages/wildlife_report_page.dart';
@@ -292,8 +291,10 @@ GoRouter createAppRouter({String initialLocation = '/home'}) => GoRouter(
         GoRoute(
           path: '/techpie',
           name: 'techpie',
-          builder: (BuildContext context, GoRouterState state) =>
-              const TechpieHomePage(),
+          // 「TechPie 整合」不再是独立模块：能力并入校园服务 / 校园卡 / 我的。
+          // 旧链接仍然可用 —— 只有裸 `/techpie` 重定向，三个子页照常工作。
+          redirect: (BuildContext context, GoRouterState state) =>
+              state.uri.path == '/techpie' ? '/campus-services' : null,
           routes: <RouteBase>[
             // 三个静态子段；本模块没有 `:id` 路由，因此不存在"静态段被 :id 吃掉"的问题。
             GoRoute(

@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_providers.dart';
+import '../../app/app_version.dart';
 import '../../application/campus_bindings_controller.dart';
 import '../../application/consent_controller.dart';
+import '../../application/module_catalog.dart';
 import '../../application/session_controller.dart';
 import '../../application/theme_controller.dart';
 import '../../domain/models/auth_session.dart';
@@ -13,12 +15,14 @@ import '../../domain/models/theme_mode.dart';
 import '../../platform/platform_info.dart';
 import '../components/kedaya_shell.dart';
 import '../components/unofficial_platform_notice.dart';
+import '../theme/kedaya_theme_extension.dart';
 import '../theme/kedaya_tokens.dart';
 
-/// "我的"页：会话、校园系统绑定、同意记录、外观、运行环境。
+/// 「我的」：账号、校园绑定、偏好设置与关于。
 ///
-/// 这一页把契约 §5 的**两级身份模型**直接呈现出来：
-/// 上面是身份层（KedaYa 会话），下面是能力层（校园系统绑定）——两者互不越界。
+/// 页面面向使用者而不是开发者：不出现契约条款号、适配器名这类实现细节，
+/// 需要排障的信息收在「关于 → 运行环境」里。两级身份模型仍然成立 ——
+/// 账号登录与校园系统绑定是两组独立的入口，互不越界。
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
@@ -38,96 +42,205 @@ class ProfilePage extends ConsumerWidget {
       title: '我的',
       child: ListView(
         children: <Widget>[
-          const UnofficialPlatformNotice(dense: true),
+          _AccountCard(session: session),
           const SizedBox(height: KedaYaTokens.space5),
-          const _SectionTitle('第一级 · 身份（KedaYa 会话）'),
+          const _SectionTitle('校园账号'),
           const SizedBox(height: KedaYaTokens.space2),
-          if (session.isLoading)
-            const LinearProgressIndicator()
-          else if (session.hasError)
-            Text(
-              '登录失败：${session.error}',
-              style: const TextStyle(
-                fontSize: KedaYaTokens.fontSizeSm,
-                color: KedaYaTokens.colorDanger,
-              ),
-            )
-          else
-            _SessionTile(session: session.valueOrNull),
-          const SizedBox(height: KedaYaTokens.space3),
-          Row(
+          _Group(
             children: <Widget>[
-              FilledButton(
-                onPressed: () => context.push('/campus-login'),
-                child: const Text('统一身份登录'),
+              for (final CampusSystem system in CampusSystem.values)
+                _BindingRow(
+                  system: system,
+                  binding: _bindingFor(bindings.valueOrNull, system),
+                  onTap: () => context.push('/techpie/bindings'),
+                ),
+              const Divider(height: 0.5, thickness: 0.5),
+              _NavRow(
+                icon: Icons.tune_outlined,
+                title: '绑定管理',
+                subtitle: '发起绑定、解绑与手动续期',
+                onTap: () => context.push('/techpie/bindings'),
               ),
-              const SizedBox(width: KedaYaTokens.space3),
-              OutlinedButton(
+              const Divider(height: 0.5, thickness: 0.5),
+              _NavRow(
+                icon: Icons.checklist_outlined,
+                title: '能力清单',
+                subtitle: '哪些功能可用、哪些需要先绑定',
+                onTap: () => context.push('/techpie/capabilities'),
+              ),
+              const Divider(height: 0.5, thickness: 0.5),
+              _NavRow(
+                icon: Icons.school_outlined,
+                title: '校园服务',
+                subtitle: 'E云课堂、课程录播、教务与请假',
+                onTap: () => context.push('/campus-services'),
+              ),
+              const Divider(height: 0.5, thickness: 0.5),
+              _NavRow(
+                icon: Icons.credit_card_outlined,
+                title: '校园卡',
+                subtitle: '余额、流水与付款码',
+                onTap: () => context.push('/campus-card'),
+              ),
+            ],
+          ),
+          const SizedBox(height: KedaYaTokens.space5),
+          const _SectionTitle('偏好'),
+          const SizedBox(height: KedaYaTokens.space2),
+          _Group(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(KedaYaTokens.space4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Text('外观'),
+                    const SizedBox(height: KedaYaTokens.space2),
+                    SegmentedButton<KedaYaThemeMode>(
+                      showSelectedIcon: false,
+                      segments: <ButtonSegment<KedaYaThemeMode>>[
+                        for (final KedaYaThemeMode mode
+                            in KedaYaThemeMode.values)
+                          ButtonSegment<KedaYaThemeMode>(
+                              value: mode, label: Text(mode.label)),
+                      ],
+                      selected: <KedaYaThemeMode>{themeMode},
+                      onSelectionChanged:
+                          (Set<KedaYaThemeMode> selection) async {
+                        await ref
+                            .read(themeModeControllerProvider.notifier)
+                            .setMode(selection.first);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 0.5, thickness: 0.5),
+              _NavRow(
+                icon: Icons.notifications_outlined,
+                title: '通知与提醒',
+                subtitle: '站内信与设备推送开关',
+                onTap: () => context.push('/notifications'),
+              ),
+              const Divider(height: 0.5, thickness: 0.5),
+              _NavRow(
+                icon: Icons.privacy_tip_outlined,
+                title: '敏感模块授权',
+                subtitle: granted.isEmpty
+                    ? '尚未授权任何敏感模块'
+                    : granted
+                        .map((String id) =>
+                            ref.read(moduleByIdProvider(id))?.nameZh ?? id)
+                        .join('、'),
+                onTap: () => _showConsents(context, granted, ref),
+              ),
+            ],
+          ),
+          const SizedBox(height: KedaYaTokens.space5),
+          const _SectionTitle('关于'),
+          const SizedBox(height: KedaYaTokens.space2),
+          _Group(
+            children: <Widget>[
+              const _NavRow(
+                icon: Icons.info_outline,
+                title: '版本',
+                subtitle: '可达鸭 $kKedayaVersion',
+              ),
+              const Divider(height: 0.5, thickness: 0.5),
+              ExpansionTile(
+                leading: const Icon(Icons.settings_ethernet_outlined, size: 20),
+                title: const Text('运行环境'),
+                subtitle: Text(
+                  PlatformInfo.current.label,
+                  style: const TextStyle(fontSize: KedaYaTokens.fontSizeXs),
+                ),
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      KedaYaTokens.space4,
+                      0,
+                      KedaYaTokens.space4,
+                      KedaYaTokens.space3,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        _KeyValueRow(
+                            label: '平台', value: PlatformInfo.current.label),
+                        _KeyValueRow(
+                          label: '数据来源',
+                          value: usesMock ? '本机演示（未连接后端）' : '远端服务',
+                        ),
+                        const _KeyValueRow(
+                            label: '客户端', value: 'Flutter · kedaya'),
+                        _KeyValueRow(label: '版本号', value: kKedayaVersion),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: KedaYaTokens.space4),
+          if (session.valueOrNull != null)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
                 onPressed: () async {
                   await ref.read(sessionControllerProvider.notifier).signOut();
                 },
-                child: const Text('退出登录'),
+                icon: const Icon(Icons.logout, size: 18),
+                label: const Text('退出登录'),
               ),
-            ],
-          ),
-          const SizedBox(height: KedaYaTokens.space6),
-          const _SectionTitle('第二级 · 校园系统绑定（能力层）'),
-          const SizedBox(height: KedaYaTokens.space2),
-          Text(
-            '凭据只保存在系统安全存储里，界面拿到的永远只是绑定状态（契约 §5）。',
-            style: TextStyle(
-              fontSize: KedaYaTokens.fontSizeXs,
-              color: Theme.of(context).colorScheme.outline,
             ),
-          ),
-          const SizedBox(height: KedaYaTokens.space2),
-          for (final CampusSystem system in CampusSystem.values)
-            _BindingTile(
-                system: system,
-                binding: _bindingFor(bindings.valueOrNull, system)),
-          const SizedBox(height: KedaYaTokens.space6),
-          const _SectionTitle('二次同意记录（契约 §9）'),
-          const SizedBox(height: KedaYaTokens.space2),
-          Text(
-            granted.isEmpty ? '尚未对任何敏感模块表示同意' : granted.join('、'),
-            style: const TextStyle(
-              fontSize: KedaYaTokens.fontSizeSm,
-              color: KedaYaTokens.colorText,
-            ),
-          ),
-          const SizedBox(height: KedaYaTokens.space6),
-          const _SectionTitle('外观（契约 §11.5）'),
-          const SizedBox(height: KedaYaTokens.space2),
-          SegmentedButton<KedaYaThemeMode>(
-            showSelectedIcon: false,
-            segments: <ButtonSegment<KedaYaThemeMode>>[
-              for (final KedaYaThemeMode mode in KedaYaThemeMode.values)
-                ButtonSegment<KedaYaThemeMode>(
-                    value: mode, label: Text(mode.label)),
-            ],
-            selected: <KedaYaThemeMode>{themeMode},
-            onSelectionChanged: (Set<KedaYaThemeMode> selection) async {
-              await ref
-                  .read(themeModeControllerProvider.notifier)
-                  .setMode(selection.first);
-            },
-          ),
-          const SizedBox(height: KedaYaTokens.space2),
-          Text(
-            '选择会被记住（本地缓存，启动时同步读回，不会闪一下再切）。',
-            style: const TextStyle(
-              fontSize: KedaYaTokens.fontSizeXs,
-              color: KedaYaTokens.colorTextMuted,
-            ),
-          ),
-          const SizedBox(height: KedaYaTokens.space6),
-          const _SectionTitle('运行环境'),
-          const SizedBox(height: KedaYaTokens.space2),
-          _KeyValueRow(label: '平台', value: PlatformInfo.current.label),
-          _KeyValueRow(
-              label: '适配器', value: usesMock ? '内存 mock（无后端）' : '远端 API'),
-          const _KeyValueRow(label: '客户端', value: 'Flutter · kedaya 0.1.0'),
+          const SizedBox(height: KedaYaTokens.space4),
+          const UnofficialPlatformNotice(dense: true),
         ],
+      ),
+    );
+  }
+
+  void _showConsents(BuildContext context, Set<String> granted, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (BuildContext context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.all(KedaYaTokens.space4),
+          children: <Widget>[
+            const Text(
+              '敏感模块授权',
+              style: TextStyle(
+                fontSize: KedaYaTokens.fontSizeMd,
+                fontWeight: KedaYaTokens.fontWeightSemibold,
+              ),
+            ),
+            const SizedBox(height: KedaYaTokens.space2),
+            const Text(
+              '这些模块涉及更敏感的信息，需要你单独同意。'
+              '随时可以在模块页面里撤回，撤回后该模块立即不可用。',
+              style: TextStyle(fontSize: KedaYaTokens.fontSizeXs),
+            ),
+            const SizedBox(height: KedaYaTokens.space3),
+            if (granted.isEmpty)
+              const Text('尚未授权任何敏感模块。')
+            else
+              for (final String id in granted)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(ref.read(moduleByIdProvider(id))?.nameZh ?? id),
+                  trailing: TextButton(
+                    onPressed: () async {
+                      await ref
+                          .read(consentControllerProvider.notifier)
+                          .revoke(id);
+                      if (context.mounted) Navigator.of(context).pop();
+                    },
+                    child: const Text('撤回'),
+                  ),
+                ),
+          ],
+        ),
       ),
     );
   }
@@ -142,61 +255,220 @@ CampusBinding? _bindingFor(List<CampusBinding>? bindings, CampusSystem system) {
   return null;
 }
 
-class _SessionTile extends StatelessWidget {
-  const _SessionTile({required this.session});
+/// 顶部账户卡：登录态一目了然，未登录时主操作就是登录。
+class _AccountCard extends ConsumerWidget {
+  const _AccountCard({required this.session});
 
-  final AuthSession? session;
+  final AsyncValue<AuthSession?> session;
 
   @override
-  Widget build(BuildContext context) {
-    final AuthSession? current = session;
-    if (current == null) {
-      return const Text(
-        '未登录 · 浏览类功能仍可用（契约 §5 硬规则 3：可以"已登录但未绑定"）',
-        style: TextStyle(
-          fontSize: KedaYaTokens.fontSizeSm,
-          color: KedaYaTokens.colorTextMuted,
-        ),
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        _KeyValueRow(label: '用户', value: current.user.displayNameOrId),
-        _KeyValueRow(label: '学号', value: current.user.studentId ?? '—'),
-        _KeyValueRow(label: '院系', value: current.user.department ?? '—'),
-        _KeyValueRow(
-          label: '令牌',
-          value: current.hasTokens ? '已持有' : '待后台恢复（契约 §8）',
-        ),
-      ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    final KedaYaColors colors = context.kedayaColors;
+    final AuthSession? current = session.valueOrNull;
+    final String title = current?.user.displayNameOrId ?? '还未登录';
+    final String subtitle = session.isLoading
+        ? '正在读取登录状态…'
+        : session.hasError
+            ? '登录状态读取失败：${session.error}'
+            : current == null
+                ? '浏览类功能可以直接用，登录后解锁个人数据'
+                : <String?>[
+                    current.user.studentId,
+                    current.user.department,
+                  ].whereType<String>().where((String s) => s.isNotEmpty).join(' · ');
+
+    return Container(
+      padding: const EdgeInsets.all(KedaYaTokens.space4),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(KedaYaTokens.radiusLg),
+        border: Border.all(color: colors.border),
+      ),
+      child: Column(
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: colors.brandSoft,
+                child: Text(
+                  current == null
+                      ? '鸭'
+                      : title.substring(0, 1),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: KedaYaTokens.fontWeightSemibold,
+                    color: colors.brandStrong,
+                  ),
+                ),
+              ),
+              const SizedBox(width: KedaYaTokens.space3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: KedaYaTokens.fontSizeLg,
+                        fontWeight: KedaYaTokens.fontWeightSemibold,
+                        color: colors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle.isEmpty ? '已登录' : subtitle,
+                      style: TextStyle(
+                        fontSize: KedaYaTokens.fontSizeXs,
+                        height: KedaYaTokens.lineHeightNormal,
+                        color: colors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: KedaYaTokens.space3),
+          SizedBox(
+            width: double.infinity,
+            child: current == null
+                ? FilledButton.icon(
+                    onPressed: () => context.push('/campus-login'),
+                    icon: const Icon(Icons.login, size: 18),
+                    label: const Text('用学校统一身份登录'),
+                  )
+                : OutlinedButton.icon(
+                    onPressed: () => context.push('/campus-login'),
+                    icon: const Icon(Icons.swap_horiz, size: 18),
+                    label: const Text('重新登录 / 切换账号'),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _BindingTile extends StatelessWidget {
-  const _BindingTile({required this.system, this.binding});
+class _BindingRow extends StatelessWidget {
+  const _BindingRow({required this.system, this.binding, this.onTap});
 
   final CampusSystem system;
   final CampusBinding? binding;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final KedaYaColors colors = context.kedayaColors;
     final CampusBinding? current = binding;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(
-        current == null ? Icons.link_off : Icons.link,
-        color: current == null
-            ? KedaYaTokens.colorTextMuted
-            : KedaYaTokens.colorSuccess,
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: KedaYaTokens.space4,
+          vertical: KedaYaTokens.space3,
+        ),
+        child: Row(
+          children: <Widget>[
+            Icon(
+              current == null ? Icons.link_off : Icons.link,
+              size: 20,
+              color: current == null ? colors.textMuted : colors.success,
+            ),
+            const SizedBox(width: KedaYaTokens.space3),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(system.label),
+                  Text(
+                    current == null
+                        ? '未绑定'
+                        : '已绑定 ${current.displayName ?? ''}'.trim(),
+                    style: TextStyle(
+                      fontSize: KedaYaTokens.fontSizeXs,
+                      color: colors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 18, color: colors.textMuted),
+          ],
+        ),
       ),
-      title: Text(system.label),
-      subtitle: Text(
-        current == null
-            ? '未绑定 · 依赖它的功能会返回 CAMPUS_BINDING_REQUIRED'
-            : '已绑定 ${current.displayName ?? '（无显示名）'}',
-        style: const TextStyle(fontSize: KedaYaTokens.fontSizeXs),
+    );
+  }
+}
+
+class _Group extends StatelessWidget {
+  const _Group({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final KedaYaColors colors = context.kedayaColors;
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: children),
+    );
+  }
+}
+
+class _NavRow extends StatelessWidget {
+  const _NavRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final KedaYaColors colors = context.kedayaColors;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: KedaYaTokens.space4,
+          vertical: KedaYaTokens.space3,
+        ),
+        child: Row(
+          children: <Widget>[
+            Icon(icon, size: 20, color: colors.brandStrong),
+            const SizedBox(width: KedaYaTokens.space3),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(title),
+                  const SizedBox(height: 1),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: KedaYaTokens.fontSizeXs,
+                      height: KedaYaTokens.lineHeightNormal,
+                      color: colors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (onTap != null)
+              Icon(Icons.chevron_right, size: 18, color: colors.textMuted),
+          ],
+        ),
       ),
     );
   }
@@ -208,12 +480,15 @@ class _SectionTitle extends StatelessWidget {
   final String title;
 
   @override
-  Widget build(BuildContext context) => Text(
-        title,
-        style: const TextStyle(
-          fontSize: KedaYaTokens.fontSizeMd,
-          fontWeight: KedaYaTokens.fontWeightSemibold,
-          color: KedaYaTokens.colorText,
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(left: KedaYaTokens.space1),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: KedaYaTokens.fontSizeSm,
+            fontWeight: KedaYaTokens.fontWeightSemibold,
+            color: context.kedayaColors.textMuted,
+          ),
         ),
       );
 }

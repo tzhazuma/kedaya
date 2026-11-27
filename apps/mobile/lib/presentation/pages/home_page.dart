@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../application/module_entries.dart';
 import '../../application/session_controller.dart';
 import '../../domain/models/auth_session.dart';
 import '../../domain/models/kedaya_module.dart';
@@ -90,7 +91,7 @@ class HomePage extends ConsumerWidget {
           const SizedBox(height: KedaYaTokens.space2),
           _GroupedCard(
             children: <Widget>[
-              for (final KedayaModule module in businessModules)
+              for (final KedayaModule module in directoryModules(businessModules))
                 _ModuleRow(
                   title: module.nameZh,
                   subtitle: module.summary,
@@ -99,7 +100,7 @@ class HomePage extends ConsumerWidget {
                       : module.requiresConsent
                           ? '需同意'
                           : null,
-                  onTap: () => context.push('/module/${module.id}'),
+                  onTap: () => context.push(moduleEntryLocation(module.id)),
                 ),
             ],
           ),
