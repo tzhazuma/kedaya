@@ -1,16 +1,19 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../domain/models/facility_booking.dart';
 import '../../../../domain/models/facility_venue.dart';
+import '../../../../platform/system_browser.dart';
 import '../../../../presentation/components/kedaya_shell.dart';
 import '../../../../presentation/theme/kedaya_theme_extension.dart';
 import '../../../../presentation/theme/kedaya_tokens.dart';
 import '../../application/facility_providers.dart';
 import '../../../campus_web/presentation/campus_web_page.dart' show campusWebSupported;
 import '../components/facility_common.dart';
+import '../oa_gym_page.dart' show oaGymEntryUrl;
 
 /// 场馆列表（`/facility`）。
 ///
@@ -152,13 +155,44 @@ class _RealFacilityEntry extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: supported ? () => context.push('/oa-gym') : null,
+              onPressed: () => _openRealFacility(context),
               icon: const Icon(Icons.open_in_new, size: 18),
-              label: Text(supported ? '查询空闲并预约' : '当前平台不支持内嵌学校页面'),
+              label: Text(
+                supported
+                    ? '查询空闲并预约'
+                    : systemBrowserSupported
+                        ? '在浏览器打开学校 OA 预约'
+                        : '复制学校 OA 地址',
+              ),
             ),
           ),
+          if (!supported) ...<Widget>[
+            const SizedBox(height: KedaYaTokens.space2),
+            Text(
+              '桌面端在浏览器里登录后预约；App 内的实时空闲面板目前仅 Android / iOS 支持。',
+              style: TextStyle(
+                fontSize: KedaYaTokens.fontSizeXs,
+                height: KedaYaTokens.lineHeightNormal,
+                color: colors.textMuted,
+              ),
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  Future<void> _openRealFacility(BuildContext context) async {
+    final bool supported = !kIsWeb && campusWebSupported(defaultTargetPlatform);
+    if (supported) {
+      await context.push('/oa-gym');
+      return;
+    }
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    if (await openInSystemBrowser(oaGymEntryUrl)) return;
+    await Clipboard.setData(const ClipboardData(text: oaGymEntryUrl));
+    messenger.showSnackBar(
+      const SnackBar(content: Text('已复制学校 OA 地址，请在浏览器打开')),
     );
   }
 }

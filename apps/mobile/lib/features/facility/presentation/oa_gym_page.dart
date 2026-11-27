@@ -15,6 +15,10 @@ import '../data/oa_gym_client.dart';
 /// OA 体育馆空闲查询（只读）。
 ///
 /// 上半屏是 OA 页面（用户在这里完成登录），下半屏按「时段 × 运动」列出空闲场地。
+/// OA 体育馆入口（内嵌页与桌面端的系统浏览器共用同一个地址）。
+const String oaGymEntryUrl =
+    'https://oa.shanghaitech.edu.cn/wui/main.jsp?templateId=1';
+
 class OaGymPage extends StatefulWidget {
   const OaGymPage({super.key});
 
@@ -23,7 +27,7 @@ class OaGymPage extends StatefulWidget {
 }
 
 class _OaGymPageState extends State<OaGymPage> {
-  static const String _entry = 'https://oa.shanghaitech.edu.cn/wui/main.jsp?templateId=1';
+  static const String _entry = oaGymEntryUrl;
 
   WebViewController? _controller;
   final Map<String, Completer<CampusBridgeResponse>> _pending =

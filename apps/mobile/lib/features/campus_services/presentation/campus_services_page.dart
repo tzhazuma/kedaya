@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/app_providers.dart';
 import '../../../domain/ports/webview_port.dart';
+import '../../../platform/system_browser.dart';
 import '../../../presentation/components/kedaya_shell.dart';
 import '../../../presentation/theme/kedaya_theme_extension.dart';
 import '../../../presentation/theme/kedaya_tokens.dart';
@@ -111,6 +112,8 @@ class CampusServicesPage extends ConsumerWidget {
       );
       return;
     }
+    // 桌面端没有内嵌浏览器：直接交给系统浏览器，而不是只复制链接。
+    if (await openInSystemBrowser(service.url)) return;
     final WebViewPort port = ref.read(webViewProvider);
     final bool opened = await port.openOneTimeUrl(service.url);
     if (!context.mounted) return;
