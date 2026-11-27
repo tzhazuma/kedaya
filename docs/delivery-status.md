@@ -1,8 +1,35 @@
 # 交付状态总览
 
-> 2026-11-25。只写**已验证**的事实；没验证的写「未验证」，做不到的写「不做的原因」。
+> 2026-11-28。只写**已验证**的事实；没验证的写「未验证」，做不到的写「不做的原因」。
 
-## 1. 安装包（`mobile-v0.1.8`，已发布）
+## 1. 安装包（`mobile-v0.2.0`，已发布）
+
+| 平台 | 资产 | 大小 | 状态 |
+| --- | --- | --- | --- |
+| Android | `kedaya-0.2.0-android-universal-debug-signed.apk` | 61.1 MB | debug 签名，可装可跑，不能上架 |
+| iOS | `kedaya-0.2.0-ios-unsigned.zip` | 11.1 MB | **未签名** `Runner.app`，需在你 Mac 上重签 |
+| Windows x64 | `setup.exe` + `portable.zip` | 11.2 / 13.2 MB | 可用，已复制到本机下载目录 |
+| Windows arm64 | `portable-experimental.zip` | — | 实验性；本次发布待手动触发 `mobile-windows-arm64.yml` |
+| Linux x64 | `tar.gz` + `deb` | 19.4 / 15.4 MB | 可用 |
+| Linux arm64 | `tar.gz` + `deb` | 19.4 / 15.4 MB | 原生 arm64 runner 构建 |
+| macOS arm64 | `dmg` + `zip` | 23.9 / 20.8 MB | 未签名，首次打开需右键 |
+| HarmonyOS | `release-unsigned.hap` | 26.2 MB | **未签名**，`hdc install` 会被拒；本地构建 `versionName 0.2.0 / versionCode 11` 已核对 |
+| 微信小程序 | `miniapp-weapp.zip` | 1.9 MB | 导入开发者工具可用；上传需真实 AppID |
+| 校验 | `SHA256SUMS` | — | CI 产出 |
+
+0.2.0 相对 0.1.9 的变化集中在** Flutter 客户端的信息架构与登录体验**：
+模块卡片点击直达（不再有「进入模块」二次确认）、`techpie` 不再单独占格子、
+场馆页顶部是真实 OA 预约通道、登录页支持内嵌自动取码与整段地址粘贴、
+「我的」页改为常规个人中心。服务端唯一改动是 `auth/cas/login-url` 多返回
+`service`（回调地址）。详见根目录 `AGENTS.md` 的「Flutter 客户端的信息架构」。
+
+macOS / iOS 的本地构建步骤见 `docs/build/apple.md`；鸿蒙见 `docs/build/harmonyos.md`
+（注意：`jbr\bin` 必须进 PATH，否则报 `00308018`）；小程序见 `docs/build/miniapp.md`。
+
+### 历史版本 `mobile-v0.1.8` / `mobile-v0.1.9`
+
+0.1.9 共 16 份资产（含 Windows arm64 实验包、鸿蒙 HAP、小程序 zip）；
+下表保留 0.1.8 的大小记录供对照。
 
 | 平台 | 资产 | 大小 | 状态 |
 | --- | --- | --- | --- |
@@ -20,7 +47,23 @@
 macOS / iOS 的本地构建步骤见 `docs/build/apple.md`；鸿蒙见 `docs/build/harmonyos.md`
 （注意：`jbr\bin` 必须进 PATH，否则报 `00308018`）；小程序见 `docs/build/miniapp.md`。
 
-## 2. 验证证据（2026-11-25 实跑）
+## 2. 验证证据（2026-11-28 实跑）
+
+| 包 | 结果 |
+| --- | --- |
+| `@kedaya/api`（Windows） | **1845 通过 / 0 失败 / 18 跳过**，typecheck 与 lint 通过 |
+| `apps/mobile`（Flutter） | **1259 通过 / 0 失败**，`flutter analyze` 0 issue |
+| `@kedaya/miniapp` 构建 | `build:weapp` + `verify:weapp` 通过；主包 1.73 MiB（上限 2），22 个分包 |
+| HAP | `flutter build hap --release` 通过，`pack.info` 为 `versionName 0.2.0 / versionCode 11` |
+| CI `mobile-v0.2.0` | Mobile Build **全部 success**（Android / iOS / macOS / Linux x64 / Linux arm64 / Windows x64 / Flutter analyze+test） |
+| CI `main` | 契约 / 小程序 / Web / 仓库卫生 success；**后端（NestJS）failure**，本地 Windows 全绿，正在 Linux 环境复现 |
+
+新增测试：`test/application/module_entries_test.dart`（目录过滤与直达）、
+`test/domain/cas_callback_test.dart`（授权码提取，含"中文句子不能被当成 code"）。
+界面预览用临时 golden 测试渲染成 PNG（`Downloads/kedaya-ui-preview/`），
+预览文件与测试均不入库 —— golden 跨平台渲染有差异，不能做 CI 断言。
+
+### 2026-11-25 基线
 
 | 包 | 结果 |
 | --- | --- |

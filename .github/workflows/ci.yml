@@ -124,7 +124,29 @@ jobs:
       - name: 类型检查
         run: npm run typecheck -w @kedaya/api
       - name: 测试
-        run: npm run test -w @kedaya/api
+        shell: bash
+        # PGlite（PostgreSQL 的 WASM 构建）在 Linux 上偶发
+        # `Connection terminated unexpectedly`（2026-11-28 实测：同一文件连跑三次，
+        # 第一次失败、后两次通过）。实例是 describe 级共享的，vitest 的用例级
+        # retry 重建不了连接，因此只在**失败全部来自真库 spec** 时整体重跑那两个文件；
+        # 其它任何失败都直接判红，不被重跑掩盖。
+        run: |
+          LOG=$(mktemp)
+          set +e
+          npm run test -w @kedaya/api 2>&1 | tee "$LOG"
+          STATUS=${PIPESTATUS[0]}
+          set -e
+          if [ "$STATUS" -eq 0 ]; then exit 0; fi
+          if grep -E 'FAIL[[:space:]]' "$LOG" | grep -v -E 'techpie-db|buddy-db' | grep -q .; then
+            echo '存在非 PGlite 真库用例的失败，不做重跑'
+            exit "$STATUS"
+          fi
+          if ! grep -qE 'Connection terminated unexpectedly' "$LOG"; then
+            echo '失败不是已知的 PGlite 偶发断连，不做重跑'
+            exit "$STATUS"
+          fi
+          echo '仅 PGlite 真库用例偶发断连，整体重跑这两个文件'
+          npm run test -w @kedaya/api -- test/techpie-db.spec.ts test/buddy-db.spec.ts
       - name: 构建
         run: npm run build -w @kedaya/api
 
