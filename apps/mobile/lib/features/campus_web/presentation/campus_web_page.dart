@@ -134,6 +134,7 @@ class _CampusWebPageState extends State<CampusWebPage> {
     return KedaYaPageScaffold(
       title: widget.title,
       padding: EdgeInsets.zero,
+      maxContentWidth: null,
       actions: <Widget>[
         IconButton(
           tooltip: '抓取当前页',

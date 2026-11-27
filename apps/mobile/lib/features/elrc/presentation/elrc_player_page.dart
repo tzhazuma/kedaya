@@ -63,6 +63,7 @@ class _ElrcPlayerPageState extends State<ElrcPlayerPage> {
     final VideoPlayerController? controller = _controller;
     return KedaYaPageScaffold(
       title: widget.title,
+      maxContentWidth: null,
       child: Center(
         child: _error != null
             ? Text(

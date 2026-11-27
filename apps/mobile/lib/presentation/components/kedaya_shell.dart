@@ -52,6 +52,7 @@ class KedaYaPageScaffold extends StatelessWidget {
     this.actions,
     this.bottom,
     this.padding = const EdgeInsets.all(KedaYaTokens.space4),
+    this.maxContentWidth = 1120,
     super.key,
   });
 
@@ -61,11 +62,29 @@ class KedaYaPageScaffold extends StatelessWidget {
   final PreferredSizeWidget? bottom;
   final EdgeInsets padding;
 
+  /// 桌面宽窗口下的内容列宽；传 null 表示不限宽（视频播放、内嵌网页）。
+  ///
+  /// 与首页一致：一行正文拉到 1500px 以上既难读又显得空。
+  final double? maxContentWidth;
+
   @override
   Widget build(BuildContext context) {
+    final double? width = maxContentWidth;
     return Scaffold(
       appBar: AppBar(title: Text(title), actions: actions, bottom: bottom),
-      body: SafeArea(child: Padding(padding: padding, child: child)),
+      body: SafeArea(
+        child: Padding(
+          padding: padding,
+          child: width == null
+              ? child
+              : Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: width),
+                    child: child,
+                  ),
+                ),
+        ),
+      ),
     );
   }
 }

@@ -23,7 +23,10 @@ class ModulesPage extends ConsumerWidget {
         directoryModules(ref.watch(businessModulesProvider));
     return Scaffold(
       appBar: AppBar(title: const Text('全部服务')),
-      body: ListView(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1120),
+          child: ListView(
         padding: const EdgeInsets.all(KedaYaTokens.space4),
         children: <Widget>[
           // ⚠️ 原先这里把核心模块**逐个列举**（列举必过期：后来加了
@@ -54,6 +57,8 @@ class ModulesPage extends ConsumerWidget {
             const SizedBox(height: KedaYaTokens.space3),
           ],
         ],
+          ),
+        ),
       ),
     );
   }

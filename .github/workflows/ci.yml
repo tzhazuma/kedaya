@@ -132,7 +132,7 @@ jobs:
         # 前提两条同时满足：失败文件**全部**是 PGlite 真库 spec，且日志里确有该错误。
         # 其它任何失败都直接判红，不被重跑掩盖。
         run: |
-          LOG=$(mktemp)
+          LOG=services/api-test.log
           set +e
           npm run test -w @kedaya/api 2>&1 | tee "$LOG"
           STATUS=${PIPESTATUS[0]}
@@ -158,6 +158,18 @@ jobs:
           echo '仅 PGlite 真库用例偶发断连，整体重跑失败文件'
           # shellcheck disable=SC2086
           npm run test -w @kedaya/api -- $FAILED
+      # 失败时把日志末尾写进 job summary：网页 Summary 可直接看到，
+      # 不必再为一个报错去下载整份日志。
+      - name: 测试失败摘要
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo '### 后端测试失败摘要'
+            echo '```'
+            tail -c 6000 services/api-test.log || echo '没有日志文件'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: 构建
         run: npm run build -w @kedaya/api
 
