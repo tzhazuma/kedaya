@@ -128,7 +128,8 @@ jobs:
         # PGlite（PostgreSQL 的 WASM 构建）在 Linux 上偶发
         # `Connection terminated unexpectedly`（2026-11-28 实测：同一文件连跑三次，
         # 第一次失败、后两次通过）。实例是 describe 级共享的，vitest 的用例级
-        # retry 重建不了连接，因此只在**失败全部来自真库 spec** 时整体重跑那两个文件；
+        # retry 重建不了连接，因此整体重跑失败的文件。
+        # 前提两条同时满足：失败文件**全部**是 PGlite 真库 spec，且日志里确有该错误。
         # 其它任何失败都直接判红，不被重跑掩盖。
         run: |
           LOG=$(mktemp)
@@ -137,16 +138,26 @@ jobs:
           STATUS=${PIPESTATUS[0]}
           set -e
           if [ "$STATUS" -eq 0 ]; then exit 0; fi
-          if grep -E 'FAIL[[:space:]]' "$LOG" | grep -v -E 'techpie-db|buddy-db' | grep -q .; then
-            echo '存在非 PGlite 真库用例的失败，不做重跑'
-            exit "$STATUS"
-          fi
           if ! grep -qE 'Connection terminated unexpectedly' "$LOG"; then
             echo '失败不是已知的 PGlite 偶发断连，不做重跑'
             exit "$STATUS"
           fi
-          echo '仅 PGlite 真库用例偶发断连，整体重跑这两个文件'
-          npm run test -w @kedaya/api -- test/techpie-db.spec.ts test/buddy-db.spec.ts
+          FAILED=$(grep -E 'FAIL' "$LOG" \
+            | grep -oE '(test|src)/[A-Za-z0-9_./-]+\.spec\.ts' | sort -u)
+          if [ -z "$FAILED" ]; then
+            echo '没能定位失败的 spec 文件，不做重跑'
+            exit "$STATUS"
+          fi
+          echo "失败文件：$FAILED"
+          for f in $FAILED; do
+            if ! grep -q 'createPglitePrisma' "services/api/$f"; then
+              echo "$f 不是 PGlite 真库用例，不做重跑"
+              exit "$STATUS"
+            fi
+          done
+          echo '仅 PGlite 真库用例偶发断连，整体重跑失败文件'
+          # shellcheck disable=SC2086
+          npm run test -w @kedaya/api -- $FAILED
       - name: 构建
         run: npm run build -w @kedaya/api
 
